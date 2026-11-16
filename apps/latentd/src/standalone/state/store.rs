@@ -74,7 +74,14 @@ enum StartupPayload {
 }
 
 #[cfg(target_os = "linux")]
+pub(super) type InventoryPayloads = (
+    Arc<latent_blobs::local::LocalBlobStore>,
+    crate::config::ProviderIdentity,
+);
+
+#[cfg(target_os = "linux")]
 pub(super) struct LocalPayloadSelection {
+    owner: Option<Arc<latent_blobs::local::LocalBlobStore>>,
     provider: crate::config::ProviderIdentity,
     namespace: String,
     root: std::path::PathBuf,
@@ -83,6 +90,12 @@ pub(super) struct LocalPayloadSelection {
 
 #[cfg(target_os = "linux")]
 impl LocalPayloadSelection {
+    pub(super) fn inventory_payloads(&self) -> Option<InventoryPayloads> {
+        self.owner
+            .as_ref()
+            .map(|owner| (Arc::clone(owner), self.provider.clone()))
+    }
+
     pub(super) fn matches(
         &self,
         settings: &crate::config::NodeSettings,
@@ -204,12 +217,8 @@ impl StateBootstrap {
         durable_retention: bool,
         before_promotion: Option<Box<dyn FnOnce() + Send>>,
     ) -> Result<Arc<latent_blobs::local::LocalBlobStore>, PlatformError> {
-        let selection = LocalPayloadSelection {
-            provider: provider.clone(),
-            namespace: owner.namespace().to_owned(),
-            root,
-            durable_retention,
-        };
+        let selected_provider = provider.clone();
+        let namespace = owner.namespace().to_owned();
         let (returned, receiver) = std::sync::mpsc::sync_channel(1);
         let store = self
             .open_store_inner(
@@ -266,7 +275,16 @@ impl StateBootstrap {
             self.check_live()?;
             guard.delivered = true;
         }
-        self.local_payload_selection = Some(Box::new(selection));
+        self.local_payload_selection = Some(Box::new(LocalPayloadSelection {
+            // A non-durable inventory was validated with RejectPayloads and
+            // must remain uniquely owned for any later explicit promotion.
+            // Only the already-admitted durable owner can verify retained rows.
+            owner: (already_durable || durable_retention).then(|| Arc::clone(&owner)),
+            provider: selected_provider,
+            namespace,
+            root,
+            durable_retention,
+        }));
         Ok(owner)
     }
 

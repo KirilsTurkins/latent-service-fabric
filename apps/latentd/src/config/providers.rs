@@ -74,6 +74,34 @@ pub struct ConfiguredProviders {
     pub bindings: Vec<HostBinding>,
 }
 
+impl ConfiguredProviders {
+    /// The incoming consumer shares the node broker even when no guest-facing
+    /// provider was configured. This installs no guest bindings or providers.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(crate) fn incoming_only() -> Self {
+        Self {
+            format_version: 1,
+            http: None,
+            outbound_streams: None,
+            http_streaming: None,
+            additional_http_streaming: Vec::new(),
+            activation_runtime: None,
+            blob: None,
+            secrets: None,
+            metrics: None,
+            local_service: None,
+            events: None,
+            clock_monotonic: None,
+            clock_wall: None,
+            random: None,
+            context: None,
+            log: None,
+            scalar_aliases: Vec::new(),
+            bindings: Vec::new(),
+        }
+    }
+}
+
 /// Explicit node-owned scalar installation. Limits and implementation are fixed
 /// by the maintained profile; configuration cannot inject a test provider.
 #[derive(Clone, Deserialize)]

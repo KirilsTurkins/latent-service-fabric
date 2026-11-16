@@ -39,6 +39,14 @@ and result-read authority. It re-observes the protected clock without renewing
 the original deadline. It never reruns a guest or treats uncertain I/O as a
 retryable conflict.
 
+For a scoped inbox retry, `fence_inbox_scope` carries the exact existing source
+row into both the new attempt and its complete disposition. The same expectation
+is checked when recovering a concurrent retry winner and survives physical
+retirement into technical-abort planning. A source description does not replace
+the original durable abort proof, reset retry limits or extend result/identity
+expiry. Missing or substituted source history refuses the operation; source
+creation and restore continuity require separate installed custody authority.
+
 The trusted payload API binds an admitted attempt to its original capability
 session once, then `attach_verified_payloads` checks captured local pins against
 that session and the actual engine view. Result/effect attachments must match the

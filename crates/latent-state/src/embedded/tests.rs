@@ -538,6 +538,33 @@ fn conflicting_and_over_budget_batches_abort_all_families() {
 }
 
 #[test]
+fn typed_read_honors_the_smaller_of_codec_and_engine_limits() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = EmbeddedStore::open_file(
+        file(&dir.path().join("typed-read.redb")),
+        StoreLimits {
+            maximum_value_bytes: 128,
+            ..StoreLimits::default()
+        },
+    )
+    .unwrap();
+    let row = key(Family::State, "typed");
+    store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: row.clone(),
+                value: Some(vec![7; 16]),
+            }],
+        })
+        .unwrap();
+    let view = store.snapshot().unwrap();
+    assert_eq!(view.get_typed_bounded(&row, 2048), Ok(Some(vec![7; 16])));
+    assert_eq!(view.get_typed_bounded(&row, 15), Err(StoreError::Corrupt));
+    assert_eq!(view.get_typed_bounded(&row, 0), Err(StoreError::Invalid));
+}
+
+#[test]
 fn read_views_duplicates_and_prefix_scan_are_bounded() {
     let dir = tempfile::tempdir().unwrap();
     let limits = StoreLimits {

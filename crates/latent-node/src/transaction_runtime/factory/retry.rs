@@ -1,5 +1,5 @@
 //! DTO associations only constrain the actual immutable durable abort record.
-use super::TransactionRetrySelection;
+use super::{authorization, NativeTransactionAdmission, State, TransactionRetrySelection};
 use latent_commit::atomic::{AdmissionInput, AtomicError, CommandRecord, Outcome};
 use latent_state::embedded::ReadView;
 
@@ -39,4 +39,41 @@ pub(super) fn check_association(
     // Route/revision observations may change, but guest execution remains bound
     // to the first accepted exact publication/component/schema/type identity.
     Ok(())
+}
+
+impl NativeTransactionAdmission {
+    /// Attach an authenticated inbox and its exact source to an explicit retry.
+    /// These descriptors grant no retry authority. Normal admission verifies
+    /// the original immutable abort/transaction association and finite retry
+    /// policy, and fences the existing source into the pending/final writers.
+    /// Pending, uncertain and terminal business outcomes cannot justify retry.
+    /// Broker redelivery alone must not select this path.
+    pub fn with_trusted_inbox_retry(
+        mut self,
+        identity: latent_commit::atomic::InboxIdentity,
+        scope: latent_state::inbox_scope::InboxScope,
+    ) -> Result<Self, latent_core::PlatformError> {
+        let expected_key = identity.command_key().map_err(super::atomic)?;
+        let valid = match self.state.get_mut() {
+            Ok(State::Fresh(Some(selection))) => {
+                selection.mode == latent_manifest::TransactionOperationMode::StrictCommand
+                    && selection.retry.is_some()
+                    && selection.client_key.as_deref() == Some(expected_key.as_str())
+                    && selection.namespace == scope.namespace
+                    && selection.incarnation == scope.incarnation
+            }
+            _ => false,
+        };
+        if !valid
+            || self.inbox.is_some()
+            || self.inbox_scope.is_some()
+            || identity.provider != scope.provider
+            || scope.input_binding().map_err(|_| authorization::denied())? != identity.binding
+        {
+            return Err(authorization::denied());
+        }
+        self.inbox = Some(identity);
+        self.inbox_scope = Some(scope);
+        Ok(self)
+    }
 }

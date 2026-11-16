@@ -16,7 +16,7 @@ use super::{error, PlatformError, PlatformErrorCode, StandaloneNode};
 
 mod checkpoint;
 mod clock;
-pub use checkpoint::{ProtectedEffectStartup, ProtectedStatePreparation};
+pub use checkpoint::{ProtectedEffectStartup, ProtectedInboxInventory, ProtectedStatePreparation};
 pub use clock::ProtectedEffectClock;
 
 pub use latent_effects::runtime::{

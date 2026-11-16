@@ -6,6 +6,7 @@ mod accounting;
 mod captured;
 mod census;
 mod codec;
+mod inbox_replay;
 mod ownership;
 mod payload_links;
 mod record;
@@ -15,6 +16,7 @@ mod validation;
 mod writer;
 pub use captured::{CapturedIntent, IntentCaptureContext};
 pub use census::tenant_census_contribution;
+pub use inbox_replay::inspect_inbox;
 pub use ownership::{AttemptRetirement, PhysicalAttemptWork, RetiredAttempt};
 pub use payload_links::inspect_payload_reference;
 pub use record::{
@@ -31,8 +33,9 @@ pub use validation::{
     validate_view_observed_with_checkpoint,
 };
 pub use writer::{
-    inspect, AdmissionDecision, AdmittedCommand, CompleteEnvelope, EnvelopeNamespaceExpectation,
-    PreparedAdmission, PreparedDisposition, PublishedAdmission, RetryRequest, StagedIntent,
+    inspect, verify_inbox_scope, AdmissionDecision, AdmittedCommand, CompleteEnvelope,
+    EnvelopeNamespaceExpectation, PreparedAdmission, PreparedDisposition, PublishedAdmission,
+    RetryRequest, StagedIntent,
 };
 #[cfg(target_os = "linux")]
 pub use writer::{PayloadAttachment, PayloadAttachmentTarget};

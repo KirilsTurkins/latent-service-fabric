@@ -71,7 +71,9 @@ impl ConfiguredProviders {
         Ok(selected)
     }
 
-    pub(super) fn installation_identities(&self) -> impl Iterator<Item = &ProviderIdentity> {
+    pub(in crate::config) fn installation_identities(
+        &self,
+    ) -> impl Iterator<Item = &ProviderIdentity> {
         [
             self.http.as_ref().map(|v| &v.identity),
             self.outbound_streams.as_ref().map(|v| &v.identity),

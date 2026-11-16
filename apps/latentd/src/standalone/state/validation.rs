@@ -59,16 +59,53 @@ pub(super) fn validate(
     quotas: &[TenantQuota],
     original: &NativeReservation,
 ) -> Result<(), StoreError> {
-    validate_with_payloads(view, identity, quotas, original, &RejectPayloads)
+    validate_inventory(view, identity, quotas, original).map(|_| ())
 }
 
-fn validate_with_payloads(
+/// The watermark is descriptive only after the entire existing producer and
+/// tenant scan succeeds on this view; it does not authorize a checkpoint write.
+pub(super) fn validate_inventory(
     view: &ReadView,
     identity: &StoreIdentity,
     quotas: &[TenantQuota],
     original: &NativeReservation,
+) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
+    validate_inventory_inner(view, identity, quotas, original, None, &RejectPayloads)
+}
+
+/// Describes a single addition only after the same complete producer and quota
+/// validation. The caller must separately establish approval and exclusion.
+#[cfg_attr(not(test), allow(dead_code))]
+pub(super) fn validate_inventory_addition(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+    source: &latent_state::inbox_scope::InboxScope,
+    expected_before: Option<latent_state::store_identity::InboxCustodyWatermark>,
+) -> Result<latent_state::store_identity::InboxCustodyWatermark, StoreError> {
+    validate_inventory_inner(
+        view,
+        identity,
+        quotas,
+        original,
+        Some((source, expected_before)),
+        &RejectPayloads,
+    )?
+    .ok_or(StoreError::Conflict)
+}
+
+fn validate_inventory_inner(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+    addition: Option<(
+        &latent_state::inbox_scope::InboxScope,
+        Option<latent_state::store_identity::InboxCustodyWatermark>,
+    )>,
     payloads: &dyn PayloadVerifier,
-) -> Result<(), StoreError> {
+) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
     live(original)?;
     if !quotas.is_empty() {
         tenant::configuration_digest(quotas)?;
@@ -80,13 +117,21 @@ fn validate_with_payloads(
     if only_initial_identity(view, original)? {
         // An existing matching identity still cannot recreate a lost external
         // checkpoint. That later decision consumes the affine kernel witness.
-        return live(original);
+        if addition.is_some() {
+            return Err(StoreError::Conflict);
+        }
+        finish_validation(view, original)?;
+        return Ok(None);
     }
     if current.is_none() {
         return Err(StoreError::UnsupportedFormat);
     }
     if quotas.is_empty() {
-        return validate_global_bootstrap(view, original);
+        if addition.is_some() {
+            return Err(StoreError::Conflict);
+        }
+        validate_global_bootstrap(view, original)?;
+        return Ok(None);
     }
     let mut census = TenantCensus::capture(
         view,
@@ -94,6 +139,9 @@ fn validate_with_payloads(
         tenant::INSTALLED_GLOBAL_ALLOWANCE,
         original.original_deadline(),
     )?;
+    if let Some((source, before)) = addition {
+        census.track_inbox_addition(source, before)?;
+    }
     latent_commit::atomic::validate_view_observed_with_checkpoint(
         view,
         foreign_row,
@@ -104,10 +152,11 @@ fn validate_with_payloads(
         },
         || live(original),
     )?;
-    census.finish()?;
+    let report = census.finish()?;
     live(original)?;
-    DispatchCatalog::validate_view(view)?;
-    live(original)
+    DispatchCatalog::validate_view_with_checkpoint(view, &mut || live(original))?;
+    finish_validation(view, original)?;
+    Ok(report.inbox_custody)
 }
 
 #[cfg(target_os = "linux")]
@@ -118,7 +167,7 @@ pub(super) fn validate_with_local_payloads(
     original: &NativeReservation,
     payloads: &LocalPayloadVerifier<'_>,
 ) -> Result<(), StoreError> {
-    validate_with_payloads(view, identity, quotas, original, payloads)
+    validate_inventory_with_local_payloads(view, identity, quotas, original, payloads).map(|_| ())
 }
 
 trait PayloadVerifier {
@@ -172,6 +221,18 @@ impl PayloadVerifier for LocalPayloadVerifier<'_> {
     }
 }
 
+/// Return an inbox watermark only after the same physical payload checks.
+#[cfg(target_os = "linux")]
+pub(super) fn validate_inventory_with_local_payloads(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+    payloads: &LocalPayloadVerifier<'_>,
+) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
+    validate_inventory_inner(view, identity, quotas, original, None, payloads)
+}
+
 fn validate_global_bootstrap(
     view: &ReadView,
     original: &NativeReservation,
@@ -212,12 +273,20 @@ fn validate_global_bootstrap(
         || live(original),
     )?;
     live(original)?;
-    DispatchCatalog::validate_view(view)?;
-    live(original)
+    DispatchCatalog::validate_view_with_checkpoint(view, &mut || live(original))?;
+    finish_validation(view, original)
 }
 
-// Standalone has not yet installed the same-root physical blob inventory at
-// startup. Logical closure alone cannot prove that required bytes exist.
+fn finish_validation(view: &ReadView, original: &NativeReservation) -> Result<(), StoreError> {
+    live(original)?;
+    // The final admission check can block; an expired view cannot establish a
+    // completed startup observation or an inbox custody watermark.
+    let _ = view.is_empty()?;
+    Ok(())
+}
+
+// Without an admitted same-root physical provider, logical closure alone
+// cannot prove that required payload bytes exist.
 fn reject_unverified_payload(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     if latent_state::payload_references::owns_row(key)
         && latent_state::payload_references::owner_reference(key, bytes)?.is_some()
@@ -255,13 +324,14 @@ pub(in crate::standalone::state) fn foreign_row(
 ) -> Result<(), StoreError> {
     // Only UnsupportedFormat delegates. A malformed owned row cannot be
     // rescued by another codec, a prefix label, or permissive opaque storage.
-    let validators: [Validator; 11] = [
+    let validators: [Validator; 12] = [
         latent_wire::phase4::StateManagementBackend::validate_operation_row,
         tenant::validate_row,
         latent_state::session::validate_row,
         namespace_row,
         |_, key, bytes| RecoveryGuard::validate_row(key, bytes),
         |_, key, bytes| StoreIdentity::validate_row(key, bytes),
+        |_, key, bytes| latent_state::inbox_scope::validate_row(key, bytes),
         |_, key, bytes| latent_effects::dispatch_store::validate_row(key, bytes),
         |_, key, bytes| {
             latent_state::recovery::migration::AggregateMigrationProgress::validate_row(key, bytes)

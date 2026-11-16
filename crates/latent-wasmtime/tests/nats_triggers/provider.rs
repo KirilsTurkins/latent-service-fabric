@@ -39,6 +39,7 @@ pub fn config() -> TriggerConfig {
                 stream: format!("TRIGGER{}", name.to_uppercase()),
                 consumer: "PROCESS".into(),
                 filter_subject: format!("lsf.trigger.{name}"),
+                transaction: None,
                 budget: RootBudget {
                     cpu_fuel: 100_000_000,
                     memory_bytes: 4_194_304,

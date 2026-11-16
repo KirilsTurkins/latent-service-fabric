@@ -24,6 +24,7 @@ use latent_state::{
     session::{StateMode, StateScope},
     store_io::StoreIoKind,
 };
+use sha2::{Digest, Sha256};
 enum PendingPublication {
     New(latent_commit::atomic::AdmittedCommand),
     Existing(CommandRecord),
@@ -184,6 +185,18 @@ impl NativeTransactionAdmission {
             *state = State::Failed;
             selection
         };
+        if let Some(inbox) = &self.inbox {
+            let digest = latent_commit::atomic::Identity::parse_hex(&format!(
+                "{:x}",
+                latent_core::digest::HexDigest(Sha256::digest(&envelope.input))
+            ))
+            .map_err(atomic)?;
+            if envelope.principal.kind != latent_core::PrincipalKind::Trigger
+                || digest != inbox.payload_digest
+            {
+                return Err(authorization::denied());
+            }
+        }
         // Verify pinned source, mode, finite input and original policy BEFORE
         // any native lookup or durable reservation. DTOs supply no source grant.
         let source = observation::platform(Phase::Source, self.installation.source(envelope))?;
@@ -299,7 +312,7 @@ impl NativeTransactionAdmission {
                 source,
                 result_read_policy: self.installation.result_read_policy.clone(),
                 result_policy: self.installation.result_policy,
-                inbox: None,
+                inbox: self.inbox.clone(),
                 owner_epoch: epoch,
             };
             if selection.entity.is_some() {
@@ -641,6 +654,7 @@ impl NativeTransactionAdmission {
         let time = role.captured_time();
         let keeper: Arc<dyn std::any::Any + Send + Sync> =
             Arc::new((Arc::clone(&authorization), Arc::clone(&role)));
+        let inbox_scope = self.inbox_scope.clone();
         let job = self.owners.store.with_store_retaining(
             StoreIoKind::Write,
             bytes,
@@ -667,18 +681,42 @@ impl NativeTransactionAdmission {
                 };
                 let first_attempt = retry.is_none();
                 let mut retained_input = Some(input);
-                let prepared = if let Some(retry) = retry.as_ref() {
-                    authorize(CommandAccess::Admit, None).and_then(|()| {
-                        let input = retained_input.as_ref().ok_or(AtomicError::Invalid)?;
-                        super::retry::check_association(&view, input, retry)?;
-                        PreparedAdmission::retry(&view, input, &retry.request, time, &authorize)
-                    })
-                } else {
-                    match retained_input.take() {
-                        Some(input) => PreparedAdmission::prepare(&view, input, time, &authorize),
-                        None => Err(AtomicError::Invalid),
-                    }
+                let scope_check = match (&inbox_scope, retained_input.as_ref()) {
+                    (Some(scope), Some(input)) => input
+                        .inbox
+                        .as_ref()
+                        .ok_or(AtomicError::Invalid)
+                        .and_then(|inbox| {
+                            latent_commit::atomic::verify_inbox_scope(
+                                &view, &input.key, inbox, scope,
+                            )
+                            .map(|_| ())
+                        }),
+                    (None, _) => Ok(()),
+                    _ => Err(AtomicError::Invalid),
                 };
+                let prepared = scope_check.and_then(|()| {
+                    if let Some(retry) = retry.as_ref() {
+                        authorize(CommandAccess::Admit, None).and_then(|()| {
+                            let input = retained_input.as_ref().ok_or(AtomicError::Invalid)?;
+                            super::retry::check_association(&view, input, retry)?;
+                            PreparedAdmission::retry(&view, input, &retry.request, time, &authorize)
+                        })
+                    } else {
+                        match retained_input.take() {
+                            Some(input) => {
+                                PreparedAdmission::prepare(&view, input, time, &authorize)
+                            }
+                            None => Err(AtomicError::Invalid),
+                        }
+                    }
+                });
+                let prepared = prepared.and_then(|decision| match (decision, &inbox_scope) {
+                    (AdmissionDecision::New(prepared), Some(scope)) => prepared
+                        .fence_inbox_scope(&view, scope)
+                        .map(AdmissionDecision::New),
+                    (decision, _) => Ok(decision),
+                });
                 let prepared = observation::atomic(Phase::PendingPreparation, prepared);
                 // A CAS loser may take one fresh view to inspect the winning
                 // command. Retire the original planning view first.

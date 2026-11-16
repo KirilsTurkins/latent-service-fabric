@@ -83,6 +83,20 @@ fn write(path: &Path, bytes: &[u8], mode: u32) {
 }
 
 #[test]
+fn private_leaf_policy_rejects_public_mode_even_under_a_private_ancestor() {
+    let root = private_directory();
+    let path = root.path().join("incoming.json");
+    write(&path, b"configuration", 0o600);
+    assert_eq!(
+        read(&path, 32, ProtectedFilePolicy::SecretLeaf, "test").unwrap(),
+        b"configuration"
+    );
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+    assert!(read(&path, 32, ProtectedFilePolicy::Secret, "test").is_ok());
+    assert!(read(&path, 32, ProtectedFilePolicy::SecretLeaf, "test").is_err());
+}
+
+#[test]
 fn secret_policy_accepts_owner_service_group_and_private_directory_reads() {
     let root = private_directory();
     let owner = root.path().join("owner.json");

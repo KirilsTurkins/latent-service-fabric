@@ -4,6 +4,8 @@ use super::*;
 use wasmparser::{ElementItems, ElementKind};
 
 mod derived_names;
+#[cfg(test)]
+mod names;
 
 const NATIVE: &str = "latent:runtime-native/threads@0.1.0";
 const NEW: &str = "[thread-new-indirect-v0]";

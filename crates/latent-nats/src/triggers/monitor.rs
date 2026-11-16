@@ -14,6 +14,7 @@ pub enum TriggerTerminal {
     Cancelled,
     Failed,
     Exhausted,
+    RecoveryRequired,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Acknowledgement {
