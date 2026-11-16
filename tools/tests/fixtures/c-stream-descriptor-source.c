@@ -156,6 +156,41 @@ __attribute__((export_name("descriptor_controls"))) int descriptor_controls(void
     return 0;
 }
 
+__attribute__((export_name("descriptor_flags_controls"))) int descriptor_flags_controls(void) {
+    int before=host_calls;
+    int plain=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);CHECK(plain==3);
+    CHECK(__lsf_c_net_fcntl(plain,F_GETFD)==0);
+    CHECK(__lsf_c_net_fcntl(plain,F_SETFD,FD_CLOEXEC)==0);
+    CHECK(__lsf_c_net_fcntl(plain,F_GETFD)==FD_CLOEXEC);
+    CHECK(__lsf_c_net_fcntl(plain,F_SETFD,0)==0);
+    CHECK(__lsf_c_net_fcntl(plain,F_GETFD)==0);
+    CHECK(__lsf_c_net_close(plain)==0);
+
+    int marked=__lsf_c_net_socket(AF_INET,SOCK_STREAM|SOCK_CLOEXEC,0);CHECK(marked==3);
+    CHECK(__lsf_c_net_fcntl(marked,F_GETFL)==O_RDWR);
+    CHECK(__lsf_c_net_fcntl(marked,F_GETFD)==FD_CLOEXEC);
+    int second=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);CHECK(second==4);
+    CHECK(__lsf_c_net_fcntl(second,F_GETFD)==0);
+    CHECK(__lsf_c_net_fcntl(marked,F_SETFD,0)==0);
+    CHECK(__lsf_c_net_fcntl(marked,F_GETFD)==0);
+    CHECK(__lsf_c_net_fcntl(marked,F_SETFD,FD_CLOEXEC)==0);
+    CHECK(__lsf_c_net_fcntl(marked,F_SETFD,FD_CLOEXEC|2)==-1 && lsf_test_errno==ENOTSUP);
+    CHECK(__lsf_c_net_fcntl(marked,F_GETFD)==FD_CLOEXEC);
+    CHECK(__lsf_c_net_fcntl(second,F_GETFD)==0);
+    CHECK(__lsf_c_net_close(second)==0);
+    CHECK(__lsf_c_net_close(marked)==0);
+
+    int reused=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);CHECK(reused==3);
+    CHECK(__lsf_c_net_fcntl(reused,F_GETFD)==0);
+    CHECK(__lsf_c_net_socket(AF_INET,SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK,0)==-1 &&
+          lsf_test_errno==ENOTSUP);
+    CHECK(__lsf_c_net_fcntl(reused,F_SETFL,O_NONBLOCK)==-1 && lsf_test_errno==ENOTSUP);
+    CHECK(__lsf_c_net_close(reused)==0);
+    CHECK(__lsf_c_net_fcntl(reused,F_GETFD)==-1 && lsf_test_errno==EBADF);
+    CHECK(host_calls==before);
+    return 0;
+}
+
 __attribute__((export_name("readiness_controls"))) int readiness_controls(void) {
     mode=0;host_calls=0;allow_host=1;current_fd=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);
     struct sockaddr_in peer=address();CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==0);

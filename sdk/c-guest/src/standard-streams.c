@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <netinet/in.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
@@ -28,6 +29,7 @@ struct descriptor {
     bool allocated;
     bool busy;
     bool has_connection;
+    bool close_on_exec;
     bool write_shut;
     bool failed;
     bool has_error;
@@ -94,11 +96,13 @@ static struct descriptor *ready_descriptor(int fd) {
 
 int __lsf_c_net_socket(int domain, int type, int protocol) {
     if (domain != AF_INET) return fail(EAFNOSUPPORT);
-    if (type != SOCK_STREAM || (protocol != 0 && protocol != IPPROTO_TCP)) return fail(ENOTSUP);
+    bool close_on_exec = type == (SOCK_STREAM | SOCK_CLOEXEC);
+    if ((type != SOCK_STREAM && !close_on_exec) || (protocol != 0 && protocol != IPPROTO_TCP))
+        return fail(ENOTSUP);
     for (int index = 0; index < SLOT_COUNT; ++index) {
         struct descriptor *slot = &descriptors[index];
         if (!slot->allocated) {
-            *slot = (struct descriptor){ .allocated = true };
+            *slot = (struct descriptor){ .allocated = true, .close_on_exec = close_on_exec };
             return FIRST_FD + index;
         }
     }
@@ -106,10 +110,20 @@ int __lsf_c_net_socket(int domain, int type, int protocol) {
 }
 
 int __lsf_c_net_fcntl(int fd, int command, ...) {
-    if (!find_descriptor(fd)) return fail(EBADF);
+    struct descriptor *slot = find_descriptor(fd);
+    if (!slot) return fail(EBADF);
     if (command == F_GETFL) return O_RDWR;
-    if (command == F_GETFD) return 0;
-    /* In particular, no nonblocking mode or close-on-exec behavior is faked. */
+    if (command == F_GETFD) return slot->close_on_exec ? FD_CLOEXEC : 0;
+    if (command == F_SETFD) {
+        va_list arguments;
+        va_start(arguments, command);
+        int flags = va_arg(arguments, int);
+        va_end(arguments);
+        if (flags & ~FD_CLOEXEC) return fail(ENOTSUP);
+        slot->close_on_exec = (flags & FD_CLOEXEC) != 0;
+        return 0;
+    }
+    /* Nonblocking mode, descriptor duplication and unknown flags are unavailable. */
     return fail(ENOTSUP);
 }
 
