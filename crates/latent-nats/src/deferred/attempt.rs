@@ -260,15 +260,27 @@ async fn within_retry_window<T>(
     qualified: &mut bool,
 ) -> crate::Result<T> {
     if let Some(deadline) = deadline {
-        match tokio::time::timeout_at(deadline.into(), future).await {
-            Ok(result) => result,
-            Err(_) => {
-                // The original socket future has been dropped, but it may
-                // have transmitted bytes before its monotonic window ended.
-                *qualified = false;
-                Err(EventError::Uncertain)
+        tokio::pin!(future);
+        let guarded = std::future::poll_fn(|context| {
+            if std::time::Instant::now() >= deadline {
+                return std::task::Poll::Ready((true, Err(EventError::Uncertain)));
             }
+            match std::future::Future::poll(future.as_mut(), context) {
+                std::task::Poll::Ready(result) => std::task::Poll::Ready((false, result)),
+                std::task::Poll::Pending => std::task::Poll::Pending,
+            }
+        });
+        let (expired, result) = tokio::select! {
+            biased;
+            () = tokio::time::sleep_until(deadline.into()) => (true, Err(EventError::Uncertain)),
+            result = guarded => result,
+        };
+        if expired {
+            // The original socket future has been dropped, but it may have
+            // transmitted bytes before its monotonic window ended.
+            *qualified = false;
         }
+        result
     } else {
         future.await
     }
@@ -301,6 +313,24 @@ mod retry_tests {
         );
         assert!(!qualified);
         assert!(dropped.load(Ordering::Acquire));
+    }
+
+    #[tokio::test]
+    async fn expired_window_wins_before_the_first_publish_poll() {
+        let polled = Arc::new(AtomicBool::new(false));
+        let observed = Arc::clone(&polled);
+        let publish = async move {
+            observed.store(true, Ordering::Release);
+            Ok(())
+        };
+        let mut qualified = true;
+        let deadline = std::time::Instant::now() - std::time::Duration::from_millis(1);
+        assert_eq!(
+            within_retry_window(Some(deadline), publish, &mut qualified).await,
+            Err(EventError::Uncertain)
+        );
+        assert!(!qualified);
+        assert!(!polled.load(Ordering::Acquire));
     }
 }
 
