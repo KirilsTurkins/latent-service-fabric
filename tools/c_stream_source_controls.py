@@ -22,6 +22,8 @@ SOURCES = (
     'tools/tests/fixtures/c-stream-abort-link.c', 'tools/tests/fixtures/c-stream-abort-link.cjs',
     'sdk/c-guest/src/standard-stdio.c', 'tools/tests/fixtures/c-stream-stdio-source.c',
     'tools/tests/fixtures/c-stream-stdio-source.cjs',
+    'sdk/c-guest/src/standard-resolver.c', 'tools/tests/fixtures/c-stream-resolver-source.c',
+    'tools/tests/fixtures/c-stream-resolver-source.cjs',
 )
 
 
@@ -80,6 +82,22 @@ def run(output: Path, zig: Path, wit: Path, node: Path) -> dict:
         combined = commands.run('combined-controls', node, ROOT / SOURCES[13], output / 'combined-controls.wasm')
         require(combined == b'PASS stdio_stream_controls\nPASS stdio_missing_log_authority\n',
                 'c-stream-stdio-source-exact-outcome')
+        resolver_args = ['cc', '-std=c11', '-target', 'wasm32-wasi', '-O2', '-Wall', '-Wextra', '-Werror',
+                         '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory',
+                         '-matomics', '-mbulk-memory', '-pthread', '-fno-lto']
+        commands.run('resolver-compile', zig, *resolver_args, ROOT / SOURCES[14], ROOT / SOURCES[15],
+                     '-o', output / 'resolver.wasm')
+        resolver = commands.run('resolver-controls', node, ROOT / SOURCES[16], output / 'resolver.wasm')
+        require(resolver == b'PASS numeric_resolver_controls\n', 'c-stream-resolver-exact-outcome')
+        # Exercise allocation refusal using a finite allocator double, not the
+        # separately unqualified pinned-libc errno getter.
+        commands.run('resolver-allocation-compile', zig, *resolver_args, '-DLSF_C_RESOLVER_TEST_ALLOC=1',
+                     '-Dmalloc=lsf_test_malloc', '-Dfree=lsf_test_free', ROOT / SOURCES[14], ROOT / SOURCES[15],
+                     '-o', output / 'resolver-allocation.wasm')
+        allocation = commands.run('resolver-allocation-controls', node, ROOT / SOURCES[16],
+                                  output / 'resolver-allocation.wasm')
+        require(allocation == b'PASS numeric_resolver_controls\nPASS numeric_resolver_allocation_refusal\n',
+                'c-stream-resolver-allocation-exact-outcome')
         link_args = ['cc', '-std=c11', '-target', 'wasm32-wasi', '-O2', '-Wall', '-Wextra', '-Werror',
                      '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory', '-matomics',
                      '-mbulk-memory', '-pthread', '-fno-lto', '-D_DEFAULT_SOURCE',
@@ -97,7 +115,8 @@ def run(output: Path, zig: Path, wit: Path, node: Path) -> dict:
                       cases=['descriptor_controls', 'send_nosignal_controls', 'descriptor_flags_controls', 'readiness_controls', 'full_shutdown_refusal_controls',
                              'half_close_controls', 'libc-entropy',
                              'application_abort', 'original_libc_abort',
-                             'stdio_stream_controls', 'stdio_missing_log_authority'])
+                             'stdio_stream_controls', 'stdio_missing_log_authority',
+                             'numeric_resolver_controls', 'numeric_resolver_allocation_refusal'])
         write_json(output / 'source-controls.json', result)
         return result
     except BaseException:

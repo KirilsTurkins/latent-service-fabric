@@ -103,6 +103,30 @@ endpoint, the stream provider, clocks, entropy and the cooperative runtime.
 No hostname grant is converted to an address grant, and this profile does not
 resolve hostnames.
 
+Selected C source can use `getaddrinfo` and `freeaddrinfo` for strictly dotted
+decimal IPv4 addresses and a decimal port from 0 through 65535. A missing
+service selects port 0; a missing node or nonnumeric hostname returns
+`EAI_NONAME` without contacting a resolver. Named services return `EAI_SERVICE`
+(or `EAI_NONAME` with `AI_NUMERICSERV`), and ports beyond the five-digit,
+65535 bound return `EAI_SERVICE`. The only supported flags are
+`AI_NUMERICHOST` and `AI_NUMERICSERV`; flags such as `AI_CANONNAME`,
+`AI_ADDRCONFIG` and `AI_PASSIVE` return `EAI_BADFLAGS`. IPv6 returns
+`EAI_FAMILY`, and datagram or non-TCP requests return `EAI_SOCKTYPE`. Each
+successful call owns a separate result in the original bounded guest memory;
+`freeaddrinfo` releases it. The result is not an endpoint grant, and legacy
+hostname lookup functions remain unavailable.
+
+The captured component build selects this implementation when it is present
+in the project's verified SDK snapshot. Previously captured projects without
+the source retain their original behavior: a call to this API fails to link.
+To use the new source, create a project with the current tool bundle and migrate
+the application source, WIT and dependency declarations through normal review;
+editing a project's vendored SDK invalidates its lock. An external dependency's
+configuration step does not yet receive a resolver object for feature-detection
+links, so it may report `getaddrinfo` unavailable even when the source is
+captured. A manual probe with that object does not qualify the dependency or
+its complete client behavior.
+
 One-descriptor `select`/`pselect` supports readable and writable interest with
 a NULL timeout; the provider and activation deadlines still apply. Finite
 descriptor wait timeouts, including zero-time polling, are refused because the
