@@ -1174,6 +1174,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     ready_reference = private / 'ScheduledReadyShutdownReferenceControl.java'
     reference = private / 'ScheduledStoppedReferenceControl.java'
     periodic_reference = private / 'ScheduledPeriodicReferenceControl.java'
+    validation_reference = private / 'ScheduledPeriodicValidationReferenceControl.java'
     invoke_reference = private / 'ExecutorInvokeInterruptReferenceControl.java'
     invoke_any_reference = private / 'ExecutorInvokeAnyReadyReferenceControl.java'
     invoke_all_reference = private / 'ExecutorInvokeAllWaitReferenceControl.java'
@@ -1184,13 +1185,13 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     comparison_inputs = [private / name for name in ('ScheduledCompareReferenceControl.java',
         'ScheduledCompareFakeClock.java', 'ScheduledCompareClockControl.java')]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
+        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, validation_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
                      null_failure_reference, monitor_reference, default_monitor_reference)}
     output.mkdir()
     jdk_output = output / 'reference-jdk'
     jdk_output.mkdir()
     compiler.run('scheduled-stopped-reference-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', jdk_output, reference, periodic_reference, invoke_reference, termination_reference,
+        '-d', jdk_output, reference, periodic_reference, validation_reference, invoke_reference, termination_reference,
         null_failure_reference, monitor_reference, default_monitor_reference, ready_reference, noop_reference, invoke_any_reference, invoke_all_reference)
     expected_stopped = ('SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;'
         'running;shutdown;shutdown-policy;physical-runner;worker-capacity;factory-failure-retry')
@@ -1202,6 +1203,10 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('scheduled-periodic-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ScheduledPeriodicReferenceControl').strip()
     if result != expected_periodic: raise ValueError('Java periodic scheduled reference did not complete')
+    expected_validation = 'SCHEDULED_PERIODIC_VALIDATION PASS null-task;null-unit;nonpositive;open;shutdown'
+    result = compiler.run('scheduled-periodic-validation-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
+        'ScheduledPeriodicValidationReferenceControl').strip()
+    if result != expected_validation: raise ValueError('Java periodic validation reference did not complete')
     expected_invoke = ('EXECUTOR_INVOKE_INTERRUPT PASS preinterrupted-ready;empty;zero;pending-cancel;'
         'blocked-interrupt')
     result = compiler.run('executor-invoke-interrupt-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
@@ -1235,6 +1240,11 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     if text.count(original) != 1: raise ValueError('Java periodic scheduled source import is ambiguous')
     selected_periodic = output / 'ScheduledPeriodicReferenceControl.java'
     selected_periodic.write_bytes(text.replace(original,
+        'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
+    text = read_file(validation_reference).decode('utf-8')
+    if text.count(original) != 1: raise ValueError('Java periodic validation source import is ambiguous')
+    selected_validation = output / 'ScheduledPeriodicValidationReferenceControl.java'
+    selected_validation.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
     text = read_file(invoke_reference).decode('utf-8')
     original = 'import java.util.concurrent.AbstractExecutorService;'
@@ -1293,8 +1303,11 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     selected_noop.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', output, *ports, *controls, selected, selected_periodic, selected_invoke, selected_termination,
+        '-d', output, *ports, *controls, selected, selected_periodic, selected_validation, selected_invoke, selected_termination,
         selected_null_failure, selected_monitor, selected_default_monitor, selected_ready, selected_noop, selected_invoke_any, selected_invoke_all)
+    validation_result = compiler.run('scheduled-periodic-validation-source', 'java', '-Xmx256m', '-cp', output,
+        'ScheduledPeriodicValidationReferenceControl').strip()
+    if validation_result != expected_validation: raise ValueError('Java periodic validation source differs from reference')
     result = compiler.run('executor-invoke-interrupt-source', 'java', '-Xmx256m', '-cp', output,
         'ExecutorInvokeInterruptReferenceControl', 'source').strip()
     if result != expected_invoke: raise ValueError('Java executor invoke source differs from reference')
@@ -1411,6 +1424,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError('Java scheduled source control inputs changed')
     return {'status': 'SDK-source-controls-passed', 'referenceJdk': 'matched-stopped-and-periodic-observables', 'sourceInputs': inputs,
+        'periodicValidation': 'matched-jdk-before-owner-admission',
         'futureCancelInterrupt': interrupt_control, 'executorOwnerSettlement': executor_settlement,
         'executorInvokeInterrupt': 'matched-14-preinterrupted-and-two-blocked-JDK-cases',
         'executorAwaitTermination': 'matched-16-preinterrupted-two-blocked-and-overridden-state-JDK-cases',
