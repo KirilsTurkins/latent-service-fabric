@@ -1,0 +1,2 @@
+package dev.latent.guest;
+public final class Wire { public static boolean fail; public static final class Writer implements AutoCloseable { public void integer(int v,int n) {} public Reader call(int x) {return new Reader();} public void close() {} } public static final class Reader implements AutoCloseable { public void finish() {if (fail) throw new IllegalStateException("uncertain destructor");} public void close() {} }}
