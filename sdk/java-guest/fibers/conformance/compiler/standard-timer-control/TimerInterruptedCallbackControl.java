@@ -17,6 +17,8 @@ public final class TimerInterruptedCallbackControl {
         if (!sourcePort) return;
         ledger().getMethod("joinWorkers").invoke(null);
         if (count("owners") != 0) throw new AssertionError("unretired-ledger");
+        if ((Boolean)ledger().getMethod("poisoned").invoke(null))
+            throw new AssertionError("user-callback-failure-fenced-activation");
     }
     private static final class DerivedInterrupt extends InterruptedException { }
     @SuppressWarnings("unchecked") private static <E extends Throwable> void rethrow(Throwable error) throws E { throw (E)error; }
@@ -28,7 +30,7 @@ public final class TimerInterruptedCallbackControl {
     private static void test(String mode) throws Exception {
         CountDownLatch firstEntered=new CountDownLatch(1), firstRelease=new CountDownLatch(1);
         CountDownLatch boundary=new CountDownLatch(1), witnessRelease=new CountDownLatch(1);
-        AtomicReference<Throwable> error=new AtomicReference<>(); AtomicInteger calls=new AtomicInteger();
+        AtomicReference<Throwable> error=new AtomicReference<>(), original=new AtomicReference<>(); AtomicInteger calls=new AtomicInteger();
         AtomicReference<Boolean> witnessFlag=new AtomicReference<>();
         Thread.UncaughtExceptionHandler prior=Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler((thread,failure)->{ error.set(failure); boundary.countDown(); });
@@ -38,8 +40,8 @@ public final class TimerInterruptedCallbackControl {
                 int n=calls.incrementAndGet();
                 if (n==1) {
                     firstEntered.countDown(); await(firstRelease,"first-release");
-                    if (mode.equals("runtime")) rethrow(new IllegalStateException("expected-runtime"));
-                    if (mode.equals("error")) rethrow(new AssertionError("expected-error"));
+                    if (mode.equals("runtime")) { Throwable failure=new IllegalStateException("expected-runtime"); original.set(failure); rethrow(failure); }
+                    if (mode.equals("error")) { Throwable failure=new AssertionError("expected-error"); original.set(failure); rethrow(failure); }
                     if (mode.endsWith("-sleep")) {
                         Thread.currentThread().interrupt();
                         try { Thread.sleep(0); throw new AssertionError("sleep-did-not-interrupt"); }
@@ -59,6 +61,7 @@ public final class TimerInterruptedCallbackControl {
             }},0);
             int before=queued(); firstRelease.countDown(); await(boundary,"boundary");
             boolean survived=error.get()==null;
+            if (original.get()!=null && error.get()!=original.get()) throw new AssertionError("callback-failure-identity-changed");
             int atBoundary=queued();
             boolean accepted;
             try { timer.schedule(new TimerTask() { @Override public void run() { throw new AssertionError("late-execution"); } },60_000); accepted=true; }

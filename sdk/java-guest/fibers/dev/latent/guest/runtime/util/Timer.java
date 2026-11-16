@@ -198,6 +198,7 @@ public class Timer implements Activation.ManagedPool {
 
     private void work() {
         Throwable primary = null;
+        Throwable callbackFailure = null;
         try {
             while (true) {
                 Entry entry;
@@ -243,12 +244,14 @@ public class Timer implements Activation.ManagedPool {
                         continue;
                     }
                 }
-                Throwable callbackFailure = null;
                 try { entry.task.run(); }
                 catch (Throwable error) {
                     // The reference Timer worker ignores an InterruptedException
                     // from either wait or the task body, then processes its queue.
-                    if (!(error instanceof InterruptedException)) { callbackFailure = error; throw error; }
+                    if (!(error instanceof InterruptedException)) {
+                        callbackFailure = error;
+                        throw error;
+                    }
                 }
                 finally {
                     synchronized (lock) {
@@ -262,6 +265,11 @@ public class Timer implements Activation.ManagedPool {
             }
         } catch (Throwable error) {
             primary = error;
+            // A failed timer/monitor admission or another worker failure must
+            // not turn already-accepted callbacks into a successful root result
+            // when the finally block clears their queue. User callback failure
+            // keeps the standard Timer worker/uncaught-exception behavior.
+            if (error != callbackFailure) Activation.fenceUncertainCompletion();
             throw error;
         } finally {
             synchronized (lock) {

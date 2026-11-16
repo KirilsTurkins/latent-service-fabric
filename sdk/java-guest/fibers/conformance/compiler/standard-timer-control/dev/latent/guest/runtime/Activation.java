@@ -157,6 +157,7 @@ public final class Activation {
         if (failedQueued != null) throw new AssertionError("duplicate-failed-owner");
         poisoned = true; failedQueued = owner; failedOwnerLinks++;
     }
+    public static synchronized void fenceUncertainCompletion() { poisoned = true; }
     public static synchronized void fenceUncertainResultSettlement() { poisoned = true; }
     public static synchronized boolean retireIfIdle(ManagedPool pool) {
         if (pool.hasPendingWork()) return false;
