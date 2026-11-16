@@ -26,7 +26,10 @@ mod audit;
 mod buffer;
 mod future;
 mod limits;
-pub use future::{IoFuture, PreparedIoFuture, PreparedIoFutureWith};
+pub use future::{
+    IoFuture, PreparedIoFuture, PreparedIoFutureWith, PreparedStreamIoFutureWith,
+    StreamRetirementGuard, StreamRetirementObserver,
+};
 mod memory;
 pub(in crate::broker) use memory::HttpInputOrigin;
 pub use memory::IoMemory;

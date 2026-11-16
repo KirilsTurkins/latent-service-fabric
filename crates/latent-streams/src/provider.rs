@@ -700,6 +700,11 @@ impl StreamProvider {
         self.usage_with_quarantine().map(|(usage, _)| usage)
     }
 
+    pub(crate) fn closed_and_empty_for_pruning(&self) -> bool {
+        self.inner.connections.closed_and_empty()
+            && self.inner.installed.quarantined_connections() == 0
+    }
+
     // Read quarantine once so the separate diagnostic and included totals use
     // the same observation. This changes no owner or capacity accounting.
     pub(crate) fn usage_with_quarantine(&self) -> Result<(crate::StreamUsage, usize), StreamError> {
@@ -827,21 +832,27 @@ impl OutboundStreamInvoker for StreamProvider {
         // future or physical owner. Retirement closes this same gate.
         let opening = self.inner.connections.reserve_opening()?;
         let custody = opening.try_clone_custody()?;
+        let outer_custody = opening.try_clone_custody()?.into_stream_guard();
         let inner = Arc::clone(&self.inner);
-        let prepared = session.prepare_io_future_with(
-            move |(scope, client, admission, opening, custody): (
+        let prepared = session.prepare_stream_io_future_with(
+            &self.reference(),
+            move |(scope, client, admission, opening, custody, outer_custody): (
                 StreamScope,
                 Arc<ProviderClient<Socket>>,
                 PoolAdmission,
                 crate::connection_registry::OpeningTicket,
                 crate::connection_registry::RetirementCustody,
+                latent_capabilities::broker::io::StreamRetirementGuard,
             )| {
-                OpeningFuture {
-                    future: connection::connect(
-                        inner, scope, index, client, admission, deadline, opening,
-                    ),
-                    custody,
-                }
+                (
+                    OpeningFuture {
+                        future: connection::connect(
+                            inner, scope, index, client, admission, deadline, opening,
+                        ),
+                        custody,
+                    },
+                    outer_custody,
+                )
             },
         )?;
         let scope = session.reserve_stream()?;
@@ -850,7 +861,7 @@ impl OutboundStreamInvoker for StreamProvider {
             u16::try_from(index).map_err(|_| error(StreamErrorCode::InvalidInput))?,
         )?;
         let admission = self.inner.pools.admit_until(&client, session, deadline)?;
-        Ok(prepared.finish((scope, client, admission, opening, custody)))
+        Ok(prepared.finish((scope, client, admission, opening, custody, outer_custody)))
     }
 }
 impl Drop for Inner {

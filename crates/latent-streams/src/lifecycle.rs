@@ -96,7 +96,7 @@ pub struct StreamStatus {
 pub struct ReadCancelWitness {
     lifecycle: Arc<StreamLifecycle>,
     provider: StreamProvider,
-    connection: Arc<crate::connection::Connection>,
+    connection: crate::connection_registry::ConnectionOwner,
 }
 
 #[cfg(feature = "development-read-witness")]
@@ -324,7 +324,7 @@ impl StreamLifecycle {
         for (retired, removed) in state.retired.iter_mut().zip(&mut removed) {
             if retired
                 .as_ref()
-                .is_some_and(|p| p.usage().is_ok_and(|u| u.owners == 0))
+                .is_some_and(StreamProvider::closed_and_empty_for_pruning)
             {
                 *removed = retired.take();
             }
@@ -356,11 +356,17 @@ impl StreamLifecycle {
         Ok(reference)
     }
     pub fn status(&self) -> Result<StreamStatus, StreamError> {
-        let state = self.state.try_lock().map_err(crate::snapshot_lock_error)?;
-        let reference = state.current.reference();
-        let (mut usage, mut quarantined_connections) = state.current.usage_with_quarantine()?;
-        for retired in state.retired.iter().flatten() {
-            let (u, quarantined) = retired.usage_with_quarantine()?;
+        // A temporary connection observed below may be its last strong
+        // owner. Its destructor can wake arbitrary waiters, so inspect only
+        // after releasing the lifecycle mutex.
+        let (current, retired, stopped) = {
+            let state = self.state.try_lock().map_err(crate::snapshot_lock_error)?;
+            (state.current.clone(), state.retired.clone(), state.stopped)
+        };
+        let reference = current.reference();
+        let (mut usage, mut quarantined_connections) = current.usage_with_quarantine()?;
+        for provider in retired.iter().flatten() {
+            let (u, quarantined) = provider.usage_with_quarantine()?;
             quarantined_connections = sum_quarantined(quarantined_connections, quarantined)?;
             usage.owners += u.owners;
             usage.connections += u.connections;
@@ -384,15 +390,35 @@ impl StreamLifecycle {
             }
             usage.delivered_read_bytes += u.delivered_read_bytes;
         }
+        let current_generation_retired = current.inner.installed.is_retired();
+        let state = self.state.try_lock().map_err(crate::snapshot_lock_error)?;
+        let same_retired =
+            state
+                .retired
+                .iter()
+                .zip(&retired)
+                .all(|(now, snapshot)| match (now, snapshot) {
+                    (None, None) => true,
+                    (Some(now), Some(snapshot)) => Arc::ptr_eq(&now.inner, &snapshot.inner),
+                    _ => false,
+                });
+        if !Arc::ptr_eq(&state.current.inner, &current.inner)
+            || state.stopped != stopped
+            || !same_retired
+        {
+            return Err(StreamError::new(StreamErrorCode::Exhausted));
+        }
+        let retired_generations = retired.iter().filter(|p| p.is_some()).count();
+        drop(state);
         Ok(StreamStatus {
             profile: latent_capabilities::broker::network::STREAM_PROFILE,
             configuration_digest: reference.configuration_digest().into(),
             configuration_epoch: reference.configuration_epoch(),
-            retired_generations: state.retired.iter().filter(|p| p.is_some()).count(),
+            retired_generations,
             quarantined_connections,
             usage,
-            stopped: state.stopped,
-            current_generation_retired: state.current.inner.installed.is_retired(),
+            stopped,
+            current_generation_retired,
             maintenance_owners: usize::from(self.maintenance_claimed.load(Ordering::Acquire)),
         })
     }

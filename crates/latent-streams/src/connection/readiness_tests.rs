@@ -1,6 +1,6 @@
 //! Real TCP readiness with deterministic audit-boundary injection. The gate
 //! and audit failure are test doubles, not durable-journal or guest evidence.
-use super::{Connection, TestWritePoint};
+use super::{ConnectionOwner, TestWritePoint};
 use crate::{
     tests::{config, fixture::Fixture},
     StreamErrorCode,
@@ -9,7 +9,7 @@ use latent_capabilities::broker::network::{
     OutboundStreamInvoker, StreamConnectRequest, StreamInterest, StreamState,
 };
 use latent_policy::capability::{MutationRequest, RecordKind};
-use std::{sync::Arc, time::Duration};
+use std::time::Duration;
 use tokio::{io::AsyncReadExt, net::TcpListener};
 
 async fn fixture() -> (Fixture, TcpListener) {
@@ -28,7 +28,7 @@ fn request(fixture: &Fixture) -> StreamConnectRequest {
     }
 }
 
-fn owner(fixture: &Fixture) -> Arc<Connection> {
+fn owner(fixture: &Fixture) -> ConnectionOwner {
     fixture
         .provider
         .inner
