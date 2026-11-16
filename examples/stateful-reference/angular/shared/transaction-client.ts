@@ -34,7 +34,7 @@ interface Envelope {
 }
 interface Original {key: string; body: string; draftId: string; ifMatch?: string}
 type RequestOptions = Omit<RequestInit, 'headers'> & {headers?: Record<string, string>};
-type FetchReply = {status: number; envelope: Envelope};
+type FetchReply = {status: number; envelope: Envelope; authorityEpoch: number};
 
 const VALUE_MEDIA = 'application/vnd.latent.wit-values.v1+json';
 const PROFILE = 'transaction-http-v1';
@@ -212,10 +212,11 @@ export class DraftClient {
       if (authorityEpoch !== this.authorityEpoch) { controller.abort(); throw new Error('permission-denied'); }
       const text = await limitedBody(response);
       if (authorityEpoch !== this.authorityEpoch) throw new Error('permission-denied');
-      return {status: response.status, envelope: envelope(text ? lossless(text) : undefined)};
+      return {status: response.status, envelope: envelope(text ? lossless(text) : undefined), authorityEpoch};
     } finally { clearTimeout(timer); }
   }
   private apply(reply: FetchReply, requestedDraft: string, query = false): Reply {
+    if (reply.authorityEpoch !== this.authorityEpoch) throw new Error('permission-denied');
     const {status, envelope: response} = reply;
     if (response.disposition === 'effect' || (response.disposition === 'query') !== query)
       throw new Error('unexpected-transaction-response');
@@ -279,6 +280,7 @@ export class DraftClient {
     const reply = await this.request(this.routes.result, {method: 'GET',
       headers: {'idempotency-key': original.key, 'effect-id': effectId}});
     if (this.pending !== original) throw new Error('original-command-changed');
+    if (reply.authorityEpoch !== this.authorityEpoch) throw new Error('permission-denied');
     const effect = reply.envelope.effect;
     const allowed = ['pending', 'dispatching', 'provider-acknowledged', 'known-failure', 'uncertain',
       'expired', 'policy-blocked', 'administratively-terminated', 'retry-scheduled', 'dead-lettered'];

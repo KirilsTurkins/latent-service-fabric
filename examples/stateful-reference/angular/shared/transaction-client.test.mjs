@@ -81,6 +81,24 @@ test('a response started before permission denial cannot restore a private view'
   assert.equal(app.status, 'permission-denied');
 });
 
+test('a parsed response cannot be applied after permission was denied', async () => {
+  let count = 0, release, parsed;
+  const ready = new Promise(resolve => { parsed = resolve; });
+  const app = client(async () => ++count === 1 ? response('query') : new Response('', {status: 403}));
+  const request = app.request.bind(app);
+  app.request = async (...args) => {
+    const reply = await request(...args);
+    if (reply.status === 200) { parsed(); await new Promise(resolve => { release = resolve; }); }
+    return reply;
+  };
+  const stale = app.query('demo');
+  await ready;
+  await assert.rejects(app.query('demo'), /permission-denied/);
+  release();
+  await assert.rejects(stale, /permission-denied/);
+  assert.equal(app.view, undefined);
+});
+
 test('effect status uses the original command and accepts only its bounded effect', async () => {
   const id = 'e'.repeat(64), requests = [];
   const app = client(async (url, options) => {
