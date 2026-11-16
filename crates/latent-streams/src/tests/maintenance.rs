@@ -8,13 +8,102 @@ use latent_capabilities::broker::network::{
     OutboundStreamInvoker, StreamConnectRequest, StreamState,
 };
 use std::{
-    sync::Arc,
+    future::Future,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    task::{Context, Poll, Wake, Waker},
     time::{Duration, Instant},
 };
 use tokio::{
     io::AsyncReadExt,
     net::{TcpListener, UdpSocket},
 };
+
+struct InspectOnWake {
+    lifecycle: Arc<StreamLifecycle>,
+    maintenance_thread: std::thread::ThreadId,
+    armed: AtomicBool,
+    woke: AtomicBool,
+    inspected: AtomicBool,
+}
+impl Wake for InspectOnWake {
+    fn wake(self: Arc<Self>) {
+        self.wake_by_ref();
+    }
+    fn wake_by_ref(self: &Arc<Self>) {
+        if self.armed.load(Ordering::Acquire)
+            && std::thread::current().id() == self.maintenance_thread
+        {
+            self.woke.store(true, Ordering::Release);
+            if self.lifecycle.status().is_ok() {
+                self.inspected.store(true, Ordering::Release);
+            }
+        }
+    }
+}
+
+#[tokio::test]
+async fn expiry_wakes_pending_read_without_holding_lifecycle_lock() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let fixture = Fixture::new(configuration);
+    let lifecycle = Arc::new(
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap(),
+    );
+    let (session, control) = fixture.session(5000);
+    let stream = lifecycle
+        .start(
+            &session,
+            StreamConnectRequest {
+                endpoint: fixture.provider.inner.config.destinations[0]
+                    .endpoint
+                    .clone(),
+                timeout_millis: None,
+            },
+        )
+        .unwrap()
+        .await
+        .unwrap();
+    let (_peer, _) = listener.accept().await.unwrap();
+    let probe = Arc::new(InspectOnWake {
+        lifecycle: Arc::clone(&lifecycle),
+        maintenance_thread: std::thread::current().id(),
+        armed: AtomicBool::new(false),
+        woke: AtomicBool::new(false),
+        inspected: AtomicBool::new(false),
+    });
+    let waker = Waker::from(Arc::clone(&probe));
+    let mut pending = Box::pin(stream.read(1, None).unwrap());
+    assert!(matches!(
+        pending.as_mut().poll(&mut Context::from_waker(&waker)),
+        Poll::Pending
+    ));
+
+    // Drive the real existing connection past its idle/deadline edge without
+    // waiting on a wall-clock timer. Its pending read wakes synchronously.
+    probe.armed.store(true, Ordering::Release);
+    assert!(!lifecycle
+        .maintenance_step(Instant::now() + Duration::from_secs(10))
+        .unwrap());
+    probe.armed.store(false, Ordering::Release);
+    assert!(probe.woke.load(Ordering::Acquire));
+    assert!(probe.inspected.load(Ordering::Acquire));
+    assert_eq!(stream.inspect().state, StreamState::Stopping);
+
+    drop(pending);
+    drop(stream);
+    drop(waker);
+    drop(probe);
+    drop(lifecycle);
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
 
 #[expect(
     clippy::too_many_lines,
