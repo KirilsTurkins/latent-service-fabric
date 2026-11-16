@@ -32,7 +32,7 @@ pub use future::{
 };
 mod memory;
 mod output_slot;
-pub(in crate::broker) use memory::HttpInputOrigin;
+pub(in crate::broker) use memory::{HttpInputOrigin, HttpInputRetirement};
 pub use memory::IoMemory;
 #[doc(hidden)]
 pub use output_slot::stream_chunk_owner_allocation_bytes;

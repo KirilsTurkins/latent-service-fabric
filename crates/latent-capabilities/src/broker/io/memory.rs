@@ -5,13 +5,13 @@ use super::{capacity, denied, Charge, IoAdmission, IoCall, Kind, OperationOwner,
 
 // Retained outside the Bytes allocation, and dropped only after its header and
 // input owner have physically retired. Both charges belong to the original call.
-pub(super) struct HttpInputRetirement {
+pub(in crate::broker) struct HttpInputRetirement {
     host: latent_core::budget::HostMemoryReservation,
     _metadata: Charge,
 }
 
 impl HttpInputRetirement {
-    pub(super) fn confirm(&mut self) {
+    pub(in crate::broker) fn confirm(&mut self) {
         self.host.confirm();
     }
 }
@@ -28,6 +28,37 @@ pub(in crate::broker) struct HttpInputOrigin {
     _operation: super::OperationWeak,
 }
 impl IoMemory {
+    pub(in crate::broker) fn reserve_http_body_owner(
+        &self,
+        expected: Option<&super::super::session::SessionCoreOwner>,
+        bytes: usize,
+    ) -> Result<Option<HttpInputRetirement>, PlatformError> {
+        self._operation.with_session(|session| {
+            if expected.is_some_and(|original| !super::Shared::ptr_eq(&session.core, original)) {
+                return Err(denied());
+            }
+            // Phase 1 keeps the original logical-only behavior. Native profiles
+            // reserve from this exact operation's existing session and node.
+            if !session.core.budget.profile().supports_descendants() {
+                return Ok(None);
+            }
+            let metadata = self
+                ._operation
+                .runtime
+                .counters
+                .acquire(Kind::Metadata, bytes)?;
+            let host = session
+                .core
+                .budget
+                .reserve_host_memory(u64::try_from(bytes).map_err(|_| capacity())?)
+                .map_err(|failure| failure.to_platform_error())?;
+            Ok(Some(HttpInputRetirement {
+                host,
+                _metadata: metadata,
+            }))
+        })
+    }
+
     pub(super) fn reserve_http_input_owner(
         &self,
         bytes: usize,

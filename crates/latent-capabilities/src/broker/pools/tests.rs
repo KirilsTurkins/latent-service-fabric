@@ -14,6 +14,7 @@ mod control_admission;
 mod deferred;
 pub(super) mod fixture;
 mod ingress;
+mod http_body;
 mod lifecycle;
 mod maintenance;
 mod protocol;
