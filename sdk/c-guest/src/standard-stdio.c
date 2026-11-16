@@ -8,8 +8,20 @@
 #define LSF_STDIO_MAX_IOVECS 16u
 #define LSF_STDIO_MAX_BYTES 4096u
 
+#if defined(LSF_C_STREAM_STDIO) && LSF_C_STREAM_STDIO
+/* The cooperative root installs its context before running ordinary C and
+ * rejects application constructors. Initialize these original stdio streams
+ * there instead of introducing an unowned constructor. */
+void __lsf_c_stdio_initialize(void) {
+    static bool initialized;
+    if (initialized) return;
+#else
 __attribute__((constructor(101))) static void initialize_standard_stdio(void) {
+#endif
     if (setvbuf(stdout, NULL, _IONBF, 0) || setvbuf(stderr, NULL, _IONBF, 0)) __builtin_trap();
+#if defined(LSF_C_STREAM_STDIO) && LSF_C_STREAM_STDIO
+    initialized = true;
+#endif
 }
 
 static int valid_range(const void *pointer, uint32_t size) {
@@ -101,3 +113,28 @@ __attribute__((export_name("lsf_c_stdio_fd_close")))
 int32_t lsf_c_stdio_fd_close(int32_t fd) {
     return fd == 1 || fd == 2 ? __WASI_ERRNO_NOTSUP : __WASI_ERRNO_BADF;
 }
+
+#if defined(LSF_C_STREAM_STDIO) && LSF_C_STREAM_STDIO
+/* Resolve only the four preview1 calls used by the pinned libc in this
+ * combined profile. Their bodies are the same bounded stdio implementation
+ * used by the separately selected adapter; no preview1 provider is imported. */
+int32_t __imported_wasi_snapshot_preview1_fd_write(int32_t fd, int32_t vectors,
+                                                    int32_t count, int32_t written) {
+    return lsf_c_stdio_fd_write(fd, vectors, count, written);
+}
+int32_t __imported_wasi_snapshot_preview1_fd_fdstat_get(int32_t fd, int32_t output) {
+    return lsf_c_stdio_fd_fdstat_get(fd, output);
+}
+int32_t __imported_wasi_snapshot_preview1_fd_seek(int32_t fd, int64_t offset,
+                                                   int32_t whence, int32_t output) {
+    return lsf_c_stdio_fd_seek(fd, offset, whence, output);
+}
+int32_t __imported_wasi_snapshot_preview1_fd_close(int32_t fd) {
+    return lsf_c_stdio_fd_close(fd);
+}
+
+/* Zig libc's own close calls bypass selected-source macros. Use the same
+ * descriptor table as ordinary selected calls, including its stdio refusal. */
+#undef close
+int close(int fd) { return __lsf_c_net_close(fd); }
+#endif

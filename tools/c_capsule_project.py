@@ -64,9 +64,9 @@ def create(directory: Path, template: str, name: str | None = None, *, threading
     if runtime_profile is not None:
         from tools.c_guest import standard_facilities
         selected_runtime = standard_facilities.selected_profile({'runtimeProfile': runtime_profile})
-        if selected_runtime == standard_facilities.STREAM_PROFILE and not selected_threading:
+        if selected_runtime in standard_facilities.STREAM_PROFILES and not selected_threading:
             raise ValueError('c-stream-network-requires-cooperative-threading')
-        if selected_runtime == standard_facilities.STREAM_PROFILE and template != 'greeting':
+        if selected_runtime in standard_facilities.STREAM_PROFILES and template != 'greeting':
             raise ValueError('c-stream-network-template-requires-greeting')
     from tools.c_guest import closed_headers
     header_selection = {'threadingProfile': threading_profile or 'single-threaded'}
@@ -77,7 +77,7 @@ def create(directory: Path, template: str, name: str | None = None, *, threading
     files = {"vendor/lsf/" + path: data for path, data in vendor.items()}
     files.update({"src/main.c": read_file(ROOT / "sdk/c-guest/templates" / (template + ".c")),
                   "wit/world.wit": read_file(source / "world.wit"), ".gitignore": b"/target/\n"})
-    if runtime_profile is not None and selected_runtime == standard_facilities.STREAM_PROFILE:
+    if runtime_profile is not None and selected_runtime in standard_facilities.STREAM_PROFILES:
         original = b'greet: func(name: string) -> result<string, string>;'
         if files['wit/world.wit'].count(original) != 1:
             raise ValueError('c-stream-network-greeting-world-preimage')
@@ -134,9 +134,9 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
     if (not isinstance(project, dict) or set(project) - {"runtimeProfile", "languageStandard", "threadingProfile", "headerProfile"} != {"formatVersion", "name", "version", "tenant", "service", "world", "limits"}
             or type(project["formatVersion"]) is not int or project["formatVersion"] != 1):
         raise ValueError("unsupported capsule project format")
-    from tools.c_guest.standard_facilities import selected_profile, STREAM_PROFILE
+    from tools.c_guest.standard_facilities import selected_profile, STREAM_PROFILES, STREAM_STDIO_PROFILE
     runtime = selected_profile(project)
-    if runtime == STREAM_PROFILE:
+    if runtime in STREAM_PROFILES:
         if project.get('threadingProfile', 'single-threaded') != 'c-context144-sync-cooperative-v1':
             raise ValueError('c-stream-network-requires-cooperative-threading')
         required = ('vendor/lsf/sdk/c-guest/src/standard-streams.c',
@@ -144,6 +144,10 @@ def validate(files: dict[str, bytes]) -> tuple[dict, dict, dict]:
                     'vendor/lsf/wit/platform/network/package.wit')
         if not all(path in files for path in required):
             raise ValueError('c-stream-network-requires-captured-runtime')
+        if runtime == STREAM_STDIO_PROFILE and not all(path in files for path in (
+                'vendor/lsf/sdk/c-guest/src/standard-stdio.c',
+                'vendor/lsf/wit/platform/log/package.wit')):
+            raise ValueError('c-stream-stdio-requires-captured-runtime')
     from tools.c_guest.language import selected_standard
     selected_standard(project)
     from tools.c_guest import closed_headers

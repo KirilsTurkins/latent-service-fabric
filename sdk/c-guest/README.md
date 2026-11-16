@@ -141,6 +141,22 @@ These are finite source-level capabilities. They do not establish signed node
 execution, physical kernel retirement, general POSIX compatibility or libcurl
 easy/multi support.
 
+For applications that also use the bounded log-backed standard output, select
+`c-stream-clock-entropy-stdio-v1` with the same cooperative threading profile.
+This separate profile imports the existing log capability in addition to the
+stream, clock and entropy capabilities; the operator must explicitly grant
+each one and provide a nonzero `logBytes` budget. It does not grant authority.
+Standard output and error use descriptors 1 and 2 and the existing bounded,
+UTF-8 log implementation; socket descriptors remain 3 through 10. Selected-source
+`write` routes those standard descriptors to that implementation and socket
+descriptors to the stream provider; libc `close` uses the same bounded table.
+The four selected libc stdio calls are linked within the component core, with
+no ambient WASI filesystem imports. Selected-source `read` of stdin returns
+`EBADF`; an unchanged libc `fread(stdin, ...)` requires the unsupported preview1
+`fd_read` and is refused during component construction. Closing stdout or stderr
+returns `ENOTSUP`, and other file descriptors and mixed descriptor polling are
+not supported. This combination has not been qualified through a signed node.
+
 ## Optional closed signal and jump declarations
 
 A cooperative C project may explicitly select `c-closed-signal-jump-headers-v1`:
