@@ -135,6 +135,9 @@ impl AcceptedPublish {
     }
 
     fn retry_deadline(&self) -> crate::Result<Option<std::time::Instant>> {
+        // Anchor before observing wall time so scheduler delay cannot extend
+        // the original retry window when converting it to a monotonic deadline.
+        let anchor = std::time::Instant::now();
         let now = self.time.observe();
         if !now.continuity_proven
             || now.unix_millis < self.request.grant().committed_at_millis()
@@ -149,7 +152,7 @@ impl AcceptedPublish {
                     .checked_sub(now.unix_millis)
                     .filter(|remaining| *remaining > 0)
                     .ok_or(EventError::PermissionDenied)?;
-                std::time::Instant::now()
+                anchor
                     .checked_add(std::time::Duration::from_millis(remaining))
                     .ok_or(EventError::PermissionDenied)
             })
