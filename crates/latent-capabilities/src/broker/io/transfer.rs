@@ -45,6 +45,18 @@ pub struct IoInputChunk {
     _slot: Slot,
     owner: Option<Arc<dyn Send + Sync>>,
 }
+
+fn http_input_owner_bytes() -> Result<usize, PlatformError> {
+    // The vendored Bytes query uses the constructor's actual private Box type;
+    // its retirement guard is taken out before the Box is dropped, including
+    // during owner unwind. Do not mirror that layout in the caller.
+    bytes::Bytes::owner_with_retirement_allocation_size::<
+        IoInputChunk,
+        super::memory::HttpInputRetirement,
+    >()
+    .checked_add(super::ALLOCATION_BOOKKEEPING)
+    .ok_or_else(capacity)
+}
 /// One buffer and one outstanding slot prepaid by their original transfer.
 /// The allocation dies before its memory and slot reservations. A Store-side
 /// adapter may capture bytes without calling back into the operation, then
@@ -84,6 +96,22 @@ impl PreparedIoInput {
     }
 }
 impl IoInputChunk {
+    /// Convert the original accepted input into its HTTP byte owner. Native
+    /// profiles prepay its exact backing and retain the original charges until
+    /// the last transport clone has physically released the allocation.
+    #[doc(hidden)]
+    pub fn into_http_bytes(self) -> Result<bytes::Bytes, PlatformError> {
+        let retirement = self
+            ._memory
+            .reserve_http_input_owner(http_input_owner_bytes()?)?;
+        Ok(match retirement {
+            Some(retirement) => {
+                bytes::Bytes::from_owner_with_retirement(self, retirement, |guard| guard.confirm())
+            }
+            None => bytes::Bytes::from_owner(self),
+        })
+    }
+
     pub fn retain_owner(&mut self, owner: Arc<dyn Send + Sync>) -> Result<(), PlatformError> {
         if self.owner.is_some() {
             return Err(denied());
@@ -1051,6 +1079,210 @@ mod native_tests {
         session.close_handle(handle).unwrap();
         admission.start(provider).unwrap()
     }
+
+    #[tokio::test]
+    async fn http_input_owner_uses_original_budget_until_last_clone_and_unwind() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+
+        struct ObserveDrop {
+            budget: latent_core::ActivationBudget,
+            io: Arc<IoRuntime>,
+            host: u64,
+            metadata: usize,
+            observed: Arc<AtomicBool>,
+            panic: bool,
+        }
+        impl Drop for ObserveDrop {
+            fn drop(&mut self) {
+                self.observed.store(
+                    self.budget.host_memory_bytes() == self.host
+                        && self.io.snapshot().metadata_bytes == self.metadata,
+                    Ordering::SeqCst,
+                );
+                assert!(!self.panic, "controlled input owner destructor");
+            }
+        }
+
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        for mode in 0..3 {
+            let (request, control) = native_request(&fixture, "http-input-retirement");
+            let session = fixture.session(&request, &control);
+            let io = Arc::new(IoRuntime::new(IoLimits::default()).unwrap());
+            let call = start(&io, &session).await;
+            let transfer = call
+                .transfer(IoTransferOptions {
+                    maximum_chunk_bytes: 16,
+                    maximum_outstanding_chunks: 1,
+                })
+                .unwrap();
+            let baseline = control.budget.host_memory_bytes();
+            let counts = io.snapshot();
+            let charge = http_input_owner_bytes().unwrap();
+            let mut input = transfer.input(b"data".to_vec()).unwrap();
+            let observed = Arc::new(AtomicBool::new(false));
+            input
+                .retain_owner(Arc::new(ObserveDrop {
+                    budget: control.budget.clone(),
+                    io: Arc::clone(&io),
+                    host: baseline + charge as u64,
+                    metadata: counts.metadata_bytes + charge,
+                    observed: Arc::clone(&observed),
+                    panic: mode == 1,
+                }))
+                .unwrap();
+            let before = control.budget.host_memory_bytes();
+            let before_metadata = io.snapshot().metadata_bytes;
+            let bytes = input.into_http_bytes().unwrap();
+            assert_eq!(&bytes[..], b"data");
+            assert_eq!(control.budget.host_memory_bytes(), before + charge as u64);
+            assert_eq!(io.snapshot().metadata_bytes, before_metadata + charge);
+            let clone = bytes.clone();
+            drop(bytes);
+            assert!(!observed.load(Ordering::SeqCst));
+            assert_eq!(control.budget.host_memory_bytes(), before + charge as u64);
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
+                if mode == 2 {
+                    let _caller_owner = clone;
+                    panic!("controlled caller unwind");
+                }
+                drop(clone);
+            }));
+            assert_eq!(result.is_err(), mode != 0);
+            assert!(observed.load(Ordering::SeqCst));
+            assert_eq!(control.budget.host_memory_bytes(), baseline);
+            assert_eq!(io.snapshot(), counts);
+        }
+    }
+
+    #[tokio::test]
+    async fn http_input_owner_refuses_original_host_and_metadata_exhaustion() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = native_request(&fixture, "http-input-refusal");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        let baseline = control.budget.host_memory_bytes();
+        let counts = io.snapshot();
+        let charge = http_input_owner_bytes().unwrap();
+
+        let input = transfer.input(b"host".to_vec()).unwrap();
+        let current = control.budget.host_memory_bytes();
+        let padding_bytes = request.budget.memory_bytes - current - charge as u64 + 1;
+        let padding = control.budget.reserve_host_memory(padding_bytes).unwrap();
+        assert_eq!(
+            input.into_http_bytes().err().unwrap().code,
+            latent_core::PlatformErrorCode::ResourceExhausted
+        );
+        assert_eq!(control.budget.host_memory_bytes(), baseline + padding_bytes);
+        assert_eq!(io.snapshot(), counts);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+        drop(padding);
+
+        let input = transfer.input(b"node".to_vec()).unwrap();
+        let padding = call
+            .operation
+            .runtime
+            .counters
+            .acquire(
+                Kind::Metadata,
+                IoLimits::default().maximum_metadata_bytes - io.snapshot().metadata_bytes - charge
+                    + 1,
+            )
+            .unwrap();
+        assert_eq!(
+            input.into_http_bytes().err().unwrap().code,
+            latent_core::PlatformErrorCode::ResourceExhausted
+        );
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+        drop(padding);
+        assert_eq!(io.snapshot(), counts);
+    }
+
+    #[tokio::test]
+    async fn http_input_owner_preserves_legacy_phase1_path() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = fixture.request("http-input-phase1");
+        assert!(!control.budget.profile().supports_descendants());
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        let baseline = io.snapshot();
+        let input = transfer.input(b"old".to_vec()).unwrap();
+        let before = io.snapshot();
+        let bytes = input.into_http_bytes().unwrap();
+        assert_eq!(&bytes[..], b"old");
+        assert_eq!(io.snapshot(), before);
+        assert_eq!(control.budget.host_memory_bytes(), 0);
+        drop(bytes);
+        assert_eq!(io.snapshot(), baseline);
+    }
+
+    #[tokio::test]
+    async fn http_input_owner_preserves_finalized_budget_error() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = native_request(&fixture, "http-input-finalized");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        let counts = io.snapshot();
+        let input = transfer.input(b"data".to_vec()).unwrap();
+        let _ = control.budget.finalize_at(None, Instant::now());
+        let error = input.into_http_bytes().err().unwrap();
+        let expected = latent_core::BudgetError::AccountingFinalized.to_platform_error();
+        assert_eq!(error.code, expected.code);
+        assert_eq!(error.details, expected.details);
+        assert_eq!(io.snapshot(), counts);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+    }
+
+    #[test]
+    fn http_input_owner_layout_matches_pinned_allocator_shape() {
+        let size = bytes::Bytes::owner_with_retirement_allocation_size::<
+            IoInputChunk,
+            super::super::memory::HttpInputRetirement,
+        >();
+        let charge = http_input_owner_bytes().unwrap();
+        assert_eq!(charge, size + super::super::ALLOCATION_BOOKKEEPING);
+        eprintln!(
+            "HTTP input: value={}, retirement={}, optional={}, Box={}, charge={charge}",
+            std::mem::size_of::<IoInputChunk>(),
+            std::mem::size_of::<super::super::memory::HttpInputRetirement>(),
+            std::mem::size_of::<Option<super::super::memory::HttpInputRetirement>>(),
+            size
+        );
+        #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
+        assert_eq!(
+            (
+                std::mem::size_of::<IoInputChunk>(),
+                std::mem::align_of::<IoInputChunk>(),
+                std::mem::size_of::<super::super::memory::HttpInputRetirement>(),
+                std::mem::align_of::<super::super::memory::HttpInputRetirement>(),
+                std::mem::size_of::<Option<super::super::memory::HttpInputRetirement>>(),
+                size,
+            ),
+            (168, 8, 48, 8, 48, 224)
+        );
+    }
+
     #[tokio::test]
     async fn native_output_copy_is_affine_and_outlives_source_chunk_and_call() {
         let fixture = Fixture::new(CapabilityBrokerLimits::default());

@@ -18,9 +18,9 @@ REGISTRY_PACKAGE = {'name': 'bytes', 'version': VERSION,
     'checksum': ARCHIVE_SHA256}
 POSTIMAGES = {
     'Cargo.toml': {'bytes': 2601, 'sha256': '989921f4afccdec4c5076d4ded65428b22ff42899475eeff847e7bd2cc68ace6'},
-    'src/bytes.rs': {'bytes': 52468, 'sha256': '8868b252f0c21802d2e01cdcee98b218e36e6830ec105b2902a42e7a6ecc9831'},
-    'PHYSICAL-RETIREMENT.md': {'bytes': 1958, 'sha256': '55a96c57290f9f460e5477421bad0cd4a0435b7fb5d41206a156033e34ba2bf6'},
-    'tests/test_owner_retirement.rs': {'bytes': 6621, 'sha256': '66f36dfe3b5f82fcf4ef6db0b6b6454e94719af8a0db2a93cd1e7856cdae8b42'},
+    'src/bytes.rs': {'bytes': 52875, 'sha256': 'f35381f1e1e385b2888c101f1c927c078d1122556d2418750e9a431522c79f2f'},
+    'PHYSICAL-RETIREMENT.md': {'bytes': 2072, 'sha256': '5256a9077f2fcd0876c575d964ac939186717e09f1919aa5ce42aa7e493f3b86'},
+    'tests/test_owner_retirement.rs': {'bytes': 6913, 'sha256': '12f0d01f0963eb72c1c1f8ae74a8ffcfac2c6d9b7dbae149af04c3806ead26f9'},
 }
 
 
