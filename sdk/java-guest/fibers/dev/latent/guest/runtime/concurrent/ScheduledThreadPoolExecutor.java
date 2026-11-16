@@ -403,7 +403,10 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             int addedAt = -1;
             try {
                 thread = factory.newThread(worker::run);
-                if (thread == null || thread.isAlive())
+                // The standard factory contract permits null. Accepted queue
+                // entries remain owned and a later admission can retry startup.
+                if (thread == null) { worker.clear(); return; }
+                if (thread.isAlive())
                     throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
                 if (Activation.alive(thread)) throw new IllegalThreadStateException();
                 addedAt = workers.size();

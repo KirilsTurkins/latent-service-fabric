@@ -60,10 +60,23 @@ public final class ScheduledCompletableOwnerControl {
         catch (RejectedExecutionException expected) { }
         held(0, 0); require(!pending.isDone() && calls.get() == 0);
 
-        var failedFactory = new ScheduledThreadPoolExecutor(1, command -> null);
+        var failure = new RejectedExecutionException("factory-failed");
+        var failedFactory = new ScheduledThreadPoolExecutor(1, command -> { throw failure; });
         try { CompletableFuture.supplyAsync(() -> 42, failedFactory); throw new AssertionError(); }
-        catch (RejectedExecutionException expected) { }
+        catch (RejectedExecutionException expected) { require(expected == failure); }
         held(0, 0); failedFactory.shutdownNow(); terminated(failedFactory);
+
+        var noWorker = new ScheduledThreadPoolExecutor(1, command -> null);
+        var waiting = CompletableFuture.supplyAsync(() -> { calls.incrementAndGet(); return 42; }, noWorker);
+        require(!waiting.isDone() && noWorker.hasPendingWork() && calls.get() == 0);
+        held(2, 2);
+        List<Runnable> withdrawn = noWorker.shutdownNow();
+        require(withdrawn.size() == 1 && !waiting.isDone() && calls.get() == 0);
+        terminated(noWorker); held(0, 0);
+        withdrawn.get(0).run();
+        require(((java.util.concurrent.Future<?>)withdrawn.get(0)).isCancelled()
+            && !waiting.isDone() && calls.get() == 0);
+        held(0, 0);
 
         var deniedInner = new ScheduledThreadPoolExecutor(1);
         var nested = new dev.latent.guest.runtime.concurrent.FutureTask<>(() -> 42);
