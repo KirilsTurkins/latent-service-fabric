@@ -319,6 +319,8 @@ OWNER_RETRY_CASES = (
     'timer-cancel-retry', 'timer-clear-retry',
     'timer-capture-before-host', 'timer-capture-refused-retirement',
     'timer-late-return', 'timer-nested-clear', 'timer-native-limit',
+    'timer-stop-refusal-caught', 'timer-stop-refusal-uncaught', 'timer-stop-refusal-rethrow',
+    'timer-native-refusal-caught', 'timer-native-refusal-uncaught', 'timer-native-refusal-rethrow',
     'import-result-retry', 'import-lowering-retry', 'import-record-retry',
     'import-turn-fence', 'import-lower-fence', 'import-lift-fence',
     'import-partial-admission', 'import-partial-buffer',
