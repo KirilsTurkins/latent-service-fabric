@@ -1,5 +1,5 @@
 //! Provider-owned boxed futures. This is deliberately not the core BoxFuture alias.
-use super::{capacity, PlatformError, RefundAfterRetirement, ALLOCATION_BOOKKEEPING};
+use super::{capacity, PlatformError, ALLOCATION_BOOKKEEPING};
 use latent_core::{ActivationBudget, HostMemoryReservation};
 use std::{
     alloc::Layout,
@@ -138,7 +138,7 @@ impl<T> Future for IoFuture<'_, T> {
 
 impl<T> Drop for IoFuture<'_, T> {
     fn drop(&mut self) {
-        let allocation = RefundAfterRetirement(self.allocation.take());
+        let allocation = self.allocation.take();
         let mut retirement = match self.state.as_mut() {
             Some(IoFutureState::Boxed(future)) => future.as_mut().take_stream_retirement(),
             _ => None,
@@ -146,10 +146,14 @@ impl<T> Drop for IoFuture<'_, T> {
         if let Some(retirement) = &mut retirement {
             retirement.begin_drop();
         }
-        // In the boxed branch, the actual F and its Box backing retire first.
-        // If F::drop unwinds, retain this same original charge conservatively.
+        // The pinned Box's drop glue deallocates its own backing even if F's
+        // destructor unwinds. This local guard drops after that glue finishes;
+        // independently retained captures keep their own original guards.
+        // Rust 1.97.1 Box drop elaboration and deallocator:
+        // https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/compiler/rustc_mir_transform/src/elaborate_drop.rs#L745-L753
+        // https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/alloc/src/boxed.rs#L1885-L1898
         drop(self.state.take());
-        allocation.refund();
+        drop(allocation);
         drop(retirement);
     }
 }
@@ -482,8 +486,8 @@ mod tests {
         assert_eq!(released.load(Ordering::SeqCst), 2);
         assert!(catch_unwind(AssertUnwindSafe(|| drop(make(true)))).is_err());
         assert_eq!(released.load(Ordering::SeqCst), 2);
-        assert_eq!(admitted.host_memory_bytes(), stream_charge());
-        assert_eq!(admitted.outstanding_reservations(), 1);
+        assert_eq!(admitted.host_memory_bytes(), 0);
+        assert_eq!(admitted.outstanding_reservations(), 0);
     }
 
     #[test]
@@ -559,13 +563,103 @@ mod tests {
         .is_err());
         assert_eq!(admitted.host_memory_bytes(), 0);
 
-        // A failing destructor retains the SAME original charge, not a refund.
+        // The box backing is deallocated even when its payload unwinds.
         let future = PreparedIoFuture::new(&admitted, || body(&admitted, true))
             .unwrap()
             .finish();
         assert!(catch_unwind(AssertUnwindSafe(|| drop(future))).is_err());
-        assert_eq!(admitted.host_memory_bytes(), charge());
-        assert_eq!(admitted.outstanding_reservations(), 1);
+        assert_eq!(admitted.host_memory_bytes(), 0);
+        assert_eq!(admitted.outstanding_reservations(), 0);
+    }
+
+    #[test]
+    fn future_refund_preserves_the_original_separately_owned_capture() {
+        const CAPTURE_BYTES: u64 = 512;
+        struct Retained {
+            _allocation: HostMemoryReservation,
+        }
+        struct CapturedBody {
+            budget: ActivationBudget,
+            expected: u64,
+            _retained: Arc<Retained>,
+            should_panic: bool,
+        }
+        impl Future for CapturedBody {
+            type Output = ();
+            fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<()> {
+                Poll::Pending
+            }
+        }
+        impl Drop for CapturedBody {
+            fn drop(&mut self) {
+                assert_eq!(self.budget.host_memory_bytes(), self.expected);
+                assert!(!self.should_panic, "captured future destructor");
+            }
+        }
+        struct Observer {
+            budget: ActivationBudget,
+            releases: Arc<AtomicUsize>,
+        }
+        impl StreamRetirementObserver for Observer {
+            fn release_stream_retirement(&self, sequence: u64) {
+                assert_eq!(sequence, 17);
+                assert_eq!(self.budget.host_memory_bytes(), CAPTURE_BYTES);
+                self.releases.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+
+        let admitted = budget(16 * 1024, BudgetProfile::Phase3);
+        let mut capture = admitted.reserve_host_memory(CAPTURE_BYTES).unwrap();
+        capture.confirm();
+        let retained = Arc::new(Retained {
+            _allocation: capture,
+        });
+        for stream in [false, true] {
+            for should_panic in [false, true] {
+                let layout = if stream {
+                    Layout::new::<StreamFuture<CapturedBody>>()
+                } else {
+                    Layout::new::<PlainFuture<CapturedBody>>()
+                };
+                let charge = (layout.size() + ALLOCATION_BOOKKEEPING) as u64;
+                let releases = Arc::new(AtomicUsize::new(0));
+                let body = CapturedBody {
+                    budget: admitted.clone(),
+                    expected: CAPTURE_BYTES + charge,
+                    _retained: retained.clone(),
+                    should_panic,
+                };
+                let future = if stream {
+                    let custody = StreamRetirementGuard::new(
+                        Arc::new(Observer {
+                            budget: admitted.clone(),
+                            releases: releases.clone(),
+                        }),
+                        17,
+                    );
+                    PreparedStreamIoFutureWith::new(&admitted, |(body, custody)| (body, custody))
+                        .unwrap()
+                        .finish((body, custody))
+                } else {
+                    PreparedIoFuture::new(&admitted, || body).unwrap().finish()
+                };
+                assert_eq!(admitted.host_memory_bytes(), CAPTURE_BYTES + charge);
+                assert_eq!(admitted.outstanding_reservations(), 2);
+                assert_eq!(
+                    catch_unwind(AssertUnwindSafe(|| drop(future))).is_err(),
+                    should_panic
+                );
+                assert_eq!(admitted.host_memory_bytes(), CAPTURE_BYTES);
+                assert_eq!(admitted.outstanding_reservations(), 1);
+                assert_eq!(
+                    releases.load(Ordering::SeqCst),
+                    usize::from(stream && !should_panic)
+                );
+            }
+        }
+        drop(retained);
+        assert_eq!(admitted.host_memory_bytes(), 0);
+        assert_eq!(admitted.outstanding_reservations(), 0);
     }
 
     #[test]
