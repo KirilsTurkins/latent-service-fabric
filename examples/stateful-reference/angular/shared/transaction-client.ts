@@ -198,11 +198,12 @@ export class DraftClient {
       const headers = new Headers(this.csrfHeaders());
       for (const [name, value] of Object.entries(options.headers ?? {})) headers.set(name, value);
       const response = await this.fetcher(url, {...options, headers, credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: controller.signal});
-      const text = await limitedBody(response);
       if (response.status === 401 || response.status === 403) {
         this.view = undefined; this.minimumView = undefined; this.last = undefined; this.status = 'permission-denied';
+        controller.abort();
         throw new Error('permission-denied');
       }
+      const text = await limitedBody(response);
       return {status: response.status, envelope: envelope(text ? lossless(text) : undefined)};
     } finally { clearTimeout(timer); }
   }

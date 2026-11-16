@@ -110,6 +110,14 @@ test('u64 business revisions retain every original bit in requests and decoded r
   function revisionOverflow() { client(async () => response('query')).prepare('demo', '18446744073709551616', 3); }
 });
 
+test('oversized denial clears private observations before reading the body', async () => {
+  const app = client(async () => new Response('x'.repeat(192 * 1024 + 1), {status: 403}));
+  app.view = {private: 'prior user'}; app.last = {private: 'prior user'}; app.minimumView = 'prior-token';
+  await assert.rejects(app.query('demo'), /permission-denied/);
+  assert.equal(app.view, undefined); assert.equal(app.last, undefined); assert.equal(app.minimumView, undefined);
+  assert.equal(app.status, 'permission-denied');
+});
+
 test('current authority refusal clears private observations and cross-origin routes are rejected', async () => {
   const app = client(async () => new Response('', {status: 403}));
   app.view = {private: 'prior user'}; app.last = {private: 'prior user'}; app.minimumView = 'prior-token';
