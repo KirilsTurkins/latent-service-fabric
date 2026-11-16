@@ -24,6 +24,69 @@ function response(disposition, {error, revision = '1', units = 3} = {}) {
 }
 function client(fetcher) { return new DraftClient(routes, {origin: 'https://node.example', fetcher}); }
 
+test('unavailable query is reported without discarding the original command', async () => {
+  const app = client(async () => new Response(JSON.stringify({profile: 'transaction-http-v1',
+    disposition: 'query', representation: 'receipt-only', result: null}), {status: 503}));
+  const key = app.prepare('demo', '0', 3);
+  await assert.rejects(app.query('demo'), /query-unavailable/);
+  assert.equal(app.pending.key, key);
+  assert.equal(app.status, 'prepared');
+});
+
+test('failed query cannot install an application body from an error response', async () => {
+  const app = client(async () => {
+    const body = await response('query').text();
+    return new Response(body, {status: 503});
+  });
+  await assert.rejects(app.query('demo'), /query-unavailable/);
+  assert.equal(app.view, undefined);
+});
+
+test('fragmented query bodies remain bounded and decode correctly', async () => {
+  const payload = new TextEncoder().encode(await response('query').text());
+  const app = client(async () => new Response(new ReadableStream({
+    start(controller) {
+      for (let index = 0; index < 100; index++) controller.enqueue(new Uint8Array());
+      for (const byte of payload) controller.enqueue(Uint8Array.of(byte));
+      controller.close();
+    },
+  }), {status: 200}));
+  const result = await app.query('demo');
+  assert.equal(result.value.draftId, 'demo');
+  const oversized = client(async () => new Response(new Uint8Array(192 * 1024 + 1), {status: 200}));
+  await assert.rejects(oversized.query('demo'), /response-byte-limit/);
+  const empty = client(async () => new Response(new ReadableStream({
+    start(controller) {
+      for (let index = 0; index < 1025; index++) controller.enqueue(new Uint8Array());
+      controller.close();
+    },
+  }), {status: 200}));
+  await assert.rejects(empty.query('demo'), /response-fragment-limit/);
+});
+
+test('effect status uses the original command and accepts only its bounded effect', async () => {
+  const id = 'e'.repeat(64), requests = [];
+  const app = client(async (url, options) => {
+    requests.push({url, ...options});
+    if (requests.length === 1) {
+      const body = await response('committed').json();
+      body['effect-ids'] = [id];
+      return new Response(JSON.stringify(body), {status: 200});
+    }
+    return new Response(JSON.stringify({profile: 'transaction-http-v1', disposition: 'effect',
+      representation: 'effect-status', effect: {'effect-id': requests.length === 2 ? id : 'f'.repeat(64),
+        disposition: 'provider-acknowledged', 'dispatch-attempt': 2}}), {status: 200});
+  });
+  const original = app.prepare('demo', '0', 3);
+  await app.submit();
+  assert.deepEqual(await app.effectStatus(id), {effectId: id, disposition: 'provider-acknowledged', dispatchAttempt: 2});
+  assert.equal(requests[1].headers.get('idempotency-key'), original);
+  assert.equal(requests[1].headers.get('effect-id'), id);
+  await assert.rejects(app.effectStatus('f'.repeat(64)), /original-command-effect-required/);
+  assert.equal(requests.length, 2);
+  await assert.rejects(app.effectStatus(id), /invalid-effect-status/);
+});
+
 test('uncertain delivery retains the original body, precondition and key and only recovery is sent', async () => {
   const requests = [];
   const app = client(async (url, options) => {
@@ -99,6 +162,14 @@ test('u64 business revisions retain every original bit in requests and decoded r
   assert.equal(result.value.revision, maximum);
   assert.throws(() => revisionOverflow(), /invalid-business-revision/);
   function revisionOverflow() { client(async () => response('query')).prepare('demo', '18446744073709551616', 3); }
+});
+
+test('oversized denial clears private observations before reading the body', async () => {
+  const app = client(async () => new Response('x'.repeat(192 * 1024 + 1), {status: 403}));
+  app.view = {private: 'prior user'}; app.last = {private: 'prior user'}; app.minimumView = 'prior-token';
+  await assert.rejects(app.query('demo'), /permission-denied/);
+  assert.equal(app.view, undefined); assert.equal(app.last, undefined); assert.equal(app.minimumView, undefined);
+  assert.equal(app.status, 'permission-denied');
 });
 
 test('current authority refusal clears private observations and cross-origin routes are rejected', async () => {

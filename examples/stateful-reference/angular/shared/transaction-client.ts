@@ -6,7 +6,8 @@ export interface DraftView {
   namespaceView: string;
   keyVersion?: string;
 }
-export type Disposition = 'query' | 'in-progress' | 'recovery-required' | 'committed' | 'rejected' | 'aborted';
+export type Disposition = 'query' | 'in-progress' | 'recovery-required' | 'committed' | 'rejected' | 'aborted' | 'effect';
+export interface EffectStatus {effectId: string; disposition: string; dispatchAttempt: number}
 export interface Reply {
   status: number;
   disposition: Disposition;
@@ -29,6 +30,7 @@ interface Envelope {
   'effect-ids'?: string[];
   'abort-fence'?: AbortFence;
   result?: {'media-type': string; 'body-base64': string};
+  effect?: unknown;
 }
 interface Original {key: string; body: string; draftId: string; ifMatch?: string}
 type RequestOptions = Omit<RequestInit, 'headers'> & {headers?: Record<string, string>};
@@ -125,23 +127,24 @@ export function projection(result: unknown): DraftView | {error: string} {
 async function limitedBody(response: Response): Promise<string> {
   if (!response.body) return '';
   const reader = response.body.getReader();
-  const chunks: Uint8Array[] = []; let count = 0;
+  const bytes = new Uint8Array(MAX_RESPONSE); let count = 0; let emptyChunks = 0;
   try {
     for (;;) {
       const {done, value} = await reader.read();
       if (done) break;
-      count += value.length;
-      if (count > MAX_RESPONSE) throw new Error('response-byte-limit');
-      chunks.push(value);
+      if (value.length === 0) {
+        if (++emptyChunks > 1024) throw new Error('response-fragment-limit');
+        continue;
+      }
+      if (value.length > MAX_RESPONSE - count) throw new Error('response-byte-limit');
+      bytes.set(value, count); count += value.length;
     }
   } finally { await reader.cancel().catch(() => {}); reader.releaseLock(); }
-  const bytes = new Uint8Array(count); let offset = 0;
-  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.length; }
-  return decoder.decode(bytes);
+  return decoder.decode(bytes.subarray(0, count));
 }
 function envelope(value: unknown): Envelope {
   if (!record(value) || value['profile'] !== PROFILE) throw new Error('unsupported-transaction-response');
-  if (typeof value['disposition'] !== 'string' || !['query', 'in-progress', 'recovery-required', 'committed', 'rejected', 'aborted'].includes(value['disposition']))
+  if (typeof value['disposition'] !== 'string' || !['query', 'in-progress', 'recovery-required', 'committed', 'rejected', 'aborted', 'effect'].includes(value['disposition']))
     throw new Error('unknown-transaction-disposition');
   for (const key of ['command-id']) {
     if (value[key] != null && (typeof value[key] !== 'string' || !/^[0-9a-f]{64}$/.test(value[key])))
@@ -198,16 +201,18 @@ export class DraftClient {
       const headers = new Headers(this.csrfHeaders());
       for (const [name, value] of Object.entries(options.headers ?? {})) headers.set(name, value);
       const response = await this.fetcher(url, {...options, headers, credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: controller.signal});
-      const text = await limitedBody(response);
       if (response.status === 401 || response.status === 403) {
         this.view = undefined; this.minimumView = undefined; this.last = undefined; this.status = 'permission-denied';
+        controller.abort();
         throw new Error('permission-denied');
       }
+      const text = await limitedBody(response);
       return {status: response.status, envelope: envelope(text ? lossless(text) : undefined)};
     } finally { clearTimeout(timer); }
   }
   private apply(reply: FetchReply, requestedDraft: string): Reply {
     const {status, envelope: response} = reply;
+    if (response.disposition === 'effect') throw new Error('unexpected-effect-response');
     const value = response.result ? projection(response.result) : undefined;
     if (value && !('error' in value) && value.draftId !== requestedDraft) throw new Error('foreign-draft-response');
     if (response.disposition !== 'query') {
@@ -240,8 +245,29 @@ export class DraftClient {
     boundedId(draftId);
     const input = encoder.encode(JSON.stringify([draftId]));
     const query = btoa(String.fromCharCode(...input)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    return this.apply(await this.request(this.routes.query + '?input=' + query, {method: 'GET',
-      headers: this.minimumView ? {'if-state-view': this.minimumView} : {}}), draftId);
+    const reply = await this.request(this.routes.query + '?input=' + query, {method: 'GET',
+      headers: this.minimumView ? {'if-state-view': this.minimumView} : {}});
+    // A receipt-only failure is not a fresh draft. Keep any original command
+    // for recovery and make the unavailable read visible to the application.
+    if (reply.envelope.disposition !== 'query' || !reply.envelope.result ||
+        (reply.status !== 200 && reply.status !== 422)) throw new Error('query-unavailable');
+    return this.apply(reply, draftId);
+  }
+  async effectStatus(effectId: string): Promise<EffectStatus> {
+    if (!this.pending || !/^[0-9a-f]{64}$/.test(effectId) || !this.last?.['effect-ids']?.includes(effectId))
+      throw new Error('original-command-effect-required');
+    const reply = await this.request(this.routes.result, {method: 'GET',
+      headers: {'idempotency-key': this.pending.key, 'effect-id': effectId}});
+    const effect = reply.envelope.effect;
+    const allowed = ['pending', 'dispatching', 'provider-acknowledged', 'known-failure', 'uncertain',
+      'expired', 'policy-blocked', 'administratively-terminated', 'retry-scheduled', 'dead-lettered'];
+    if (reply.status !== 200 || reply.envelope.disposition !== 'effect' || !record(effect) ||
+        Object.keys(effect).sort().join(',') !== 'dispatch-attempt,disposition,effect-id' ||
+        effect['effect-id'] !== effectId || typeof effect['disposition'] !== 'string' ||
+        !allowed.includes(effect['disposition']) || typeof effect['dispatch-attempt'] !== 'number' ||
+        !Number.isInteger(effect['dispatch-attempt']) || effect['dispatch-attempt'] < 0 || effect['dispatch-attempt'] > 0xffffffff)
+      throw new Error('invalid-effect-status');
+    return {effectId, disposition: effect['disposition'], dispatchAttempt: effect['dispatch-attempt']};
   }
   async retryAborted(): Promise<Reply> {
     if (!this.pending || this.status !== 'aborted' || this.last?.disposition !== 'aborted' || !this.last['abort-fence']) throw new Error('affirmative-original-abort-proof-required');
