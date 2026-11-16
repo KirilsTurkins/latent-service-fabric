@@ -64,6 +64,23 @@ test('fragmented query bodies remain bounded and decode correctly', async () => 
   await assert.rejects(empty.query('demo'), /response-fragment-limit/);
 });
 
+test('a response started before permission denial cannot restore a private view', async () => {
+  let release;
+  let count = 0;
+  const app = client(async () => {
+    if (++count === 1) return new Promise(resolve => { release = resolve; });
+    return new Response('', {status: 403});
+  });
+  const original = app.prepare('demo', '0', 3);
+  const stale = app.query('demo');
+  await assert.rejects(app.query('demo'), /permission-denied/);
+  release(response('query'));
+  await assert.rejects(stale, /permission-denied/);
+  assert.equal(app.view, undefined);
+  assert.equal(app.pending.key, original);
+  assert.equal(app.status, 'permission-denied');
+});
+
 test('effect status uses the original command and accepts only its bounded effect', async () => {
   const id = 'e'.repeat(64), requests = [];
   const app = client(async (url, options) => {

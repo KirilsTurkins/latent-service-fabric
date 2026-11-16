@@ -169,6 +169,7 @@ export class DraftClient {
   status = 'idle';
   minimumView?: string;
   private last?: Envelope;
+  private authorityEpoch = 0;
 
   constructor(routes: Routes, {fetcher = globalThis.fetch, csrfHeaders = () => ({}), origin = globalThis.location?.origin}: {
     fetcher?: typeof fetch; csrfHeaders?: () => Record<string, string>; origin?: string;
@@ -195,6 +196,7 @@ export class DraftClient {
     return key;
   }
   private async request(url: string, options: RequestOptions): Promise<FetchReply> {
+    const authorityEpoch = this.authorityEpoch;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 10000);
     try {
@@ -202,11 +204,14 @@ export class DraftClient {
       for (const [name, value] of Object.entries(options.headers ?? {})) headers.set(name, value);
       const response = await this.fetcher(url, {...options, headers, credentials: 'same-origin', cache: 'no-store', redirect: 'error', signal: controller.signal});
       if (response.status === 401 || response.status === 403) {
+        this.authorityEpoch++;
         this.view = undefined; this.minimumView = undefined; this.last = undefined; this.status = 'permission-denied';
         controller.abort();
         throw new Error('permission-denied');
       }
+      if (authorityEpoch !== this.authorityEpoch) { controller.abort(); throw new Error('permission-denied'); }
       const text = await limitedBody(response);
+      if (authorityEpoch !== this.authorityEpoch) throw new Error('permission-denied');
       return {status: response.status, envelope: envelope(text ? lossless(text) : undefined)};
     } finally { clearTimeout(timer); }
   }
