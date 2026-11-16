@@ -1,17 +1,34 @@
 """Selection controls for the bounded C IPv4 stream adapter."""
+import hashlib
 import json
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from tools import c_capsule, c_capsule_project
+from tools import c_capsule, c_capsule_build, c_capsule_project
 from tools.c_guest import standard_facilities, threading
 from tools.c_guest.compiler import Compiler
 from tools.rust_capsule_project import ROOT, inventory, snapshot
 
 
 class CStreamProfile(unittest.TestCase):
+    def test_dependency_material_order_remains_stable_and_stream_receipt_is_bound(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary)
+            names = ('application-dependencies', 'c-libraries', 'c-resources')
+            expected = []
+            for name in names:
+                data = (name + '-receipt').encode()
+                (output / (name + '.json')).write_bytes(data)
+                expected.append({'name': name, 'digest': 'sha256:' + hashlib.sha256(data).hexdigest(),
+                                 'size': len(data)})
+            for profile in (standard_facilities.DEFAULT, *standard_facilities.STREAM_PROFILES):
+                self.assertEqual(c_capsule_build.dependency_materials(output, True, profile), expected)
+            for profile in standard_facilities.STREAM_PROFILES:
+                self.assertEqual(c_capsule_build.dependency_materials(output, False, profile), [expected[1]])
+            self.assertEqual(c_capsule_build.dependency_materials(output, False, standard_facilities.DEFAULT), [])
+
     def test_creation_captures_profile_without_grant_and_requires_threads(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -48,6 +65,22 @@ class CStreamProfile(unittest.TestCase):
                 incomplete.pop(missing)
                 with self.subTest(missing=missing), self.assertRaisesRegex(ValueError, 'requires-captured-runtime'):
                     c_capsule_project.validate(incomplete)
+            resolver = 'vendor/lsf/sdk/c-guest/src/standard-resolver.c'
+            self.assertIn(resolver, files)
+            self.assertIn('standard-resolver.c', standard_facilities.captured_sources(selected['runtimeProfile'], files))
+            old_capture = dict(files)
+            old_capture.pop(resolver)
+            with self.assertRaisesRegex(ValueError, 'vendored SDK changed'):
+                c_capsule_project.validate(old_capture)
+            # Simulate an already-reviewed capture made before this SDK source
+            # existed. The current build must keep its original adapter set.
+            old_lock = json.loads(old_capture['sdk-lock.json'])
+            old_vendor = {path.removeprefix('vendor/lsf/'): data for path, data in old_capture.items()
+                          if path.startswith('vendor/lsf/')}
+            old_lock['sdk'] = json.loads(inventory(old_vendor))
+            old_capture['sdk-lock.json'] = json.dumps(old_lock).encode()
+            c_capsule_project.validate(old_capture)
+            self.assertNotIn('standard-resolver.c', standard_facilities.captured_sources(selected['runtimeProfile'], old_capture))
             combined = c_capsule_project.create(root / 'combined', 'greeting',
                 runtime_profile=standard_facilities.STREAM_STDIO_PROFILE, threading_profile=threading.PROFILE)
             combined_files = snapshot(combined)
@@ -87,6 +120,11 @@ class CStreamProfile(unittest.TestCase):
             for profile in facilities.STREAM_PROFILES:
                 with self.subTest(symbol=symbol, profile=profile), self.assertRaisesRegex(ValueError, 'compiler-owned-symbol'):
                     facilities.compiler_defines(profile, (symbol + '=1',))
+        for symbol in ('getaddrinfo', 'freeaddrinfo'):
+            for profile in facilities.STREAM_PROFILES:
+                self.assertIn(symbol + '=foreign', facilities.compiler_defines(profile, (symbol + '=foreign',)))
+                with self.subTest(symbol=symbol, profile=profile), self.assertRaisesRegex(ValueError, 'compiler-owned-symbol'):
+                    facilities.compiler_defines(profile, (symbol + '=foreign',), numeric_resolver=True)
         compiler = Compiler.__new__(Compiler)
         with tempfile.TemporaryDirectory() as temporary, patch('tools.c_guest.compiler.generate') as generate:
             output = Path(temporary) / 'no-output'

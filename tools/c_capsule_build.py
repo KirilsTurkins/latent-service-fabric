@@ -51,6 +51,20 @@ RECIPE += standard_facilities.RECIPE
 RECIPE += language.RECIPE + c_resource_inputs.RECIPE + closed_headers.RECIPE
 
 
+def dependency_materials(output: Path, has_closure: bool, runtime_profile: str) -> list[dict]:
+    if has_closure:
+        names = ('application-dependencies.json', 'c-libraries.json', 'c-resources.json')
+    elif runtime_profile in standard_facilities.STREAM_PROFILES:
+        names = ('c-libraries.json',)
+    else:
+        names = ()
+    result = []
+    for name in names:
+        data = read_file(output / name, 8 * 1024 * 1024)
+        result.append({'name': name.removesuffix('.json'), 'digest': digest(data), 'size': len(data)})
+    return result
+
+
 def binding_check(work: Path, lock: dict, commands: Commands, generator: Path) -> str:
     platform = work / "vendor/lsf/wit/platform"
     source, staged = platform / "runtime-phase3-blobs", work.parent / "binding-wit"
@@ -136,6 +150,12 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                                         sort_keys=True, separators=(",", ":")).encode()) if closure is not None else None)
             if use_closed_headers:
                 application.receipt['headerProfile'] = closed_headers.PROFILE
+            if runtime_profile in standard_facilities.STREAM_PROFILES:
+                runtime_sources = standard_facilities.captured_sources(runtime_profile, files)
+                application.receipt['runtimeSources'] = [
+                    {'path': standard_facilities.SDK_SOURCE_PREFIX + name,
+                     'digest': digest(files[standard_facilities.SDK_SOURCE_PREFIX + name])}
+                    for name in runtime_sources]
             write_json(output / "c-libraries.json", application.receipt)
             if threaded and runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE,
                                                 standard_facilities.FETCH_STANDARD_PROFILE,
@@ -158,7 +178,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             compile_wit, defines = work / "wit", application.defines
             if runtime_profile in standard_facilities.PROFILE_IMPORTS:
                 sources.extend(work / "vendor/lsf/sdk/c-guest/src" / adapter
-                               for adapter in standard_facilities.PROFILE_SOURCES[runtime_profile])
+                               for adapter in standard_facilities.captured_sources(runtime_profile, files))
                 compile_wit = standard_facilities.stage(compile_wit, project["world"], temporary / "standard-wit",
                                                        work / "vendor/lsf/wit/platform", profile=runtime_profile)
                 profile_defines = ('_POSIX_C_SOURCE=200809L', '_DEFAULT_SOURCE')
@@ -232,10 +252,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
             materials.extend({"name": name, "digest": digest(data), "size": len(data)} for name, data in (
                 ("source-snapshot", source_inputs), ("build-recipe", recipe_inputs), ("package-inputs", package_inventory),
                 ("toolchain-config", files["vendor/lsf/tools/toolchain.toml"])))
-            if closure is not None:
-                for name in ("application-dependencies.json", "c-libraries.json", "c-resources.json"):
-                    data = read_file(output / name, 8 * 1024 * 1024)
-                    materials.append({"name": name.removesuffix(".json"), "digest": digest(data), "size": len(data)})
+            materials.extend(dependency_materials(output, closure is not None, runtime_profile))
             if closure is not None or threaded:
                 data = read_file(output / "compiler-inputs.json", 8 * 1024 * 1024)
                 materials.append({"name": "c-compiler-sysroot-and-isolation", "digest": digest(data), "size": len(data)})

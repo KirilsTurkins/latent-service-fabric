@@ -29,7 +29,7 @@ PROFILE_SOURCES = {PROFILE: ('standard-clock-entropy.c',), LOGGING_PROFILE: ('st
                    COMBINED_PROFILE: ('standard-clock-entropy.c', 'standard-stdio.c'),
                    FETCH_PROFILE: ('libfetch/fetch.c', 'libfetch/http.c', 'closed-file-abi.c')}
 PROFILE_SOURCES[FETCH_STANDARD_PROFILE] = (*PROFILE_SOURCES[FETCH_PROFILE], 'standard-clock-entropy.c')
-PROFILE_SOURCES[STREAM_PROFILE] = ('standard-clock-entropy.c', 'standard-streams.c')
+PROFILE_SOURCES[STREAM_PROFILE] = ('standard-clock-entropy.c', 'standard-streams.c', 'standard-resolver.c')
 PROFILE_SOURCES[STREAM_STDIO_PROFILE] = (*PROFILE_SOURCES[STREAM_PROFILE], 'standard-stdio.c')
 RECIPE = ('tools/c_guest/standard_facilities.py',)
 # The precompiled libc may extract other strong definitions from a member
@@ -40,6 +40,16 @@ FETCH_CLOSED_SYMBOLS = ('open', 'close', 'fstat', 'mmap', 'munmap', 'realpath',
 STREAM_SYMBOLS = ('socket', 'connect', 'bind', 'send', 'recv', 'read', 'write', 'shutdown', 'close', 'poll',
                   'fcntl', 'getsockopt', 'setsockopt')
 STREAM_HEADER = 'include/lsf/standard-streams.h'
+RESOLVER_SOURCE = 'standard-resolver.c'
+SDK_SOURCE_PREFIX = 'vendor/lsf/sdk/c-guest/src/'
+
+
+def captured_sources(profile, files):
+    """Select only sources present in the already-verified SDK snapshot."""
+    sources = PROFILE_SOURCES[profile]
+    if profile in STREAM_PROFILES and SDK_SOURCE_PREFIX + RESOLVER_SOURCE not in files:
+        return tuple(name for name in sources if name != RESOLVER_SOURCE)
+    return sources
 
 
 def selected_profile(project, graph=None):
@@ -52,7 +62,7 @@ def selected_profile(project, graph=None):
     return profile
 
 
-def compiler_defines(profile, defines):
+def compiler_defines(profile, defines, *, numeric_resolver=False):
     """The selected GNU-cookie port owns its declaration feature selection."""
     if profile in STREAM_PROFILES:
         reserved = {'LSF_C_STREAM_NETWORK', 'LSF_C_STREAM_STDIO', 'LSF_C_STANDARD_STREAMS_H', 'MSG_NOSIGNAL', 'POLLPRI', 'POLLRDBAND',
@@ -61,6 +71,8 @@ def compiler_defines(profile, defines):
                     *('__imported_wasi_snapshot_preview1_' + name for name in
                       ('fd_write', 'fd_fdstat_get', 'fd_seek', 'fd_close')),
                     *('__lsf_c_net_' + name for name in STREAM_SYMBOLS)}
+        if numeric_resolver:
+            reserved.update(('getaddrinfo', 'freeaddrinfo'))
         if any(value.split('=', 1)[0] in reserved for value in defines):
             raise ValueError('c-stream-compiler-owned-symbol')
         # The selected WASI libc may pull its own abort together with another

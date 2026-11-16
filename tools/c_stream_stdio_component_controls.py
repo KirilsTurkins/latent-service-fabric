@@ -71,6 +71,11 @@ def run(output: Path, zig: Path, wit: Path, wasm: Path, contracts: Path) -> dict
     component = built / 'component.wasm'
     complete = json.loads((built / 'BUILD-COMPLETE.json').read_bytes())
     selection = json.loads((built / 'standard-runtime-selection.json').read_bytes())
+    runtime_sources = json.loads((built / 'c-libraries.json').read_bytes()).get('runtimeSources')
+    expected_sources = [{'path': standard_facilities.SDK_SOURCE_PREFIX + name,
+                         'digest': 'sha256:' + hashlib.sha256(read_file(
+                             project / standard_facilities.SDK_SOURCE_PREFIX / name, 262144)).hexdigest()}
+                        for name in standard_facilities.PROFILE_SOURCES[standard_facilities.STREAM_STDIO_PROFILE]]
     world = command(wasm, 'component', 'wit', component).decode('utf-8')
     imports = re.findall(r'^  import ([^;]+);$', world, re.MULTILINE)
     required = {'latent:runtime/activation@0.1.0', 'latent:runtime-native/threads@0.1.0',
@@ -79,7 +84,8 @@ def run(output: Path, zig: Path, wit: Path, wasm: Path, contracts: Path) -> dict
     if (set(imports) != required or len(imports) != len(required)
             or 'wasi_snapshot_preview1' in world or complete.get('packageAssembled') is not False
             or selection.get('profile') != standard_facilities.STREAM_STDIO_PROFILE
-            or selection.get('authority') != 'none'):
+            or selection.get('authority') != 'none' or runtime_sources != expected_sources
+            or not any(row['name'] == 'c-libraries' for row in selection['toolAndCompilerInputs'])):
         raise ValueError('c-stream-stdio-component-profile-or-authority')
     # The production builder already authenticates the original four-module
     # routing and validates its final component with the selected features.
@@ -99,6 +105,7 @@ def run(output: Path, zig: Path, wit: Path, wasm: Path, contracts: Path) -> dict
         raise ValueError('c-stream-stdio-component-fixture-changed')
     result = {'status': 'passed', 'fixtures': fixtures, 'componentDigest': complete['componentDigest'],
               'imports': imports, 'unsupportedStdin': 'preview1-fd-read-refused-before-component',
+              'runtimeSources': runtime_sources,
               'grantsCreated': False, 'signedComponent': False, 'realProvider': False}
     write_json(output / 'component-controls.json', result)
     return result
