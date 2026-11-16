@@ -37,6 +37,14 @@ int __lsf_c_net_fcntl(int, int, ...);
 int __lsf_c_net_getsockopt(int, int, int, void *, socklen_t *);
 int __lsf_c_net_setsockopt(int, int, int, const void *, socklen_t);
 
+/* WASI preview1 omits MSG_NOSIGNAL; this profile uses the same value as the
+ * pinned libc's WASI preview2 header. The stream adapter never raises SIGPIPE. */
+#ifndef MSG_NOSIGNAL
+#define MSG_NOSIGNAL 0x4000
+#elif MSG_NOSIGNAL != 0x4000
+#error incompatible MSG_NOSIGNAL value for the C stream profile
+#endif
+
 /* These absent WASI declarations can be named but are never silently served. */
 #ifndef POLLPRI
 #define POLLPRI 0x0004

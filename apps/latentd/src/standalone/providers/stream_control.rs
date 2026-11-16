@@ -269,7 +269,10 @@ impl ProviderRuntime {
             .await
             .map_err(|_| unavailable())?;
         let outcome = if status.usage.owners == 0 {
-            "drained"
+            // The usage snapshot includes registered and quarantined owners,
+            // but not an admitted connect that has not registered its socket.
+            // Zero therefore cannot establish physical retirement.
+            "retirement-unconfirmed"
         } else {
             "retained-owners-not-refunded"
         };

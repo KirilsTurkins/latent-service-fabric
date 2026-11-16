@@ -54,6 +54,148 @@ pub struct ProviderSetup<'a> {
 pub struct ProviderPools {
     inner: Arc<Inner>,
 }
+
+/// A trusted caller may publish an epoch while holding its own state lock, then
+/// finish the original pool notification after releasing that lock. Create this
+/// guard before acquiring any such lock so unwinding drops the lock first.
+#[doc(hidden)]
+pub struct DeferredProviderInstall<'a> {
+    pools: &'a ProviderPools,
+    epoch: Option<Arc<Epoch>>,
+    old_epoch: Option<Arc<Epoch>>,
+    committed: bool,
+}
+
+fn drop_deferred_owner<T>(owner: T) {
+    if std::thread::panicking() {
+        // Preserve the original unwind while still reaching notification.
+        let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(owner)));
+    } else {
+        drop(owner);
+    }
+}
+
+// Run maintenance even if an arbitrary wake callback panics. During an
+// existing unwind a second panic is contained so the original is preserved.
+fn notify_then_maintain<N: FnOnce(), M: FnOnce()>(notify: N, maintain: M) {
+    struct Maintain<M: FnOnce()>(Option<M>);
+    impl<M: FnOnce()> Drop for Maintain<M> {
+        fn drop(&mut self) {
+            if let Some(maintain) = self.0.take() {
+                if std::thread::panicking() {
+                    let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(maintain));
+                } else {
+                    maintain();
+                }
+            }
+        }
+    }
+    let _maintain = Maintain(Some(maintain));
+    notify();
+}
+
+#[cfg(test)]
+mod deferred_install_controls {
+    use super::{drop_deferred_owner, notify_then_maintain};
+    use std::{
+        cell::Cell,
+        panic::{catch_unwind, AssertUnwindSafe},
+    };
+
+    #[test]
+    fn notification_panic_still_runs_maintenance_and_propagates() {
+        let maintained = Cell::new(false);
+        let error = catch_unwind(AssertUnwindSafe(|| {
+            notify_then_maintain(|| panic!("wake panic"), || maintained.set(true));
+        }))
+        .unwrap_err();
+        assert_eq!(error.downcast_ref::<&str>(), Some(&"wake panic"));
+        assert!(maintained.get());
+    }
+
+    #[test]
+    fn old_owner_panic_during_unwind_preserves_original_and_completion() {
+        struct Old<'a>(&'a Cell<usize>);
+        impl Drop for Old<'_> {
+            fn drop(&mut self) {
+                self.0.set(self.0.get() + 1);
+                panic!("old owner panic");
+            }
+        }
+        struct Completion<'a> {
+            dropped: &'a Cell<usize>,
+            notified: &'a Cell<bool>,
+        }
+        impl Drop for Completion<'_> {
+            fn drop(&mut self) {
+                drop_deferred_owner(Old(self.dropped));
+                self.notified.set(true);
+            }
+        }
+        let dropped = Cell::new(0);
+        let notified = Cell::new(false);
+        let error = catch_unwind(AssertUnwindSafe(|| {
+            let _completion = Completion {
+                dropped: &dropped,
+                notified: &notified,
+            };
+            panic!("original panic");
+        }))
+        .unwrap_err();
+        assert_eq!(error.downcast_ref::<&str>(), Some(&"original panic"));
+        assert_eq!(dropped.get(), 1);
+        assert!(notified.get());
+    }
+}
+
+impl DeferredProviderInstall<'_> {
+    /// The caller has published the replacement in its own state.
+    pub fn commit(&mut self) {
+        assert!(self.epoch.is_some(), "no provider installation to commit");
+        self.committed = true;
+    }
+
+    /// Flush notification and maintenance now; Drop also does so on error.
+    pub fn finish(mut self) {
+        self.flush();
+    }
+
+    fn flush(&mut self) {
+        let Some(epoch) = self.epoch.as_ref() else {
+            return;
+        };
+        if !self.committed {
+            // A published-but-uncommitted epoch must not remain usable. The old
+            // epoch may already be retired; this is fail-closed, not rollback.
+            epoch.retire();
+        }
+        // The replaced epoch may be the final Arc. Keep its original
+        // destruction before notification, but outside the caller's lock.
+        // Leave the new epoch armed if destruction unwinds, so Drop still
+        // performs the pending notification after the caller lock is gone.
+        // Every physical client holds its own Arc<Epoch>. A final epoch Arc
+        // therefore contains only its fixed bookkeeping, not a live client.
+        drop_deferred_owner(self.old_epoch.take());
+        let _epoch = self.epoch.take();
+        let notify = || self.pools.inner.changed.notify_waiters();
+        let maintain = || self.pools.inner.maintain();
+        if std::thread::panicking() {
+            // A second arbitrary waker panic must not abort the original
+            // unwind; the helper still attempts the original maintenance.
+            let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                notify_then_maintain(notify, maintain);
+            }));
+        } else {
+            notify_then_maintain(notify, maintain);
+        }
+    }
+}
+
+impl Drop for DeferredProviderInstall<'_> {
+    fn drop(&mut self) {
+        self.flush();
+    }
+}
 pub(super) struct Inner {
     broker: Arc<ActivationCapabilityBroker>,
     io: Arc<IoRuntime>,
@@ -213,6 +355,40 @@ impl ProviderPools {
         input: ProviderSetup<'_>,
         expected_epoch: u64,
     ) -> Result<InstalledProvider, PlatformError> {
+        let mut completion = self.defer_install();
+        let installed = self.install_deferred(input, expected_epoch, &mut completion)?;
+        completion.commit();
+        completion.finish();
+        Ok(installed)
+    }
+
+    /// Construct before taking any caller lock that a waker can re-enter.
+    #[doc(hidden)]
+    pub fn defer_install(&self) -> DeferredProviderInstall<'_> {
+        DeferredProviderInstall {
+            pools: self,
+            epoch: None,
+            old_epoch: None,
+            committed: false,
+        }
+    }
+
+    /// Publish with the original epoch compare-and-swap but defer callbacks.
+    /// A successful caller must publish its own state and commit the guard.
+    #[doc(hidden)]
+    pub fn install_deferred(
+        &self,
+        input: ProviderSetup<'_>,
+        expected_epoch: u64,
+        completion: &mut DeferredProviderInstall<'_>,
+    ) -> Result<InstalledProvider, PlatformError> {
+        if !Arc::ptr_eq(&self.inner, &completion.pools.inner)
+            || completion.epoch.is_some()
+            || completion.old_epoch.is_some()
+            || completion.committed
+        {
+            return Err(invalid());
+        }
         let limits = self.inner.quotas.limits()?;
         if input.credentials.len() > limits.maximum_configuration_bytes {
             return Err(capacity());
@@ -261,6 +437,9 @@ impl ProviderPools {
             _metadata: metadata,
             _slot: slot,
         });
+        // From the first irreversible fence onward, the caller's guard must
+        // signal waiters even if subsequent publication unwinds.
+        completion.epoch = Some(Arc::clone(&epoch));
         let old = if let Some(index) = old {
             // Broker's provider fence closes later dispatches before publication.
             state.epochs[index].retire();
@@ -272,13 +451,13 @@ impl ProviderPools {
             state.epochs.push(Arc::clone(&epoch));
             None
         };
+        // Preserve the replaced owner before any subsequent bookkeeping can
+        // unwind; the deferred guard releases it only after caller unlock.
+        completion.old_epoch = old;
         state.next_instance = instance;
         state.retained_epochs.retain(|old| old.strong_count() != 0);
         state.retained_epochs.push(Arc::downgrade(&epoch));
         drop(state);
-        drop(old);
-        self.inner.changed.notify_waiters();
-        self.inner.maintain();
         Ok(InstalledProvider { epoch })
     }
     pub fn provider(&self, logical_id: &str) -> Result<InstalledProvider, PlatformError> {

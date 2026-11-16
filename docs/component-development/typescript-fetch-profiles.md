@@ -80,6 +80,15 @@ evidence is labelled separately from unchanged constructor/default-global runs.
 
 ## Execution evidence
 
+Evidence below remains bound to its original source and engine products. The
+[active #745 integration ledger](../testing/typescript-runtime-745-qualification.md)
+records a later source-owned AbortSignal change whose signed Fetch programme
+fails at native fan-out refusal. Do not transfer earlier client qualification
+to that changed engine, infer byte-accurate runtime accounting from owner-slot
+ceilings, or infer socket/DNS/TLS authority from a Fetch profile. The selected
+compiler candidate remains `qualification: unknown` / `apiSupport: not-evaluated`
+until separately scoped execution evidence establishes the claimed behavior.
+
 The legacy buffered and published-client programmes retain their own signed
 receipts, source identities and finite limits. The current
 [phase programme](../development/typescript-fetch-phases.md) requires normal

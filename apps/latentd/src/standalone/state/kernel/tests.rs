@@ -279,6 +279,191 @@ async fn missing_checkpoint_on_actual_restart_never_recreates_fresh_evidence_or_
 }
 
 #[tokio::test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "Keep checkpoint startup, restart, and original source identity checks in one scenario"
+)]
+async fn checkpoint_with_matching_source_inventory_survives_restart() {
+    use latent_core::{StateNamespaceId, TenantId};
+    use latent_state::{
+        inbox_scope::{InboxScope, PreparedInboxScope},
+        namespace::{
+            catalog::{NamespaceCatalog, NamespaceMutation, NamespaceOperationContext},
+            NamespaceQuota,
+        },
+    };
+    let mut fixture = Fixture::new();
+    fixture.settings.tenant_quotas =
+        serde_json::from_value(crate::config::state::tests::input()["tenantQuotas"].clone())
+            .unwrap();
+    let (kernel, mut effects) = StateKernel::start(
+        fixture.bootstrap(),
+        &fixture.settings,
+        fixture.authority.clone(),
+        Vec::new(),
+        &AdapterClock::default(),
+        tokio::runtime::Handle::current(),
+    )
+    .await
+    .unwrap();
+    let deadline = fixture.clock.monotonic_now() + Duration::from_secs(20);
+    assert!(effects.shutdown(deadline).await.unwrap().clean);
+    drop(effects);
+    assert!(kernel.shutdown(deadline).await.unwrap().clean);
+    let bootstrap = fixture.bootstrap();
+    let file = std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open(
+            fixture
+                .settings
+                .store
+                .root
+                .join(&fixture.settings.store.file_name),
+        )
+        .unwrap();
+    let engine = EmbeddedStore::open_file(file, fixture.settings.store.engine).unwrap();
+    let namespace = NamespaceCatalog::new()
+        .prepare(
+            &engine,
+            NamespaceOperationContext {
+                tenant: TenantId("a".into()),
+                actor: "operator".into(),
+                operation_id: "create".into(),
+            },
+            &NamespaceMutation::Create {
+                id: StateNamespaceId("orders".into()),
+                state_schema: format!("sha256:{}", "1".repeat(64)),
+                quota: NamespaceQuota::default(),
+            },
+            0,
+        )
+        .unwrap();
+    engine.apply(namespace.batch).unwrap();
+    let source = InboxScope {
+        tenant: "a".into(),
+        namespace: "orders".into(),
+        incarnation: 1,
+        processing_scope: "primary".into(),
+        provider: "private-nats".into(),
+        stream: "orders".into(),
+        stream_created: "2026-01-01T00:00:00Z".into(),
+    };
+    let view = engine.snapshot().unwrap();
+    let source = PreparedInboxScope::prepare(&view, &source)
+        .unwrap()
+        .into_batch();
+    drop(view);
+    engine.apply(source).unwrap();
+    let view = engine.snapshot().unwrap();
+    let custody = super::super::validation::validate_inventory(
+        &view,
+        &fixture.settings.store_identity,
+        &super::super::validation::quotas(&fixture.settings),
+        &bootstrap.original(),
+    )
+    .unwrap()
+    .unwrap();
+    drop(view);
+    drop(engine);
+    // A source inserted without its external custody anchor must never be
+    // silently adopted by an older checkpoint on the ordinary startup path.
+    let legacy = std::fs::read(fixture.checkpoint()).unwrap();
+    let dispatch = fixture.persisted_dispatch();
+    let native = bootstrap.native.clone();
+    assert!(StateKernel::start(
+        bootstrap,
+        &fixture.settings,
+        fixture.authority.clone(),
+        Vec::new(),
+        &AdapterClock::default(),
+        tokio::runtime::Handle::current(),
+    )
+    .await
+    .is_err());
+    let retired = native
+        .drain_async(deadline, tokio::time::sleep_until(deadline.into()))
+        .unwrap()
+        .await;
+    assert!(!retired.clean && retired.snapshot.physically_retired());
+    assert_eq!(std::fs::read(fixture.checkpoint()).unwrap(), legacy);
+    assert_eq!(fixture.persisted_dispatch(), dispatch);
+    let bootstrap = fixture.bootstrap();
+    let checkpoint = ExternalCheckpoint::decode(&legacy)
+        .unwrap()
+        .advance_inbox_custody(custody)
+        .unwrap();
+    std::fs::write(fixture.checkpoint(), checkpoint.encode()).unwrap();
+    let (kernel, mut effects) = StateKernel::start(
+        bootstrap,
+        &fixture.settings,
+        fixture.authority.clone(),
+        Vec::new(),
+        &AdapterClock::default(),
+        tokio::runtime::Handle::current(),
+    )
+    .await
+    .unwrap();
+    let advanced =
+        ExternalCheckpoint::decode(&std::fs::read(fixture.checkpoint()).unwrap()).unwrap();
+    assert_eq!(advanced.inbox_custody(), Some(custody));
+    assert!(advanced.dispatch_owner_epoch() > checkpoint.dispatch_owner_epoch());
+    assert!(effects.shutdown(deadline).await.unwrap().clean);
+    drop(effects);
+    assert!(kernel.shutdown(deadline).await.unwrap().clean);
+}
+
+#[tokio::test]
+async fn checkpoint_source_inventory_mismatch_refuses_restart_before_dispatch() {
+    let fixture = Fixture::new();
+    let (kernel, mut effects) = StateKernel::start(
+        fixture.bootstrap(),
+        &fixture.settings,
+        fixture.authority.clone(),
+        Vec::new(),
+        &AdapterClock::default(),
+        tokio::runtime::Handle::current(),
+    )
+    .await
+    .unwrap();
+    let deadline = fixture.clock.monotonic_now() + Duration::from_secs(20);
+    assert!(effects.shutdown(deadline).await.unwrap().clean);
+    drop(effects);
+    assert!(kernel.shutdown(deadline).await.unwrap().clean);
+    let dispatch = fixture.persisted_dispatch();
+    let record = ExternalCheckpoint::decode(&std::fs::read(fixture.checkpoint()).unwrap())
+        .unwrap()
+        .advance_inbox_custody(latent_state::store_identity::InboxCustodyWatermark {
+            generation: 1,
+            digest: [7; 32],
+        })
+        .unwrap();
+    let saved = record.encode();
+    std::fs::write(fixture.checkpoint(), &saved).unwrap();
+    let bootstrap = fixture.bootstrap();
+    let native = bootstrap.native.clone();
+    let adapter = AdapterClock::default();
+    assert!(StateKernel::start(
+        bootstrap,
+        &fixture.settings,
+        fixture.authority.clone(),
+        Vec::new(),
+        &adapter,
+        tokio::runtime::Handle::current(),
+    )
+    .await
+    .is_err());
+    let retired = native
+        .drain_async(deadline, tokio::time::sleep_until(deadline.into()))
+        .unwrap()
+        .await;
+    assert!(!retired.clean && retired.snapshot.physically_retired());
+    assert_eq!(std::fs::read(fixture.checkpoint()).unwrap(), saved);
+    assert_eq!(fixture.persisted_dispatch(), dispatch);
+    assert!(!adapter.observe().continuity_proven);
+}
+
+#[tokio::test]
 async fn existing_corrupt_checkpoint_is_preserved_and_cannot_publish_a_dispatch_owner() {
     let fixture = Fixture::new();
     let malformed = b"existing operator data is not checkpoint evidence";

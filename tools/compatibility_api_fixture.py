@@ -138,12 +138,12 @@ def library_sources(language: str) -> dict[str, bytes]:
                 b'    let callback: fn() -> i32 = original_api_callback; callback()\n}\n',
         }
     return {
-        'primary/go.mod': b'module outside.example.test/api-primary\n\ngo 1.27.3\n\n'
+        'primary/go.mod': b'module outside.example.test/api-primary\n\ngo 1.27.4\n\n'
             b'require outside.example.test/api-child v1.0.0\n'
             b'replace outside.example.test/api-child => ../child\n',
         'primary/primary.go': b'package primary\nimport child "outside.example.test/api-child"\n'
             b'//go:noinline\nfunc Probe() int32 { return child.Probe() }\n',
-        'child/go.mod': b'module outside.example.test/api-child\n\ngo 1.27.3\n',
+        'child/go.mod': b'module outside.example.test/api-child\n\ngo 1.27.4\n',
         'child/child.go': b'package child\nimport ("errors"; "os"; "syscall")\n'
             b'func originalAPICallback() int32 {\n'
             b'    file, err := os.Open("lsf-api-fixture")\n'

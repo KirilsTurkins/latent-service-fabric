@@ -4,6 +4,49 @@ use latent_state::embedded::RowKey;
 use super::*;
 
 #[test]
+fn effect_history_scan_observes_the_original_checkpoint() {
+    let fixture = Fixture::new();
+    let due = seed(fixture.store(), 'a');
+    let epoch = DispatchCatalog::begin_exclusive_epoch(fixture.store(), time(100), None).unwrap();
+    let claim = DispatchCatalog::claim(fixture.store(), epoch, &due, time(101)).unwrap();
+    DispatchCatalog::complete(
+        fixture.store(),
+        epoch,
+        &claim.attempt,
+        receipt(Disposition::KnownFailed, 102),
+        None,
+        time(102),
+    )
+    .unwrap();
+    let view = fixture.store().snapshot().unwrap();
+    let owner = crate::dispatch_store::codec::OwnerRecord::decode(
+        &view
+            .get(&crate::dispatch_store::codec::OwnerRecord::key())
+            .unwrap()
+            .unwrap(),
+    )
+    .unwrap();
+    let key = effect_row_key(&due.effect).unwrap();
+    let bytes = view.get(&key).unwrap().unwrap();
+    let mut calls = 0;
+    assert_eq!(
+        super::super::validation::validate_effect_with_checkpoint(
+            &view,
+            Some(owner),
+            &key,
+            &bytes,
+            &mut || {
+                calls += 1;
+                Err(StoreError::Unavailable)
+            },
+        ),
+        Err(StoreError::Unavailable)
+    );
+    assert_eq!(calls, 1);
+    DispatchCatalog::validate_view(&view).unwrap();
+}
+
+#[test]
 fn coherent_dispatch_links_validate_claim_send_recovery_and_terminal_payload_retirement() {
     let mut fixture = Fixture::new();
     let due = seed(fixture.store(), 'a');

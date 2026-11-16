@@ -25,6 +25,36 @@ mod quarantine_usage_tests;
 
 const MAX_RETIRED: usize = 8;
 
+// Keep the original provider available until pool notification has finished.
+// If a callback unwinds, retire it after the lifecycle lock is released.
+#[cfg(any(test, feature = "development-outbound"))]
+struct DeferredRetirement(Option<StreamProvider>);
+
+#[cfg(any(test, feature = "development-outbound"))]
+impl DeferredRetirement {
+    fn finish(mut self) {
+        self.retire();
+    }
+
+    fn retire(&mut self) {
+        if let Some(provider) = self.0.take() {
+            if std::thread::panicking() {
+                let _ =
+                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| provider.retire()));
+            } else {
+                provider.retire();
+            }
+        }
+    }
+}
+
+#[cfg(any(test, feature = "development-outbound"))]
+impl Drop for DeferredRetirement {
+    fn drop(&mut self) {
+        self.retire();
+    }
+}
+
 fn sum_quarantined(total: usize, next: usize) -> Result<usize, StreamError> {
     total
         .checked_add(next)
@@ -157,33 +187,38 @@ impl StreamLifecycle {
     }
 
     pub(crate) fn maintenance_step(&self, now: Instant) -> Result<bool, StreamError> {
-        let state = match self.state.try_lock() {
-            Ok(state) => state,
-            Err(std::sync::TryLockError::WouldBlock) => return Ok(false),
-            Err(std::sync::TryLockError::Poisoned(_)) => return Err(unavailable()),
+        // Maintenance can close a connection and wake its waiters. Retain the
+        // bounded original provider generations, but release the lifecycle
+        // lock before driving their callbacks or destroying any owners.
+        let (current, retired, stopped) = {
+            let state = match self.state.try_lock() {
+                Ok(state) => state,
+                Err(std::sync::TryLockError::WouldBlock) => return Ok(false),
+                Err(std::sync::TryLockError::Poisoned(_)) => return Err(unavailable()),
+            };
+            (state.current.clone(), state.retired.clone(), state.stopped)
         };
         #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
-        let protected = state.current.inner.native_bank.is_some()
-            || state
-                .retired
+        let protected = current.inner.native_bank.is_some()
+            || retired
                 .iter()
                 .flatten()
                 .any(|p| p.inner.native_bank.is_some());
         #[cfg(not(all(target_os = "linux", any(test, feature = "development-outbound"))))]
         let protected = false;
-        if state.stopped && !protected {
+        if stopped && !protected {
             return Ok(true); // Original unselected maintenance behavior.
         }
-        state.current.maintenance_step(now);
-        for retired in state.retired.iter().flatten() {
-            retired.maintenance_step(now);
+        current.maintenance_step(now);
+        for provider in retired.iter().flatten() {
+            provider.maintenance_step(now);
         }
-        if state.stopped {
+        if stopped {
             // No renewed authority or forced timeout-success. Unknown physical
             // retirement keeps the original paid driver and quarantine alive.
-            let mut owners = state.current.usage()?.owners;
-            for retired in state.retired.iter().flatten() {
-                owners = owners.saturating_add(retired.usage()?.owners);
+            let mut owners = current.usage()?.owners;
+            for provider in retired.iter().flatten() {
+                owners = owners.saturating_add(provider.usage()?.owners);
             }
             return Ok(owners == 0);
         }
@@ -247,7 +282,7 @@ impl StreamLifecycle {
             expected_epoch,
             new_epoch,
             config,
-            StreamProvider::install_for_qualification,
+            StreamProvider::install_for_rotation,
         )
     }
     #[cfg(test)]
@@ -261,17 +296,24 @@ impl StreamLifecycle {
             expected_epoch,
             new_epoch,
             config,
-            StreamProvider::install_tls_for_accounting_reference,
+            StreamProvider::install_tls_for_rotation_reference,
         )
     }
     #[cfg(any(test, feature = "development-outbound"))]
-    fn rotate_with_installer(
+    pub(crate) fn rotate_with_installer(
         &self,
         expected_epoch: u64,
         new_epoch: u64,
         config: StreamProviderConfig,
-        install: crate::provider::ProviderInstaller,
+        install: crate::provider::DeferredProviderInstaller,
     ) -> Result<ProviderReference, StreamError> {
+        // Keep removed generations alive until the lifecycle lock has been
+        // released, including on a later installation failure.
+        let mut removed: [Option<StreamProvider>; MAX_RETIRED] = std::array::from_fn(|_| None);
+        let mut retirement = DeferredRetirement(None);
+        // Declaration order matters on error/unwind: state drops first, then
+        // deferred pool callbacks run without this lifecycle lock held.
+        let mut completion = self.pools.defer_install();
         let mut state = self.state.lock().map_err(|_| unavailable())?;
         if state.stopped
             || state.current.reference().configuration_epoch() != expected_epoch
@@ -279,12 +321,12 @@ impl StreamLifecycle {
         {
             return Err(unavailable());
         }
-        for retired in &mut state.retired {
+        for (retired, removed) in state.retired.iter_mut().zip(&mut removed) {
             if retired
                 .as_ref()
                 .is_some_and(|p| p.usage().is_ok_and(|u| u.owners == 0))
             {
-                *retired = None;
+                *removed = retired.take();
             }
         }
         let index = state
@@ -298,13 +340,20 @@ impl StreamLifecycle {
             new_epoch,
             expected_epoch,
             config,
+            &mut completion,
         )?;
-        // Installation fenced the old epoch first; abort now wakes accepted
-        // original work and retains physical charges through its final Drop.
-        state.current.retire();
         let retired = std::mem::replace(&mut state.current, replacement);
-        state.retired[index] = Some(retired);
-        Ok(state.current.reference())
+        state.retired[index] = Some(retired.clone());
+        retirement.0 = Some(retired);
+        let reference = state.current.reference();
+        completion.commit();
+        drop(state);
+        drop(removed);
+        completion.finish();
+        // Installation fenced the old epoch first. Wake its accepted work
+        // outside the lifecycle lock; the original physical owners are kept.
+        retirement.finish();
+        Ok(reference)
     }
     pub fn status(&self) -> Result<StreamStatus, StreamError> {
         let state = self.state.try_lock().map_err(crate::snapshot_lock_error)?;
@@ -348,13 +397,17 @@ impl StreamLifecycle {
         })
     }
     pub fn retire(&self) {
-        let mut state = self
-            .state
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        state.stopped = true;
-        state.current.retire();
-        for retired in state.retired.iter().flatten() {
+        let (current, retired) = {
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            state.stopped = true;
+            (state.current.clone(), state.retired.clone())
+        };
+        // Abort can wake arbitrary waiters; no lifecycle lock is held here.
+        current.retire();
+        for retired in retired.iter().flatten() {
             retired.retire();
         }
     }

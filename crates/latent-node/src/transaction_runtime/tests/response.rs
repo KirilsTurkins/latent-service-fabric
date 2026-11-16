@@ -1,5 +1,7 @@
 use super::*;
 
+mod inbox;
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn duplicate_replay_of_corrupt_result_quarantines_protected_store() {
     use latent_state::embedded::{AtomicBatch, RowMutation, StoreError};

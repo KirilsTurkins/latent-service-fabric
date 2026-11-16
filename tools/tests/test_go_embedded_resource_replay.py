@@ -65,7 +65,7 @@ class GoEmbeddedReplay(unittest.TestCase):
         self.assertNotIn('qualify_rust_capsules.py',commands)
         self.assertIn('--record-producer',commands)
         self.assertIn('--producer-receipt',commands)
-        self.assertIn('65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40',commands)
+        self.assertIn('7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840',commands)
         producer_index = next(index for index,step in enumerate(steps) if '--record-producer' in step.get('run',''))
         self.assertLess(producer_index,steps.index(download))
 

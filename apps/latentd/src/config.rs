@@ -26,6 +26,7 @@ mod supply_chain;
 #[cfg(test)]
 mod tests;
 pub(crate) mod topology;
+pub(crate) mod triggers;
 mod validation;
 
 use std::path::{Path, PathBuf};
@@ -65,6 +66,7 @@ pub use state::{
 };
 pub use stream_reload::StreamReloadGuard;
 pub(crate) use supply_chain::SupplyChainSettings;
+pub use triggers::{TriggerCredentialFile, TriggerInstallation};
 
 /// Opaque, mutually compatible node settings produced by [`NodeConfig::derive`].
 /// Configure the input before derivation; callers cannot alter the validated
@@ -94,6 +96,7 @@ pub struct NodeSettings {
     pub(crate) capability_policies: Option<CapabilityPolicyConfig>,
     pub(crate) providers: Option<Box<ConfiguredProviders>>,
     pub(crate) state: Option<state::StateSettings>,
+    pub(crate) transactional_triggers: Option<triggers::TriggerSettings>,
     pub(crate) manifest_profile: latent_manifest::ManifestValidationProfile,
     pub(crate) admission: latent_admission::NodeAdmissionPolicy,
     pub(crate) budget_profile: latent_core::BudgetProfile,

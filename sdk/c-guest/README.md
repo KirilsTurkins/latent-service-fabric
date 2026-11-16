@@ -111,6 +111,14 @@ of the original connection or activation. Concurrent use or close of a busy
 descriptor is refused. Exceptional descriptor sets, descriptor `poll`, nonblocking mode,
 socket option changes, local bind, IPv6 and unsupported message flags are refused;
 `SO_TYPE` is observable and TLS is not supplied by this profile.
+Selected-source `send` accepts `MSG_NOSIGNAL` (using the pinned WASI preview2
+value `0x4000`) with the same write and error behavior as flag zero. The adapter
+does not raise `SIGPIPE`, with or without this flag. The flag does not enable
+signals or other message flags. Other `send` flags and every nonzero `recv` flag
+are refused.
+`SOCK_CLOEXEC` at creation and `F_GETFD`/`F_SETFD` retain the descriptor's
+`FD_CLOEXEC` flag. Other descriptor flags and duplication remain unsupported;
+this profile does not provide process execution or descriptor inheritance.
 `POLLPRI` is never silently ignored. Descriptor-free timer polls retain the
 existing timed runtime. Calls inside prebuilt libc objects are not remapped.
 Selected-source `read`, `write` and `close` route only to this socket table;
@@ -122,7 +130,9 @@ source-level calls. Do not combine it with another descriptor producer until
 the profiles share a coordinated descriptor namespace.
 After a successful send half-close, later sends return `EPIPE` without another
 provider write, while reads remain available; repeated send half-close is local
-and idempotent.
+and idempotent. `SHUT_RD` and `SHUT_RDWR` return `ENOTSUP` without changing
+the descriptor: the v1 provider's `both` operation stops the transport and does
+not preserve previously buffered input for a subsequent read.
 An error after a possible write keeps the descriptor failed; the optional
 `lsf_stream_last_error` reports its original error code, accepted prefix and
 possible-effect bit while the descriptor remains open.

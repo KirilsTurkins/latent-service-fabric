@@ -8,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
 /** Ordinary standard API defaults: no executor injection or activation/shutdown glue. */
 public final class Capsule {
@@ -80,6 +81,23 @@ public final class Capsule {
             require(!completer.isAlive());
         }
     }
+    private static final class CopySource extends CompletableFuture<Integer> {
+        int applyCalls, factoryCalls;
+        @Override public <U> CompletableFuture<U> thenApply(Function<? super Integer, ? extends U> fn) {
+            applyCalls++;
+            throw new IllegalStateException("copy-dispatched-thenApply");
+        }
+        @Override public <U> CompletableFuture<U> newIncompleteFuture() {
+            factoryCalls++;
+            return new CompletableFuture<>();
+        }
+    }
+    private static void copyControls() {
+        CopySource source = new CopySource();
+        CompletableFuture<Integer> copy = source.copy();
+        require(source.applyCalls == 0 && source.factoryCalls == 1 && copy != source && !copy.isDone());
+        require(source.complete(42) && copy.join() == 42);
+    }
     private static final class Gate {
         private boolean entered, released, exited;
         private boolean interrupted;
@@ -130,6 +148,7 @@ public final class Capsule {
         require(any.join().equals(20) || any.join().equals(22));
         left.join(); right.join();
         publicFutureMonitor();
+        copyControls();
         require(first.applyToEither(second, value -> value + 22).join() == 42);
         require(CompletableFuture.allOf().join() == null && !CompletableFuture.anyOf().isDone());
         require(first.thenCompose(value -> CompletableFuture.completedFuture(value + 22)).join() == 42);

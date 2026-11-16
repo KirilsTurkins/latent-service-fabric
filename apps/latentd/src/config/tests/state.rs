@@ -1,6 +1,55 @@
 use super::*;
 use latent_core::BudgetProfile;
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[test]
+fn incoming_configuration_requires_private_leaf_and_refuses_incomplete_installation() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let (directory, mut config) = configured();
+    let path = directory.path().join("incoming.json");
+    let configuration = serde_json::json!({
+        "formatVersion": 1,
+        "endpoint": {"peer":"127.0.0.1:4222","serverName":"localhost","allowNonPublicPeer":true},
+        "publicRoots": true, "extraRoots": [], "bindings": [{
+            "id":"input", "tenant":"a", "principalSubject":"input",
+            "service":"a/service", "contract":"a:service/api@1.0.0", "function":"update",
+            "route":null, "stream":"INPUT", "consumer":"PROCESS", "filterSubject":"input.event",
+            "budget":{"cpuFuel":1000,"memoryBytes":65536,"wallTimeMillis":1000,
+                "childCalls":0,"outboundRequests":0,"blobReadBytes":0,"blobWriteBytes":0,"logBytes":0},
+            "transaction":{"processingScope":"orders", "namespace":"orders", "incarnation":1,
+                "qualification":{"formatVersion":1,"serverVersion":"2.14.6",
+                    "streamCreated":"2026-10-06T00:00:00Z","maximumMessages":10000,
+                    "maximumBytes":67_108_864,"maximumAgeMillis":0,"maximumMessageBytes":16384},
+                "duplicateWindowMillis":30000,"stateReadBytes":4096,"stateWriteBytes":2048,"effectCount":2}
+        }], "maximumPayloadBytes":1024,"operationTimeoutMillis":1000,"pollIntervalMillis":10,
+        "maximumDeliveries":3,"ackWaitMillis":3000,"redeliveryDelayMillis":100
+    });
+    std::fs::write(&path, serde_json::to_vec(&configuration).unwrap()).unwrap();
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o600)).unwrap();
+    config.transactional_triggers = Some(super::super::TriggerInstallation {
+        id: "incoming".into(),
+        epoch: 1,
+        configuration_file: path.clone(),
+        credential_directory: directory.path().to_path_buf(),
+        credentials: vec![super::super::TriggerCredentialFile {
+            tenant: "a".into(),
+            reference: "input".into(),
+            file: "credential".into(),
+            username: None,
+        }],
+    });
+    assert!(super::super::triggers::derive(&config).unwrap().is_some());
+    let Err(failure) = config.derive() else {
+        panic!("incomplete incoming startup was accepted");
+    };
+    assert!(failure
+        .message
+        .contains("transactionalTriggers.scopeCustodyUnavailable"));
+    std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
+    assert!(super::super::triggers::derive(&config).is_err());
+}
+
 fn configured() -> (TempDir, NodeConfig) {
     let (directory, mut config) = config();
     config.state = Some(serde_json::from_value(super::super::state::tests::input()).unwrap());

@@ -5,6 +5,8 @@ use std::path::Path;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ProtectedFilePolicy {
     Secret,
+    /// Require a private leaf in addition to the protected ancestor path.
+    SecretLeaf,
     Integrity,
 }
 
@@ -367,6 +369,11 @@ mod platform {
             return Err(());
         }
         match policy {
+            ProtectedFilePolicy::SecretLeaf => {
+                if mode & 0o077 != 0 {
+                    return Err(());
+                }
+            }
             ProtectedFilePolicy::Secret => {
                 if mode & 0o022 != 0 {
                     return Err(());

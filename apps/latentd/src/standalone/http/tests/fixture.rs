@@ -43,14 +43,19 @@ pub fn config(root: &TempDir) -> Value {
 }
 impl Fixture {
     pub async fn start(root: TempDir, value: Value, component: Option<Vec<u8>>) -> Self {
-        Self::start_with_artifact(root, value, component.map(artifact)).await
+        Box::pin(Self::start_with_artifact(
+            root,
+            value,
+            component.map(artifact),
+        ))
+        .await
     }
     pub async fn start_with_artifact(
         root: TempDir,
         value: Value,
         component: Option<CapsuleArtifact>,
     ) -> Self {
-        Self::start_with_route(root, value, component, None).await
+        Box::pin(Self::start_with_route(root, value, component, None)).await
     }
     pub async fn start_public_application(
         root: TempDir,
@@ -58,7 +63,13 @@ impl Fixture {
         component: Vec<u8>,
         authority: &str,
     ) -> Self {
-        Self::start_with_route(root, value, Some(artifact(component)), Some(authority)).await
+        Box::pin(Self::start_with_route(
+            root,
+            value,
+            Some(artifact(component)),
+            Some(authority),
+        ))
+        .await
     }
     async fn start_with_route(
         root: TempDir,

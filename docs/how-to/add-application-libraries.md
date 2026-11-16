@@ -34,10 +34,9 @@ classpath or package ordering and eligible runtime APIs.
    receipt: direct/transitive inputs, native locks, selected profile/features,
    original and transformed bytes, licenses and executable inputs. Resolution
    preserves the currently accepted lock.
-3. Accept only the exact reviewed candidate. Rust, C, TypeScript, Go and Java use
-   their recipe's `review-lock` operation with the expected digest. The .NET
-   recipe uses an explicit copy of the inspected candidate to the accepted lock
-   path, as shown in its guide. Keep `latent.dependencies.json`,
+3. Accept only the exact reviewed candidate. Each language recipe, including
+   .NET, uses `review-lock` with the expected digest. Follow the selected
+   language guide for the exact command. Keep `latent.dependencies.json`,
    `latent.dependencies.lock.json`, native locks and `dependency-inputs/objects/`
    together. Private repositories and credentials belong in separate resolution
    configuration, never in a public lock or build receipt.
