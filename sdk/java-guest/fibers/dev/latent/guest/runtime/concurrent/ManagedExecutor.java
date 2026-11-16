@@ -83,6 +83,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         boolean acceptedAction = false;
         Item item = null;
         boolean installed = false;
+        boolean fallbackAccepted = false;
         try {
             if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
                 throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
@@ -93,9 +94,21 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
             queue.addLast(item);
             pendingWork++;
             installed = true;
-            if (workers.size() < parallelism && (!cached || queue.size() > workers.size() - running)) startWorker();
+            if (workers.size() < parallelism && (!cached || queue.size() > workers.size() - running)) {
+                if (cached) startWorker();
+                else if (tryStartWorker(false) && workers.isEmpty() && startingWorkers == 0
+                        && !interrupting && !retiring && !queue.isEmpty()) {
+                    // Fixed pools retry once after the first null factory when
+                    // no worker exists, keeping already-admitted queue owners.
+                    fallbackAccepted = true;
+                    tryStartWorker(true);
+                }
+            }
             notifyAll();
         } catch (Throwable error) {
+            // Any fallback startup failure follows queue acceptance. Keep the
+            // exact entry, or its existing physical disposition, owned.
+            if (fallbackAccepted) throw error;
             if (!installed || queue.remove(item)) {
                 if (installed) pendingWork--;
                 if (queued != null) closeQueued(queued);
@@ -125,8 +138,14 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     }
 
     private void startWorker() {
+        if (tryStartWorker(false)) throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
+    }
+
+    // True means this attempted factory returned null; false also covers a
+    // reentrant call whose worker slot was already reserved.
+    private boolean tryStartWorker(boolean fallback) {
         // Callers hold the pool monitor, including reentrant admissions.
-        if (workers.size() >= parallelism - startingWorkers) return;
+        if (workers.size() >= parallelism - startingWorkers) return false;
         startingWorkers++;
         boolean transferred = false;
         Throwable failure = null;
@@ -136,8 +155,11 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
             int addedAt = -1;
             try {
                 thread = factory.newThread(worker::run);
-                if (thread == null || thread.isAlive())
+                if (thread == null) { worker.clear(); return true; }
+                if (thread.isAlive()) {
+                    if (fallback) throw new IllegalThreadStateException();
                     throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
+                }
                 if (Activation.alive(thread)) throw new IllegalThreadStateException();
                 addedAt = workers.size();
                 workers.add(thread);
@@ -163,6 +185,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                 }
                 throw error;
             }
+            return false;
         } catch (Throwable error) {
             failure = error;
             throw error;
@@ -219,7 +242,10 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         } finally {
             synchronized (this) {
                 removeWorker(current);
-                if (!queue.isEmpty() && !interrupting) startWorker();
+                if (!queue.isEmpty() && !interrupting) {
+                    if (cached) startWorker();
+                    else tryStartWorker(false);
+                }
                 settleIfTerminated();
                 notifyAll();
             }
