@@ -135,6 +135,21 @@ __attribute__((export_name("descriptor_controls"))) int descriptor_controls(void
     int socket_type=0;socklen_t socket_type_len=sizeof(socket_type);
     CHECK(__lsf_c_net_getsockopt(current_fd,SOL_SOCKET,SO_TYPE,&socket_type,&socket_type_len)==0);
     CHECK(socket_type==SOCK_STREAM && socket_type_len==sizeof(socket_type));
+    /* Match the native SO_TYPE value-result contract for short buffers. */
+    int expected_type=SOCK_STREAM, calls_before=host_calls;
+    const unsigned char *expected=(const unsigned char *)&expected_type;
+    for(socklen_t requested=0;requested<=sizeof(expected_type)+2;++requested) {
+        unsigned char bytes[sizeof(expected_type)+2];memset(bytes,0xa5,sizeof(bytes));
+        socklen_t actual=requested;lsf_test_errno=ERANGE;
+        CHECK(__lsf_c_net_getsockopt(current_fd,SOL_SOCKET,SO_TYPE,bytes,&actual)==0);
+        CHECK(actual==(requested<sizeof(expected_type)?requested:sizeof(expected_type)));
+        CHECK(lsf_test_errno==ERANGE);
+        for(size_t i=0;i<sizeof(bytes);++i) CHECK(bytes[i]==(i<actual?expected[i]:0xa5));
+    }
+    socklen_t zero=0,one=1;
+    CHECK(__lsf_c_net_getsockopt(current_fd,SOL_SOCKET,SO_TYPE,NULL,&zero)==0 && zero==0);
+    CHECK(__lsf_c_net_getsockopt(current_fd,SOL_SOCKET,SO_TYPE,NULL,&one)==-1 && lsf_test_errno==EINVAL && one==1);
+    CHECK(host_calls==calls_before);
     CHECK(__lsf_c_net_fcntl(current_fd,F_GETFL)==O_RDWR);
     CHECK(__lsf_c_net_fcntl(current_fd,F_SETFL,O_NONBLOCK)==-1 && lsf_test_errno==ENOTSUP);
     CHECK(__lsf_c_net_setsockopt(current_fd,SOL_SOCKET,SO_TYPE,&socket_type,sizeof(socket_type))==-1 && lsf_test_errno==ENOTSUP);

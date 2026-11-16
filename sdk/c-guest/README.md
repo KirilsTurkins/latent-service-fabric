@@ -133,7 +133,8 @@ provider's timeout result does not distinguish observation expiry from expiry
 of the original connection or activation. Concurrent use or close of a busy
 descriptor is refused. Exceptional descriptor sets, descriptor `poll`, nonblocking mode,
 socket option changes, local bind, IPv6 and unsupported message flags are refused;
-`SO_TYPE` is observable and TLS is not supplied by this profile.
+`SO_TYPE` is observable, with output truncated to the supplied buffer length,
+and TLS is not supplied by this profile.
 Selected-source `send` accepts `MSG_NOSIGNAL` (using the pinned WASI preview2
 value `0x4000`) with the same write and error behavior as flag zero. The adapter
 does not raise `SIGPIPE`, with or without this flag. The flag does not enable
