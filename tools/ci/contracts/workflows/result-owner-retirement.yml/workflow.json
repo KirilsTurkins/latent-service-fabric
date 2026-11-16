@@ -17,6 +17,16 @@
 "crates/latent-http/src/tests/protocol.rs",
 "crates/latent-capabilities/src/broker/pools.rs",
 "crates/latent-capabilities/src/broker/pools/**",
+"crates/latent-capabilities/src/broker/network.rs",
+"crates/latent-capabilities/src/broker/session.rs",
+"crates/latent-capabilities/src/broker/session/**",
+"crates/latent-capabilities/src/broker/tests/fixture.rs",
+"crates/latent-core/src/budget.rs",
+"crates/latent-core/src/budget/**",
+"crates/latent-streams/src/connection.rs",
+"crates/latent-manifest/tests/fixtures/valid-capsule-v1alpha1.json",
+"tools/stream_scope_retirement_witness.py",
+"tools/stream_scope_retirement_witness.rs",
 "Cargo.lock",
 "rust-toolchain.toml",
 "crates/latent-blobs/src/s3/provider/handles.rs",
@@ -29,7 +39,8 @@
 },
 "push":{
 "branches":[
-"feat/result-box-retirement-20261023"
+"feat/result-box-retirement-20261023",
+"development"
 ],
 "paths":[
 "crates/vendor/bytes/**",
@@ -40,6 +51,16 @@
 "crates/latent-http/src/tests/protocol.rs",
 "crates/latent-capabilities/src/broker/pools.rs",
 "crates/latent-capabilities/src/broker/pools/**",
+"crates/latent-capabilities/src/broker/network.rs",
+"crates/latent-capabilities/src/broker/session.rs",
+"crates/latent-capabilities/src/broker/session/**",
+"crates/latent-capabilities/src/broker/tests/fixture.rs",
+"crates/latent-core/src/budget.rs",
+"crates/latent-core/src/budget/**",
+"crates/latent-streams/src/connection.rs",
+"crates/latent-manifest/tests/fixtures/valid-capsule-v1alpha1.json",
+"tools/stream_scope_retirement_witness.py",
+"tools/stream_scope_retirement_witness.rs",
 "Cargo.lock",
 "rust-toolchain.toml",
 "crates/latent-blobs/src/s3/provider/handles.rs",
@@ -58,9 +79,10 @@
 },
 "requiredJobs":[
 "physical-owner",
-"protocol-page-owner"
+"protocol-page-owner",
+"stream-scope-owner"
 ],
-"reviewReason":"Add the original-pool protocol page physical-retirement witness without removing the existing result owner control.",
+"reviewReason":"Keep physical page and result owner checks while adding the actual stream scope allocator control on pull requests and development.",
 "schemaVersion":"latent.ci.contracts.v1",
 "workflow":".github/workflows/result-owner-retirement.yml"
 }

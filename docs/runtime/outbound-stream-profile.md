@@ -171,9 +171,12 @@ its Arc. On the pinned Linux x86-64 build this adds 232 bytes including
 bookkeeping; the last private handle moves the scope and its charge out only
 after the Arc backing is freed. Tight budgets can refuse earlier. The legacy
 raw-Arc kernel-ownership API remains available and does not gain this private
-handle's lifetime guarantee. The actual scope allocation has not yet been
-observed by a dedicated allocator witness. During an ordinary failed dial, the
-socket value is destroyed before its original connection reservation. A second
+handle's lifetime guarantee. A standalone allocator witness observes the
+actual 168-byte private Arc on this build while its original 232-byte activation
+charge remains held through deallocation, including concurrent final clones and
+caller unwind. Its legacy Weak control confirms that the raw Arc can outlive
+its scope charge. During an ordinary failed dial, the socket value is destroyed
+before its original connection reservation. A second
 destructor panic during an existing unwind can abort the process; these controls
 do not establish recovery from that case.
 
