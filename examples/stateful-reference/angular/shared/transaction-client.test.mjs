@@ -214,6 +214,31 @@ test('business rejection recovery does not refresh expected revision or retry a 
   assert.equal(calls, 2);
 });
 
+test('a proven abort can be explicitly finished without retry', async () => {
+  const app = client(async () => response('aborted'));
+  app.prepare('demo', '0', 3);
+  await app.submit();
+  assert.equal(app.canFinishOriginal(), true);
+  app.finishOriginal();
+  assert.equal(app.status, 'idle');
+  assert.equal(app.pending, undefined);
+  app.prepare('demo', '0', 4);
+});
+
+test('an abort without its original fence cannot be finished or retried', async () => {
+  const app = client(async () => {
+    const value = await response('aborted').json();
+    value['abort-fence'] = null;
+    return new Response(JSON.stringify(value), {status: 409});
+  });
+  const original = app.prepare('demo', '0', 3);
+  await app.submit();
+  assert.equal(app.canFinishOriginal(), false);
+  assert.throws(() => app.finishOriginal(), /original-command-not-terminal/);
+  await assert.rejects(app.retryAborted(), /affirmative-original-abort-proof-required/);
+  assert.equal(app.pending.key, original);
+});
+
 test('explicit technical-abort retry retains the original command and fences further retry after an uncertain response', async () => {
   const requests = [];
   const app = client(async (url, options) => {

@@ -290,16 +290,26 @@ export class DraftClient {
       throw new Error('invalid-effect-status');
     return {effectId, disposition: effect['disposition'], dispatchAttempt: effect['dispatch-attempt']};
   }
-  async retryAborted(): Promise<Reply> {
+  private abortProof(): Record<string, unknown> {
     if (!this.pending || this.status !== 'aborted' || this.last?.disposition !== 'aborted' || !this.last['abort-fence']) throw new Error('affirmative-original-abort-proof-required');
     const proof = this.last['abort-fence'];
     if (!record(proof) || Object.keys(proof).sort().join(',') !== 'attempt-id,command-id,owner-fence,transaction-id' ||
         proof['command-id'] !== this.last['command-id'] || proof['attempt-id'] !== this.last['attempt-id'] ||
         typeof proof['transaction-id'] !== 'string' || !/^[0-9a-f]{64}$/.test(proof['transaction-id']) || unbase64(proof['owner-fence']).length !== 32)
       throw new Error('foreign-abort-proof');
+    return proof;
+  }
+  canFinishOriginal(): boolean {
+    if (!this.last) return false;
+    if (['committed', 'rejected'].includes(this.last.disposition)) return true;
+    try { this.abortProof(); return true; } catch { return false; }
+  }
+  async retryAborted(): Promise<Reply> {
+    const proof = this.abortProof();
     const encoded = btoa(String.fromCharCode(...encoder.encode(JSON.stringify(proof))));
     const retryKey = globalThis.crypto.randomUUID();
     const original = this.pending;
+    if (!original) throw new Error('no-original-command');
     this.status = 'pending';
     try {
       return this.applyCommand(await this.request(this.routes.command, {method: 'POST', body: original.body,
@@ -308,7 +318,7 @@ export class DraftClient {
     } catch (error) { if (this.pending === original && this.status !== 'permission-denied' && !['committed', 'rejected'].includes(this.status)) this.status = 'uncertain'; throw error; }
   }
   finishOriginal(): void {
-    if (!this.last || !['committed', 'rejected'].includes(this.last.disposition)) throw new Error('original-command-not-terminal');
+    if (!this.canFinishOriginal()) throw new Error('original-command-not-terminal');
     this.pending = undefined; this.last = undefined; this.status = 'idle';
   }
 }

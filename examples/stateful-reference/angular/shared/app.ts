@@ -71,7 +71,7 @@ export class App {
       this.client.view = this.page.draft;
     }
   }
-  terminal() { return this.status() === 'committed' || this.status() === 'rejected'; }
+  terminal() { return this.client?.canFinishOriginal() ?? false; }
   chooseUnits(event: Event) {
     const value = Number((event.target as HTMLInputElement).value);
     if (Number.isInteger(value) && value >= 0 && value <= 10000) this.chosenUnits.set(value);
