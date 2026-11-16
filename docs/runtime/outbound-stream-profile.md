@@ -165,10 +165,17 @@ prepays its actual chunk Arc: 264 bytes including bookkeeping, within the existi
 512-byte node metadata window and in addition to the unchanged 16 KiB connection
 allowance. These original-activation reservations precede allocation and may
 cause earlier refusal under a tight budget. Broader read and lowering-copy
-lifecycle qualification remains open. The existing scope Arc is allocated
-before the connection reservation and its full physical lifetime remains
-unqualified. A second destructor panic during an existing unwind can abort the
-process; these controls do not establish recovery from that case.
+lifecycle qualification remains open. The production connection path now
+prepays a private shared scope from its original activation before allocating
+its Arc. On the pinned Linux x86-64 build this adds 232 bytes including
+bookkeeping; the last private handle moves the scope and its charge out only
+after the Arc backing is freed. Tight budgets can refuse earlier. The legacy
+raw-Arc kernel-ownership API remains available and does not gain this private
+handle's lifetime guarantee. The actual scope allocation has not yet been
+observed by a dedicated allocator witness. During an ordinary failed dial, the
+socket value is destroyed before its original connection reservation. A second
+destructor panic during an existing unwind can abort the process; these controls
+do not establish recovery from that case.
 
 #736 readiness records park only the calling logical thread with sealed Store
 generation; siblings/nested calls may progress. No mutable Store borrow spans

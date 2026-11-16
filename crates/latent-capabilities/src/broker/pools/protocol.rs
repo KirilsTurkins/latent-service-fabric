@@ -2,7 +2,11 @@
 use super::{
     Arc, Charge, Kind, PlatformError, PoolAdmission, PoolCall, ProviderClient, ProviderPools,
 };
-use crate::broker::{io::IoLease, network::StreamScope, session::SessionCoreOwner};
+use crate::broker::{
+    io::IoLease,
+    network::{SharedStreamScope, StreamScope},
+    session::SessionCoreOwner,
+};
 use sha2::{Digest, Sha256};
 
 /// Retain after the actual protocol objects it accounts for. Dropping a waiter
@@ -107,6 +111,11 @@ impl ProviderPools {
 /// not a kernel identity, retirement certificate or provider-install permission.
 /// There is no constructor from strings, scope words, serialized claims or an
 /// arbitrary HostMemoryReservation. Keep it after the actual kernel handle.
+enum StreamKernelScope {
+    Legacy { _scope: Arc<StreamScope> },
+    Shared { _scope: SharedStreamScope },
+}
+
 pub struct StreamKernelOwnership {
     binding: [u64; 8],
     deadline: std::time::Instant,
@@ -114,7 +123,7 @@ pub struct StreamKernelOwnership {
     // Rust drops fields in declaration order: actual memory/accounting owners
     // precede scope/request release and the final original I/O quiescence owner.
     memory: latent_core::budget::HostMemoryReservation,
-    _scope: Arc<StreamScope>,
+    _scope: StreamKernelScope,
     _request: super::admission::RequestOwner,
     io: IoLease,
 }
@@ -158,6 +167,37 @@ impl PoolCall {
     pub fn reserve_stream_kernel_ownership(
         &self,
         scope: &Arc<StreamScope>,
+        bytes: u64,
+    ) -> Result<StreamKernelOwnership, PlatformError> {
+        self.reserve_stream_kernel_ownership_inner(
+            scope,
+            StreamKernelScope::Legacy {
+                _scope: Arc::clone(scope),
+            },
+            bytes,
+        )
+    }
+
+    /// Retain a prepaid private shared scope for the production stream path.
+    #[doc(hidden)]
+    pub fn reserve_shared_stream_kernel_ownership(
+        &self,
+        scope: &SharedStreamScope,
+        bytes: u64,
+    ) -> Result<StreamKernelOwnership, PlatformError> {
+        self.reserve_stream_kernel_ownership_inner(
+            scope,
+            StreamKernelScope::Shared {
+                _scope: scope.clone(),
+            },
+            bytes,
+        )
+    }
+
+    fn reserve_stream_kernel_ownership_inner(
+        &self,
+        scope: &StreamScope,
+        retained_scope: StreamKernelScope,
         bytes: u64,
     ) -> Result<StreamKernelOwnership, PlatformError> {
         self.io.checkpoint()?;
@@ -229,7 +269,7 @@ impl PoolCall {
             deadline: self.io.deadline(),
             bytes,
             memory,
-            _scope: Arc::clone(scope),
+            _scope: retained_scope,
             _request: self.retain_stream_request(),
             io: self.io.lease(),
         })

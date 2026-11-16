@@ -37,6 +37,45 @@ async fn actual_stream_socket_and_connection_layouts_are_prepaid() {
     fixture.clean().await;
 }
 
+#[tokio::test]
+async fn failed_dial_socket_drops_before_original_connection_reservation() {
+    // Keep the port bound without listening, so the refusal cannot race a
+    // different test reusing a just-closed ephemeral listener.
+    let unlistening = tokio::net::TcpSocket::new_v4().unwrap();
+    unlistening.bind("127.0.0.1:0".parse().unwrap()).unwrap();
+    let port = unlistening.local_addr().unwrap().port();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = port;
+    let fixture = Fixture::new(configuration.clone());
+    let (session, control) = fixture.session(5000);
+    let session = Arc::new(session);
+    let observer = session.observer();
+    let pools = Arc::clone(&fixture.pools);
+    let (sent, received) = std::sync::mpsc::sync_channel(1);
+    crate::connection::observe_socket_drop(
+        &session,
+        Box::new(move || {
+            sent.send((pools.snapshot().unwrap().connections, observer.live_calls()))
+                .unwrap();
+        }),
+    );
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let result = fixture.provider.start(&session, request).unwrap().await;
+    crate::connection::clear_socket_drop_observer();
+    assert!(result.is_err());
+    let (connections, live_calls) = received.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert_eq!(connections, 1);
+    assert!(live_calls > 0);
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
+    drop((result, session, unlistening));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
 struct ReentrantWake {
     lifecycle: Arc<StreamLifecycle>,
     stopped_without_lock: AtomicBool,
