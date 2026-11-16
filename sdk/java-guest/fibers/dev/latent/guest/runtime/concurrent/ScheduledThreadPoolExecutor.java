@@ -542,11 +542,13 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         return add(command, null, Objects.requireNonNull(unit).toNanos(delay), 0);
     }
     @Override public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
+        Objects.requireNonNull(command);
         Objects.requireNonNull(unit);
         if (period <= 0) throw new IllegalArgumentException();
         return add(new RunnableCall<>(command, null), command, unit.toNanos(initialDelay), unit.toNanos(period));
     }
     @Override public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+        Objects.requireNonNull(command);
         Objects.requireNonNull(unit);
         if (delay <= 0) throw new IllegalArgumentException();
         return add(new RunnableCall<>(command, null), command, unit.toNanos(initialDelay), -unit.toNanos(delay));

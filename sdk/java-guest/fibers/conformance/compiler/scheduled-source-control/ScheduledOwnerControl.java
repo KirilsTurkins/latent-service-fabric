@@ -391,7 +391,23 @@ public final class ScheduledOwnerControl {
             } finally { finish(pool); }
         }
     }
+    private static void periodicValidationBeforeAdmission() throws Exception {
+        var pool = new ScheduledThreadPoolExecutor(1);
+        int queued = Activation.admissions(LatentRuntimeActivationOwnerKind.QueuedWork);
+        int results = Activation.admissions(LatentRuntimeActivationOwnerKind.Result);
+        ScheduledPeriodicValidationReferenceControl.check(pool);
+        require(Activation.admissions(LatentRuntimeActivationOwnerKind.QueuedWork) == queued
+            && Activation.admissions(LatentRuntimeActivationOwnerKind.Result) == results
+            && !pool.hasPendingWork() && workers(pool).isEmpty());
+        pool.shutdown();
+        ScheduledPeriodicValidationReferenceControl.check(pool);
+        require(Activation.admissions(LatentRuntimeActivationOwnerKind.QueuedWork) == queued
+            && Activation.admissions(LatentRuntimeActivationOwnerKind.Result) == results
+            && pool.awaitTermination(5, TimeUnit.SECONDS));
+        Activation.idle();
+    }
     public static void main(String[] arguments) throws Exception {
+        periodicValidationBeforeAdmission();
         ScheduledThreadPoolExecutor pool = new ScheduledThreadPoolExecutor(1);
         for (String denied : new String[]{"QueuedWork", "Result"}) {
             Activation.denyNext = denied;
