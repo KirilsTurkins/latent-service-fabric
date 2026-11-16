@@ -10,9 +10,10 @@ for executable tools, then build offline from its captured output and provenance
 
 ## Captured CMake feature probes
 
-For a separate CMake configuration step, the selected C SDK can prepare the
-numeric IPv4 resolver as a link probe. This uses the project's verified SDK
-snapshot and pinned compiler inside the existing Linux compiler sandbox:
+For a separate CMake configuration step, the selected C stream SDK can prepare
+link probes for its numeric IPv4 resolver and blocking IPv4 stream socket. This
+uses the project's verified SDK snapshot and pinned compiler inside the existing
+Linux compiler sandbox:
 
 ```bash
 python3 tools/c_capsule.py feature-probes "$LSF_C_PROJECT" --output "$LSF_FEATURE_KIT"
@@ -38,8 +39,12 @@ Zig executable, and `LSF_PYTHON` is the SDK's Python executable:
 ```
 
 The fixed SDK loader checks the reviewed receipt, current captured project,
-resolver source and complete Zig distribution before adding the probe object.
-It does not execute a generated CMake include. Configure inside a read-only
+resolver and socket sources, generated network bindings, and complete Zig
+distribution. It adds the resolver object and the captured stream source to the
+link checks. A declaration-only alias makes a socket check link the real SDK
+implementation; it does not fabricate a successful socket operation. The stream
+source is compiled by the configure stage under its sandbox for each link check.
+The loader does not execute a generated CMake include. Configure inside a read-only
 isolated environment for the project, kit and compiler, with network denied,
 and recheck the inputs before accepting its output. Outside that environment,
 another process could replace the object after verification and before a link.
@@ -48,10 +53,17 @@ authenticated SDK installation. Paths containing quotes, semicolons, dollar
 signs, backticks, control characters or POSIX backslashes are refused. Spaces
 are supported when passed as individual arguments.
 
-An older verified capture without the resolver produces a kit with no probe
-object; its feature checks do not acquire the API from the SDK. Detection indicates a numeric-only
-`getaddrinfo` implementation, not DNS, nonblocking sockets, or an endpoint
-grant. The kit does not run CMake or alter the project. Adopt configuration
+An older verified capture without the resolver produces no resolver probe object;
+it can still detect the stream socket if that captured profile includes its
+source and header. Resolver detection means numeric-only `getaddrinfo`; socket
+detection means the bounded blocking IPv4 stream subset, with unsupported calls
+still returning their actual errors. Neither provides DNS, nonblocking sockets,
+an endpoint grant, or proof that a complete client is supported. Dependency
+configuration must also disable features outside the selected runtime profile;
+for example, curl 8.23.0 defaults to IPv6 and a threaded resolver even when
+only this IPv4/numeric subset is selected. Configure it with
+`-DENABLE_IPV6=OFF -DENABLE_THREADED_RESOLVER=OFF` until those broader paths
+are qualified. The kit does not run CMake or alter the project. Adopt configuration
 outputs through the existing approved generator and dependency-review flow;
 the kit receipt alone does not authenticate the external configure process or
 qualify an HTTP client. The approved stage must make the captured project, kit,
