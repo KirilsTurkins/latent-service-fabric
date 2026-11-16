@@ -363,12 +363,16 @@ mutation or repeats a side effect.
 
 `SIGUSR2` explicitly retires/drains streams under the existing 30-second
 deadline. A retained owner remains charged and visible; a timeout is not a
-refund. Drain permanently stops this stream manager, so fresh work requires a
-normal node restart. `SIGINT` and `SIGTERM` retain their original shutdown path
-and interrupt a pending control operation. Restart uses the protected file's
-current generation and actual startup provider descriptors; previous status
-lines are historical evidence, not confirmation of the new process's catalog.
-Ordinary default builds allocate no reload owner and register no stream signals.
+refund. A zero registered-owner count is reported as `retirement-unconfirmed`:
+an already admitted connection can still be opening before it is registered,
+so this snapshot does not establish physical retirement. A nonzero count is
+reported as `retained-owners-not-refunded`. Drain permanently stops this stream
+manager, so fresh work requires a normal node restart. `SIGINT` and `SIGTERM`
+retain their original shutdown path and interrupt a pending control operation.
+Restart uses the protected file's current generation and actual startup
+provider descriptors; previous status lines are historical evidence, not
+confirmation of the new process's catalog. Ordinary default builds allocate no
+reload owner and register no stream signals.
 
 The [source-bound packaging observation](../testing/evidence/stream-operator-packaging-2026-10-23.json)
 records the actual Linux and Windows frozen frontend checks on source
