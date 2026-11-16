@@ -24,6 +24,15 @@ function response(disposition, {error, revision = '1', units = 3} = {}) {
 }
 function client(fetcher) { return new DraftClient(routes, {origin: 'https://node.example', fetcher}); }
 
+test('unavailable query is reported without discarding the original command', async () => {
+  const app = client(async () => new Response(JSON.stringify({profile: 'transaction-http-v1',
+    disposition: 'query', representation: 'receipt-only', result: null}), {status: 503}));
+  const key = app.prepare('demo', '0', 3);
+  await assert.rejects(app.query('demo'), /query-unavailable/);
+  assert.equal(app.pending.key, key);
+  assert.equal(app.status, 'prepared');
+});
+
 test('uncertain delivery retains the original body, precondition and key and only recovery is sent', async () => {
   const requests = [];
   const app = client(async (url, options) => {

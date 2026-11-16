@@ -240,8 +240,12 @@ export class DraftClient {
     boundedId(draftId);
     const input = encoder.encode(JSON.stringify([draftId]));
     const query = btoa(String.fromCharCode(...input)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    return this.apply(await this.request(this.routes.query + '?input=' + query, {method: 'GET',
-      headers: this.minimumView ? {'if-state-view': this.minimumView} : {}}), draftId);
+    const reply = await this.request(this.routes.query + '?input=' + query, {method: 'GET',
+      headers: this.minimumView ? {'if-state-view': this.minimumView} : {}});
+    // A receipt-only failure is not a fresh draft. Keep any original command
+    // for recovery and make the unavailable read visible to the application.
+    if (reply.envelope.disposition !== 'query' || !reply.envelope.result) throw new Error('query-unavailable');
+    return this.apply(reply, draftId);
   }
   async retryAborted(): Promise<Reply> {
     if (!this.pending || this.status !== 'aborted' || this.last?.disposition !== 'aborted' || !this.last['abort-fence']) throw new Error('affirmative-original-abort-proof-required');

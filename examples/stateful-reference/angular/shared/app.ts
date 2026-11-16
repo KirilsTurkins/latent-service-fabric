@@ -88,7 +88,9 @@ export class App {
       this.status.set(this.client.status);
       if (this.client.status === 'permission-denied') {
         this.draft.set(undefined); this.message.set('Current access was refused.');
-      } else this.message.set('The response is unavailable. Recover the original command before another edit.');
+      } else this.message.set(this.client.pending
+        ? 'The response is unavailable. Recover the original command before another edit.'
+        : 'The current draft could not be read.');
     } finally {
       this.originalRetained.set(this.client.pending !== undefined); this.busy.set(false);
     }
