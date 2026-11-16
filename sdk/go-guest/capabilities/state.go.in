@@ -87,5 +87,5 @@ func (p *Page) Next() wit.Result[wit.Option[Entry], StateError] {
 	return raw.PageNext(v)
 }
 func (p *Page) Close() {
-	p.owner.Close(func(v *raw.Page) { defer p.parent.pages.Add(^uint32(0)); v.Drop() })
+	p.owner.Close(func(v *raw.Page) { v.Drop(); p.parent.pages.Add(^uint32(0)) })
 }
