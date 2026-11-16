@@ -40,6 +40,16 @@ public final class CompletableFutureOwnerControl {
         AtomicReference<Throwable> threadFailure = new AtomicReference<>();
         Thread.setDefaultUncaughtExceptionHandler((thread, error) -> threadFailure.compareAndSet(null, error));
         owners(0, 0);
+        CompletableFuture<Integer> copyInput = new CompletableFuture<>();
+        CompletableFuture<Integer> abandonedCopy = copyInput.copy();
+        owners(1, 1); require(copyInput.getNumberOfDependents() == 1);
+        require(abandonedCopy.cancel(false)); owners(0, 0);
+        require(copyInput.getNumberOfDependents() == 0);
+        require(copyInput.complete(42)); owners(0, 0);
+        CompletableFuture<Integer> readyInput = new CompletableFuture<>();
+        CompletableFuture<Integer> readyCopy = readyInput.copy();
+        owners(1, 1);
+        require(readyInput.complete(42) && readyCopy.join() == 42); owners(0, 0);
         Queue queue = new Queue();
         AtomicInteger calls = new AtomicInteger();
         require(dev.latent.guest.runtime.concurrent.Executors.pools() == 0);

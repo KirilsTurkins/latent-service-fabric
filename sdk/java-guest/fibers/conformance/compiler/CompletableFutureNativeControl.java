@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
 /** Same standard-API observables run against the reference JDK and SDK source port. */
 public final class CompletableFutureNativeControl {
@@ -18,6 +19,45 @@ public final class CompletableFutureNativeControl {
         final ArrayDeque<Runnable> work = new ArrayDeque<>();
         @Override public void execute(Runnable command) { work.add(command); }
         void run() { work.removeFirst().run(); }
+    }
+    private static final class CopySource extends CompletableFuture<Integer> {
+        int applyCalls, factoryCalls;
+        @Override public <U> CompletableFuture<U> thenApply(Function<? super Integer, ? extends U> fn) {
+            applyCalls++;
+            throw new AssertionError("copy-dispatched-thenApply");
+        }
+        @Override public <U> CompletableFuture<U> newIncompleteFuture() {
+            factoryCalls++;
+            return new CompletableFuture<>();
+        }
+    }
+    private static void copyControls(IllegalArgumentException cause) throws Exception {
+        CopySource pending = new CopySource();
+        CompletableFuture<Integer> copy = pending.copy();
+        require(pending.applyCalls == 0 && pending.factoryCalls == 1);
+        require(copy != pending && !copy.isDone());
+        require(pending.complete(42) && copy.join() == 42);
+
+        CopySource independent = new CopySource();
+        CompletableFuture<Integer> completedCopy = independent.copy();
+        require(completedCopy.complete(7) && !independent.isDone());
+        require(independent.complete(42) && completedCopy.join() == 7);
+
+        CopySource ready = new CopySource();
+        require(ready.complete(41));
+        require(ready.copy().join() == 41 && ready.applyCalls == 0 && ready.factoryCalls == 1);
+
+        CopySource failedSource = new CopySource();
+        require(failedSource.completeExceptionally(cause));
+        failed(failedSource.copy(), cause);
+        require(failedSource.applyCalls == 0 && failedSource.factoryCalls == 1);
+
+        CopySource cancelled = new CopySource();
+        require(cancelled.cancel(false));
+        CompletableFuture<Integer> cancelledCopy = cancelled.copy();
+        require(!cancelledCopy.isCancelled() && cancelledCopy.isCompletedExceptionally());
+        try { cancelledCopy.join(); throw new AssertionError("cancelled-copy-succeeded"); }
+        catch (CompletionException error) { require(error.getCause() instanceof java.util.concurrent.CancellationException); }
     }
     private static void await(CountDownLatch latch) {
         try { if (!latch.await(3, TimeUnit.SECONDS)) throw new AssertionError("source-control-watchdog"); }
@@ -140,6 +180,8 @@ public final class CompletableFutureNativeControl {
         CompletableFuture<Integer> queuedRecovery = right.exceptionallyAsync(error -> 0, queue);
         require(!queuedRecovery.isDone() && queue.work.size() == 1);
         queue.run(); require(queuedRecovery.join() == 41);
+
+        copyControls(cause);
 
         ThreadLocal<String> local = new ThreadLocal<>(); local.set("root");
         require(CompletableFuture.supplyAsync(() -> Thread.currentThread() != original && local.get() == null).get());

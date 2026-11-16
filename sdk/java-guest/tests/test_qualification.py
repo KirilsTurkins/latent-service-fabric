@@ -701,8 +701,8 @@ class CompletableSourceIntegrity(unittest.TestCase):
 
     @staticmethod
     def complete_receipts():
-        native = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=82"
-        owners = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=419;raceRounds=32"
+        native = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=96"
+        owners = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=429;raceRounds=32"
         scenarios = [
             ("supply-queued-rejection", True, 1, False, 1, "future-not-returned"),
             ("supply-queued-generic-throw", True, 1, False, 1, "future-not-returned"),
@@ -785,7 +785,7 @@ class CompletableSourceIntegrity(unittest.TestCase):
             } | {"fibers/dev/latent/guest/runtime/concurrent/" + name + ".java"
                  for name in ("CompletableFuture", "CompletionStage", "CompletionException")})
             self.assertEqual((report["referenceObservables"], report["sourceOwnershipObservables"], report["raceRounds"]),
-                             (82, 419, 32))
+                             (96, 429, 32))
             self.assertFalse(report["componentExecutionPerformed"])
             self.assertFalse(report["actualGuestBindingsUsed"])
             self.assertEqual(report["futureMonitor"], "JDK-and-SDK-source-controls-passed")
