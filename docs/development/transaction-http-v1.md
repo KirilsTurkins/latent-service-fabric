@@ -72,6 +72,14 @@ parameters, body, write precondition or minimum-view token. The runtime performs
 an explicit finite authorized lookup; it does not run the original mutating guest
 or mint application/management authority from knowledge of a command ID.
 
+The same result route accepts one optional `Effect-Id` header containing the
+lowercase 64-character identity returned for that original command. This selects
+an authorized effect inspection rather than a command receipt. The existing
+`inspect-effect` policy and exact command/effect association are rechecked; the
+identifier alone grants nothing. The no-store response identifies the effect,
+its bounded disposition and dispatch attempt, without provider receipts or
+private failure details. Provider acknowledgement is not consumer processing.
+
 A retry after a proven abort is explicit. The original `Idempotency-Key` remains
 unchanged, and the request supplies both `Command-Retry-Key` (a separate bounded
 retry request identity) and `Command-Abort-Fence`. The latter is canonical padded
