@@ -215,9 +215,10 @@ export class DraftClient {
       return {status: response.status, envelope: envelope(text ? lossless(text) : undefined)};
     } finally { clearTimeout(timer); }
   }
-  private apply(reply: FetchReply, requestedDraft: string): Reply {
+  private apply(reply: FetchReply, requestedDraft: string, query = false): Reply {
     const {status, envelope: response} = reply;
-    if (response.disposition === 'effect') throw new Error('unexpected-effect-response');
+    if (response.disposition === 'effect' || (response.disposition === 'query') !== query)
+      throw new Error('unexpected-transaction-response');
     const allowedStatus: Record<Exclude<Disposition, 'effect'>, number[]> = {
       query: [200, 422], 'in-progress': [202], 'recovery-required': [503],
       committed: [200], rejected: [422], aborted: [409],
@@ -261,7 +262,7 @@ export class DraftClient {
     // for recovery and make the unavailable read visible to the application.
     if (reply.envelope.disposition !== 'query' || !reply.envelope.result ||
         (reply.status !== 200 && reply.status !== 422)) throw new Error('query-unavailable');
-    return this.apply(reply, draftId);
+    return this.apply(reply, draftId, true);
   }
   async effectStatus(effectId: string): Promise<EffectStatus> {
     if (!this.pending || !/^[0-9a-f]{64}$/.test(effectId) || !this.last?.['effect-ids']?.includes(effectId))

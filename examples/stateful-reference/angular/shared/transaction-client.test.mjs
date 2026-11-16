@@ -104,6 +104,15 @@ test('effect status uses the original command and accepts only its bounded effec
   await assert.rejects(app.effectStatus(id), /invalid-effect-status/);
 });
 
+test('a query response cannot stand in for a command disposition', async () => {
+  const app = client(async () => response('query'));
+  const original = app.prepare('demo', '0', 3);
+  await assert.rejects(app.submit(), /unexpected-transaction-response/);
+  assert.equal(app.status, 'uncertain');
+  assert.equal(app.pending.key, original);
+  assert.equal(app.view, undefined);
+});
+
 test('an inconsistent HTTP status cannot install a terminal command result', async () => {
   const app = client(async () => new Response(await response('committed').text(), {status: 503}));
   const original = app.prepare('demo', '0', 3);
