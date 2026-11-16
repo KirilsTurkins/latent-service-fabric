@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -50,7 +49,7 @@ public final class ManagedReentrantFactoryOwnerControl {
     private static void nestedFailure(boolean returnsNull) throws Exception {
         AtomicReference<ExecutorService> selected = new AtomicReference<>();
         AtomicReference<Future<?>> nested = new AtomicReference<>();
-        AtomicInteger factories = new AtomicInteger(), calls = new AtomicInteger();
+        AtomicInteger factories = new AtomicInteger(), calls = new AtomicInteger(), outerCalls = new AtomicInteger();
         var failure = new IllegalStateException("managed-factory-failed");
         var pool = Executors.newFixedThreadPool(1, target -> {
             if (factories.incrementAndGet() == 1) {
@@ -58,19 +57,25 @@ public final class ManagedReentrantFactoryOwnerControl {
                 if (returnsNull) return null;
                 throw failure;
             }
+            if (returnsNull && factories.get() == 2) return null;
             return new Thread(target);
         });
         selected.set(pool);
         try {
-            try { pool.submit(() -> { throw new AssertionError("withdrawn-outer-ran"); });
-                throw new AssertionError("missing-factory-failure"); }
-            catch (RuntimeException error) { require(returnsNull ? error instanceof RejectedExecutionException : error == failure); }
-            require(factories.get() == 1 && nested.get() != null && !nested.get().isDone()
+            Future<?> outer = null;
+            if (returnsNull) outer = pool.submit(outerCalls::incrementAndGet);
+            else {
+                try { pool.submit(outerCalls::incrementAndGet); throw new AssertionError("missing-factory-failure"); }
+                catch (IllegalStateException error) { require(error == failure); }
+            }
+            require(factories.get() == (returnsNull ? 2 : 1) && nested.get() != null && !nested.get().isDone()
                 && ((Activation.ManagedPool)pool).hasPendingWork());
-            held(1, 1, 1);
+            held(returnsNull ? 2 : 1, returnsNull ? 2 : 1, 1);
             pool.submit(() -> {}).get(5, TimeUnit.SECONDS);
             nested.get().get(5, TimeUnit.SECONDS);
-            require(factories.get() == 2 && calls.get() == 1);
+            if (outer != null) outer.get(5, TimeUnit.SECONDS);
+            require(factories.get() == (returnsNull ? 3 : 2) && calls.get() == 1
+                && outerCalls.get() == (returnsNull ? 1 : 0));
             pool.shutdown(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0, 0);
         } finally { pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
         Activation.idle();
@@ -94,11 +99,11 @@ public final class ManagedReentrantFactoryOwnerControl {
         });
         selected.set(pool);
         try {
-            if (mode.equals("thread")) pool.submit(() -> { throw new AssertionError("withdrawn-work-ran"); });
+            if (!mode.equals("throw")) pool.submit(() -> { throw new AssertionError("withdrawn-work-ran"); });
             else {
                 try { pool.submit(() -> { throw new AssertionError("withdrawn-work-ran"); });
                     throw new AssertionError("missing-factory-failure"); }
-                catch (RuntimeException error) { require(mode.equals("null") ? error instanceof RejectedExecutionException : error == failure); }
+                catch (RuntimeException error) { require(error == failure); }
             }
             require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0, 0);
             var task = (Future<?>)removed.get().get(0);

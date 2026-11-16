@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -381,13 +380,12 @@ public final class ScheduledNullFactoryActivationControl {
             worker.set(thread); return thread;
         });
         selected.set(pool);
-        if (mode.equals("thread")) pool.submit(() -> { throw new AssertionError("withdrawn-managed-ran"); });
+        if (!mode.equals("throw")) pool.submit(() -> { throw new AssertionError("withdrawn-managed-ran"); });
         else {
             try { pool.submit(() -> { throw new AssertionError("withdrawn-managed-ran"); });
                 throw new AssertionError("managed-factory-failure-missing"); }
             catch (RuntimeException error) {
-                require(mode.equals("null") ? error instanceof RejectedExecutionException : error == failure,
-                    "wrong-managed-factory-failure");
+                require(error == failure, "wrong-managed-factory-failure");
             }
         }
         require(pool.awaitTermination(5, TimeUnit.SECONDS), "managed-pool-not-retired");
@@ -401,6 +399,84 @@ public final class ScheduledNullFactoryActivationControl {
         require(!task.isDone() && task.cancel(false), "managed-withdrawn-future-not-cancelled");
         invoke("retireIdlePools");
         finishRoot(root);
+    }
+    private static void managedNullRoot(String mode) throws Exception {
+        Object root = enter();
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        var failure = new IllegalStateException("managed-fallback-factory-failed");
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            int attempt = attempts.incrementAndGet();
+            if (attempt == 1 || mode.equals("pending")) return null;
+            if (mode.equals("fallback-throw")) throw failure;
+            Bindings.LatentRuntimeActivation.denyRegistration = true;
+            return new Thread(target);
+        });
+        Future<?> future = null;
+        try {
+            try { future = pool.submit(calls::incrementAndGet); }
+            catch (IllegalStateException error) {
+                require(mode.equals("fallback-throw") ? error == failure
+                    : mode.equals("worker-denied") && error.getMessage().contains("activation-runtime-register-"),
+                    "wrong-managed-null-failure");
+            }
+        } finally { Bindings.LatentRuntimeActivation.denyRegistration = false; }
+        require(attempts.get() == 2 && calls.get() == 0, "managed-null-attempts");
+        require(mode.equals("pending") ? future != null && !future.isDone() : future == null,
+            "wrong-managed-null-result");
+        held(1, 1, 1); closeRoot();
+        require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools")
+            && !((Activation.ManagedPool)pool).isRetired(), "managed-null-root-not-fenced");
+        Activation.waitFor(-1);
+        var rootToken = root.getClass().getDeclaredField("token"); rootToken.setAccessible(true);
+        require(Bindings.LatentRuntimeActivation.lastWaitContinuation.isSome()
+            && Bindings.LatentRuntimeActivation.lastWaitContinuation.value().equals(rootToken.get(root)),
+            "managed-null-wait-lost-root");
+        held(1, 1, 1);
+        List<Runnable> removed = pool.shutdownNow();
+        require(removed.size() == 1 && removed.get(0) instanceof Future<?>, "managed-null-withdrawal");
+        if (future == null) future = (Future<?>)removed.get(0);
+        require(removed.get(0) == future && !future.isDone() && future.cancel(false), "managed-null-cancel");
+        require(pool.awaitTermination(5, TimeUnit.SECONDS), "managed-null-pool-not-retired"); held(0, 0, 0);
+        invoke("retireIdlePools"); finishRoot(root);
+    }
+    private static void managedNullUncertainWorker() throws Exception {
+        enter();
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        AtomicReference<Thread> selected = new AtomicReference<>();
+        var failure = new IllegalStateException("worker-start-failed");
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            if (attempts.incrementAndGet() == 1) return null;
+            Thread thread = new Thread(target) {
+                @Override public synchronized void start() {
+                    Bindings.LatentRuntimeActivation.denySettle = true;
+                    throw failure;
+                }
+            };
+            selected.set(thread); return thread;
+        });
+        try {
+            try { pool.submit(calls::incrementAndGet); throw new AssertionError("uncertain-start-was-accepted"); }
+            catch (IllegalStateException error) {
+                require(error.getCause() == failure && error.getMessage().contains("activation-runtime-start-rollback-"),
+                    "wrong-uncertain-start-failure");
+            }
+        } finally { Bindings.LatentRuntimeActivation.denySettle = false; }
+        require(attempts.get() == 2 && calls.get() == 0 && Activation.alive(selected.get())
+            && owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 1, "uncertain-worker-not-owned");
+        held(1, 1, 1); closeRoot();
+        require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools"), "uncertain-root-not-fenced");
+        int before = Bindings.LatentRuntimeActivation.settlementAttempts;
+        List<Runnable> removed = pool.shutdownNow();
+        require(removed.size() == 1 && removed.get(0) instanceof Future<?>, "uncertain-queue-withdrawal");
+        var future = (Future<?>)removed.get(0);
+        require(!future.isDone() && future.cancel(false), "uncertain-future-not-cancelled");
+        held(0, 0, 1);
+        require(owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 1 && Activation.alive(selected.get())
+            && (boolean)invoke("pending") && !pool.isTerminated()
+            && Bindings.LatentRuntimeActivation.settlementAttempts == before + 2, "uncertain-worker-refunded");
+        pool.shutdownNow();
+        require(Bindings.LatentRuntimeActivation.settlementAttempts == before + 2, "uncertain-worker-retried");
+        // The original worker and executor remain owned until Store teardown.
     }
     public static void main(String[] args) throws Exception {
         String mode = args[0];
@@ -416,6 +492,10 @@ public final class ScheduledNullFactoryActivationControl {
         else if (mode.equals("managed-factory-thread") || mode.equals("managed-factory-null")
                 || mode.equals("managed-factory-throw"))
             managedFactoryRetirement(mode.substring("managed-factory-".length()));
+        else if (mode.equals("managed-null-pending") || mode.equals("managed-null-fallback-throw")
+                || mode.equals("managed-null-worker-denied"))
+            managedNullRoot(mode.substring("managed-null-".length()));
+        else if (mode.equals("managed-null-worker-uncertain")) managedNullUncertainWorker();
         else if (mode.equals("recovery") || mode.equals("reentrant")) recovery(mode.equals("reentrant"));
         else if (mode.equals("cancel") || mode.equals("remove") || mode.equals("factory-throw") || mode.equals("wait-denied")
                 || mode.equals("settle-result-denied") || mode.equals("settle-queue-denied")) noWorker(mode);

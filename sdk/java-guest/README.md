@@ -189,9 +189,16 @@ case, that call returned fewer entries than the queue held.
 Fixed and cached managed pools also count an in-progress factory call toward
 their worker limit. A nested task already accepted by such a pool keeps its
 original owners if the outer factory fails, until it runs or is withdrawn.
-Managed-pool factories that return `null` still reject the submission; the
-tested JDK retains it. A reentrant `shutdownNow()` can also withdraw an outer
-SDK submission that then returns, while the tested JDK rejects it.
+For fixed and single-thread pools, a null factory is retried once when no other
+worker exists or is starting. If it still returns `null`, accepted work remains
+charged and root drain waits until a worker runs it or it is withdrawn. Cached
+pools retain their single-attempt rejection behavior. During later recovery the
+SDK consumes its FIFO queue; the tested JDK can run the new submission before
+an older queued task as the new worker's first task. A reentrant `shutdownNow()`
+can also withdraw an outer SDK submission that then returns, while the tested
+JDK rejects it. If the first null factory reenters graceful `shutdown()`, the
+SDK may run its already-queued outer task on the retry; the tested JDK rejects
+that submission.
 Compiler progress checks distinguish suspendable checkpoints from finite
 nonsuspendable loops; source that cannot establish bounded progress is rejected.
 GC roots across parked continuations have a separate

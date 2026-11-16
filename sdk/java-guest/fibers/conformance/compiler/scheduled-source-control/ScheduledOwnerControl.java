@@ -59,8 +59,7 @@ public final class ScheduledOwnerControl {
         return (java.util.List<Thread>)field.get(pool);
     }
     private static void factoryRejectionTargets() throws Exception {
-        for (boolean scheduled : new boolean[]{false, true}) for (String mode : new String[]{"null", "throws", "live", "add-before", "add-after"}) {
-            if (scheduled && mode.equals("null")) continue; // Accepted scheduled work is covered below.
+        for (boolean scheduled : new boolean[]{false, true}) for (String mode : new String[]{"throws", "live", "add-before", "add-after"}) {
             AtomicReference<Runnable> target = new AtomicReference<>();
             var original = new IllegalStateException("source-factory-failure-" + mode);
             CountDownLatch liveStarted = new CountDownLatch(1), liveRelease = new CountDownLatch(1);
@@ -69,7 +68,6 @@ public final class ScheduledOwnerControl {
             var pool = executor(scheduled, task -> {
                 target.set(task);
                 if (mode.equals("throws")) throw original;
-                if (mode.equals("null")) return null;
                 if (mode.equals("live")) return live;
                 return new Thread(task);
             });
@@ -85,7 +83,7 @@ public final class ScheduledOwnerControl {
                 }
                 try { pool.execute(() -> { throw new AssertionError("unadmitted-factory-callback"); }); throw new AssertionError("expected-factory-rejection"); }
                 catch (RuntimeException error) {
-                    if (mode.equals("null") || mode.equals("live")) require(error instanceof java.util.concurrent.RejectedExecutionException);
+                    if (mode.equals("live")) require(error instanceof java.util.concurrent.RejectedExecutionException);
                     else require(error == original);
                 }
                 require(target.get() != null && capturedPool(target.get()) == null && workers(pool).isEmpty());
