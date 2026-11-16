@@ -15,6 +15,7 @@ workspace = true
 test-support = []
 
 [dependencies]
+bytes.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 latent-core = { path = "../latent-core" }
