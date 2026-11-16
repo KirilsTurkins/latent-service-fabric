@@ -3,7 +3,7 @@ use super::{
     IngressRequest, Inner, InstalledProvider, Instant, Kind, MaintenanceRequest, Mutex, Ordering,
     PlatformError, PoolCall, ProviderPools, Weak,
 };
-use crate::broker::io::IoLease;
+use crate::broker::io::{IoLease, StreamRetirementGuard};
 use std::{collections::VecDeque, time::Duration};
 mod admission;
 use admission::{bookkeeping, ClientAccessError};
@@ -51,11 +51,36 @@ enum Retained<T: Send + 'static> {
         owner: PooledConnection<T>,
         stream_retirement: Option<fn(&mut T) -> bool>,
     },
+    GuardedStreamConnection {
+        owner: PooledConnection<T>,
+        stream_retirement: fn(&mut T) -> Option<StreamRetirementGuard>,
+    },
+    FailedStreamRetirement {
+        _reservation: ConnectionReservation<T>,
+    },
     Dial {
         reservation: ConnectionReservation<T>,
         _value: T,
         stream_retirement: Option<fn(&mut T) -> bool>,
     },
+}
+#[cfg(test)]
+#[allow(dead_code)]
+enum PreviousRetained<T: Send + 'static> {
+    Idle(Idle<T>),
+    Connection {
+        owner: PooledConnection<T>,
+        stream_retirement: Option<fn(&mut T) -> bool>,
+    },
+    Dial {
+        reservation: ConnectionReservation<T>,
+        value: T,
+        stream_retirement: Option<fn(&mut T) -> bool>,
+    },
+}
+#[cfg(feature = "test-support")]
+pub fn stream_retained_layout_bytes<T: Send + 'static>() -> usize {
+    std::alloc::Layout::new::<Retained<T>>().size()
 }
 struct Idle<T> {
     physical: Physical<T>,
@@ -70,6 +95,7 @@ struct Physical<T> {
 struct ConnectionLifetime {
     client: Arc<ClientCore>,
     failed: bool,
+    defer_notification: bool,
     _metadata: Charge,
     _slot: Charge,
 }
@@ -80,7 +106,9 @@ impl Drop for ConnectionLifetime {
             if self.failed {
                 owner.failed_cleanup.fetch_sub(1, Ordering::AcqRel);
             }
-            owner.changed.notify_waiters();
+            if !self.defer_notification {
+                owner.changed.notify_waiters();
+            }
         }
     }
 }
@@ -287,6 +315,7 @@ impl<T: Send + 'static> ProviderClient<T> {
             lifetime: Some(ConnectionLifetime {
                 client: Arc::clone(&self.core),
                 failed: false,
+                defer_notification: false,
                 _metadata: metadata,
                 _slot: slot,
             }),
@@ -325,10 +354,12 @@ impl<T: Send + 'static> ErasedClient for ProviderClient<T> {
                 Retained::Idle(value) => {
                     retired || now.saturating_duration_since(value.since) >= maximum
                 }
-                Retained::Connection { owner, .. } => {
+                Retained::Connection { owner, .. }
+                | Retained::GuardedStreamConnection { owner, .. } => {
                     debug_assert!(owner.physical.is_some());
                     false
                 }
+                Retained::FailedStreamRetirement { .. } => false,
                 Retained::Dial { reservation, .. } => {
                     debug_assert!(reservation.lifetime.is_some());
                     false
@@ -466,13 +497,19 @@ impl<T: Send + 'static> Drop for ConnectionReservation<T> {
     }
 }
 fn mark_failed(lifetime: &mut ConnectionLifetime) {
+    if let Some(owner) = mark_failed_without_notification(lifetime) {
+        owner.changed.notify_waiters();
+    }
+}
+fn mark_failed_without_notification(lifetime: &mut ConnectionLifetime) -> Option<Arc<Inner>> {
     if !lifetime.failed {
         lifetime.failed = true;
         if let Some(owner) = lifetime.client.owner.upgrade() {
             owner.failed_cleanup.fetch_add(1, Ordering::AcqRel);
-            owner.changed.notify_waiters();
+            return Some(owner);
         }
     }
+    None
 }
 // The original table entry remains affine while its fixed synchronous native
 // step runs outside locks. Unwind puts it back BEFORE original fields can Drop.
@@ -532,6 +569,19 @@ impl<T: Send + 'static> ProviderClient<T> {
                     owner,
                     stream_retirement: Some(retire),
                 } => retire(owner.resource()),
+                Retained::GuardedStreamConnection {
+                    owner,
+                    stream_retirement: retire,
+                } => {
+                    if let Some(custody) = retire(owner.resource()) {
+                        let entry = step.entry.take().expect("original guarded owner");
+                        let Retained::GuardedStreamConnection { owner, .. } = entry else {
+                            unreachable!()
+                        };
+                        owner.retire_stream_with_guard_inner(custody, true);
+                    }
+                    false
+                }
                 _ => false, // Original ordinary/unproved quarantine stays permanent.
             };
             if retired {
@@ -550,6 +600,21 @@ impl<T: Send + 'static> ProviderClient<T> {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         self.core.epoch.quarantined.fetch_add(1, Ordering::AcqRel);
+        retained.push_back(value);
+    }
+    fn retain_guarded_stream_quarantine(&self, value: Retained<T>) {
+        self.retain_quarantine(value);
+    }
+    fn retain_failed_stream_retirement(&self, value: Retained<T>, already_quarantined: bool) {
+        let mut retained = self
+            .idle
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        if !already_quarantined {
+            self.core.epoch.quarantined.fetch_add(1, Ordering::AcqRel);
+        }
+        // The original connection lifetime still owns one admission; limits
+        // may only decrease, so it already reserves a place in this table.
         retained.push_back(value);
     }
 }
@@ -572,6 +637,99 @@ impl<T: Send + 'static> PooledConnection<T> {
     }
     pub fn resource(&mut self) -> &mut T {
         &mut self.physical.as_mut().expect("connection owner").value
+    }
+    /// Retire one original stream physical owner before its same IoLease.
+    #[doc(hidden)]
+    pub fn retire_stream_with_guard(self, custody: StreamRetirementGuard) {
+        let reference = self.client.core.epoch.registration.reference();
+        if reference.capability() != crate::broker::network::STREAM_CAPABILITY
+            || reference.profile() != crate::broker::network::STREAM_PROFILE
+        {
+            self.quarantine();
+            return;
+        }
+        self.retire_stream_with_guard_inner(custody, false);
+    }
+    fn retire_stream_with_guard_inner(
+        mut self,
+        mut custody: StreamRetirementGuard,
+        already_quarantined: bool,
+    ) {
+        let epoch = Arc::clone(&self.client.core.epoch);
+        struct Finalizer<T: Send + 'static> {
+            owner: Option<PooledConnection<T>>,
+            custody: Option<StreamRetirementGuard>,
+        }
+        custody.begin_drop();
+        let physical = self.physical.take().expect("original connection owner");
+        let Physical {
+            value,
+            mut lifetime,
+        } = physical;
+        let mut finalizer = Finalizer {
+            owner: Some(self),
+            custody: Some(custody),
+        };
+        // Wake while the original lifetime and IoLease are still intact. If
+        // that callback unwinds, retain both in the same paid table slot.
+        let dropped = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            drop(value);
+            if let Some(owner) = lifetime.client.owner.upgrade() {
+                owner.changed.notify_waiters();
+            }
+        }));
+        if let Err(panic) = dropped {
+            let notify = mark_failed_without_notification(&mut lifetime);
+            let owner = finalizer.owner.take().expect("original pooled owner");
+            let client = Arc::clone(&owner.client);
+            let custody = finalizer.custody.take().expect("original stream custody");
+            let PooledConnection {
+                physical: _,
+                client: original_client,
+                activation,
+                maintenance,
+                ingress,
+            } = owner;
+            client.retain_failed_stream_retirement(
+                Retained::FailedStreamRetirement {
+                    _reservation: ConnectionReservation {
+                        client: original_client,
+                        lifetime: Some(lifetime),
+                        activation,
+                        maintenance,
+                        ingress,
+                        success: true,
+                        finished: true,
+                    },
+                },
+                already_quarantined,
+            );
+            // The original lease and slot are published first, even if a
+            // trusted observer's own destructor unexpectedly unwinds.
+            let _ =
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| custody.retain_failed()));
+            if let Some(owner) = notify {
+                let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    owner.changed.notify_waiters()
+                }));
+            }
+            std::panic::resume_unwind(panic);
+        }
+        // The original lease retires while its connection quota is still held.
+        // Defer the lifetime's post-quota wake until after the quarantined
+        // count and the original custody are settled, so a reentrant/panicking
+        // waiter cannot strand an entry that has already been retired.
+        drop(finalizer.owner.take());
+        let post_quota_wake = lifetime.client.owner.upgrade();
+        lifetime.defer_notification = true;
+        drop(lifetime);
+        if already_quarantined {
+            epoch.quarantined.fetch_sub(1, Ordering::AcqRel);
+        }
+        drop(finalizer.custody.take());
+        if let Some(owner) = post_quota_wake {
+            owner.changed.notify_waiters();
+        }
     }
     /// Only a protocol adapter that has verified a reusable connection may park
     /// it. Expired/cancelled activations and retired epochs cannot populate idle.
@@ -622,6 +780,36 @@ impl<T: Send + 'static> PooledConnection<T> {
             && reference.profile() == crate::broker::network::STREAM_PROFILE;
         self.quarantine_with_stream_retirement(stream.then_some(retirement));
     }
+    /// Continue the same stream custody through the complete pooled-owner drop.
+    pub fn quarantine_stream_with_guard(
+        self,
+        retirement: fn(&mut T) -> Option<StreamRetirementGuard>,
+    ) {
+        let reference = self.client.core.epoch.registration.reference();
+        let stream = reference.capability() == crate::broker::network::STREAM_CAPABILITY
+            && reference.profile() == crate::broker::network::STREAM_PROFILE;
+        if !stream {
+            self.quarantine();
+            return;
+        }
+        self.quarantine_with_stream_guard(retirement);
+    }
+    fn quarantine_with_stream_guard(
+        mut self,
+        retirement: fn(&mut T) -> Option<StreamRetirementGuard>,
+    ) {
+        let notify = mark_failed_without_notification(
+            &mut self.physical.as_mut().expect("connection owner").lifetime,
+        );
+        let client = Arc::clone(&self.client);
+        client.retain_guarded_stream_quarantine(Retained::GuardedStreamConnection {
+            owner: self,
+            stream_retirement: retirement,
+        });
+        if let Some(owner) = notify {
+            owner.changed.notify_waiters();
+        }
+    }
     fn quarantine_with_stream_retirement(mut self, retirement: Option<fn(&mut T) -> bool>) {
         self.cleanup_failed();
         let client = Arc::clone(&self.client);
@@ -634,6 +822,9 @@ impl<T: Send + 'static> PooledConnection<T> {
         mark_failed(&mut self.physical.as_mut().expect("connection owner").lifetime);
     }
 }
+
+#[cfg(test)]
+mod stream_custody_tests;
 
 #[cfg(test)]
 mod stream_quarantine_controls {

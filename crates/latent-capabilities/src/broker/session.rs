@@ -904,4 +904,22 @@ impl CapabilitySession {
     {
         crate::broker::io::PreparedIoFutureWith::new(&self.core.budget, make)
     }
+
+    /// Admit the stream future and its same fixed-row owner before creation.
+    pub fn prepare_stream_io_future_with<Make, F, Args>(
+        &self,
+        provider: &super::ProviderReference,
+        make: Make,
+    ) -> Result<crate::broker::io::PreparedStreamIoFutureWith<Make, F, Args>, PlatformError>
+    where
+        Make: FnOnce(Args) -> (F, crate::broker::io::StreamRetirementGuard),
+    {
+        if provider.capability() != super::network::STREAM_CAPABILITY
+            || provider.profile() != super::network::STREAM_PROFILE
+            || !self.uses_provider(provider)?
+        {
+            return Err(super::denied());
+        }
+        crate::broker::io::PreparedStreamIoFutureWith::new(&self.core.budget, make)
+    }
 }

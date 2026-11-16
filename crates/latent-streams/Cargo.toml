@@ -37,6 +37,7 @@ rustix = { version = "=1.1.6", features = ["event", "fs", "time"] }
 latent-stream-factory-native = { path = "../latent-stream-factory-native" }
 
 [dev-dependencies]
+latent-capabilities = { path = "../latent-capabilities", features = ["test-support"] }
 rustls-upstream = { package = "rustls", version = "=0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
 hickory-proto = "=0.26.3"
 rcgen = { version = "=0.14.10", default-features = false, features = ["crypto", "ring"] }

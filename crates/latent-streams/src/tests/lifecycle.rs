@@ -12,6 +12,31 @@ use std::{
 };
 use tokio::{io::AsyncReadExt, net::TcpListener};
 
+#[tokio::test]
+async fn actual_stream_socket_and_connection_layouts_are_prepaid() {
+    let fixture = Fixture::new(config());
+    let before = fixture.pools.snapshot().unwrap().metadata_bytes;
+    let slots = fixture
+        .pools
+        .limits()
+        .unwrap()
+        .maximum_connections_per_client;
+    let client = fixture
+        .pools
+        .client::<crate::connection::Socket>(&fixture.provider.inner.installed, 0)
+        .unwrap();
+    let after = fixture.pools.snapshot().unwrap().metadata_bytes;
+    let actual_slot = latent_capabilities::broker::pools::stream_retained_layout_bytes::<
+        crate::connection::Socket,
+    >();
+    assert_eq!(after - before, 4096 + slots * actual_slot);
+    let (owner_bytes, chunk_bytes) = crate::connection::prepaid_layout_bytes();
+    assert!(owner_bytes <= 16 * 1024);
+    assert!(chunk_bytes <= 512);
+    drop(client);
+    fixture.clean().await;
+}
+
 struct ReentrantWake {
     lifecycle: Arc<StreamLifecycle>,
     stopped_without_lock: AtomicBool,
@@ -25,6 +50,49 @@ impl Wake for ReentrantWake {
             self.stopped_without_lock.store(true, Ordering::Release);
         }
     }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn status_releases_lifecycle_lock_before_dropping_last_observed_owner() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration);
+    let lifecycle = Arc::new(
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap(),
+    );
+    let (session, control) = fixture.session(5000);
+    let handle = lifecycle.start(&session, request).unwrap().await.unwrap();
+    let (_peer, _) = listener.accept().await.unwrap();
+    lifecycle.retire();
+    let registry = fixture.provider.inner.connections.clone();
+    let connection = registry.snapshot(0).unwrap().unwrap();
+    let probe = Arc::new(ReentrantWake {
+        lifecycle: lifecycle.clone(),
+        stopped_without_lock: AtomicBool::new(false),
+    });
+    connection.wake_in_drop_tail(Waker::from(probe.clone()));
+    drop(connection);
+    let (reached, resume) = registry.pause_next_observed_owner();
+    let observer = lifecycle.clone();
+    let status = std::thread::spawn(move || observer.status());
+    reached.recv_timeout(Duration::from_secs(2)).unwrap();
+    drop(handle);
+    resume.send(()).unwrap();
+    assert!(status.join().unwrap().is_ok());
+    assert!(probe.stopped_without_lock.load(Ordering::Acquire));
+    drop(probe);
+    drop(registry);
+    drop(lifecycle);
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
 }
 
 #[tokio::test]
@@ -291,6 +359,247 @@ async fn unpolled_connect_retains_its_prepaid_opening_through_retirement() {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn rotation_keeps_generation_until_original_future_allocation_retires() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration.clone());
+    let lifecycle =
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap();
+    let (session, control) = fixture.session(5000);
+    let base = control.native_session_bytes();
+    let invocation = lifecycle.start(&session, request).unwrap();
+    assert!(control.budget.host_memory_bytes() > base);
+    lifecycle.rotate(1, 2, configuration.clone()).unwrap();
+    assert_eq!(lifecycle.status().unwrap().retired_generations, 1);
+    assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+
+    // Stop during original future destruction, before its Box and host-memory
+    // reservation retire. The original row must still hold its generation.
+    let (reached, resume) = fixture.provider.inner.connections.pause_next_release();
+    let (empty, resume_empty) = fixture
+        .provider
+        .inner
+        .connections
+        .pause_when_opening_empty();
+    let dropping = std::thread::spawn(move || drop(invocation));
+    reached.recv_timeout(Duration::from_secs(2)).unwrap();
+    assert!(control.budget.host_memory_bytes() > base);
+    assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+    lifecycle.rotate(2, 3, configuration).unwrap();
+    let generations_after_rotation = lifecycle.status().unwrap().retired_generations;
+    resume.send(()).unwrap();
+    empty.recv_timeout(Duration::from_secs(2)).unwrap();
+    // The final row can clear only after the original Box and its reservation.
+    let after_refund = control.budget.host_memory_bytes();
+    resume_empty.send(()).unwrap();
+    dropping.join().unwrap();
+    drop(lifecycle);
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+
+    assert_eq!(after_refund, base);
+    assert_eq!(
+        generations_after_rotation, 2,
+        "the original generation was pruned while its future allocation remained charged"
+    );
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn rotation_keeps_connection_arc_billing_until_destructor_returns() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration.clone());
+    let lifecycle =
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap();
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let handle = lifecycle.start(&session, request).unwrap().await.unwrap();
+    let (_peer, _) = listener.accept().await.unwrap();
+    let connection = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (reached, resume) = connection.pause_drop_tail();
+    drop(connection);
+    lifecycle.rotate(1, 2, configuration.clone()).unwrap();
+    let pools = fixture.pools.clone();
+    drop(fixture);
+    let dropping = std::thread::spawn(move || drop(handle));
+    reached.recv_timeout(Duration::from_secs(2)).unwrap();
+    let paid_before_rotation = control.budget.host_memory_bytes();
+    lifecycle.rotate(2, 3, configuration.clone()).unwrap();
+    let paid_after_rotation = control.budget.host_memory_bytes();
+    let metadata_during_tail = pools.snapshot().unwrap().metadata_bytes;
+    let retired_generations = lifecycle.status().unwrap().retired_generations;
+    resume.send(()).unwrap();
+    dropping.join().unwrap();
+    lifecycle.rotate(3, 4, configuration).unwrap();
+    let metadata_after_retirement = pools.snapshot().unwrap().metadata_bytes;
+    drop(lifecycle);
+    drop(session);
+    let snapshot = pools
+        .shutdown(Instant::now() + Duration::from_secs(2))
+        .await
+        .unwrap();
+    assert!(snapshot.is_clean(), "{snapshot:?}");
+    drop(pools);
+    control.assert_native_settled();
+    assert!(paid_before_rotation >= baseline + 16 * 1024);
+    assert!(
+        paid_after_rotation >= baseline + 16 * 1024,
+        "the original Connection Arc activation charge was refunded before its destructor returned"
+    );
+    assert!(metadata_during_tail >= metadata_after_retirement + 16 * 1024);
+    assert_eq!(retired_generations, 2);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn connection_destructor_panic_keeps_only_a_bounded_registry_row() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration.clone());
+    let lifecycle =
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap();
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let handle = lifecycle.start(&session, request).unwrap().await.unwrap();
+    let (_peer, _) = listener.accept().await.unwrap();
+    let registry = fixture.provider.inner.connections.clone();
+    let connection = registry.snapshot(0).unwrap().unwrap();
+    connection.panic_in_drop_tail();
+    drop(connection);
+    lifecycle.rotate(1, 2, configuration.clone()).unwrap();
+
+    let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(handle)));
+    assert!(panic.is_err());
+    assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+    assert!(control.budget.host_memory_bytes() >= baseline + 16 * 1024);
+    lifecycle.rotate(2, 3, configuration).unwrap();
+    assert_eq!(lifecycle.status().unwrap().retired_generations, 2);
+
+    // The failed row is bounded by its actual registry lifetime; dropping the
+    // registry destroys its weak header and releases the original reservation.
+    let pools = fixture.pools.clone();
+    drop(fixture);
+    drop(lifecycle);
+    drop(registry);
+    drop(session);
+    let snapshot = pools
+        .shutdown(Instant::now() + Duration::from_secs(2))
+        .await
+        .unwrap();
+    assert!(snapshot.is_clean(), "{snapshot:?}");
+    drop(pools);
+    control.assert_native_settled();
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn concurrent_connection_drops_keep_original_charge_on_destructor_panic() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: configuration.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(configuration.clone());
+    let lifecycle =
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap();
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let handle = lifecycle.start(&session, request).unwrap().await.unwrap();
+    let (_peer, _) = listener.accept().await.unwrap();
+    let registry = fixture.provider.inner.connections.clone();
+    let connection = registry.snapshot(0).unwrap().unwrap();
+    connection.panic_in_drop_tail();
+    let (last_reached, last_resume) = connection.pause_drop_tail();
+    lifecycle.rotate(1, 2, configuration.clone()).unwrap();
+    let (non_last_reached, non_last_resume) = registry.pause_next_non_last_drop();
+    let non_last = std::thread::spawn(move || drop(connection));
+    non_last_reached
+        .recv_timeout(Duration::from_secs(2))
+        .unwrap();
+    let last = std::thread::spawn(move || {
+        std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(handle)))
+    });
+    last_reached.recv_timeout(Duration::from_secs(2)).unwrap();
+    non_last_resume.send(()).unwrap();
+    non_last.join().unwrap();
+
+    assert!(control.budget.host_memory_bytes() >= baseline + 16 * 1024);
+    assert_eq!(lifecycle.status().unwrap().usage.owners, 1);
+    lifecycle.rotate(2, 3, configuration.clone()).unwrap();
+    assert_eq!(lifecycle.status().unwrap().retired_generations, 2);
+    last_resume.send(()).unwrap();
+    assert!(last.join().unwrap().is_err());
+
+    // The same failed row and its original charges stay within the existing
+    // per-provider registry and metadata limits across later clean rotations.
+    let pools = fixture.pools.clone();
+    let maximum_metadata = pools.limits().unwrap().maximum_metadata_bytes;
+    for epoch in 3..8 {
+        lifecycle
+            .rotate(epoch, epoch + 1, configuration.clone())
+            .unwrap();
+        assert_eq!(lifecycle.status().unwrap().retired_generations, 2);
+        assert!(control.budget.host_memory_bytes() >= baseline + 16 * 1024);
+        assert!(pools.snapshot().unwrap().metadata_bytes <= maximum_metadata);
+    }
+    drop(fixture);
+    drop(lifecycle);
+    drop(registry);
+    drop(session);
+    let snapshot = pools
+        .shutdown(Instant::now() + Duration::from_secs(2))
+        .await
+        .unwrap();
+    assert!(snapshot.is_clean(), "{snapshot:?}");
+    drop(pools);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn clean_rotations_reuse_the_bounded_retired_generations() {
+    let configuration = config();
+    let fixture = Fixture::new(configuration.clone());
+    let lifecycle =
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap();
+    for epoch in 1..=12 {
+        lifecycle
+            .rotate(epoch, epoch + 1, configuration.clone())
+            .unwrap();
+        assert_eq!(lifecycle.status().unwrap().retired_generations, 1);
+    }
+    drop(lifecycle);
+    fixture.clean().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn unpolled_and_parked_connect_drop_original_admission_before_opening_row() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let mut configuration = config();
@@ -331,7 +640,20 @@ async fn unpolled_and_parked_connect_drop_original_admission_before_opening_row(
         let (reached, resume) = fixture.provider.inner.connections.pause_next_release();
         let thread = std::thread::spawn(move || drop(waiting));
         reached.recv_timeout(Duration::from_secs(2)).unwrap();
-        let at_release = fixture.pools.snapshot().unwrap();
+        let deadline = Instant::now() + Duration::from_secs(2);
+        let at_release = loop {
+            match fixture.pools.snapshot() {
+                Ok(snapshot) => break snapshot,
+                Err(error)
+                    if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                        && error.message == "capability-busy"
+                        && Instant::now() < deadline =>
+                {
+                    std::thread::yield_now();
+                }
+                Err(error) => panic!("pool snapshot failed at original release barrier: {error:?}"),
+            }
+        };
         assert_eq!(at_release.running_requests, 1);
         assert_eq!(
             at_release.pending_requests, 0,

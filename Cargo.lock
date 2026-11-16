@@ -1605,6 +1605,7 @@ dependencies = [
  "latent-routing",
  "latent-state",
  "latent-telemetry",
+ "pin-project-lite",
  "rustix",
  "serde",
  "serde_json",

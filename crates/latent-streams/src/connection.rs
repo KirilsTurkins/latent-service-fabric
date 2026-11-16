@@ -1,8 +1,10 @@
 //! Socket ownership is affine even when its readiness handle is shared. The
 //! pool connection survives every pending Arc<TcpStream> and is never parked.
 use crate::{
-    connection_registry::RetirementCustody, error, provider::Inner, StreamError, StreamErrorCode,
-    StreamResolution, StreamUsage,
+    connection_registry::{ConnectionOwner, RetirementCustody},
+    error,
+    provider::Inner,
+    StreamError, StreamErrorCode, StreamResolution, StreamUsage,
 };
 use latent_capabilities::broker::{
     io::{
@@ -122,13 +124,15 @@ pub(crate) struct Socket {
     _kernel_scope: Arc<StreamScope>,
     // Only the original pool's explicit quarantine may retain a lost registry
     // owner. This is the SAME Connection/PoolCall/IoCall, never replacement work.
-    _quarantined_connection: Option<Arc<Connection>>,
+    _quarantined_connection: Option<ConnectionOwner>,
     // Last: every physical socket and its original allocations retire first.
-    _opening: RetirementCustody,
+    _opening: Option<RetirementCustody>,
 }
 impl Drop for Socket {
     fn drop(&mut self) {
-        self._opening.begin_drop();
+        if let Some(opening) = &mut self._opening {
+            opening.begin_drop();
+        }
     }
 }
 impl Socket {
@@ -163,6 +167,23 @@ impl Socket {
         {
             false
         }
+    }
+
+    fn retire_quarantined_with_guard(
+        &mut self,
+    ) -> Option<latent_capabilities::broker::io::StreamRetirementGuard> {
+        if !self.retire_quarantined() {
+            return None;
+        }
+        self._opening
+            .take()
+            .map(RetirementCustody::into_stream_guard)
+    }
+
+    fn keep_unproved_quarantined(
+        &mut self,
+    ) -> Option<latent_capabilities::broker::io::StreamRetirementGuard> {
+        None
     }
 }
 enum SocketMemory {
@@ -254,13 +275,13 @@ impl Drop for SocketOwner {
 }
 struct PhysicalSocket(Option<PooledConnection<Socket>>);
 impl PhysicalSocket {
-    fn quarantine_with_connection(mut self, owner: Arc<Connection>) {
+    fn quarantine_with_connection(mut self, owner: ConnectionOwner) {
         let mut original = self.0.take().expect("original physical wrapper");
         original.resource()._quarantined_connection = Some(owner);
         if original.resource().protected_selected {
-            original.quarantine_stream(Socket::retire_quarantined);
+            original.quarantine_stream_with_guard(Socket::retire_quarantined_with_guard);
         } else {
-            original.quarantine();
+            original.quarantine_stream_with_guard(Socket::keep_unproved_quarantined);
         } // SAME original finite client quarantine table.
     }
     fn resource(&mut self) -> &mut Socket {
@@ -289,12 +310,20 @@ impl Drop for PhysicalSocket {
                     drop(original.resource().stream.take());
                 }
                 if original.resource().protected_selected {
-                    original.quarantine_stream(Socket::retire_quarantined);
+                    original.quarantine_stream_with_guard(Socket::retire_quarantined_with_guard);
                 } else {
-                    original.quarantine();
+                    original.quarantine_stream_with_guard(Socket::keep_unproved_quarantined);
                 }
+                return;
             }
         }
+        // Move the already-paid row outside the complete pooled owner. The
+        // physical Socket drops before the connection lifetime and IoLease.
+        let Some(opening) = original.resource()._opening.take() else {
+            original.quarantine();
+            return;
+        };
+        original.retire_stream_with_guard(opening.into_stream_guard());
     }
 }
 #[expect(
@@ -329,9 +358,7 @@ pub(crate) struct Connection {
     transfer: IoTransfer,
     call: PoolCall,
     scope: Arc<StreamScope>,
-    owner_memory: HostMemoryReservation,
     registry: crate::connection_registry::RegistryWeak,
-    _owner_metadata: Arc<ProviderMetadata>,
     // The first read-specific drop action records an inert,
     // monotone edge before the original transport or guard can be dropped.
     #[cfg(feature = "development-read-witness")]
@@ -342,12 +369,42 @@ pub(crate) struct Connection {
     write_none_once: std::sync::atomic::AtomicBool,
     #[cfg(test)]
     fail_audit_once: std::sync::atomic::AtomicBool,
-    // Last: owner memory, transfer and original call retire before this row.
-    _opening: RetirementCustody,
+    // Last test field: all original value fields have retired before this
+    // pauses the final Arc value destructor, while its header remains live.
+    #[cfg(all(test, unix))]
+    drop_tail: ConnectionDropTail,
 }
-impl Drop for Connection {
+
+#[cfg(all(test, unix))]
+struct ConnectionDropTail {
+    pause: Mutex<Option<(std::sync::mpsc::Sender<()>, std::sync::mpsc::Receiver<()>)>>,
+    panic: std::sync::atomic::AtomicBool,
+    wake: Mutex<Option<std::task::Waker>>,
+}
+#[cfg(all(test, unix))]
+impl Drop for ConnectionDropTail {
     fn drop(&mut self) {
-        self._opening.begin_drop();
+        if let Some((reached, resume)) = self
+            .pause
+            .get_mut()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take()
+        {
+            let _ = reached.send(());
+            let _ = resume.recv_timeout(Duration::from_secs(20));
+        }
+        if let Some(waker) = self
+            .wake
+            .get_mut()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take()
+        {
+            waker.wake();
+        }
+        assert!(
+            !self.panic.load(std::sync::atomic::Ordering::Acquire),
+            "injected connection destructor failure"
+        );
     }
 }
 
@@ -367,7 +424,7 @@ struct TestWriteGate {
     release: tokio::sync::oneshot::Receiver<()>,
 }
 struct Handle {
-    connection: Arc<Connection>,
+    connection: ConnectionOwner,
 }
 /// Drop the last copied socket reference before releasing a pending-operation
 /// count. `Connection::finish` takes the physical wrapper only after this edge.
@@ -381,12 +438,21 @@ struct Pending {
     observation_immediate: bool,
 }
 struct PendingGuard {
-    connection: Arc<Connection>,
+    connection: ConnectionOwner,
     direction: usize,
 }
 struct ChunkOwner {
-    _connection: Arc<Connection>,
+    _connection: ConnectionOwner,
     _window: latent_capabilities::broker::network::StreamChunkReservation,
+}
+
+pub(crate) fn prepaid_layout_bytes() -> (usize, usize) {
+    let chunk_bytes = crate::connection_registry::arc_bytes::<ChunkOwner>() + 64;
+    let owner_bytes = ConnectionOwner::allocation_bytes()
+        + std::mem::size_of::<Handle>()
+        + 4 * 64
+        + 4 * chunk_bytes;
+    (owner_bytes, chunk_bytes)
 }
 
 // The original ready call and socket stay owned until its audit and final
@@ -395,7 +461,7 @@ struct ChunkOwner {
 struct ReadinessFlight {
     call: ProviderCall,
     pending: Pending,
-    connection: Arc<Connection>,
+    connection: ConnectionOwner,
     settled: bool,
 }
 impl Drop for ReadinessFlight {
@@ -414,7 +480,7 @@ struct ReadFlight {
     output: Option<IoOutputChunk>,
     call: ProviderCall,
     pending: Pending,
-    connection: Arc<Connection>,
+    connection: ConnectionOwner,
     consumed: bool,
 }
 impl Drop for ReadFlight {
@@ -433,7 +499,7 @@ struct WriteFlight {
     input: IoInputChunk,
     call: ProviderCall,
     pending: Pending,
-    connection: Arc<Connection>,
+    connection: ConnectionOwner,
     possible: bool,
     accepted: u32,
     accounted: bool,
@@ -541,59 +607,61 @@ pub(crate) async fn connect(
     })?;
     let owner_metadata = inner.pools.reserve_protocol_metadata(16 * 1024)?;
     let owner_memory = scope.reserve_host_memory(16 * 1024)?;
-    // Both new Arc layouts stay inside the original prepaid 16-KiB owner.
-    if crate::connection_registry::arc_bytes::<Connection>()
-        + crate::connection_registry::arc_bytes::<ProviderMetadata>()
-        > 16 * 1024
-    {
+    // Include the three connection Arc allocations, returned Box and up to
+    // four resident chunk owners in the original activation envelope. Each
+    // heap allocation also includes the existing 64-byte bookkeeping margin.
+    let (owner_bytes, chunk_bytes) = prepaid_layout_bytes();
+    if owner_bytes > 16 * 1024 || chunk_bytes > 512 {
         return Err(error(StreamErrorCode::Exhausted));
     }
-    let owner_metadata = Arc::new(owner_metadata);
-    let mut connection = Arc::new(Connection {
-        state: Mutex::new(State {
-            socket: Some(socket),
-            pending: 0,
-            busy: [false; 4],
-            closing: false,
-            quarantined: false,
-            failure: None,
-            read_eof: false,
-            write_shut: false,
-            accepted_write: 0,
-            delivered_read: 0,
+    let opening_custody = opening_owner.try_clone_custody()?;
+    let connection = ConnectionOwner::new(
+        Connection {
+            state: Mutex::new(State {
+                socket: Some(socket),
+                pending: 0,
+                busy: [false; 4],
+                closing: false,
+                quarantined: false,
+                failure: None,
+                read_eof: false,
+                write_shut: false,
+                accepted_write: 0,
+                delivered_read: 0,
+                #[cfg(feature = "development-read-witness")]
+                read_admissions: 0,
+                #[cfg(feature = "development-read-witness")]
+                retired_read_delivered: 0,
+                attempted_write: false,
+                last_progress: Instant::now(),
+            }),
+            changed: Notify::new(),
+            endpoint: destination.endpoint.clone(),
+            deadline: deadline.min(validity),
+            idle: Duration::from_millis(u64::from(inner.config.limits.idle_timeout_millis)),
+            transfer,
+            call,
+            scope,
+            registry: inner.connections.downgrade(),
             #[cfg(feature = "development-read-witness")]
-            read_admissions: 0,
-            #[cfg(feature = "development-read-witness")]
-            retired_read_delivered: 0,
-            attempted_write: false,
-            last_progress: Instant::now(),
-        }),
-        changed: Notify::new(),
-        endpoint: destination.endpoint.clone(),
-        deadline: deadline.min(validity),
-        idle: Duration::from_millis(u64::from(inner.config.limits.idle_timeout_millis)),
-        transfer,
-        call,
-        scope,
+            read_drop_starts: std::sync::atomic::AtomicU8::new(0),
+            #[cfg(test)]
+            write_gate: Mutex::new(None),
+            #[cfg(test)]
+            write_none_once: std::sync::atomic::AtomicBool::new(false),
+            #[cfg(test)]
+            fail_audit_once: std::sync::atomic::AtomicBool::new(false),
+            #[cfg(all(test, unix))]
+            drop_tail: ConnectionDropTail {
+                pause: Mutex::new(None),
+                panic: std::sync::atomic::AtomicBool::new(false),
+                wake: Mutex::new(None),
+            },
+        },
         owner_memory,
-        registry: inner.connections.downgrade(),
-        _owner_metadata: owner_metadata,
-        _opening: opening_owner.try_clone_custody()?,
-        #[cfg(feature = "development-read-witness")]
-        read_drop_starts: std::sync::atomic::AtomicU8::new(0),
-        #[cfg(test)]
-        write_gate: Mutex::new(None),
-        #[cfg(test)]
-        write_none_once: std::sync::atomic::AtomicBool::new(false),
-        #[cfg(test)]
-        fail_audit_once: std::sync::atomic::AtomicBool::new(false),
-    });
-    // Move the confirmed owner reservation into the real Arc; it cannot be
-    // refunded by a facade while a pending operation still retains the Arc.
-    Arc::get_mut(&mut connection)
-        .expect("new owner")
-        .owner_memory
-        .confirm();
+        owner_metadata,
+        opening_custody,
+    );
     inner.connections.register(&opening_owner, &connection)?;
     Ok(Box::new(Handle { connection }))
 }
@@ -632,7 +700,7 @@ async fn create_socket(
             protected_selected: false,
             _kernel_scope: Arc::clone(scope),
             _quarantined_connection: None,
-            _opening: opening.try_clone_custody()?,
+            _opening: Some(opening.try_clone_custody()?),
         }),
         armed: false,
     };
@@ -920,7 +988,7 @@ async fn create_socket(
     Ok((owned.connected()?, valid_until))
 }
 
-impl Connection {
+impl ConnectionOwner {
     #[cfg(test)]
     pub(crate) fn test_write_none_once(&self) {
         self.write_none_once
@@ -1014,8 +1082,32 @@ impl Connection {
             && self.read_drop_starts() == 1)
     }
 
-    pub(crate) fn metadata_billing(&self) -> Arc<ProviderMetadata> {
-        Arc::clone(&self._owner_metadata)
+    #[cfg(all(test, unix))]
+    pub(crate) fn pause_drop_tail(
+        &self,
+    ) -> (std::sync::mpsc::Receiver<()>, std::sync::mpsc::Sender<()>) {
+        let (reached, wait) = std::sync::mpsc::channel();
+        let (resume, release) = std::sync::mpsc::channel();
+        assert!(self
+            .drop_tail
+            .pause
+            .lock()
+            .unwrap()
+            .replace((reached, release))
+            .is_none());
+        (wait, resume)
+    }
+
+    #[cfg(all(test, unix))]
+    pub(crate) fn panic_in_drop_tail(&self) {
+        self.drop_tail
+            .panic
+            .store(true, std::sync::atomic::Ordering::Release);
+    }
+
+    #[cfg(all(test, unix))]
+    pub(crate) fn wake_in_drop_tail(&self, waker: std::task::Waker) {
+        assert!(self.drop_tail.wake.lock().unwrap().replace(waker).is_none());
     }
 
     // The last copied transport reference retires before PendingGuard calls
@@ -1030,7 +1122,7 @@ impl Connection {
         }
     }
 
-    pub(crate) fn maintenance_step(self: &Arc<Self>, now: Instant) {
+    pub(crate) fn maintenance_step(&self, now: Instant) {
         self.release_retiring_if_done();
         let transport = {
             let Ok(mut state) = self.state.try_lock() else {
@@ -1067,11 +1159,7 @@ impl Connection {
         }
     }
 
-    fn pending(
-        self: &Arc<Self>,
-        direction: usize,
-        timeout: Option<u32>,
-    ) -> Result<Pending, StreamError> {
+    fn pending(&self, direction: usize, timeout: Option<u32>) -> Result<Pending, StreamError> {
         self.call
             .io()
             .checkpoint()
@@ -1135,7 +1223,7 @@ impl Connection {
         Ok(Pending {
             socket,
             _guard: PendingGuard {
-                connection: Arc::clone(self),
+                connection: self.clone(),
                 direction,
             },
             deadline,
@@ -1196,10 +1284,10 @@ impl Connection {
         self.drain_closed();
         self.changed.notify_waiters();
     }
-    pub(crate) fn abort(self: &Arc<Self>, reason: StreamErrorCode) {
+    pub(crate) fn abort(&self, reason: StreamErrorCode) {
         self.stop(Some(reason));
     }
-    fn stop(self: &Arc<Self>, reason: Option<StreamErrorCode>) {
+    fn stop(&self, reason: Option<StreamErrorCode>) {
         // SAME registry slot takes strong custody before admission closes.
         // Refusal never fabricates a release: original physical Drop still
         // follows its same mode-specific quarantine contract.
@@ -1219,7 +1307,7 @@ impl Connection {
             };
             self.call.io().stop_handle().stop();
             if let Some(physical) = physical {
-                physical.quarantine_with_connection(Arc::clone(self));
+                physical.quarantine_with_connection(self.clone());
             }
             self.changed.notify_waiters();
             return;
@@ -1287,7 +1375,7 @@ impl Connection {
         })
     }
     async fn authorize(
-        self: &Arc<Self>,
+        &self,
         operation: &str,
         cost: CapabilityCallCost,
     ) -> Result<ProviderCall, StreamError> {
@@ -1373,7 +1461,7 @@ impl Connection {
     }
 
     async fn complete_readiness_observation(
-        self: &Arc<Self>,
+        &self,
         pending: Pending,
         call: ProviderCall,
         success: bool,
@@ -1381,7 +1469,7 @@ impl Connection {
         let mut flight = ReadinessFlight {
             call,
             pending,
-            connection: Arc::clone(self),
+            connection: self.clone(),
             settled: false,
         };
         let result = match self.audit_ref(&mut flight.call, success).await {
@@ -1435,7 +1523,7 @@ impl OutboundStream for Handle {
         if maximum == 0 || maximum > MAXIMUM_CHUNK_BYTES {
             return Err(error(StreamErrorCode::InvalidInput));
         }
-        let connection = Arc::clone(&self.connection);
+        let connection = self.connection.clone();
         let prepared = self.connection.call.prepare_io_future_with(
             move |(pending, buffer): (Pending, IoTransferBuffer)| async move {
                 let call = connection
@@ -1447,7 +1535,7 @@ impl OutboundStream for Handle {
                     output: None,
                     call,
                     pending,
-                    connection: Arc::clone(&connection),
+                    connection: connection.clone(),
                     consumed: false,
                 };
                 let deadline = flight.call.deadline();
@@ -1533,7 +1621,7 @@ impl OutboundStream for Handle {
         let window = self.connection.scope.reserve_chunk(maximum * 2)?;
         let mut buffer = self.connection.transfer.output_buffer(maximum)?;
         buffer.retain_owner(Arc::new(ChunkOwner {
-            _connection: Arc::clone(&self.connection),
+            _connection: self.connection.clone(),
             _window: window,
         }))?;
         let future = prepared.finish((pending, buffer));
@@ -1571,7 +1659,7 @@ impl OutboundStream for Handle {
         if maximum == 0 || maximum > MAXIMUM_CHUNK_BYTES {
             return Err(error(StreamErrorCode::InvalidInput));
         }
-        let connection = Arc::clone(&self.connection);
+        let connection = self.connection.clone();
         let prepared = self.connection.call.prepare_io_future_with(
             move |(pending, input, cost): (Pending, IoInputChunk, CapabilityCallCost)| async move {
                 let call = connection.authorize("write", cost).await?;
@@ -1580,7 +1668,7 @@ impl OutboundStream for Handle {
                     input,
                     call,
                     pending,
-                    connection: Arc::clone(&connection),
+                    connection: connection.clone(),
                     possible: false,
                     accepted: 0,
                     accounted: false,
@@ -1698,7 +1786,7 @@ impl OutboundStream for Handle {
             .with_typed_input_bytes(input.as_ref().len())
             .with_typed_request_digest(CapabilityRequestDigest::from_parts(&[input.as_ref()])?);
         input.retain_owner(Arc::new(ChunkOwner {
-            _connection: Arc::clone(&self.connection),
+            _connection: self.connection.clone(),
             _window: window,
         }))?;
         Ok(prepared.finish((pending, input, cost)))
@@ -1708,7 +1796,7 @@ impl OutboundStream for Handle {
         interest: StreamInterest,
         timeout: Option<u32>,
     ) -> Result<IoFuture<'static, Result<StreamReadiness, StreamError>>, StreamError> {
-        let connection = Arc::clone(&self.connection);
+        let connection = self.connection.clone();
         let prepared =
             self.connection
                 .call
@@ -1796,7 +1884,7 @@ impl OutboundStream for Handle {
         {
             return Err(error(StreamErrorCode::Unsupported));
         }
-        let connection = Arc::clone(&self.connection);
+        let connection = self.connection.clone();
         let prepared =
             self.connection
                 .call
@@ -1849,11 +1937,11 @@ impl OutboundStream for Handle {
         Ok(prepared.finish(pending))
     }
     fn close(self: Box<Self>) -> IoFuture<'static, Result<StreamObservation, StreamError>> {
-        let connection = Arc::clone(&self.connection);
+        let connection = self.connection.clone();
         let prepared =
             connection
                 .call
-                .prepare_io_future_with(move |connection: Arc<Connection>| async move {
+                .prepare_io_future_with(move |connection: ConnectionOwner| async move {
                     let call = connection
                         .authorize("close", CapabilityCallCost::new(0))
                         .await?;
