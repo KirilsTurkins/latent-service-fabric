@@ -173,9 +173,11 @@ clock reading. Equal deadlines use each task's original queued-work admission
 identity, including across pools. As with concurrently submitted JDK tasks,
 overlapping or reentrant submissions need not have a predetermined order.
 Scheduled pools count a worker being constructed by a `ThreadFactory` toward
-their configured parallelism. A nested accepted task keeps its original owners
-if the factory fails. When no worker remains, that task needs a later successful
-worker admission to run. A scheduled pool also retains work when a factory
+their configured parallelism. If the factory itself throws after a submission
+is queued, the original exception reaches the caller but that task and any
+nested accepted tasks keep their owners; a later worker can still run them.
+With no worker, `shutdownNow()` can return the retained tasks. A scheduled pool
+also retains work when a factory
 returns `null`: root drain remains pending until the work runs or is withdrawn.
 With no runnable worker or pending host call, the existing root wait uses the
 original deadline and a Timer admission; a refused wait fails closed without

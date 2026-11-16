@@ -102,6 +102,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         boolean resultAccepted;
         boolean released;
         boolean releasing;
+        boolean factoryFailed;
         Entry(Task<?> task, Activation.Lease queued, boolean resultAccepted) {
             this.task = task; this.queued = queued; this.resultAccepted = resultAccepted;
         }
@@ -278,10 +279,14 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             pendingWork++; counted = true;
             queue.add(entry);
             installed = true;
-            if (workers.size() < parallelism && workers.size() < queue.size() + running) startWorker();
+            if (workers.size() < parallelism && workers.size() < queue.size() + running) startWorker(entry);
             notifyAll();
             return task;
         } catch (Throwable error) {
+            // The JDK leaves an already enqueued task in the scheduled queue
+            // when the application factory itself throws. The original entry
+            // remains charged even though the same failure reaches the caller.
+            if (entry != null && entry.factoryFailed) throw error;
             boolean withdrawn;
             try { withdrawn = withdrawFailed(entry, installed); }
             catch (Throwable uncertain) { throw error; }
@@ -390,7 +395,9 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         void clear() { pool = null; thread = null; }
     }
 
-    private void startWorker() {
+    private void startWorker() { startWorker(null); }
+
+    private void startWorker(Entry admitted) {
         // All callers hold the pool monitor, including reentrant admissions.
         // Reserve capacity before calling the application-supplied factory.
         if (workers.size() >= parallelism - startingWorkers) return;
@@ -402,7 +409,12 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             Thread thread = null;
             int addedAt = -1;
             try {
-                thread = factory.newThread(worker::run);
+                Runnable target = worker::run;
+                try { thread = factory.newThread(target); }
+                catch (Throwable error) {
+                    if (admitted != null) admitted.factoryFailed = true;
+                    throw error;
+                }
                 // The standard factory contract permits null. Accepted queue
                 // entries remain owned and a later admission can retry startup.
                 if (thread == null) { worker.clear(); return; }
