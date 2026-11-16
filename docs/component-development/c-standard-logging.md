@@ -69,9 +69,9 @@ previous contracts.
 | stdout / descriptor 1 | One accepted UTF-8 record per underlying write, level `info`. |
 | stderr / descriptor 2 | Same ownership, level `error`. |
 | Formatting and buffering | The actual libc formats values. An SDK-owned reactor initializer at priority 101 selects unbuffered stdout/stderr before ordinary default-priority dependency initializers, so successful ordinary writes do not depend on application shutdown glue. |
-| Scatter/gather writes | At most 16 vectors and 4096 combined adapter bytes per call; all memory ranges and complete UTF-8 are checked before host dispatch. The host accepts at most 256 message bytes, so a 257–4096-byte message returns `EINVAL`. Empty writes make no host call. |
+| Scatter/gather writes | At most 16 vectors per call. One accepted record contains at most 256 bytes and ends at a UTF-8 character boundary; a longer write reports the accepted prefix length so its caller can continue. Memory ranges used by the prefix and its complete UTF-8 are checked before host dispatch. Empty writes make no host call. |
 | Encoding | UTF-8 may cross vector boundaries. Invalid, incomplete, overlong, surrogate or out-of-range sequences return `EILSEQ`; this is a textual log sink rather than a binary byte stream. |
-| Budget / invalid input | Host budget exhaustion returns `EAGAIN`; oversized vectors or host invalid-field errors return `EINVAL`. The original activation log ledger remains authoritative. |
+| Budget / invalid input | Host budget exhaustion returns `EAGAIN`; too many vectors or host invalid-field errors return `EINVAL`, and invalid memory returns `EFAULT`. The original activation log ledger remains authoritative for every accepted record. |
 | Unavailable / denied / rejected log | Return `EIO` with no success-labelled byte count. The existing log WIT exposes `unavailable` rather than a separate permission error; the port does not invent a more precise errno. |
 | Descriptor queries | Only stdout/stderr have a non-inheritable write right. They report unknown file type and no terminal/seek/filesystem semantics. Other descriptors return `EBADF`. |
 | Seek / close | stdout/stderr return `ENOTSUP`, other descriptors `EBADF`. No successful seek or close is fabricated. |
