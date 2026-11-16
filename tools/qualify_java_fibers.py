@@ -554,6 +554,36 @@ STANDARD_TIMER_ACTIVE_OWNER_CASES = (
 )
 
 
+def timer_cleanup_failure_source_control(compiler: Compiler, output: Path) -> None:
+    """Project a failure at callback-finally monitor reacquisition."""
+    sdk = compiler.sdk
+    fixture = sdk / 'fibers/conformance/compiler/standard-timer-control'
+    timer = read_file(sdk / 'fibers/dev/latent/guest/runtime/util/Timer.java').decode('utf-8')
+    callback = ('                finally {\n                    synchronized (lock) {\n'
+                '                        try { entry.returned(); pendingWork--; }')
+    cleanup = '        } finally {\n            synchronized (lock) {\n                cancelled = true;'
+    if timer.count(callback) != 1 or timer.count(cleanup) != 1:
+        raise ValueError('Java Timer cleanup failure source control is ambiguous')
+    timer = timer.replace(callback, callback.replace('                    synchronized (lock) {',
+        '                    TimerCleanupFailureHooks.callbackFinally();\n                    synchronized (lock) {'))
+    timer = timer.replace(cleanup, cleanup.replace('            synchronized (lock) {',
+        '            TimerCleanupFailureHooks.beforeWorkerCleanup();\n            synchronized (lock) {'))
+    output.mkdir()
+    projected = output / 'Timer.java'
+    projected.write_text(timer, encoding='utf-8')
+    sources = [sdk / 'fibers/dev/latent/guest/runtime/util/TimerTask.java',
+               fixture / 'dev/latent/generated/Bindings.java',
+               fixture / 'dev/latent/guest/runtime/Activation.java',
+               fixture / 'dev/latent/guest/runtime/util/TimerCleanupFailureHooks.java',
+               fixture / 'TimerCleanupFailureControl.java']
+    compiler.run('timer-cleanup-failure-source-compile', 'javac', '-proc:none', '--release', '25',
+        '-d', output, projected, *sources)
+    actual = compiler.run('timer-cleanup-failure-source-control', 'java', '-Xmx256m', '-cp', output,
+        'TimerCleanupFailureControl').strip()
+    if actual != 'TIMER_CLEANUP_FAILURE_SOURCE PASS exact-replacement;fenced-before-cleanup;owners-retained':
+        raise ValueError('Java Timer cleanup failure control did not complete')
+
+
 def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
     """Execute unchanged SDK timer sources with an explicitly private host ledger.
 
@@ -576,8 +606,11 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
     clock_sources = [private / "FakeClock.java", private / "ClockOrderControl.java"]
     ports = [compiler.sdk / ("fibers/dev/latent/guest/runtime/util/" + name + ".java")
              for name in ("Timer", "TimerTask")]
+    cleanup_sources = [private / 'dev/latent/guest/runtime/util/TimerCleanupFailureHooks.java',
+                       private / 'TimerCleanupFailureControl.java']
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-              for path in (application, main, validation, class_monitor, cancelled_reference, interrupt_reference, *sources, *ports, *clock_sources)}
+              for path in (application, main, validation, class_monitor, cancelled_reference, interrupt_reference,
+                           *sources, *ports, *clock_sources, *cleanup_sources)}
     output.mkdir()
     mapped = output / "Capsule.java"
     text = read_file(application).decode("utf-8")
@@ -636,6 +669,7 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
         raise ValueError("Java cancelled timer reference did not complete")
     compiler.run("standard-timer-source-compile", "javac", "-proc:none", "--release", "25",
                  "-d", output, mapped, mapped_validation, mapped_class_monitor, mapped_cancelled, mapped_interrupt, main, *sources, *ports)
+    timer_cleanup_failure_source_control(compiler, output / 'cleanup-failure')
     result = compiler.run("standard-timer-class-monitor-source", "java", "-Xmx256m", "-cp", output,
                           "TimerClassMonitorReferenceControl", "source")
     if result.strip().splitlines() != class_monitor_expected:
@@ -718,6 +752,7 @@ def standard_timer_source_control(compiler: Compiler, output: Path) -> dict:
         raise ValueError("Java timer control inputs changed during execution")
     return {"status": "SDK-source-controls-passed", "iterations": 3, "modes": [0, 1, 2, 3],
             "sourceInputs": inputs, "classMonitor": "JDK-and-SDK-source-controls-passed",
+            "cleanupFailure": "source-projection-replacement-fenced-before-cleanup",
             "cancelledTail": "JDK-reference-and-bounded-private-ledger-passed",
             "interruptedCallback": "JDK-reference-and-bounded-private-ledger-passed",
             "validationOrder": {"observations": 35, "referenceAndSource": "passed",
@@ -848,6 +883,30 @@ WORK_FINISH_CASES = tuple((kind, mode)
 )
 
 
+def timer_wait_admission_source_control(compiler: Compiler, output: Path, classes: Path,
+                                        classpath: str) -> None:
+    """Project the maintained Object.wait hook over the actual Timer sources."""
+    sdk = compiler.sdk
+    fixture = sdk / 'fibers/conformance/compiler/timer-source-control'
+    timer = read_file(sdk / 'fibers/dev/latent/guest/runtime/util/Timer.java').decode('utf-8')
+    original = 'lock.wait(remaining)'
+    if timer.count(original) != 1:
+        raise ValueError('Java Timer timed-wait source control is ambiguous')
+    output.mkdir()
+    projected = output / 'Timer.java'
+    projected.write_text(timer.replace(original, 'TimerWaitHooks.waitFor(lock, remaining)'), encoding='utf-8')
+    sources = [sdk / 'fibers/dev/latent/guest/runtime/util/TimerTask.java',
+               fixture / 'dev/latent/guest/runtime/util/TimerWaitHooks.java',
+               fixture / 'TimerWaitAdmissionSourceControl.java']
+    compiler.run('timer-worker-admission-source-compile', 'javac', '-proc:none', '--release', '25',
+        '-cp', str(classes) + os.pathsep + classpath, '-d', output, projected, *sources)
+    actual = compiler.run('timer-worker-admission-source-control', 'java', '-Xmx256m', '-cp',
+        str(output) + os.pathsep + str(classes) + os.pathsep + classpath,
+        'TimerWaitAdmissionSourceControl').strip()
+    if actual != 'TIMER_WAIT_ADMISSION_SOURCE PASS typed-refusal;accepted-callback-not-run;owners-retired;root-refused':
+        raise ValueError('Java Timer worker admission control did not complete')
+
+
 def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> dict:
     """Run actual admission and cleanup against a private, two-Timer host ledger."""
     classpath, identities = locked_model_classpath(compiler, include_platform=True)
@@ -861,7 +920,12 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
                 fixture / 'OwnerAdmissionSourceControl.java', fixture / 'OwnerSettlementSourceControl.java',
                 fixture / 'WorkFinishSourceControl.java']
     sources += sorted((sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
-    inputs = {path.relative_to(sdk).as_posix(): digest(read_file(path)) for path in sources}
+    timer_worker_sources = [sdk / ('fibers/dev/latent/guest/runtime/util/' + name + '.java')
+                            for name in ('Timer', 'TimerTask')]
+    timer_worker_sources += [fixture / 'dev/latent/guest/runtime/util/TimerWaitHooks.java',
+                             fixture / 'TimerWaitAdmissionSourceControl.java']
+    inputs = {path.relative_to(sdk).as_posix(): digest(read_file(path))
+              for path in (*sources, *timer_worker_sources)}
     output.mkdir()
     compiler.run('timer-sleep-admission-source-compile', 'javac', '-proc:none', '--release', '25',
         '-cp', classpath, '-d', output, *sources)
@@ -869,6 +933,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         str(output) + os.pathsep + classpath, 'TimerSleepAdmissionSourceControl').strip()
     if actual != 'TIMER_SLEEP_ADMISSION_SOURCE PASS zero-raw-frame;zero-interrupt;typed-refusal;wait-return;same-work-retry;raw-hook-finally':
         raise ValueError('Java timer sleep admission source control did not complete')
+    timer_wait_admission_source_control(compiler, output / 'timer-worker-admission', output, classpath)
     owner_cases = ('normal', 'refused', 'lost', 'null', 'reentry', 'capacity')
     for case in owner_cases:
         actual = compiler.run('owner-admission-source-' + case, 'java', '-Xmx256m', '-cp',
@@ -888,6 +953,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
     if inputs != {name: digest(read_file(sdk / name)) for name in inputs}:
         raise ValueError('Java timer sleep admission source inputs changed')
     return {'status': 'SDK-source-control-passed', 'sourceInputs': inputs, 'jarDigests': identities,
+        'timerWorkerAdmission': 'private-ledger-refusal-and-root-fence-passed',
         'ownerAdmissionCases': list(owner_cases), 'ownerSettlementCases': list(OWNER_SETTLEMENT_CASES),
         'workFinishCases': [list(case) for case in WORK_FINISH_CASES],
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
