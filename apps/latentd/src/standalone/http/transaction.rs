@@ -240,34 +240,52 @@ fn project(response: phase4::Response) -> Result<(u16, Response), u16> {
         };
     }
     let status = if let Some(command) = command {
-        if command.cleanup_failure.is_some() {
-            body.delivery_failure = Some("unavailable");
+        project_command(&mut body, command)?
+    } else if let Some(result) = &body.result {
+        if result.error_code.is_some() {
+            422
+        } else {
+            200
         }
-        body.command_id = Some(command.command_id);
-        body.attempt_id = Some(command.attempt_id);
-        body.result_expires_at = command
-            .retention
-            .and_then(|r| r.payload_expires_at_unix_millis)
-            .map(|n| n.to_string());
-        body.abort_fence = command.proven_abort.map(|f| AbortFence {
-            command_id: f.command_id,
-            attempt_id: f.attempt_id,
-            transaction_id: f.transaction_id,
-            owner_fence: STANDARD.encode(f.owner_fence),
-        });
-        if let Some(commit) = command.commit {
-            body.state_view = Some(STANDARD.encode(commit.committed_version));
-            body.effect_ids = commit.effect_ids;
-        }
-        if let Some(result) = command.retained_result {
-            body.result = match result {
-                t::command_inspection::RetainedResult::Success(value) => Some(success(value)?),
-                t::command_inspection::RetainedResult::BusinessRejection(value) => {
-                    Some(rejection(value)?)
-                }
-                t::command_inspection::RetainedResult::TechnicalFailure(_) => None,
-            };
-        }
+    } else {
+        query_failure.unwrap_or(503)
+    };
+    if body.result.is_some() {
+        body.representation = "application-result";
+    }
+    Ok((status, body))
+}
+
+fn project_command(body: &mut Response, command: t::CommandInspection) -> Result<u16, u16> {
+    if command.cleanup_failure.is_some() {
+        body.delivery_failure = Some("unavailable");
+    }
+    body.command_id = Some(command.command_id);
+    body.attempt_id = Some(command.attempt_id);
+    body.result_expires_at = command
+        .retention
+        .and_then(|r| r.payload_expires_at_unix_millis)
+        .map(|n| n.to_string());
+    body.abort_fence = command.proven_abort.map(|f| AbortFence {
+        command_id: f.command_id,
+        attempt_id: f.attempt_id,
+        transaction_id: f.transaction_id,
+        owner_fence: STANDARD.encode(f.owner_fence),
+    });
+    if let Some(commit) = command.commit {
+        body.state_view = Some(STANDARD.encode(commit.committed_version));
+        body.effect_ids = commit.effect_ids;
+    }
+    if let Some(result) = command.retained_result {
+        body.result = match result {
+            t::command_inspection::RetainedResult::Success(value) => Some(success(value)?),
+            t::command_inspection::RetainedResult::BusinessRejection(value) => {
+                Some(rejection(value)?)
+            }
+            t::command_inspection::RetainedResult::TechnicalFailure(_) => None,
+        };
+    }
+    Ok(
         match t::CommandOutcome::try_from(command.outcome).map_err(|_| 503u16)? {
             t::CommandOutcome::Committed => {
                 body.disposition = "committed";
@@ -290,20 +308,8 @@ fn project(response: phase4::Response) -> Result<(u16, Response), u16> {
                 503
             }
             _ => return Err(503),
-        }
-    } else if let Some(result) = &body.result {
-        if result.error_code.is_some() {
-            422
-        } else {
-            200
-        }
-    } else {
-        query_failure.unwrap_or(503)
-    };
-    if body.result.is_some() {
-        body.representation = "application-result";
-    }
-    Ok((status, body))
+        },
+    )
 }
 
 fn success(value: i::Success) -> Result<ResultValue, u16> {
