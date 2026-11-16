@@ -157,33 +157,38 @@ impl StreamLifecycle {
     }
 
     pub(crate) fn maintenance_step(&self, now: Instant) -> Result<bool, StreamError> {
-        let state = match self.state.try_lock() {
-            Ok(state) => state,
-            Err(std::sync::TryLockError::WouldBlock) => return Ok(false),
-            Err(std::sync::TryLockError::Poisoned(_)) => return Err(unavailable()),
+        // Maintenance can close a connection and wake its waiters. Retain the
+        // bounded original provider generations, but release the lifecycle
+        // lock before driving their callbacks or destroying any owners.
+        let (current, retired, stopped) = {
+            let state = match self.state.try_lock() {
+                Ok(state) => state,
+                Err(std::sync::TryLockError::WouldBlock) => return Ok(false),
+                Err(std::sync::TryLockError::Poisoned(_)) => return Err(unavailable()),
+            };
+            (state.current.clone(), state.retired.clone(), state.stopped)
         };
         #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
-        let protected = state.current.inner.native_bank.is_some()
-            || state
-                .retired
+        let protected = current.inner.native_bank.is_some()
+            || retired
                 .iter()
                 .flatten()
                 .any(|p| p.inner.native_bank.is_some());
         #[cfg(not(all(target_os = "linux", any(test, feature = "development-outbound"))))]
         let protected = false;
-        if state.stopped && !protected {
+        if stopped && !protected {
             return Ok(true); // Original unselected maintenance behavior.
         }
-        state.current.maintenance_step(now);
-        for retired in state.retired.iter().flatten() {
-            retired.maintenance_step(now);
+        current.maintenance_step(now);
+        for provider in retired.iter().flatten() {
+            provider.maintenance_step(now);
         }
-        if state.stopped {
+        if stopped {
             // No renewed authority or forced timeout-success. Unknown physical
             // retirement keeps the original paid driver and quarantine alive.
-            let mut owners = state.current.usage()?.owners;
-            for retired in state.retired.iter().flatten() {
-                owners = owners.saturating_add(retired.usage()?.owners);
+            let mut owners = current.usage()?.owners;
+            for provider in retired.iter().flatten() {
+                owners = owners.saturating_add(provider.usage()?.owners);
             }
             return Ok(owners == 0);
         }
