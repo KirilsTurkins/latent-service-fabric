@@ -254,7 +254,14 @@ ssize_t __lsf_c_net_read(int fd, void *buffer, size_t length) {
     return __lsf_c_net_recv(fd, buffer, length, 0);
 }
 
+#if defined(LSF_C_STREAM_STDIO) && LSF_C_STREAM_STDIO
+/* Only the combined profile links the existing bounded log-backed stdio. */
+extern ssize_t net_stdio_write(int, const void *, size_t) __asm__("write");
+#endif
 ssize_t __lsf_c_net_write(int fd, const void *buffer, size_t length) {
+#if defined(LSF_C_STREAM_STDIO) && LSF_C_STREAM_STDIO
+    if (fd == 1 || fd == 2) return net_stdio_write(fd, buffer, length);
+#endif
     return __lsf_c_net_send(fd, buffer, length, 0);
 }
 
@@ -276,6 +283,10 @@ int __lsf_c_net_shutdown(int fd, int how) {
 }
 
 int __lsf_c_net_close(int fd) {
+#if defined(LSF_C_STREAM_STDIO) && LSF_C_STREAM_STDIO
+    /* Match the existing stdio adapter, which does not close the log sink. */
+    if (fd == 1 || fd == 2) return fail(ENOTSUP);
+#endif
     struct descriptor *slot = find_descriptor(fd);
     if (!slot) return fail(EBADF);
     if (slot->busy) return fail(EBUSY);

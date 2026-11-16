@@ -318,6 +318,9 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-zig@adb5ed78414674f693e8fe00982f83df9badcdb3 # v2.2.1 + upstream changes + LSF security fixes
         with:
           version: '0.16.0'
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a # v7.1.0 + upstream changes + LSF security fixes
+        with:
+          node-version: 24.19.0
       - name: Prepare pinned bindings and supported compiler containment
         run: |
           python3 -m pip install --requirement tools/requirements.lock
@@ -342,6 +345,13 @@ jobs:
         run: |
           python3 -m unittest tools.tests.test_c_standard_combined
           python3 tools/qualify_c_standard_facilities.py --combined-profile --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-combined"
+      - name: Exercise bounded C stream and stdio composition
+        id: c-stream-stdio-composition
+        if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
+        run: |
+          python3 -m unittest tools.tests.test_c_stream_profile
+          python3 -B tools/c_stream_source_controls.py --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --node "$(command -v node)" --output "$RUNNER_TEMP/c-stream-stdio-source"
+          python3 -B tools/c_stream_stdio_component_controls.py --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --contracts "$RUNNER_TEMP/c-standard-facilities/native-build/native/capsule_contracts" --output "$RUNNER_TEMP/c-stream-stdio-component"
       - name: Execute captured C23 raw resources and physical trap retirement
         if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
         run: |
@@ -488,6 +498,15 @@ jobs:
             ${{ runner.temp }}/c-standard-combined/builds/*/core-componentization-failed.wasm
             ${{ runner.temp }}/c-standard-combined/builds/*/logs/**
             ${{ runner.temp }}/c-standard-combined/node/public-workflow.json
+            ${{ runner.temp }}/c-stream-stdio-source/*.json
+            ${{ runner.temp }}/c-stream-stdio-source/logs/**
+            ${{ runner.temp }}/c-stream-stdio-component/component-controls.json
+            ${{ runner.temp }}/c-stream-stdio-component/supported-build/BUILD-COMPLETE.json
+            ${{ runner.temp }}/c-stream-stdio-component/supported-build/BUILD-FAILED.json
+            ${{ runner.temp }}/c-stream-stdio-component/supported-build/standard-runtime-selection.json
+            ${{ runner.temp }}/c-stream-stdio-component/supported-build/logs/**
+            ${{ runner.temp }}/c-stream-stdio-component/unsupported-build/BUILD-FAILED.json
+            ${{ runner.temp }}/c-stream-stdio-component/unsupported-build/logs/**
             ${{ runner.temp }}/c-compiled-resources/qualified.json
             ${{ runner.temp }}/c-compiled-resources/FAILED.json
             ${{ runner.temp }}/c-compiled-resources/logs/**

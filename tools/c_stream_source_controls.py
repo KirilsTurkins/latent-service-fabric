@@ -20,6 +20,8 @@ SOURCES = (
     'tools/tests/fixtures/c-stream-descriptor-source.c', 'tools/tests/fixtures/c-stream-descriptor-source.cjs',
     'tools/c_stream_source_controls.py', 'sdk/c-guest/src/trap.c', 'tools/c_guest/standard_facilities.py',
     'tools/tests/fixtures/c-stream-abort-link.c', 'tools/tests/fixtures/c-stream-abort-link.cjs',
+    'sdk/c-guest/src/standard-stdio.c', 'tools/tests/fixtures/c-stream-stdio-source.c',
+    'tools/tests/fixtures/c-stream-stdio-source.cjs',
 )
 
 
@@ -51,6 +53,33 @@ def run(output: Path, zig: Path, wit: Path, node: Path) -> dict:
         observed = commands.run('controls', node, ROOT / SOURCES[5], output / 'controls.wasm')
         require(observed == b'PASS descriptor_controls\nPASS send_nosignal_controls\nPASS descriptor_flags_controls\nPASS readiness_controls\nPASS full_shutdown_refusal_controls\nPASS half_close_controls\n',
                 'c-stream-source-exact-outcome')
+        # The composed profile uses the same maintained C bodies and genuine
+        # generated WIT types, with explicit finite log/network/libc doubles.
+        # A failed log call models unavailable authority; it does not prove a
+        # signed node's pre-admission policy or real provider behavior.
+        combined_source = output / 'combined-wit-input'
+        combined_source.mkdir()
+        (combined_source / 'world.wit').write_text('package tests:control@1.0.0; world service {}\n')
+        combined_wit = standard_facilities.stage(
+            combined_source, 'service', output / 'combined-wit', ROOT / 'wit/platform',
+            profile=standard_facilities.STREAM_STDIO_PROFILE)
+        combined_bindings = output / 'combined-bindings'
+        combined_bindings.mkdir()
+        commands.run('combined-bindings', wit, 'c', combined_wit, '--world', 'service',
+                     '--rename-world', 'probe', '--async=-all', '--out-dir', combined_bindings)
+        combined_args = ['cc', '-std=c11', '-target', 'wasm32-wasi', '-O2', '-D_POSIX_C_SOURCE=200809L',
+                         '-DLSF_C_STREAM_NETWORK=1', '-DLSF_C_STREAM_STDIO=1', '-Wall', '-Wextra', '-Werror',
+                         '-fno-builtin', '-nostdlib', '-Wl,--no-entry', '-Wl,--export-memory']
+        for family in ('wasm-wasi-musl', 'generic-musl'):
+            combined_args += ['-isystem', zig.parent / 'lib/libc/include' / family]
+        combined_args += ['-I', combined_bindings, '-I', ROOT / 'sdk/c-guest/include',
+                          '-include', ROOT / SOURCES[3], '-include', ROOT / SOURCES[1],
+                          ROOT / SOURCES[0], ROOT / SOURCES[11], ROOT / SOURCES[12],
+                          '-o', output / 'combined-controls.wasm']
+        commands.run('combined-compile', zig, *combined_args)
+        combined = commands.run('combined-controls', node, ROOT / SOURCES[13], output / 'combined-controls.wasm')
+        require(combined == b'PASS stdio_stream_controls\nPASS stdio_missing_log_authority\n',
+                'c-stream-stdio-source-exact-outcome')
         link_args = ['cc', '-std=c11', '-target', 'wasm32-wasi', '-O2', '-Wall', '-Wextra', '-Werror',
                      '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory', '-matomics',
                      '-mbulk-memory', '-pthread', '-fno-lto', '-D_DEFAULT_SOURCE',
@@ -67,7 +96,8 @@ def run(output: Path, zig: Path, wit: Path, node: Path) -> dict:
         result.update(status='passed', commands=commands.records,
                       cases=['descriptor_controls', 'send_nosignal_controls', 'descriptor_flags_controls', 'readiness_controls', 'full_shutdown_refusal_controls',
                              'half_close_controls', 'libc-entropy',
-                             'application_abort', 'original_libc_abort'])
+                             'application_abort', 'original_libc_abort',
+                             'stdio_stream_controls', 'stdio_missing_log_authority'])
         write_json(output / 'source-controls.json', result)
         return result
     except BaseException:

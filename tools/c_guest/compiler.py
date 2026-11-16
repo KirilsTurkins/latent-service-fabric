@@ -359,7 +359,7 @@ class Compiler:
             threading.selected({'threadingProfile': threading_profile})
         if runtime_profile in standard_facilities.FETCH_PROFILES and not threaded:
             raise ValueError('c-libfetch-http-requires-cooperative-threading')
-        if runtime_profile == standard_facilities.STREAM_PROFILE and not threaded:
+        if runtime_profile in standard_facilities.STREAM_PROFILES and not threaded:
             raise ValueError('c-stream-network-requires-cooperative-threading')
         if threaded and ('c-threading-transformer' not in self.paths or static_libraries):
             raise ValueError('c-threading-requires-transformer-and-no-static-archives')
@@ -391,7 +391,7 @@ class Compiler:
             include_directories = (*include_directories, runtime)
             timed_clock = runtime_profile in {standard_facilities.PROFILE, standard_facilities.COMBINED_PROFILE,
                                                standard_facilities.FETCH_STANDARD_PROFILE,
-                                               standard_facilities.STREAM_PROFILE}
+                                               *standard_facilities.STREAM_PROFILES}
             if timed_clock:
                 self.select_threading_clock_inputs()
                 time_response = self.threading_time_alias
@@ -410,10 +410,13 @@ class Compiler:
         if use_closed_headers:
             command[command.index('-I'):command.index('-I')] = ['-I', str(self.closed_header_stage.directory)]
             command.insert(command.index(str(sources[0])), str(header_object))
-        if runtime_profile == standard_facilities.STREAM_PROFILE:
+        if runtime_profile in standard_facilities.STREAM_PROFILES:
             command.extend(['-include', str(self.sdk / standard_facilities.STREAM_HEADER)])
-        if runtime_profile in standard_facilities.FETCH_PROFILES:
+        if (runtime_profile in standard_facilities.FETCH_PROFILES or
+                runtime_profile == standard_facilities.STREAM_STDIO_PROFILE):
             # Zig maps this to wasm-ld -s: omit debug/name metadata, not code.
+            # Keep the existing finite cooperative preimage bound for the
+            # combined stream/stdio profile with its actual socket calls.
             command.append('-Wl,--strip-debug')
         thread_flags = []
         if threaded:
@@ -446,7 +449,7 @@ class Compiler:
             if use_closed_headers:
                 preprocessor[preprocessor.index('-I'):preprocessor.index('-I')] = [
                     '-I', str(self.closed_header_stage.directory)]
-            if runtime_profile == standard_facilities.STREAM_PROFILE:
+            if runtime_profile in standard_facilities.STREAM_PROFILES:
                 preprocessor.extend(['-include', str(self.sdk / standard_facilities.STREAM_HEADER)])
             for directory in include_directories:
                 preprocessor.extend(["-I", str(directory)])
@@ -525,7 +528,7 @@ class Compiler:
             encoded_core = derived / 'derived.wasm'
         try:
             component_command = ["component", "new", str(encoded_core), "-o", str(component)]
-            if runtime_profile in {standard_facilities.LOGGING_PROFILE, standard_facilities.COMBINED_PROFILE}:
+            if runtime_profile in standard_facilities.STDIO_ADAPTER_PROFILES:
                 adapter = destination / "standard-stdio-adapter.wasm"
                 self.run("wasm-tools", "parse", str(self.sdk / "src/standard-stdio.wat"), "-o", str(adapter))
                 component_command.extend(["--adapt", "wasi_snapshot_preview1=" + str(adapter)])

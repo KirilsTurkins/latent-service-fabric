@@ -24,7 +24,7 @@ def parser() -> argparse.ArgumentParser:
     new.add_argument('--event-profile', help='Exact observed event idempotency profile for the transaction template; grants no authority')
     new.add_argument('--header-profile', choices=('c-closed-signal-jump-headers-v1',),
                      help='Expose declarations only; signal and nonlocal jumps remain unavailable')
-    new.add_argument('--runtime-profile', choices=('c-stream-clock-entropy-v1',),
+    new.add_argument('--runtime-profile', choices=('c-stream-clock-entropy-v1', 'c-stream-clock-entropy-stdio-v1'),
                      help='Select the bounded IPv4 stream source profile; grants remain independent')
     resolve_ = commands.add_parser("resolve", help="Explicitly capture declared C source/static library closure")
     resolve_.add_argument("project", type=Path)
