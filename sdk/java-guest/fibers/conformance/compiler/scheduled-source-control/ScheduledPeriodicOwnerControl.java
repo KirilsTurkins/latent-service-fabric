@@ -297,7 +297,7 @@ public final class ScheduledPeriodicOwnerControl {
         } finally { stop(pool); }
         Activation.idle();
     }
-    private static void reentrantFactoryRollback() throws Exception {
+    private static void reentrantFactoryFailure() throws Exception {
         AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
         AtomicReference<ScheduledFuture<?>> selected = new AtomicReference<>();
         var failure = new IllegalStateException("periodic-factory-failure");
@@ -314,8 +314,58 @@ public final class ScheduledPeriodicOwnerControl {
             // The in-progress second factory owns the remaining worker slot.
             // Its nested manual occurrence stays queued without a third worker.
             require(attempts.get() == 2 && calls.get() == 2 && !future.isDone());
-            require(future.getDelay(TimeUnit.HOURS) >= before + 47); held(2, 1);
-            entries(pool.shutdownNow(), future, 2); require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0);
+            require(future.getDelay(TimeUnit.HOURS) >= before + 47); held(3, 1);
+            entries(pool.shutdownNow(), future, 3); require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0);
+        } finally { stop(pool); }
+        Activation.idle();
+    }
+    private static void manualFactoryFailure() throws Exception {
+        for (boolean fixedRate : new boolean[]{true, false}) {
+            AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+            var failure = new IllegalStateException("manual-factory-failure");
+            var pool = new ScheduledThreadPoolExecutor(1, target -> {
+                if (attempts.incrementAndGet() == 1) return null;
+                throw failure;
+            });
+            try {
+                var future = fixedRate ? pool.scheduleAtFixedRate(calls::incrementAndGet, 3, 1, TimeUnit.DAYS)
+                    : pool.scheduleWithFixedDelay(calls::incrementAndGet, 3, 1, TimeUnit.DAYS);
+                long before = future.getDelay(TimeUnit.HOURS);
+                try { ((Runnable)future).run(); throw new AssertionError("missing-factory-failure"); }
+                catch (IllegalStateException expected) { require(expected == failure); }
+                long after = future.getDelay(TimeUnit.HOURS);
+                require(attempts.get() == 2 && calls.get() == 1 && !future.isDone() && pool.hasPendingWork());
+                require(fixedRate ? after - before >= 23 : before - after >= 46);
+                held(2, 1);
+                entries(pool.shutdownNow(), future, 2);
+                require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0);
+                require(future.cancel(false));
+            } finally { stop(pool); }
+            Activation.idle();
+        }
+    }
+    private static void manualFactoryShutdown() throws Exception {
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        AtomicReference<ScheduledThreadPoolExecutor> selected = new AtomicReference<>();
+        AtomicReference<ScheduledFuture<?>> task = new AtomicReference<>();
+        var failure = new IllegalStateException("factory-after-shutdown");
+        var pool = new ScheduledThreadPoolExecutor(1, target -> {
+            if (attempts.incrementAndGet() == 1) return null;
+            entries(selected.get().shutdownNow(), task.get(), 2);
+            // The manual invocation still holds its physical result, and the
+            // factory reservation keeps the executor from retiring early.
+            held(0, 1);
+            require(Activation.count(LatentRuntimeActivationOwnerKind.Executor) == 1);
+            throw failure;
+        });
+        selected.set(pool);
+        try {
+            var future = pool.scheduleAtFixedRate(calls::incrementAndGet, 1, 1, TimeUnit.DAYS);
+            task.set(future);
+            try { ((Runnable)future).run(); throw new AssertionError("missing-factory-failure"); }
+            catch (IllegalStateException expected) { require(expected == failure); }
+            require(calls.get() == 1 && !future.isDone() && pool.awaitTermination(5, TimeUnit.SECONDS));
+            held(0, 0); require(future.cancel(false));
         } finally { stop(pool); }
         Activation.idle();
     }
@@ -344,7 +394,8 @@ public final class ScheduledPeriodicOwnerControl {
     public static void main(String[] args) throws Exception {
         copies(); denial(); completedFailure(); failedInsertion(); failedWorkerRequeue(); uncertainInsertion();
         manualWinsWorker(false); manualWinsWorker(true); manualStopped(true); manualStopped(false);
-        workerRunning(); managedWrapper(); opaqueRunning(); subclassReentrancy(); reentrantFactoryRollback(); deniedSettlementRemainsCharged();
+        workerRunning(); managedWrapper(); opaqueRunning(); subclassReentrancy(); reentrantFactoryFailure();
+        manualFactoryFailure(); manualFactoryShutdown(); deniedSettlementRemainsCharged();
         System.out.println("SCHEDULED_PERIODIC_OWNER PASS copies;denial;completed-failure;insertion;worker-requeue;uncertain-insertion;manual-worker;last-copy-denial;cancel;shutdown;running-worker;managed-wrapper;opaque;subclass-reentrancy;reentrant-factory;denied-settlement-held");
     }
 }

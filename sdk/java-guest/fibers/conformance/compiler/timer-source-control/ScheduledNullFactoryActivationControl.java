@@ -310,6 +310,45 @@ public final class ScheduledNullFactoryActivationControl {
         require((boolean)invoke("retireIdlePools") && pool.isRetired(), "denied-worker-pool-not-retired");
         held(0, 0, 0); finishRoot(root);
     }
+    private static void manualFactoryFailure(boolean denyWorker) throws Exception {
+        Object root = enter();
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        var failure = new IllegalStateException("manual-factory-failed");
+        var pool = new ScheduledThreadPoolExecutor(1, target -> {
+            if (attempts.incrementAndGet() == 1) return null;
+            if (denyWorker) {
+                Bindings.LatentRuntimeActivation.denyRegistration = true;
+                return new Thread(target);
+            }
+            throw failure;
+        });
+        var future = pool.scheduleAtFixedRate(calls::incrementAndGet, 1, 1, TimeUnit.DAYS);
+        long before = future.getDelay(TimeUnit.HOURS);
+        try {
+            try { ((Runnable)future).run(); throw new AssertionError("manual-failure-missing"); }
+            catch (IllegalStateException error) {
+                require(denyWorker ? error.getMessage().contains("activation-runtime-register-") : error == failure,
+                    "wrong-manual-failure");
+            }
+        } finally { Bindings.LatentRuntimeActivation.denyRegistration = false; }
+        require(calls.get() == 1 && attempts.get() == 2 && !future.isDone() && pool.hasPendingWork(),
+            "manual-work-not-retained");
+        long after = future.getDelay(TimeUnit.HOURS);
+        require(denyWorker ? after <= before + 1 : after >= before + 23, "wrong-manual-deadline");
+        held(denyWorker ? 1 : 2, 1, 1);
+        closeRoot();
+        require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools") && !pool.isRetired(),
+            "manual-root-not-fenced");
+        Activation.waitFor(-1);
+        held(denyWorker ? 1 : 2, 1, 1);
+        var removed = pool.shutdownNow();
+        require(removed.size() == (denyWorker ? 1 : 2), "manual-copy-count");
+        for (Runnable entry : removed) require(entry == future, "manual-copy-identity");
+        require(!future.isDone() && future.cancel(false), "manual-future-not-cancelled");
+        held(0, 0, 0);
+        invoke("retireIdlePools");
+        finishRoot(root);
+    }
     public static void main(String[] args) throws Exception {
         String mode = args[0];
         if (mode.equals("scan-mutation") || mode.equals("retirement-scan-mutation"))
@@ -319,6 +358,8 @@ public final class ScheduledNullFactoryActivationControl {
         else if (mode.equals("exhausted-scan-retry")) exhaustedScanRetry();
         else if (mode.equals("retry-with-live-work")) retryWithLiveWork();
         else if (mode.equals("worker-admission-denied")) workerAdmissionDenied();
+        else if (mode.equals("manual-factory-throw") || mode.equals("manual-worker-admission-denied"))
+            manualFactoryFailure(mode.equals("manual-worker-admission-denied"));
         else if (mode.equals("recovery") || mode.equals("reentrant")) recovery(mode.equals("reentrant"));
         else if (mode.equals("cancel") || mode.equals("remove") || mode.equals("factory-throw") || mode.equals("wait-denied")
                 || mode.equals("settle-result-denied") || mode.equals("settle-queue-denied")) noWorker(mode);

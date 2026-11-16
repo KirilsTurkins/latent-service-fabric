@@ -351,11 +351,14 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             advance(task); advanced = true; revision = task.scheduleRevision;
             pendingWork++; counted = true;
             queue.add(entry); installed = true;
-            if (workers.size() < parallelism && workers.size() < queue.size() + running) startWorker();
+            if (workers.size() < parallelism && workers.size() < queue.size() + running) startWorker(entry);
             notifyAll();
         } catch (Throwable error) {
             // The no-copy path may have already attempted settlement.
             if (settlementAttempted) throw error;
+            // A factory throw follows successful insertion. Preserve this
+            // occurrence and its advanced deadline just like initial admission.
+            if (entry != null && entry.factoryFailed) throw error;
             boolean withdrawn;
             try { withdrawn = withdrawFailed(entry, installed); }
             catch (Throwable uncertain) { throw error; }
