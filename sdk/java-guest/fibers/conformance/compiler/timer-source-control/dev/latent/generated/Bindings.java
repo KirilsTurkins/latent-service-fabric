@@ -10,7 +10,7 @@ import org.teavm.interop.Address;
 public final class Bindings {
     public enum LatentRuntimeActivationOwnerKind { Task, ManagedIdleWorker, Executor, QueuedWork, Wait, Timer, Result, Native }
     public enum Error { ResourceExhausted, Cancelled, InvalidToken }
-    public record LatentRuntimeActivationToken(long generation, long id) { }
+    public record LatentRuntimeActivationToken(Unsigned64 generation, Unsigned64 id) { }
     public record Reply<T>(T value, Error error) { public boolean isError() { return error != null; } }
     public static Address dispatchBody(int operation, int inputAddress, int length) { throw new AssertionError("source-control-no-dispatch"); }
     public static Option<Reply<Unsigned64>> lsfRootTimerNext(LatentRuntimeActivationToken token) {
@@ -42,7 +42,7 @@ public final class Bindings {
             registrationAttempts++;
             if (denyRegistration) return new Reply<>(null, Error.ResourceExhausted);
             if (kind == LatentRuntimeActivationOwnerKind.Timer && timers() >= 2) return new Reply<>(null, Error.ResourceExhausted);
-            var token = new LatentRuntimeActivationToken(1, ++next); owners.put(token, kind);
+            var token = new LatentRuntimeActivationToken(new Unsigned64(1), new Unsigned64(++next)); owners.put(token, kind);
             Runnable observation = registrationObservation; registrationObservation = null;
             if (observation != null) observation.run();
             if (registrationFailure != null) throw registrationFailure;

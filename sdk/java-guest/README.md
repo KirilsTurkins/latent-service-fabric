@@ -168,6 +168,10 @@ The opt-in [Java fiber profile](../../docs/runtime/java-activation-fibers.md)
 includes ordinary scheduled executors as well as thread/future ownership.
 Nested executor withdrawal, stopped wrappers, repeated occurrences and ambiguous
 queue/result settlement keep their original owners until confirmed retirement.
+Scheduled futures from different pools compare their deadlines at one monotonic
+clock reading. Equal deadlines within a pool retain submission order; equal
+cross-pool deadlines use each pool's original activation-owner identity for a
+stable order. This differs from the JDK's global task-submission tie order.
 Compiler progress checks distinguish suspendable checkpoints from finite
 nonsuspendable loops; source that cannot establish bounded progress is rejected.
 GC roots across parked continuations have a separate

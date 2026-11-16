@@ -39,6 +39,26 @@ public final class TimerReadinessSourceControl {
     private static int owners() throws ReflectiveOperationException {
         return ((Map<?, ?>)field(Bindings.LatentRuntimeActivation.class, "owners").get(null)).size();
     }
+    private static void ownerOrderIdentity() throws Exception {
+        int original = owners();
+        var first = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
+        var second = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
+        var firstKey = Activation.ownerOrder(first);
+        var secondKey = Activation.ownerOrder(second);
+        require(firstKey.compareTo(secondKey) < 0 && secondKey.compareTo(firstKey) > 0, "owner-order-live");
+        require(owners() == original + 2, "owner-order-no-extra-host-admission");
+        first.close(); second.close();
+        require(owners() == original && firstKey.compareTo(secondKey) < 0, "owner-order-survives-settlement");
+        denied(() -> Activation.ownerOrder(first));
+        var ctor = Activation.OwnerOrder.class.getDeclaredConstructor(long.class, long.class);
+        ctor.setAccessible(true);
+        var lowId = ctor.newInstance(1L, Long.MAX_VALUE);
+        var highId = ctor.newInstance(1L, Long.MIN_VALUE);
+        var lowGeneration = ctor.newInstance(Long.MAX_VALUE, 1L);
+        var highGeneration = ctor.newInstance(Long.MIN_VALUE, 1L);
+        require(lowId.compareTo(highId) < 0 && lowGeneration.compareTo(highGeneration) < 0,
+            "owner-order-unsigned-scalars");
+    }
     private static void managedStartRollback() throws Exception {
         Map<?, ?> threads = (Map<?, ?>)get("threads");
         int original = owners();
@@ -594,6 +614,7 @@ public final class TimerReadinessSourceControl {
             timerStopCase(mode);
         resetTimerStopModel(); // private fake teardown; production never resets uncertainty.
         set("entered", true); set("root", work(Thread.currentThread()));
+        ownerOrderIdentity();
         long deadline = Activation.monotonicMillis() + 200;
         var first = Activation.timer(deadline); var second = otherTimer(deadline);
         require(Bindings.LatentRuntimeActivation.timers() == 2 && ((List<?>)get("timers")).size() == 2, "two-original-timer-reservations");
@@ -647,6 +668,6 @@ public final class TimerReadinessSourceControl {
         uncertainResultPoisons();
         failedStartedWorkerPoisons();
         failedInsertionsAndPoison();
-        System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence");
+        System.out.println("TIMER_READINESS_SOURCE_CONTROL PASS two-timer-bound;captured-frame-deadline;first-clock-latch;stable-ties;fired-and-closing-exclusion;confirmed-stop;cancelled-ownership;zero-huge-and-fallback;managed-start-rollback;uncertain-result-fence;uncertain-queued-owner-fence;timer-stop-uncertain-completion-fence;nested-stop-count-guard;timer-finally-return-fence;timer-teardown-admission-fence;opaque-owner-order");
     }
 }

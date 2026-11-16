@@ -8,6 +8,8 @@ import java.util.function.Supplier;
 /** Test-only linear observations for actual port source, not the native ledger. */
 public final class Activation {
     private static final int[] owners = new int[3];
+    private static long nextOwnerId = 1;
+    private static long nextOwnerGeneration = 1;
     private static final int[] closeAttempts = new int[3];
     private static final int[] admissions = new int[3];
     private static final ArrayList<ManagedPool> pools = new ArrayList<>();
@@ -27,13 +29,16 @@ public final class Activation {
     private static Lease retainedFailedQueued;
     public static boolean retainFailedStart;
     public static Throwable manageFailure;
+    public static RuntimeException orderFailure;
     public static java.util.function.Consumer<ManagedPool> manageObservation;
     public interface ManagedPool { boolean hasPendingWork(); boolean isRetired(); void closeAtRoot(); }
     public static final class Lease implements AutoCloseable {
         private final int kind;
+        private final long generation;
+        private final long id;
         private boolean closed;
         private int attempts;
-        Lease(int kind) { this.kind = kind; }
+        Lease(int kind, long generation, long id) { this.kind = kind; this.generation = generation; this.id = id; }
         @Override public void close() {
             synchronized (Activation.class) {
                 closeAttempts[kind]++;
@@ -76,7 +81,22 @@ public final class Activation {
             Runnable observation = admissionObservation; admissionObservation = null; admissionObservationKind = null;
             if (observation != null) observation.run();
         }
-        return new Lease(kind.ordinal());
+        return new Lease(kind.ordinal(), nextOwnerGeneration, nextOwnerId++);
+    }
+    public static final class OwnerOrder implements Comparable<OwnerOrder> {
+        private final long generation, id;
+        private OwnerOrder(long generation, long id) { this.generation = generation; this.id = id; }
+        @Override public int compareTo(OwnerOrder other) {
+            int compared = Long.compareUnsigned(generation, other.generation);
+            return compared != 0 ? compared : Long.compareUnsigned(id, other.id);
+        }
+    }
+    public static OwnerOrder ownerOrder(Lease owner) {
+        if (orderFailure != null) throw orderFailure;
+        return new OwnerOrder(owner.generation, owner.id);
+    }
+    public static synchronized void controlNextOwnerIdentity(long generation, long id) {
+        nextOwnerGeneration = generation; nextOwnerId = id;
     }
     public static synchronized int count(Bindings.LatentRuntimeActivationOwnerKind kind) { return owners[kind.ordinal()]; }
     public static synchronized int closeAttempts(Bindings.LatentRuntimeActivationOwnerKind kind) { return closeAttempts[kind.ordinal()]; }

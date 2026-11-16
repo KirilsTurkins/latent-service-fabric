@@ -466,3 +466,54 @@ class ExecutorInvokeAnyReadyControl(unittest.TestCase):
         self.assertIs(caught.exception, failure)
         self.assertEqual(calls.count('executor-invoke-any-owner-timeout'), 1)
         self.assertNotIn('executor-invoke-any-owner-interrupt', calls)
+
+
+class ScheduledComparisonControl(unittest.TestCase):
+    @staticmethod
+    def receipt(stage):
+        if stage.endswith('-compile'): return ''
+        values = {
+            'scheduled-compare-jdk': 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;tie-jdk-global-order',
+            'scheduled-compare-source': 'SCHEDULED_COMPARE_REFERENCE PASS close;fifo;maximum;transitive;retired;tie-source-pool-order',
+            'scheduled-compare-clock': 'SCHEDULED_COMPARE_CLOCK PASS close;tie-transitive;fifo;maximum;overdue;wrap;retired;unsigned;owners;rollback',
+            'scheduled-compare-key-uncertain': 'SCHEDULED_COMPARE_KEY_UNCERTAIN PASS original-owner-held;single-attempt',
+        }
+        return values[stage]
+
+    @staticmethod
+    def sources():
+        fibers = subject.ROOT / 'sdk/java-guest/fibers'
+        return (sorted((fibers / 'dev/latent/guest/runtime/concurrent').glob('*.java')),
+                fibers / 'conformance/compiler/scheduled-source-control')
+
+    def test_reference_source_and_owner_controls_are_selected(self):
+        calls = []
+        def run(stage, *args):
+            calls.append((stage, args))
+            return self.receipt(stage)
+        ports, private = self.sources()
+        with tempfile.TemporaryDirectory() as temporary:
+            report = subject.scheduled_compare_control(SimpleNamespace(run=run), Path(temporary), ports, private)
+        self.assertEqual([stage for stage, _ in calls], [
+            'scheduled-compare-jdk-compile', 'scheduled-compare-jdk',
+            'scheduled-compare-source-compile', 'scheduled-compare-source',
+            'scheduled-compare-clock-compile', 'scheduled-compare-clock', 'scheduled-compare-key-uncertain'])
+        self.assertIn('--add-opens=java.base/java.util.concurrent=ALL-UNNAMED', calls[1][1])
+        self.assertIn(private / 'ScheduledCompareClockControl.java', calls[4][1])
+        self.assertEqual(report['equalCrossPoolDeadlines'], 'SDK-pool-owner-order-JDK-global-task-order')
+        self.assertEqual(report['clockWrapAndOwners'], 'synthetic-host-ledger-only')
+        self.assertFalse(report['componentExecutionPerformed'])
+        self.assertFalse(report['actualGuestBindingsUsed'])
+
+    def test_missing_comparison_receipts_fail_closed(self):
+        ports, private = self.sources()
+        for missing in ('scheduled-compare-jdk', 'scheduled-compare-source', 'scheduled-compare-clock',
+                        'scheduled-compare-key-uncertain'):
+            with self.subTest(stage=missing), tempfile.TemporaryDirectory() as temporary:
+                calls = []
+                def run(stage, *args):
+                    calls.append(stage)
+                    return 'SKIPPED' if stage == missing else self.receipt(stage)
+                with self.assertRaisesRegex(ValueError, 'Java scheduled comparison .* did not complete'):
+                    subject.scheduled_compare_control(SimpleNamespace(run=run), Path(temporary), ports, private)
+                self.assertEqual(calls[-1], missing)

@@ -20,6 +20,9 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     private final int parallelism;
     private final ThreadFactory factory;
     private final long origin = System.nanoTime();
+    // Captured from the existing Executor owner; the key remains usable after
+    // retirement and adds no host owner or cross-activation state.
+    private final Activation.OwnerOrder ownerOrder;
     private final ArrayList<Entry> queue = new ArrayList<>();
     // The root coordinator cannot acquire the pool monitor, and interrupting
     // a worker can retire it before the coordinator reaches the next one.
@@ -46,7 +49,10 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         parallelism = Math.max(1, corePoolSize);
         this.factory = Objects.requireNonNull(factory);
         owner = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.Executor);
-        try { Activation.manage(this); }
+        try {
+            ownerOrder = Activation.ownerOrder(owner);
+            Activation.manage(this);
+        }
         catch (Throwable error) {
             try { settleOwner(true); }
             catch (Throwable uncertain) {
@@ -135,10 +141,23 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         }
         @Override public int compareTo(Delayed other) {
             if (other == this) return 0;
-            if (other instanceof ScheduledThreadPoolExecutor.Task<?> task
-                    && task.executor() == ScheduledThreadPoolExecutor.this) {
-                int compared = Long.compare(next, task.next);
-                return compared != 0 ? compared : Long.compare(order, task.order);
+            if (other instanceof ScheduledThreadPoolExecutor.Task<?> task) {
+                ScheduledThreadPoolExecutor otherPool = task.executor();
+                if (otherPool == ScheduledThreadPoolExecutor.this) {
+                    int compared = Long.compare(next, task.next);
+                    return compared != 0 ? compared : Long.compare(order, task.order);
+                }
+                // Compare both pool-relative deadlines at the same instant.
+                // Separate clock reads can reverse a pair with close deadlines.
+                long now = System.nanoTime();
+                long delay = next - (now - origin);
+                long otherDelay = task.next - (now - otherPool.origin);
+                int compared = Long.compare(delay, otherDelay);
+                if (compared != 0) return compared;
+                // A pool's existing activation-owner identity gives exact
+                // cross-pool ties a stable total order. Within each pool the
+                // original sequence still gives FIFO for equal deadlines.
+                return ownerOrder.compareTo(otherPool.ownerOrder);
             }
             return Long.compare(getDelay(TimeUnit.NANOSECONDS), other.getDelay(TimeUnit.NANOSECONDS));
         }
