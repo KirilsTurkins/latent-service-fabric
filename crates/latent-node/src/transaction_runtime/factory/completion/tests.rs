@@ -2,6 +2,7 @@ use super::*;
 use latent_core::{ActivationTerminalState, ErrorDetail};
 use std::cell::Cell;
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod pre_host_conflict;
 
 fn charged() -> BudgetConsumption {
@@ -138,6 +139,7 @@ fn retired_conflict_cannot_replace_an_original_execution_fault() {
     );
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[tokio::test]
 async fn query_cannot_succeed_after_a_corrupt_read_loses_the_view() {
     use crate::transaction_runtime::tests::fixture::Fixture;
@@ -208,6 +210,7 @@ async fn query_cannot_succeed_after_a_corrupt_read_loses_the_view() {
     assert!(native.snapshot().unwrap().physically_retired());
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn dropped_query_waiter_keeps_operation_until_the_actual_view_is_destroyed() {
     use crate::transaction_runtime::tests::fixture::Fixture;
