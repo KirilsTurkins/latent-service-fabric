@@ -76,12 +76,13 @@ public final class Activation {
                 throw new IllegalStateException("source-owner-admission-denied");
             }
         }
+        Lease lease = new Lease(kind.ordinal(), nextOwnerGeneration, nextOwnerId++);
         owners[kind.ordinal()]++; admissions[kind.ordinal()]++;
         if (kind.name().equals(admissionObservationKind)) {
             Runnable observation = admissionObservation; admissionObservation = null; admissionObservationKind = null;
             if (observation != null) observation.run();
         }
-        return new Lease(kind.ordinal(), nextOwnerGeneration, nextOwnerId++);
+        return lease;
     }
     public static final class OwnerOrder implements Comparable<OwnerOrder> {
         private final long generation, id;
