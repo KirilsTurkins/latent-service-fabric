@@ -12,8 +12,8 @@ class CompletableMonitorOwner(unittest.TestCase):
     monitor = 'COMPLETABLE_FUTURE_MONITOR_REFERENCE PASS completion;exception-callbacks=7;cause-once=6'
     custody = ('COMPLETABLE_FUTURE_MONITOR_OWNER PASS callback-retirement;'
                'cancelled-queued-retirement;subscribe-race')
-    existing = 'COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=82'
-    existing_owner = 'COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=419;raceRounds=32'
+    existing = 'COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=96'
+    existing_owner = 'COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=429;raceRounds=32'
     readiness = 'COMPLETABLE_OVERRIDE_READINESS_REFERENCE PASS cases=19;public-dispatch;private-helper'
     readmit = 'COMPLETABLE_OVERRIDE_READMIT_OWNER PASS simulated-queue-copies=2;original-ledger'
     destination = '\n'.join((
@@ -67,8 +67,8 @@ class CompletableMonitorOwner(unittest.TestCase):
 
     def test_existing_and_monitor_controls_are_selected(self):
         result, calls = self.run_owner()
-        self.assertEqual(result['referenceObservables'], 82)
-        self.assertEqual(result['sourceOwnershipObservables'], 419)
+        self.assertEqual(result['referenceObservables'], 96)
+        self.assertEqual(result['sourceOwnershipObservables'], 429)
         self.assertEqual(result['raceRounds'], 32)
         self.assertEqual(result['futureMonitor'], 'JDK-and-SDK-source-controls-passed')
         self.assertEqual(result['futureReadiness'], 'JDK-and-SDK-source-controls-passed')

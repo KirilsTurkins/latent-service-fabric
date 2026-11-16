@@ -369,7 +369,7 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     reference.mkdir(); private.mkdir()
     compiler.run("completable-reference-compile", "javac", "-proc:none", "--release", "25", "-d", reference,
                  native, executor_reference, monitor_reference, readiness_reference, destination_reference)
-    expected = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=82"
+    expected = "COMPLETABLE_FUTURE_SOURCE_CONTROL PASS observables=96"
     observed = compiler.run("completable-reference-run", "java", "-Xmx256m", "-cp", reference,
                             "CompletableFutureNativeControl").strip()
     if observed != expected: raise ValueError("Java CompletableFuture reference control did not complete")
@@ -453,7 +453,7 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
                  private_native, private_executor, private_monitor, private_readiness, private_destination,
                  monitor_owner, readmit_owner,
                  owners, executor_owners, uncertain_owners, *stubs, *ports)
-    owner_result = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=419;raceRounds=32"
+    owner_result = "COMPLETABLE_FUTURE_OWNER_CONTROL PASS observables=429;raceRounds=32"
     observed = compiler.run("completable-source-run", "java", "-Xmx256m", "-cp", private,
                             "PrivateSourceRunner").strip()
     if observed.splitlines() != [expected, owner_result]:
@@ -491,8 +491,8 @@ def completable_source_control(compiler: Compiler, output: Path) -> dict:
     if observed != destination_expected: raise ValueError("Java CompletableFuture destination source differs from JDK")
     if inputs != {name: digest(read_file(compiler.sdk / name)) for name in inputs}:
         raise ValueError("Java CompletableFuture control inputs changed during execution")
-    return {"status": "reference-and-SDK-source-controls-passed", "referenceObservables": 82,
-            "sourceOwnershipObservables": 419, "raceRounds": 32, "sourceInputs": inputs,
+    return {"status": "reference-and-SDK-source-controls-passed", "referenceObservables": 96,
+            "sourceOwnershipObservables": 429, "raceRounds": 32, "sourceInputs": inputs,
             "executorReferenceCases": 6, "executorAcceptanceOwnershipObservables": 49,
             "uncertainExecutorOwnershipObservables": 30,
             "uncertainAcceptanceAtOriginalOwnerCapacity": True, "uncertainActivationRetirementQualified": False,
