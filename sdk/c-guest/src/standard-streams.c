@@ -130,10 +130,12 @@ int __lsf_c_net_fcntl(int fd, int command, ...) {
 int __lsf_c_net_getsockopt(int fd, int level, int option, void *value, socklen_t *length) {
     if (!find_descriptor(fd)) return fail(EBADF);
     if (level != SOL_SOCKET || option != SO_TYPE) return fail(ENOTSUP);
-    if (!value || !length || *length < sizeof(int)) return fail(EINVAL);
+    if (!length) return fail(EINVAL);
+    socklen_t copied = *length < sizeof(int) ? *length : sizeof(int);
+    if (copied && !value) return fail(EINVAL);
     int result = SOCK_STREAM;
-    memcpy(value, &result, sizeof(result));
-    *length = sizeof(result);
+    if (copied) memcpy(value, &result, copied);
+    *length = copied;
     return 0;
 }
 
