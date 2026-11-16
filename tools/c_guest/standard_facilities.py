@@ -49,7 +49,7 @@ def selected_profile(project, graph=None):
 def compiler_defines(profile, defines):
     """The selected GNU-cookie port owns its declaration feature selection."""
     if profile == STREAM_PROFILE:
-        reserved = {'LSF_C_STREAM_NETWORK', 'LSF_C_STANDARD_STREAMS_H', 'POLLPRI', 'POLLRDBAND',
+        reserved = {'LSF_C_STREAM_NETWORK', 'LSF_C_STANDARD_STREAMS_H', 'MSG_NOSIGNAL', 'POLLPRI', 'POLLRDBAND',
                     'POLLWRBAND', 'SO_KEEPALIVE', 'SOL_IP', 'abort', '__lsf_c_abort', *STREAM_SYMBOLS,
                     *('__lsf_c_net_' + name for name in STREAM_SYMBOLS)}
         if any(value.split('=', 1)[0] in reserved for value in defines):

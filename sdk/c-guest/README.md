@@ -111,6 +111,11 @@ of the original connection or activation. Concurrent use or close of a busy
 descriptor is refused. Exceptional descriptor sets, descriptor `poll`, nonblocking mode,
 socket option changes, local bind, IPv6 and unsupported message flags are refused;
 `SO_TYPE` is observable and TLS is not supplied by this profile.
+Selected-source `send` accepts `MSG_NOSIGNAL` (using the pinned WASI preview2
+value `0x4000`) with the same write and error behavior as flag zero. The adapter
+does not raise `SIGPIPE`, with or without this flag. The flag does not enable
+signals or other message flags. Other `send` flags and every nonzero `recv` flag
+are refused.
 `SOCK_CLOEXEC` at creation and `F_GETFD`/`F_SETFD` retain the descriptor's
 `FD_CLOEXEC` flag. Other descriptor flags and duplication remain unsupported;
 this profile does not provide process execution or descriptor inheritance.
