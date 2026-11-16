@@ -572,6 +572,10 @@ impl StreamProvider {
     /// not release charges held by a pending operation or retained chunk.
     pub fn retire(&self) {
         self.inner.installed.retire();
+        // Close registration and capture all original owners atomically. A
+        // pre-admitted connect cannot publish after this snapshot, and a
+        // contended registry cannot make retirement silently skip an owner.
+        let connections = self.inner.connections.close_and_snapshot();
         #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
         {
             let owner = self
@@ -582,11 +586,8 @@ impl StreamProvider {
                 .take();
             drop(owner);
         }
-        for index in 0..32 {
-            let connection = self.inner.connections.snapshot(index).ok().flatten();
-            if let Some(connection) = connection {
-                connection.abort(StreamErrorCode::Revoked);
-            }
+        for connection in connections.into_iter().flatten() {
+            connection.abort(StreamErrorCode::Revoked);
         }
         for resolver in self.inner.resolvers.iter().flatten() {
             let _ = resolver.close();
@@ -736,10 +737,9 @@ impl OutboundStreamInvoker for StreamProvider {
 impl Drop for Inner {
     fn drop(&mut self) {
         self.installed.retire();
-        for index in 0..crate::connection_registry::CAPACITY {
-            if let Ok(Some(connection)) = self.connections.snapshot(index) {
-                connection.abort(StreamErrorCode::Revoked);
-            }
+        let connections = self.connections.close_and_snapshot();
+        for connection in connections.into_iter().flatten() {
+            connection.abort(StreamErrorCode::Revoked);
         }
         for resolver in self.resolvers.iter().flatten() {
             let _ = resolver.close();

@@ -2,10 +2,30 @@ use super::{config, fixture::Fixture};
 use crate::{StreamErrorCode, StreamLifecycle};
 use latent_capabilities::broker::network::{OutboundStreamInvoker, StreamConnectRequest};
 use std::{
-    sync::Arc,
+    future::Future,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    task::{Context, Poll, Wake, Waker},
     time::{Duration, Instant},
 };
 use tokio::{io::AsyncReadExt, net::TcpListener};
+
+struct ReentrantWake {
+    lifecycle: Arc<StreamLifecycle>,
+    stopped_without_lock: AtomicBool,
+}
+impl Wake for ReentrantWake {
+    fn wake(self: Arc<Self>) {
+        self.wake_by_ref();
+    }
+    fn wake_by_ref(self: &Arc<Self>) {
+        if self.lifecycle.status().is_ok_and(|status| status.stopped) {
+            self.stopped_without_lock.store(true, Ordering::Release);
+        }
+    }
+}
 
 #[tokio::test]
 async fn rotation_fences_old_grants_and_drain_reports_actual_retained_owners() {
@@ -109,6 +129,123 @@ async fn rotation_fences_old_grants_and_drain_reports_actual_retained_owners() {
         .unwrap()
         .streams
         .is_none());
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn retirement_waits_for_registry_contention_and_stops_original_connection() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut config = config();
+    config.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: config.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(config);
+    let lifecycle = Arc::new(
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap(),
+    );
+    let (session, control) = fixture.session(5000);
+    let stream = lifecycle.start(&session, request).unwrap().await.unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let probe = Arc::new(ReentrantWake {
+        lifecycle: Arc::clone(&lifecycle),
+        stopped_without_lock: AtomicBool::new(false),
+    });
+    let waker = Waker::from(Arc::clone(&probe));
+    let mut pending = Box::pin(stream.read(1, None).unwrap());
+    assert!(matches!(
+        pending.as_mut().poll(&mut Context::from_waker(&waker)),
+        Poll::Pending
+    ));
+    let registry = Arc::clone(&fixture.provider.inner.connections);
+    let guard = registry.lock_for_test();
+    let (started_tx, started_rx) = std::sync::mpsc::channel();
+    let (done_tx, done_rx) = std::sync::mpsc::channel();
+    let retirement = Arc::clone(&lifecycle);
+    let thread = std::thread::spawn(move || {
+        started_tx.send(()).unwrap();
+        retirement.retire();
+        done_tx.send(()).unwrap();
+    });
+    started_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(2);
+    while !fixture.provider.inner.installed.is_retired() {
+        assert!(
+            Instant::now() < deadline,
+            "retirement did not reach the provider"
+        );
+        std::thread::yield_now();
+    }
+    assert!(done_rx.recv_timeout(Duration::from_millis(50)).is_err());
+    drop(guard);
+    done_rx.recv_timeout(Duration::from_secs(2)).unwrap();
+    thread.join().unwrap();
+    assert!(probe.stopped_without_lock.load(Ordering::Acquire));
+    drop(pending);
+    let mut byte = [0];
+    match tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+        .await
+        .unwrap()
+    {
+        Ok(0) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset => {}
+        value => panic!("original connection must be stopped: {value:?}"),
+    }
+    drop(stream);
+    drop(probe);
+    drop(waker);
+    drop(lifecycle);
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn retirement_refuses_connect_held_before_registry_publication() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut config = config();
+    config.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let request = StreamConnectRequest {
+        endpoint: config.destinations[0].endpoint.clone(),
+        timeout_millis: None,
+    };
+    let fixture = Fixture::new(config);
+    let lifecycle = Arc::new(
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap(),
+    );
+    let (session, control) = fixture.session(5000);
+    let base_bytes = control.native_session_bytes();
+    let (reached, resume) = fixture.provider.inner.connections.pause_next_registration();
+    let connecting = tokio::spawn(lifecycle.start(&session, request).unwrap());
+    let (mut peer, _) = listener.accept().await.unwrap();
+    tokio::task::spawn_blocking(move || reached.recv_timeout(Duration::from_secs(3)))
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(control.budget.host_memory_bytes() > base_bytes);
+    lifecycle.retire();
+    resume.send(()).unwrap();
+    match connecting.await.unwrap() {
+        Err(error) => assert_eq!(error.code, StreamErrorCode::Revoked),
+        Ok(_) => panic!("a connect must not publish after retirement"),
+    }
+    let mut byte = [0];
+    match tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+        .await
+        .unwrap()
+    {
+        Ok(0) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset => {}
+        value => panic!("unpublished connection must be stopped: {value:?}"),
+    }
+    drop(lifecycle);
     drop(session);
     fixture.clean().await;
     drop(fixture);
