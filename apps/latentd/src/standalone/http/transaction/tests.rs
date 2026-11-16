@@ -114,6 +114,22 @@ fn query_platform_failures_have_bounded_http_statuses_without_error_details() {
 }
 
 #[test]
+fn query_without_invocation_does_not_advertise_a_view() {
+    let response = t::QueryResponse {
+        view: Some(t::ViewIdentity {
+            version: b"stale-view".to_vec(),
+            ..Default::default()
+        }),
+        invocation: None,
+        ..Default::default()
+    };
+    let (status, body) = project(response.into()).unwrap();
+    assert_eq!(status, 503);
+    assert!(body.state_view.is_none());
+    assert!(body.result.is_none());
+}
+
+#[test]
 fn platform_failure_does_not_override_a_committed_command_disposition() {
     let response = t::InvokeCommandResponse {
         command: Some(t::CommandInspection {

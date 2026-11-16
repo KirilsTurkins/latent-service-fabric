@@ -248,6 +248,8 @@ fn project(response: phase4::Response) -> Result<(u16, Response), u16> {
             200
         }
     } else {
+        // A missing invocation has no successful query result or usable view.
+        body.state_view = None;
         query_failure.unwrap_or(503)
     };
     if body.result.is_some() {
