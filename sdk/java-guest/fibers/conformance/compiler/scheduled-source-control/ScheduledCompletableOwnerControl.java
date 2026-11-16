@@ -62,9 +62,29 @@ public final class ScheduledCompletableOwnerControl {
 
         var failure = new RejectedExecutionException("factory-failed");
         var failedFactory = new ScheduledThreadPoolExecutor(1, command -> { throw failure; });
-        try { CompletableFuture.supplyAsync(() -> 42, failedFactory); throw new AssertionError(); }
+        AtomicInteger failedCalls = new AtomicInteger();
+        try { CompletableFuture.supplyAsync(() -> { failedCalls.incrementAndGet(); return 42; }, failedFactory); throw new AssertionError(); }
         catch (RejectedExecutionException expected) { require(expected == failure); }
-        held(0, 0); failedFactory.shutdownNow(); terminated(failedFactory);
+        held(2, 2);
+        List<Runnable> failedPending = failedFactory.shutdownNow();
+        require(failedPending.size() == 1 && failedCalls.get() == 0);
+        terminated(failedFactory); held(0, 0);
+        failedPending.get(0).run();
+        require(((java.util.concurrent.Future<?>)failedPending.get(0)).isCancelled() && failedCalls.get() == 0);
+        held(0, 0);
+
+        AtomicInteger factoryAttempts = new AtomicInteger(), recoveredCalls = new AtomicInteger();
+        var recoveringFactory = new ScheduledThreadPoolExecutor(1, command -> {
+            if (factoryAttempts.getAndIncrement() == 0) throw failure;
+            return new Thread(command);
+        });
+        var recovered = new CompletableFuture<Integer>();
+        try { recovered.completeAsync(() -> { recoveredCalls.incrementAndGet(); return 42; }, recoveringFactory); throw new AssertionError(); }
+        catch (RejectedExecutionException expected) { require(expected == failure); }
+        held(2, 2); require(!recovered.isDone());
+        recoveringFactory.schedule(() -> {}, 0, TimeUnit.NANOSECONDS).get(5, TimeUnit.SECONDS);
+        require(recovered.get(5, TimeUnit.SECONDS) == 42 && recoveredCalls.get() == 1);
+        recoveringFactory.shutdown(); terminated(recoveringFactory); held(0, 0);
 
         var noWorker = new ScheduledThreadPoolExecutor(1, command -> null);
         var waiting = CompletableFuture.supplyAsync(() -> { calls.incrementAndGet(); return 42; }, noWorker);

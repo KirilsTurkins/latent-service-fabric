@@ -56,9 +56,16 @@ public final class ScheduledNullFactoryActivationControl {
     }
     private static void noWorker(String mode) throws Exception {
         Object root = enter();
-        var pool = new ScheduledThreadPoolExecutor(1, target -> null);
-        var future = pool.schedule(() -> { throw new AssertionError("no-worker-task-ran"); }, 0, TimeUnit.NANOSECONDS);
-        require(!future.isDone() && pool.hasPendingWork(), "accepted-work-not-pending");
+        var failure = new IllegalStateException("factory-failed");
+        var pool = new ScheduledThreadPoolExecutor(1, target -> {
+            if (mode.equals("factory-throw")) throw failure;
+            return null;
+        });
+        ScheduledFuture<?> future = null;
+        try { future = pool.schedule(() -> { throw new AssertionError("no-worker-task-ran"); }, 0, TimeUnit.NANOSECONDS); }
+        catch (IllegalStateException error) { require(mode.equals("factory-throw") && error == failure, "wrong-factory-failure"); }
+        require((mode.equals("factory-throw") ? future == null : future != null && !future.isDone())
+            && pool.hasPendingWork(), "accepted-work-not-pending");
         held(1, 1, 1);
         closeRoot();
         require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools") && !pool.isRetired(),
@@ -103,11 +110,16 @@ public final class ScheduledNullFactoryActivationControl {
             }
             return; // The deliberately uncertain owner is retained for Store teardown.
         }
-        if (mode.equals("remove")) {
-            require(pool.shutdownNow().contains(future) && !future.isDone(), "shutdown-now-lost-future");
+        if (mode.equals("remove") || mode.equals("factory-throw")) {
+            var removed = pool.shutdownNow();
+            if (mode.equals("factory-throw")) {
+                require(removed.size() == 1 && removed.get(0) instanceof ScheduledFuture<?>, "factory-throw-lost-future");
+                future = (ScheduledFuture<?>)removed.get(0);
+            }
+            require(removed.contains(future) && !future.isDone(), "shutdown-now-lost-future");
             require(future.cancel(false), "removed-future-not-cancellable");
         } else require(future.cancel(false), "queued-future-not-cancellable");
-        held(0, 0, mode.equals("remove") ? 0 : 1);
+        held(0, 0, mode.equals("remove") || mode.equals("factory-throw") ? 0 : 1);
         if (!pool.isRetired()) require((boolean)invoke("retireIdlePools"), "idle-pool-not-retired");
         else invoke("retireIdlePools"); // Clear the prior pending-pool retirement retry.
         require(!(boolean)invoke("pending"), "settled-work-remained-pending");
@@ -279,6 +291,25 @@ public final class ScheduledNullFactoryActivationControl {
             "idle-retirement-did-not-resume");
         held(0, 0, 0); finishRoot(root);
     }
+    private static void workerAdmissionDenied() throws Exception {
+        Object root = enter();
+        var pool = new ScheduledThreadPoolExecutor(1, target -> {
+            Bindings.LatentRuntimeActivation.denyRegistration = true;
+            return new Thread(target);
+        });
+        try {
+            try { pool.schedule(() -> { throw new AssertionError("unadmitted-worker-ran"); }, 0, TimeUnit.NANOSECONDS);
+                throw new AssertionError("worker-admission-was-not-denied"); }
+            catch (IllegalStateException error) {
+                require(error.getMessage().contains("activation-runtime-register-"), "wrong-worker-admission-refusal");
+            }
+        } finally { Bindings.LatentRuntimeActivation.denyRegistration = false; }
+        held(0, 0, 1);
+        require(!pool.hasPendingWork(), "worker-admission-refusal-kept-queue");
+        closeRoot();
+        require((boolean)invoke("retireIdlePools") && pool.isRetired(), "denied-worker-pool-not-retired");
+        held(0, 0, 0); finishRoot(root);
+    }
     public static void main(String[] args) throws Exception {
         String mode = args[0];
         if (mode.equals("scan-mutation") || mode.equals("retirement-scan-mutation"))
@@ -287,8 +318,9 @@ public final class ScheduledNullFactoryActivationControl {
             idleScanMutation(mode.equals("repeated-idle-scan-mutation"));
         else if (mode.equals("exhausted-scan-retry")) exhaustedScanRetry();
         else if (mode.equals("retry-with-live-work")) retryWithLiveWork();
+        else if (mode.equals("worker-admission-denied")) workerAdmissionDenied();
         else if (mode.equals("recovery") || mode.equals("reentrant")) recovery(mode.equals("reentrant"));
-        else if (mode.equals("cancel") || mode.equals("remove") || mode.equals("wait-denied")
+        else if (mode.equals("cancel") || mode.equals("remove") || mode.equals("factory-throw") || mode.equals("wait-denied")
                 || mode.equals("settle-result-denied") || mode.equals("settle-queue-denied")) noWorker(mode);
         else throw new IllegalArgumentException(mode);
         System.out.println("SCHEDULED_NULL_FACTORY_ACTIVATION PASS " + mode);
