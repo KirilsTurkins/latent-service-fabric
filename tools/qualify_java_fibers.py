@@ -936,7 +936,8 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
     null_factory_modes = ('cancel', 'remove', 'factory-throw', 'wait-denied', 'settle-result-denied',
                           'settle-queue-denied', 'recovery', 'reentrant', 'scan-mutation',
                           'retirement-scan-mutation', 'idle-scan-mutation', 'repeated-idle-scan-mutation',
-                          'exhausted-scan-retry', 'retry-with-live-work', 'worker-admission-denied')
+                          'exhausted-scan-retry', 'retry-with-live-work', 'worker-admission-denied',
+                          'manual-factory-throw', 'manual-worker-admission-denied')
     for mode in null_factory_modes:
         actual = compiler.run('scheduled-null-factory-activation-' + mode, 'java', '-Xmx256m', '-cp',
             str(output) + os.pathsep + classpath, 'ScheduledNullFactoryActivationControl', mode).strip()
@@ -1187,6 +1188,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     validation_reference = private / 'ScheduledPeriodicValidationReferenceControl.java'
     null_factory_reference = private / 'ScheduledNullFactoryReferenceControl.java'
     throw_factory_reference = private / 'ScheduledThrowFactoryReferenceControl.java'
+    manual_throw_reference = private / 'ManualPeriodicThrowReferenceControl.java'
     invoke_reference = private / 'ExecutorInvokeInterruptReferenceControl.java'
     invoke_any_reference = private / 'ExecutorInvokeAnyReadyReferenceControl.java'
     invoke_all_reference = private / 'ExecutorInvokeAllWaitReferenceControl.java'
@@ -1197,13 +1199,13 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     comparison_inputs = [private / name for name in ('ScheduledCompareReferenceControl.java',
         'ScheduledCompareFakeClock.java', 'ScheduledCompareClockControl.java')]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
+        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
                      null_failure_reference, monitor_reference, default_monitor_reference)}
     output.mkdir()
     jdk_output = output / 'reference-jdk'
     jdk_output.mkdir()
     compiler.run('scheduled-stopped-reference-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', jdk_output, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, invoke_reference, termination_reference,
+        '-d', jdk_output, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, invoke_reference, termination_reference,
         null_failure_reference, monitor_reference, default_monitor_reference, ready_reference, noop_reference, invoke_any_reference, invoke_all_reference)
     expected_stopped = ('SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;'
         'running;shutdown;shutdown-policy;physical-runner;worker-capacity;factory-failure-retry')
@@ -1228,6 +1230,10 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('scheduled-throw-factory-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ScheduledThrowFactoryReferenceControl').strip()
     if result != expected_throw_factory: raise ValueError('Java throwing-factory reference did not complete')
+    expected_manual_throw = 'MANUAL_PERIODIC_THROW PASS fixed-rate;fixed-delay;error;copies;reentrant'
+    result = compiler.run('manual-periodic-throw-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
+        'ManualPeriodicThrowReferenceControl').strip()
+    if result != expected_manual_throw: raise ValueError('Java manual periodic throwing-factory reference did not complete')
     expected_invoke = ('EXECUTOR_INVOKE_INTERRUPT PASS preinterrupted-ready;empty;zero;pending-cancel;'
         'blocked-interrupt')
     result = compiler.run('executor-invoke-interrupt-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
@@ -1271,6 +1277,11 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     if text.count(original) != 1: raise ValueError('Java null-factory source import is ambiguous')
     selected_null_factory = output / 'ScheduledNullFactoryReferenceControl.java'
     selected_null_factory.write_bytes(text.replace(original,
+        'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
+    text = read_file(manual_throw_reference).decode('utf-8')
+    if text.count(original) != 1: raise ValueError('Java manual periodic throwing-factory source import is ambiguous')
+    selected_manual_throw = output / 'ManualPeriodicThrowReferenceControl.java'
+    selected_manual_throw.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
     text = read_file(throw_factory_reference).decode('utf-8')
     for simple in ('ScheduledThreadPoolExecutor', 'CompletableFuture'):
@@ -1336,7 +1347,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     selected_noop.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', output, *ports, *controls, selected, selected_periodic, selected_validation, selected_null_factory, selected_throw_factory, selected_invoke, selected_termination,
+        '-d', output, *ports, *controls, selected, selected_periodic, selected_validation, selected_null_factory, selected_throw_factory, selected_manual_throw, selected_invoke, selected_termination,
         selected_null_failure, selected_monitor, selected_default_monitor, selected_ready, selected_noop, selected_invoke_any, selected_invoke_all)
     validation_result = compiler.run('scheduled-periodic-validation-source', 'java', '-Xmx256m', '-cp', output,
         'ScheduledPeriodicValidationReferenceControl').strip()
@@ -1347,6 +1358,9 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     throw_factory_result = compiler.run('scheduled-throw-factory-source', 'java', '-Xmx256m', '-cp', output,
         'ScheduledThrowFactoryReferenceControl').strip()
     if throw_factory_result != expected_throw_factory: raise ValueError('Java throwing-factory source differs from reference')
+    manual_throw_result = compiler.run('manual-periodic-throw-source', 'java', '-Xmx256m', '-cp', output,
+        'ManualPeriodicThrowReferenceControl').strip()
+    if manual_throw_result != expected_manual_throw: raise ValueError('Java manual periodic throwing-factory source differs from reference')
     result = compiler.run('executor-invoke-interrupt-source', 'java', '-Xmx256m', '-cp', output,
         'ExecutorInvokeInterruptReferenceControl', 'source').strip()
     if result != expected_invoke: raise ValueError('Java executor invoke source differs from reference')
@@ -1407,7 +1421,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
                 'java', '-Xmx256m', '-cp', output, 'ManagedExecutorQueuedSettlementControl', path, fault).strip()
             if result != 'MANAGED_EXECUTOR_QUEUED_SETTLEMENT PASS ' + path + ' ' + fault:
                 raise ValueError('Java managed executor queued settlement control did not complete')
-    for path in ('preentry', 'insert-before', 'insert-after', 'requeue', 'cancel', 'reentry-model'):
+    for path in ('preentry', 'insert-before', 'insert-after', 'requeue', 'factory-withdrawal', 'cancel', 'reentry-model'):
         for fault in ('denied', 'lost'):
             result = compiler.run('scheduled-queued-settlement-' + path + '-' + fault,
                 'java', '-Xmx256m', '-cp', output, 'ScheduledQueuedSettlementControl', path, fault).strip()
@@ -1466,6 +1480,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'periodicValidation': 'matched-jdk-before-owner-admission',
         'nullFactory': 'matched-jdk-accept-cancel-and-later-recovery',
         'throwFactory': 'matched-jdk-accept-recovery-and-withdrawal',
+        'manualThrowFactory': 'matched-jdk-deadline-and-queued-copy-count',
         'futureCancelInterrupt': interrupt_control, 'executorOwnerSettlement': executor_settlement,
         'executorInvokeInterrupt': 'matched-14-preinterrupted-and-two-blocked-JDK-cases',
         'executorAwaitTermination': 'matched-16-preinterrupted-two-blocked-and-overridden-state-JDK-cases',

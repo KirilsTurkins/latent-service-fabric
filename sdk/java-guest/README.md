@@ -182,6 +182,10 @@ returns `null`: root drain remains pending until the work runs or is withdrawn.
 With no runnable worker or pending host call, the existing root wait uses the
 original deadline and a Timer admission; a refused wait fails closed without
 releasing the work.
+If a manually run periodic future reaches a throwing factory while requeueing,
+its new occurrence and advanced deadline remain owned. The SDK returns each
+owned occurrence from `shutdownNow()`. In the tested JDK 25 duplicate-reference
+case, that call returned fewer entries than the queue held.
 Compiler progress checks distinguish suspendable checkpoints from finite
 nonsuspendable loops; source that cannot establish bounded progress is rejected.
 GC roots across parked continuations have a separate
