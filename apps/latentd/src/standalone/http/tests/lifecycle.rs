@@ -63,10 +63,13 @@ async fn failed_http_bind_retires_started_rpc_and_catalog_owners() {
     )
     .await;
     assert!(matches!(result, Err(e) if e.message == "http-ingress-owner-unavailable"));
-    drop(occupied);
-    // Reusing both exact ports and the same durable directories proves startup
-    // did not leave a listener or a catalog lock owned by an orphaned task.
+    // The failing HTTP bind never acquired this port: keep the original
+    // listener reserved so another parallel test or outbound socket cannot
+    // claim it between release and the next startup. Reusing the exact RPC
+    // port and durable directories still checks their actual owner retirement.
+    value["httpIngress"]["bind"] = json!("127.0.0.1:0");
     let fixture = Fixture::start(root, value, None).await;
+    drop(occupied);
     assert_eq!(call(&fixture, "/").await.0, 404);
     fixture.shutdown().await;
 }
