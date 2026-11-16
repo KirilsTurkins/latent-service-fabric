@@ -25,6 +25,36 @@ mod quarantine_usage_tests;
 
 const MAX_RETIRED: usize = 8;
 
+// Keep the original provider available until pool notification has finished.
+// If a callback unwinds, retire it after the lifecycle lock is released.
+#[cfg(any(test, feature = "development-outbound"))]
+struct DeferredRetirement(Option<StreamProvider>);
+
+#[cfg(any(test, feature = "development-outbound"))]
+impl DeferredRetirement {
+    fn finish(mut self) {
+        self.retire();
+    }
+
+    fn retire(&mut self) {
+        if let Some(provider) = self.0.take() {
+            if std::thread::panicking() {
+                let _ =
+                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| provider.retire()));
+            } else {
+                provider.retire();
+            }
+        }
+    }
+}
+
+#[cfg(any(test, feature = "development-outbound"))]
+impl Drop for DeferredRetirement {
+    fn drop(&mut self) {
+        self.retire();
+    }
+}
+
 fn sum_quarantined(total: usize, next: usize) -> Result<usize, StreamError> {
     total
         .checked_add(next)
@@ -252,7 +282,7 @@ impl StreamLifecycle {
             expected_epoch,
             new_epoch,
             config,
-            StreamProvider::install_for_qualification,
+            StreamProvider::install_for_rotation,
         )
     }
     #[cfg(test)]
@@ -266,20 +296,24 @@ impl StreamLifecycle {
             expected_epoch,
             new_epoch,
             config,
-            StreamProvider::install_tls_for_accounting_reference,
+            StreamProvider::install_tls_for_rotation_reference,
         )
     }
     #[cfg(any(test, feature = "development-outbound"))]
-    fn rotate_with_installer(
+    pub(crate) fn rotate_with_installer(
         &self,
         expected_epoch: u64,
         new_epoch: u64,
         config: StreamProviderConfig,
-        install: crate::provider::ProviderInstaller,
+        install: crate::provider::DeferredProviderInstaller,
     ) -> Result<ProviderReference, StreamError> {
         // Keep removed generations alive until the lifecycle lock has been
         // released, including on a later installation failure.
         let mut removed: [Option<StreamProvider>; MAX_RETIRED] = std::array::from_fn(|_| None);
+        let mut retirement = DeferredRetirement(None);
+        // Declaration order matters on error/unwind: state drops first, then
+        // deferred pool callbacks run without this lifecycle lock held.
+        let mut completion = self.pools.defer_install();
         let mut state = self.state.lock().map_err(|_| unavailable())?;
         if state.stopped
             || state.current.reference().configuration_epoch() != expected_epoch
@@ -306,15 +340,19 @@ impl StreamLifecycle {
             new_epoch,
             expected_epoch,
             config,
+            &mut completion,
         )?;
         let retired = std::mem::replace(&mut state.current, replacement);
         state.retired[index] = Some(retired.clone());
+        retirement.0 = Some(retired);
         let reference = state.current.reference();
+        completion.commit();
         drop(state);
         drop(removed);
+        completion.finish();
         // Installation fenced the old epoch first. Wake its accepted work
         // outside the lifecycle lock; the original physical owners are kept.
-        retired.retire();
+        retirement.finish();
         Ok(reference)
     }
     pub fn status(&self) -> Result<StreamStatus, StreamError> {

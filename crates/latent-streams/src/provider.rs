@@ -12,7 +12,7 @@ use latent_capabilities::broker::{
 #[cfg(any(test, feature = "development-outbound"))]
 use latent_capabilities::broker::{
     network::{STREAM_CAPABILITY, STREAM_PROFILE},
-    pools::ProviderSetup,
+    pools::{DeferredProviderInstall, ProviderSetup},
     ProviderBudgetRequirement, ProviderConfiguration,
 };
 #[cfg(any(test, feature = "development-outbound"))]
@@ -43,13 +43,23 @@ pub(crate) struct Inner {
     pub(crate) native_bank: Option<Arc<crate::kernel::native::StreamBank>>,
     _configuration: ProviderMetadata,
 }
-#[cfg(any(test, feature = "development-outbound"))]
+#[cfg(test)]
 pub(crate) type ProviderInstaller = fn(
     Arc<ProviderPools>,
     &str,
     u64,
     u64,
     StreamProviderConfig,
+) -> Result<StreamProvider, StreamError>;
+
+#[cfg(any(test, feature = "development-outbound"))]
+pub(crate) type DeferredProviderInstaller = for<'a, 'b> fn(
+    Arc<ProviderPools>,
+    &str,
+    u64,
+    u64,
+    StreamProviderConfig,
+    &'a mut DeferredProviderInstall<'b>,
 ) -> Result<StreamProvider, StreamError>;
 
 #[cfg(any(test, feature = "development-outbound"))]
@@ -412,6 +422,27 @@ impl StreamProvider {
         )
     }
 
+    #[cfg(any(test, feature = "development-outbound"))]
+    pub(crate) fn install_for_rotation(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        completion: &mut DeferredProviderInstall<'_>,
+    ) -> Result<Self, StreamError> {
+        Self::install_with_modes_deferred(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::Qualified,
+            crate::kernel::Mode::LogicalReference,
+            Some(completion),
+        )
+    }
+
     // Only unit-test code can select this reference experiment. It does not
     // exist in a normal or development-outbound provider binary.
     #[cfg(test)]
@@ -429,6 +460,27 @@ impl StreamProvider {
             expected_epoch,
             config,
             TlsInstallMode::AccountingReference,
+        )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn install_tls_for_rotation_reference(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        completion: &mut DeferredProviderInstall<'_>,
+    ) -> Result<Self, StreamError> {
+        Self::install_with_modes_deferred(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            TlsInstallMode::AccountingReference,
+            crate::kernel::Mode::LogicalReference,
+            Some(completion),
         )
     }
 
@@ -461,6 +513,33 @@ impl StreamProvider {
         config: StreamProviderConfig,
         tls_mode: TlsInstallMode,
         kernel_mode: crate::kernel::Mode,
+    ) -> Result<Self, StreamError> {
+        Self::install_with_modes_deferred(
+            pools,
+            logical_id,
+            epoch,
+            expected_epoch,
+            config,
+            tls_mode,
+            kernel_mode,
+            None,
+        )
+    }
+
+    #[cfg(any(test, feature = "development-outbound"))]
+    #[expect(
+        clippy::too_many_arguments,
+        reason = "retain the original profile and optional deferred publication"
+    )]
+    fn install_with_modes_deferred(
+        pools: Arc<ProviderPools>,
+        logical_id: &str,
+        epoch: u64,
+        expected_epoch: u64,
+        config: StreamProviderConfig,
+        tls_mode: TlsInstallMode,
+        kernel_mode: crate::kernel::Mode,
+        completion: Option<&mut DeferredProviderInstall<'_>>,
     ) -> Result<Self, StreamError> {
         config.validate()?;
         let limits = pools.limits()?;
@@ -528,25 +607,26 @@ impl StreamProvider {
         // Finish fallible local admission before publishing a replacement epoch.
         // A registry refusal must leave the original installed provider live.
         let connections = crate::connection_registry::Registry::new(&pools)?;
-        let installed = pools.install(
-            ProviderSetup {
-                logical_id,
-                credentials: &[],
-                authority: ProviderConfiguration {
-                    capability: STREAM_CAPABILITY,
-                    profile: STREAM_PROFILE,
-                    configuration_digest: &digest,
-                    configuration_epoch: epoch,
-                    restriction_json: &restriction,
-                    minimum_call_charges: &[ProviderBudgetRequirement {
-                        operation: "connect",
-                        dimension: BudgetDimension::OutboundRequests,
-                        minimum: 1,
-                    }],
-                },
+        let setup = ProviderSetup {
+            logical_id,
+            credentials: &[],
+            authority: ProviderConfiguration {
+                capability: STREAM_CAPABILITY,
+                profile: STREAM_PROFILE,
+                configuration_digest: &digest,
+                configuration_epoch: epoch,
+                restriction_json: &restriction,
+                minimum_call_charges: &[ProviderBudgetRequirement {
+                    operation: "connect",
+                    dimension: BudgetDimension::OutboundRequests,
+                    minimum: 1,
+                }],
             },
-            expected_epoch,
-        )?;
+        };
+        let installed = match completion {
+            Some(completion) => pools.install_deferred(setup, expected_epoch, completion)?,
+            None => pools.install(setup, expected_epoch)?,
+        };
         Ok(Self {
             inner: Arc::new(Inner {
                 config,
