@@ -16,6 +16,9 @@ A positive accepted prefix conservatively sets the public possible-effect flag;
 the original native prefix and flag remain available separately. `bytesWritten`
 counts WIT-confirmed accepted bytes rather than promising Node's intermediate
 queued/dispatched counter implementation.
+When backpressure clears, `drain` precedes the callback for the final write that
+emptied the buffer. Calling `end()` while that write is pending suppresses the
+late `drain`; neither event order releases the original operation or borrow early.
 
 This finite port permits at most two reserved Socket states, three pending
 operations per Socket, 16 queued write records (including empty writes),
@@ -82,13 +85,15 @@ fallback. Unsupported operations fail closed. This is a finite Socket API;
 it does not claim the complete Node stream/Duplex surface or compatibility
 with arbitrary npm networking packages.
 
-The finite 30 host controls include the pinned parser/bundler/typechecker,
+The current finite host suite contains 31 controls, including the pinned parser/bundler/typechecker,
 an authenticated previous raw generated initializer, and bounded real Node24
 loopback references for the promised callback/close ordering. The raw fixture
 contains the old diagnostic Gate; it remains mechanism evidence, not a new
 signed Socket qualification. Native handle/ACK holds, distinct cancellation
 acknowledgements, callback throws and caught synchronous emit errors are
-controlled separately. No host model count proves physical Task retirement.
+controlled separately. The signed receipt below records its historical 30-control
+suite and does not qualify the later added control. No host model count proves
+physical Task retirement.
 
 The finite accepted-close mechanism and unchanged published
 `is-port-reachable@4.0.0` client passed signed qualification in

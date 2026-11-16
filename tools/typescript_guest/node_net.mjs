@@ -324,6 +324,17 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
         else --queuedRecords;
       } else {
         --queuedRecords;
+        // Node emits drain before the callback that emptied a backpressured
+        // write buffer. The current native result and borrow ACK still own this
+        // entire callback tail, including reentrant writes or destruction.
+        if (this.#queued === 0 && this.#needDrain && !this.#ending) {
+          // Empty writes already accepted behind this write have completed
+          // too. Retain their callback jobs before a drain listener can destroy
+          // the socket; they must not be flushed as failed pending writes.
+          while (this.#writes.length && this.#writes[0].bytes.length === 0)
+            this.#finishWrite(this.#writes[0], false);
+          this.#needDrain = false; this.#emit('drain');
+        }
         if (item.callback) this.#user(item.callback, []);
       }
       if (failed) this.destroy(cause);
@@ -337,7 +348,9 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
         if (this.#destroyed) return;
       }
       if (!this.#writes.length && this.#needDrain) {
-        this.#needDrain = false; this.#emit('drain');
+        // Ended streams do not emit a late drain for prior backpressure.
+        this.#needDrain = false;
+        if (!this.#ending) this.#emit('drain');
         if (this.#destroyed) return;
         // A drain listener may enqueue/end. Its tail has now returned.
         while (this.#writes.length && this.#writes[0].bytes.length === 0)
