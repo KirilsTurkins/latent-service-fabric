@@ -1,6 +1,7 @@
 use super::*;
 use crate::protocol::{
     ProtocolBody, ProtocolHeader, ProtocolPage, ProtocolRequest, ProtocolScope, ProtocolTransport,
+    SharedProtocolPage,
 };
 use http_body_util::BodyExt;
 use std::time::Instant;
@@ -251,6 +252,106 @@ async fn protocol_frame_guard_outlives_actual_slice_drop_and_unwind() {
     }
     f.clean().await;
 }
+
+#[tokio::test]
+async fn shared_page_and_frame_retire_original_pool_on_normal_and_panic_paths() {
+    use crate::protocol::{observe_shared_page_drop, protocol_accounting_layout};
+    use std::sync::atomic::{AtomicBool, Ordering};
+    let f = Fixture::new(config(12345));
+    let baseline = f.pools.snapshot().unwrap().metadata_bytes;
+    let (_, frame_charge) = protocol_accounting_layout();
+    for mode in 0..3 {
+        let mut page = SharedProtocolPage::allocate(&f.pools, 8).unwrap();
+        let duplicate = page.clone();
+        assert!(page.try_append(b"payload").is_none());
+        drop(duplicate);
+        page.try_append(b"payload").unwrap().unwrap();
+        let mut body = ProtocolBody::from_shared_pages(&f.pools, &[page.clone()], 0..7).unwrap();
+        let frame = body.frame().await.unwrap().unwrap().into_data().unwrap();
+        let clone = frame.clone();
+        drop(frame);
+        let observed = Arc::new(AtomicBool::new(false));
+        let check = Arc::clone(&observed);
+        let pools = Arc::clone(&f.pools);
+        observe_shared_page_drop(
+            &page,
+            Box::new(move || {
+                assert_eq!(
+                    pools.snapshot().unwrap().metadata_bytes,
+                    baseline + 8 + 512 + frame_charge
+                );
+                check.store(true, Ordering::SeqCst);
+                assert!(mode != 1, "controlled page destructor unwind");
+            }),
+        );
+        drop((body, page));
+        assert_eq!(
+            f.pools.snapshot().unwrap().metadata_bytes,
+            baseline + 8 + 512 + frame_charge
+        );
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
+            if mode == 2 {
+                let _frame = clone;
+                panic!("controlled caller unwind");
+            }
+            drop(clone);
+        }));
+        assert_eq!(result.is_err(), mode != 0);
+        assert!(observed.load(Ordering::SeqCst));
+        assert_eq!(f.pools.snapshot().unwrap().metadata_bytes, baseline);
+    }
+    f.clean().await;
+}
+
+#[tokio::test]
+async fn shared_page_concurrent_final_handles_release_original_pool_once() {
+    let f = Fixture::new(config(12345));
+    let baseline = f.pools.snapshot().unwrap().metadata_bytes;
+    let page = SharedProtocolPage::allocate(&f.pools, 8).unwrap();
+    let barrier = Arc::new(std::sync::Barrier::new(9));
+    let workers: Vec<_> = (0..8)
+        .map(|_| {
+            let page = page.clone();
+            let barrier = Arc::clone(&barrier);
+            std::thread::spawn(move || {
+                barrier.wait();
+                drop(page);
+            })
+        })
+        .collect();
+    drop(page);
+    assert_eq!(
+        f.pools.snapshot().unwrap().metadata_bytes,
+        baseline + 8 + 512
+    );
+    barrier.wait();
+    for worker in workers {
+        worker.join().unwrap();
+    }
+    assert_eq!(f.pools.snapshot().unwrap().metadata_bytes, baseline);
+    f.clean().await;
+}
+
+#[tokio::test]
+async fn legacy_raw_page_weak_keeps_its_original_unqualified_header_boundary() {
+    let f = Fixture::new(config(12345));
+    let baseline = f.pools.snapshot().unwrap().metadata_bytes;
+    let mut raw = ProtocolPage::allocate(&f.pools, 8).unwrap();
+    raw.append(b"data").unwrap();
+    let page = Arc::new(raw);
+    let weak = Arc::downgrade(&page);
+    let mut body = ProtocolBody::from_pages(&f.pools, &[Arc::clone(&page)], 0..4).unwrap();
+    let frame = body.frame().await.unwrap().unwrap().into_data().unwrap();
+    assert_eq!(&frame[..], b"data");
+    drop(body);
+    drop(page);
+    assert!(weak.upgrade().is_some());
+    drop(frame);
+    assert!(weak.upgrade().is_none());
+    assert_eq!(f.pools.snapshot().unwrap().metadata_bytes, baseline);
+    drop(weak);
+    f.clean().await;
+}
 #[tokio::test]
 async fn operator_protocol_uses_real_tls_and_closes_the_actual_connection() {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -278,11 +379,11 @@ async fn operator_protocol_uses_real_tls_and_closes_the_actual_connection() {
     let (f, transport) = configured(port, root);
     let mut pages = Vec::new();
     for value in *b"abc" {
-        let mut page = ProtocolPage::allocate(&f.pools, 4096).unwrap();
-        page.append(&vec![value; 4096]).unwrap();
-        pages.push(Arc::new(page));
+        let mut page = SharedProtocolPage::allocate(&f.pools, 4096).unwrap();
+        page.try_append(&vec![value; 4096]).unwrap().unwrap();
+        pages.push(page);
     }
-    let body = ProtocolBody::from_pages(&f.pools, &pages, 4090..8200).unwrap();
+    let body = ProtocolBody::from_shared_pages(&f.pools, &pages, 4090..8200).unwrap();
     let permit = transport
         .maintenance(Instant::now() + Duration::from_secs(2), 1)
         .unwrap();

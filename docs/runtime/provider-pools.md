@@ -82,7 +82,17 @@ Other targets use their actual layout. An empty range needs no frame reservation
 unused reservations return when the body drops, and emitted frames retain theirs
 through their final transport clone. These additional reservations can cause
 earlier refusal under the existing metadata limit. They cover these frame owners,
-not all protocol, page-header or kernel allocations.
+not all protocol or kernel allocations.
+
+The S3 staging and deferred HTTP paths use managed page handles whose private
+page Arc retires before the original page reservation is returned. On pinned
+Linux x86-64 its 72-byte Arc backing and the data vector fit inside the existing
+page-capacity-plus-512-byte pool reservation, including their bookkeeping; the
+implementation checks the target's actual layout before allocating. Clones do
+not expose a raw Arc or Weak, and mutation still requires a unique handle. The
+older public raw-Arc page API remains supported, but an external Weak can retain
+its Arc header after the page's original charge returns; that legacy tail is not
+qualified by the managed path.
 
 `admit` reserves queue and metadata space before staging input. Its tenant comes
 from the sealed execution plan. The queue rotates between tenants, then providers

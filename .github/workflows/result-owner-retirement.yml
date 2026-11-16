@@ -6,11 +6,37 @@ on:
     paths:
       - 'crates/vendor/bytes/**'
       - 'crates/latent-core/src/result_payload.rs'
+      - 'crates/latent-http/src/protocol.rs'
+      - 'crates/latent-http/src/protocol/**'
+      - 'crates/latent-http/src/deferred/request.rs'
+      - 'crates/latent-http/src/tests/protocol.rs'
+      - 'crates/latent-capabilities/src/broker/pools.rs'
+      - 'crates/latent-capabilities/src/broker/pools/**'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - 'crates/latent-blobs/src/s3/provider/handles.rs'
+      - 'crates/latent-blobs/src/s3/provider/remote.rs'
+      - 'crates/latent-blobs/src/s3/provider/seal.rs'
+      - 'tools/protocol_page_retirement_witness.py'
+      - 'tools/protocol_page_retirement_witness.rs'
       - '.github/workflows/result-owner-retirement.yml'
   pull_request:
     paths:
       - 'crates/vendor/bytes/**'
       - 'crates/latent-core/src/result_payload.rs'
+      - 'crates/latent-http/src/protocol.rs'
+      - 'crates/latent-http/src/protocol/**'
+      - 'crates/latent-http/src/deferred/request.rs'
+      - 'crates/latent-http/src/tests/protocol.rs'
+      - 'crates/latent-capabilities/src/broker/pools.rs'
+      - 'crates/latent-capabilities/src/broker/pools/**'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - 'crates/latent-blobs/src/s3/provider/handles.rs'
+      - 'crates/latent-blobs/src/s3/provider/remote.rs'
+      - 'crates/latent-blobs/src/s3/provider/seal.rs'
+      - 'tools/protocol_page_retirement_witness.py'
+      - 'tools/protocol_page_retirement_witness.rs'
       - '.github/workflows/result-owner-retirement.yml'
   workflow_dispatch:
 
@@ -41,3 +67,14 @@ jobs:
       - name: Observe actual allocation frees through clones, copies, races and unwind
         shell: bash
         run: '"$RUNNER_TEMP/result-owner-tests" --test-threads=1'
+  protocol-page-owner:
+    name: Actual protocol page allocation retirement
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + upstream changes + LSF security fixes
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Observe managed and legacy protocol page allocations
+        run: python3 tools/protocol_page_retirement_witness.py
