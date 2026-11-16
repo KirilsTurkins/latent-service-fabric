@@ -80,6 +80,27 @@ Regenerate the kit after changing the project or SDK recipe.
 
 ## Capturing C libraries
 
+For a C application or resource artifact in `tar` or `zip` format, an optional
+`cArchiveSelection` selects exact archive path prefixes before materialization:
+
+```json
+"cArchiveSelection": {
+  "formatVersion": 1,
+  "include": ["library-1.0/src", "library-1.0/include"]
+}
+```
+
+Put this object inside the artifact's `metadata`. Prefixes are case-sensitive,
+relative to the original archive root, and must each match at least one file.
+They cannot overlap or differ only by case. Selected paths retain their full
+archive names, so use those names in `cSources` and `includeDirectories`.
+All selected paths must satisfy the existing portable dependency path rules.
+The original archive is stored and reviewed in full, and every entry, including
+excluded entries, is checked for unsafe types, names, collisions and size limits.
+An excluded archive name may contain `~`; it is never materialized. Changing
+the selection requires a new reviewed lock. Without this explicit option, the
+existing archive behavior applies. This selection grants no runtime authority.
+
 ```json
 {
   "id": "developer/pure-library/1.0.0",
