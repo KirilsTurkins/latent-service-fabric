@@ -220,10 +220,10 @@ case, that call returned fewer entries than the queue held.
 Fixed and cached managed pools also count an in-progress factory call toward
 their worker limit. A nested task already accepted by such a pool keeps its
 original owners if the outer factory fails, until it runs or is withdrawn.
-Their `isShutdown` and `isTerminated` observations do not acquire the public
-executor monitor. Termination becomes visible only after the original Executor
-owner settles; a denied or uncertain settlement keeps termination false. Other
-managed-pool operations and scheduled-pool status retain their existing locks.
+`isShutdown` and `isTerminated` for managed and scheduled pools do not acquire
+the public executor monitor. Termination becomes visible only after the original
+Executor owner settles; a denied or uncertain settlement keeps termination
+false. Other pool operations retain their existing locks.
 For fixed and single-thread pools, a null factory is retried once when no other
 worker exists or is starting. If it still returns `null`, accepted work remains
 charged and root drain waits until a worker runs it or it is withdrawn. Cached
