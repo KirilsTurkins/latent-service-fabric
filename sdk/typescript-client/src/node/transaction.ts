@@ -448,38 +448,45 @@ export function validateIndependentAudit(value: RecordValue): void {
   if (value.auditAck !== undefined) enumeration(object(value.auditAck).status, 4, "audit.status");
 }
 
-/** Check retained recovery data before asking structuredClone to allocate it. */
+/** Copy only finite recovery data, including selected bytes rather than backing buffers. */
 function boundedRecoveryClone(source: unknown, budget: { bytes: number; nodes: number }): unknown {
-  const pending: Array<{ value: unknown; depth: number }> = [{ value: source, depth: 0 }];
-  const seen = new Set<object>();
-  while (pending.length) {
-    const { value, depth } = pending.pop()!;
+  const seen = new Map<object, unknown>();
+  function copy(value: unknown, depth: number): unknown {
     if (--budget.nodes < 0 || depth > 16 || (budget.bytes -= 64) < 0) throw new ShapeError();
     if (typeof value === "string") {
       if (value.length > budget.bytes || (budget.bytes -= Buffer.byteLength(value)) < 0) throw new ShapeError();
-    } else if (value === null || value === undefined || typeof value === "boolean"
-      || typeof value === "number" || typeof value === "bigint") {
-      continue;
-    } else if (value instanceof Uint8Array) {
-      // structuredClone copies the backing buffer, even for a short view.
-      if (!(value.buffer instanceof ArrayBuffer) || (budget.bytes -= value.buffer.byteLength) < 0) throw new ShapeError();
-    } else if (typeof value === "object") {
-      if (seen.has(value)) continue;
-      seen.add(value);
-      if (Array.isArray(value)) {
-        if (value.length > budget.nodes) throw new ShapeError();
-      } else if (![Object.prototype, null].includes(Object.getPrototypeOf(value))) throw new ShapeError();
-      for (const key in value) {
-        if (!Object.hasOwn(value, key)) continue;
-        if (key.length > budget.bytes || (budget.bytes -= Buffer.byteLength(key) + 64) < 0) throw new ShapeError();
-        const descriptor = Object.getOwnPropertyDescriptor(value, key);
-        if (!descriptor || !("value" in descriptor)) throw new ShapeError();
-        pending.push({ value: descriptor.value, depth: depth + 1 });
-        if (pending.length > budget.nodes) throw new ShapeError();
-      }
-    } else throw new ShapeError();
+      return value;
+    }
+    if (value === null || value === undefined || typeof value === "boolean"
+      || typeof value === "number" || typeof value === "bigint") return value;
+    if (typeof value !== "object") throw new ShapeError();
+    if (seen.has(value)) return seen.get(value);
+    if (value instanceof Uint8Array) {
+      if ((budget.bytes -= value.byteLength) < 0) throw new ShapeError();
+      const result = new Uint8Array(value);
+      seen.set(value, result);
+      return result;
+    }
+    let result: Record<string, unknown> | unknown[];
+    if (Array.isArray(value)) {
+      if (value.length > budget.nodes) throw new ShapeError();
+      result = new Array(value.length);
+    } else {
+      if (![Object.prototype, null].includes(Object.getPrototypeOf(value))) throw new ShapeError();
+      result = {};
+    }
+    seen.set(value, result);
+    for (const key in value) {
+      if (!Object.hasOwn(value, key)) continue;
+      if (key.length > budget.bytes || (budget.bytes -= Buffer.byteLength(key) + 64) < 0) throw new ShapeError();
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      if (!descriptor || !("value" in descriptor)) throw new ShapeError();
+      Object.defineProperty(result, key, { value: copy(descriptor.value, depth + 1),
+        enumerable: true, writable: true, configurable: true });
+    }
+    return result;
   }
-  return structuredClone(source);
+  return copy(source, 0);
 }
 
 /** Snapshot only bounded recovery data, without retaining application input. */

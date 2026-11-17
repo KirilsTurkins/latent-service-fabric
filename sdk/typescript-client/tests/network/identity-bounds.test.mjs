@@ -13,23 +13,20 @@ test('recovery snapshot retains original scope without retaining mutable source'
   assert.deepEqual(result.authorizationPublication, publication);
 });
 
-test('oversized backing storage is rejected before cloning it', () => {
+test('a short view copies only selected bytes and keeps the original recovery key', () => {
   const buffer = new ArrayBuffer(9 * 1024 * 1024);
-  const huge = new Uint8Array(buffer, 0, 1);
-  const value = { command: { ...selector, extra: huge }, authorizationPublication: publication };
-  const original = globalThis.structuredClone;
-  let clonedHuge = false;
-  globalThis.structuredClone = (data, ...options) => {
-    if (data?.extra === huge) clonedHuge = true;
-    return original(data, ...options);
-  };
-  try {
-    assert.deepEqual(identity('lookupCommand', value), {});
-    assert.equal(clonedHuge, false);
-  } finally { globalThis.structuredClone = original; }
+  const view = new Uint8Array(buffer, 17, 1); view[0] = 42;
+  const result = identity('invokeCommand', { command: selector, invocation: { activationId: 'original' },
+    expectedVersions: [{ key: view }] });
+  assert.equal(result.command.clientKey, 'original');
+  assert.equal(result.expectedVersions[0].key[0], 42);
+  assert.equal(result.expectedVersions[0].key.buffer.byteLength, 1);
+  view[0] = 9;
+  assert.equal(result.expectedVersions[0].key[0], 42);
 });
 
-test('deep or accessor-bearing extra recovery data is refused', () => {
+test('oversized, deep or accessor-bearing recovery data is refused', () => {
+  assert.deepEqual(identity('lookupCommand', { command: { ...selector, extra: new Uint8Array(9 * 1024 * 1024) }, authorizationPublication: publication }), {});
   let deep = {}; for (let i = 0; i < 18; i++) deep = { nested: deep };
   assert.deepEqual(identity('lookupCommand', { command: { ...selector, extra: deep }, authorizationPublication: publication }), {});
   const extra = {}; Object.defineProperty(extra, 'value', { enumerable: true, get() { throw new Error('getter executed'); } });
