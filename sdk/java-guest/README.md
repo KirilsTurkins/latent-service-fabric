@@ -204,9 +204,15 @@ their owners until withdrawal or physical return. If task delivery throws before
 completing its result, `invokeAny` reports the failure rather than waiting
 indefinitely on that incomplete result.
 Scheduled pools count a worker being constructed by a `ThreadFactory` toward
-their configured parallelism. If the factory itself throws after a submission
-is queued, the original exception reaches the caller but that task and any
-nested accepted tasks keep their owners; a later worker can still run them.
+their configured parallelism. They release their own pool monitor before calling
+the factory, so another thread can submit or shut down while it runs; a caller
+already holding that monitor can still prevent progress. A factory or managed
+worker registration in progress fences root retirement. This adds one counter
+to each scheduled pool within the existing Java heap limit. `Thread.start` and
+other pool operations keep their existing locking. If the factory itself throws
+after a submission is queued, the original exception reaches the caller but
+that task and any nested accepted tasks keep their owners; a later worker can
+still run them.
 With no worker, `shutdownNow()` can return the retained tasks. A scheduled pool
 also retains work when a factory
 returns `null`: root drain remains pending until the work runs or is withdrawn.
