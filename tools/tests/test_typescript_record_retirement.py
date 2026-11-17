@@ -324,6 +324,8 @@ OWNER_RETRY_CASES = (
     'import-result-retry', 'import-lowering-retry', 'import-record-retry',
     'import-turn-fence', 'import-lower-fence', 'import-lift-fence',
     'import-partial-admission', 'import-partial-buffer',
+    'import-partial-rollback-native', 'import-partial-rollback-queue', 'import-partial-rollback-task',
+    'import-partial-admission-physical-order',
     'import-readiness-denied-before-dispatch',
     'import-immediate-readiness-retired',
     'import-park-refused-late-return', 'import-park-refused-late-cancel',

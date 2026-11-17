@@ -86,7 +86,8 @@ class Imports final {
       if (!observerLink(cx, item->id, item->record_owner.token, observer_link)) return false;
       if (*observer_link && (*observer_link)->quarantined) return invalid(cx, "borrow-quarantined");
       ImportLifecycle::Retirement retirement;
-      if (!item->lifecycle.releaseAfterPhysicalDestruction(cx, retirement)) {
+      if (!item->lifecycle.retryUnpublishedRollback(cx) ||
+          !item->lifecycle.releaseAfterPhysicalDestruction(cx, retirement)) {
         if (*observer_link) {
           (*observer_link)->quarantined = true;
           failed_observer_completion_ = stopped_ = true;

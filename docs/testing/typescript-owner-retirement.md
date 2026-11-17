@@ -61,6 +61,23 @@ injected join failure that retains the original
 subtask and owners until a later retry and terminal event. They do not qualify
 a signed guest, production host, or physical Store destruction.
 
+## Partial import-admission rollback
+
+If import admission fails before any WIT-layout buffer or subtask is created,
+the manager closes new admission and retries any surviving original Task or
+QueuedWork settlement. It retains the separately paid record and its persistent
+roots while that rollback is refused. Once logical rollback succeeds, the
+record is destroyed before its lowering Native, Result, and record Native
+owners are acknowledged. A failed physical acknowledgement keeps the same
+token in the existing bounded retry slot; it does not acknowledge a different
+record or repeat an already successful settlement.
+
+Production-header controls using host and JS doubles cover refusals of each
+original Task, QueuedWork, and Native owner, repeated cancellation, recovery,
+and result-buffer allocation failure. They observe roots and buffers at the
+acknowledgement boundary and check each original token settles once. These are
+not a SpiderMonkey, signed-component, or Store-destruction qualification.
+
 ## Budget mapping and lifecycle
 
 `ActivationBudget` is the existing authority. The bridge does not mint a new

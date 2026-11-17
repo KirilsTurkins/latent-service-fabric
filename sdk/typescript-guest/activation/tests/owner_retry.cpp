@@ -15,6 +15,9 @@ std::array<Owner,256> owners{};
 std::array<Wait,32> waits{};
 std::array<unsigned,8> counts{}, peaks{}, limits{16,2,2,16,8,8,8,64};
 uint64_t generation=1, next_owner=1, refuse_id=0, last_native=0;
+uint64_t observed_record=0, observed_native=0, observed_result=0;
+unsigned expected_roots_at_ack=0, expected_buffers_at_ack=0;
+bool record_destroyed_before_ack=false, native_destroyed_before_ack=false, result_destroyed_before_ack=false;
 uint32_t next_wait=1;
 int refuse_kind=-1, deny_kind=-1;
 bool closed=false, immediate=true, deferred=false, refuse_stop=false, refuse_disposer=false, refuse_park=false;
@@ -104,6 +107,11 @@ bool latent_runtime_activation_settle(latent_runtime_activation_token_t* t,laten
   auto& owner=owners[t->id]; ++owner.attempts;
   if (t->id==refuse_id || owner.kind==refuse_kind)
     return failure(e,LATENT_RUNTIME_ACTIVATION_ERROR_UNAVAILABLE);
+  const bool physically_retired=fixture::roots==expected_roots_at_ack &&
+      fixture::buffers==expected_buffers_at_ack;
+  if (t->id==observed_record) record_destroyed_before_ack=physically_retired;
+  if (t->id==observed_native) native_destroyed_before_ack=physically_retired;
+  if (t->id==observed_result) result_destroyed_before_ack=physically_retired;
   --counts[owner.kind]; owner.live=false; ++owner.refunds; return true;
 }
 bool latent_runtime_activation_close(latent_runtime_activation_error_t*) { closed=true; return true; }
@@ -245,6 +253,8 @@ bool import_retry(unsigned stage) {
   CHECK(e.reserve(first)); CHECK(e.reserve(second));
   // Record Native, Task, Queue, lowering Native, Result are admitted in order.
   const uint64_t result=next_owner-1, native=result-1, record=result-4;
+  observed_record=record; observed_native=native; observed_result=result;
+  expected_roots_at_ack=2; expected_buffers_at_ack=2; // the other record remains live
   refuse_id=stage==0 ? result : stage==1 ? native : record;
   for (unsigned attempt=0;attempt<3;++attempt) {
     JS_ClearPendingException(&e.cx); CHECK(!e.imports.cancelAll(&e.cx));
@@ -253,7 +263,10 @@ bool import_retry(unsigned stage) {
     CHECK(owners[result].refunds==(stage>0 ? 1u:0u));
     CHECK(owners[native].refunds==(stage>1 ? 1u:0u));
   }
-  refuse_id=0; CHECK(e.finish()); CHECK(fixture::resolutions==0); return true;
+  refuse_id=0; CHECK(e.finish());
+  CHECK(fixture::resolutions==0 && record_destroyed_before_ack &&
+        native_destroyed_before_ack && result_destroyed_before_ack);
+  return true;
 }
 bool import_fence(const char* operation) {
   Environment e; CHECK(e.begin()); uint32_t earlier=0,later=0;
@@ -274,11 +287,67 @@ bool import_fence(const char* operation) {
 }
 bool import_partial(bool buffers) {
   Environment e; CHECK(e.begin()); uint32_t id=99;
-  if (buffers) fixture::fail_allocation=2; else deny_kind=6;
+  if (buffers) {
+    const auto record=next_owner;
+    observed_record=record; observed_native=record+3; observed_result=record+4;
+    expected_roots_at_ack=0; expected_buffers_at_ack=0;
+    fixture::fail_allocation=2;
+  } else deny_kind=6;
   CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},id));
   CHECK(id==0 && fixture::resolutions==0);
   if (!buffers) CHECK(fixture::allocations==0 && counts[7]==0);
-  else CHECK(fixture::buffers==1 && fixture::buffer_bytes==16);
+  else CHECK(fixture::buffers==1 && fixture::buffer_bytes==16 && fixture::roots==2 &&
+             owners[observed_record].live && owners[observed_native].live && owners[observed_result].live);
+  deny_kind=-1; CHECK(e.finish());
+  if (buffers) CHECK(record_destroyed_before_ack && native_destroyed_before_ack && result_destroyed_before_ack);
+  return true;
+}
+bool import_partial_rollback_retry(unsigned stage) {
+  Environment e; CHECK(e.begin()); uint32_t id=99;
+  // Existing admission order: record Native, Task, Queue, lowering Native;
+  // the Result admission then fails before any buffer or subtask exists.
+  const auto record=next_owner, task=record+1, queue=record+2, native=record+3;
+  observed_record=record; observed_native=native;
+  expected_roots_at_ack=0; expected_buffers_at_ack=0;
+  deny_kind=6;
+  refuse_id=stage==0 ? native : stage==1 ? queue : task;
+  CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},id));
+  CHECK(id==0 && e.cx.exception && fixture::allocations==0 && fixture::buffers==0);
+  CHECK(owners[record].live && owners[refuse_id].live && owners[refuse_id].refunds==0);
+  CHECK(owners[native].refunds==0 &&
+        owners[queue].refunds==(stage!=1 ? 1u:0u) &&
+        owners[task].refunds==(stage==0 ? 1u:0u));
+  const char* original=e.cx.detail;
+  uint32_t rejected=99; const auto admitted=registrations;
+  CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},rejected));
+  CHECK(rejected==0 && registrations==admitted && e.cx.detail==original);
+  for (unsigned attempt=0;attempt<2;++attempt) {
+    const auto previous=owners[refuse_id].attempts;
+    JS_ClearPendingException(&e.cx);
+    CHECK(!e.imports.cancelAll(&e.cx));
+    CHECK(owners[refuse_id].live && owners[refuse_id].attempts==previous+1 &&
+          owners[refuse_id].refunds==0 && owners[record].live);
+    CHECK(fixture::buffers==0 && fixture::roots==(stage==0 ? 0u:2u) && import_dispatches==0);
+    CHECK(owners[native].refunds==0);
+    if (stage!=1) CHECK(owners[queue].attempts==1 && owners[queue].refunds==1);
+    if (stage==0) CHECK(owners[task].attempts==1 && owners[task].refunds==1);
+  }
+  deny_kind=-1; refuse_id=0; CHECK(e.finish());
+  CHECK(owners[record].refunds==1 && owners[task].refunds==1 &&
+        owners[queue].refunds==1 && owners[native].refunds==1 &&
+        record_destroyed_before_ack && native_destroyed_before_ack);
+  return true;
+}
+bool import_partial_admission_physical_order() {
+  Environment e; CHECK(e.begin()); uint32_t id=99;
+  const auto record=next_owner, task=record+1, queue=record+2, native=record+3;
+  observed_record=record; observed_native=native;
+  expected_roots_at_ack=0; expected_buffers_at_ack=0;
+  deny_kind=6; // Result never admitted; no buffer has been allocated.
+  CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},id));
+  CHECK(id==0 && fixture::allocations==0 && fixture::roots==0 && !e.imports.hasPending());
+  CHECK(owners[record].refunds==1 && owners[task].refunds==1 && owners[queue].refunds==1 &&
+        owners[native].refunds==1 && record_destroyed_before_ack && native_destroyed_before_ack);
   deny_kind=-1; CHECK(e.finish()); return true;
 }
 bool import_readiness_denied() {
@@ -484,6 +553,10 @@ bool run(const char* name) {
   if (!std::strcmp(name,"import-lift-fence")) return import_fence("lift");
   if (!std::strcmp(name,"import-partial-admission")) return import_partial(false);
   if (!std::strcmp(name,"import-partial-buffer")) return import_partial(true);
+  if (!std::strcmp(name,"import-partial-rollback-native")) return import_partial_rollback_retry(0);
+  if (!std::strcmp(name,"import-partial-rollback-queue")) return import_partial_rollback_retry(1);
+  if (!std::strcmp(name,"import-partial-rollback-task")) return import_partial_rollback_retry(2);
+  if (!std::strcmp(name,"import-partial-admission-physical-order")) return import_partial_admission_physical_order();
   if (!std::strcmp(name,"import-readiness-denied-before-dispatch")) return import_readiness_denied();
   if (!std::strcmp(name,"import-immediate-readiness-retired")) return import_immediate_readiness_retired();
   if (!std::strcmp(name,"import-park-refused-late-return")) return import_start_refused(true,true);
