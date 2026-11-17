@@ -92,10 +92,14 @@ class FutureCancellationControl(unittest.TestCase):
                               'fallback-shutdown', 'fallback-denied', 'fallback-lost')
         obtrude_modes = ('queued', 'queued-queue-denied', 'queued-queue-lost', 'queued-result-denied',
                          'queued-result-lost', 'running-value', 'running-error', 'waiting-value', 'waiting-error')
+        default_async_modes = ('accept', 'run', 'accept-both', 'run-both', 'accept-either', 'early', 'run-throw', 'both-throw',
+                               'null-default', 'invalid-null', 'invalid-default-throw')
         new_reference_stages = ('scheduled-periodic-validation-reference-jdk', 'scheduled-null-factory-reference-jdk',
             'scheduled-throw-factory-reference-jdk', 'manual-periodic-throw-reference-jdk',
-            'managed-reentrant-factory-reference-jdk', 'completable-obtrude-reference-jdk', 'managed-null-factory-reference-jdk')
+            'managed-reentrant-factory-reference-jdk', 'completable-obtrude-reference-jdk',
+            'completable-default-async-reference-jdk', 'managed-null-factory-reference-jdk')
         new_source_stages = ('completable-obtrude-source', *('completable-obtrude-owner-' + mode for mode in obtrude_modes),
+            'completable-default-async-source', *('completable-default-async-owner-' + mode for mode in default_async_modes),
             'scheduled-periodic-validation-source', 'scheduled-null-factory-source',
             'scheduled-throw-factory-source', 'manual-periodic-throw-source', 'managed-reentrant-factory-source',
             *('managed-reentrant-factory-owner-' + mode for mode in managed_factory_modes),
@@ -125,6 +129,11 @@ class FutureCancellationControl(unittest.TestCase):
                         'cancellation;overrides;deferred;waiting-destination;running')
             if stage.startswith('completable-obtrude-owner-'):
                 return 'COMPLETABLE_OBTRUDE_OWNER PASS ' + argv[-1]
+            if stage in ('completable-default-async-reference-jdk', 'completable-default-async-source'):
+                return ('COMPLETABLE_DEFAULT_ASYNC_REFERENCE PASS pending;ready;five-overloads;'
+                        'default-executor;null-default;invalid-order;factory;explicit-virtual')
+            if stage.startswith('completable-default-async-owner-'):
+                return 'COMPLETABLE_DEFAULT_ASYNC_OWNER PASS ' + argv[-1]
             if stage.startswith('managed-reentrant-factory-owner-'):
                 return 'MANAGED_REENTRANT_FACTORY_OWNER PASS ' + argv[-1]
             if stage in ('managed-null-factory-reference-jdk', 'managed-null-factory-source'):
@@ -191,12 +200,15 @@ class FutureCancellationControl(unittest.TestCase):
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/DefaultExecutorOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ExecutorInvokeAllOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/CompletableObtrudeOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/CompletableDefaultAsyncOwnerControl.java', argv)
         for stage in new_reference_stages:
             self.assertIn(stage, [name for name, _ in calls])
         reference_argv = next(args for stage, args in calls if stage == 'scheduled-stopped-reference-compile')
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ExecutorInvokeAllWaitReferenceControl.java',
                       reference_argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/CompletableObtrudeReferenceControl.java',
+                      reference_argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/CompletableDefaultAsyncReferenceControl.java',
                       reference_argv)
         for missing in ('executor-invoke-interrupt-reference-jdk', 'executor-invoke-interrupt-source',
                         'executor-invoke-interrupt-owner', 'executor-await-termination-reference-jdk',
@@ -222,7 +234,7 @@ class FutureCancellationControl(unittest.TestCase):
                 def incomplete(stage, *arguments):
                     return 'SKIPPED' if stage == missing else run(stage, *arguments)
                 incomplete_compiler = SimpleNamespace(sdk=sdk, run=incomplete)
-                with self.assertRaisesRegex(ValueError, 'Java (periodic validation|null-factory|throwing-factory|manual periodic|managed|completable obtrude).* (did not complete|differs from reference)'):
+                with self.assertRaisesRegex(ValueError, 'Java (periodic validation|null-factory|throwing-factory|manual periodic|managed|completable obtrude|completable default async).* (did not complete|differs from reference)'):
                     subject.scheduled_source_control(incomplete_compiler, Path(temporary) / 'source')
                 matrix.assert_not_called()
 

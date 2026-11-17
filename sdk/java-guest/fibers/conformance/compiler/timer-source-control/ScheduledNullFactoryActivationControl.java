@@ -10,6 +10,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionException;
@@ -617,6 +618,43 @@ public final class ScheduledNullFactoryActivationControl {
             held(0, 0, 0); invoke("retireIdlePools"); finishRoot(root);
         } finally { release.countDown(); }
     }
+    private static void managedDefaultAsyncRoot() throws Exception {
+        Object root = enter();
+        AtomicReference<Thread> selected = new AtomicReference<>();
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            Thread thread = new Thread(() -> {
+                try { Activation.starting(Thread.currentThread()); target.run(); }
+                finally { Activation.finished(Thread.currentThread()); }
+            });
+            selected.set(thread); return thread;
+        });
+        class Source extends CompletableFuture<Integer> {
+            int defaults, overloads;
+            @Override public Executor defaultExecutor() { defaults++; return pool; }
+            @Override public CompletableFuture<Void> thenRunAsync(Runnable action, Executor executor) {
+                overloads++; throw new AssertionError("unexpected-explicit-overload");
+            }
+        }
+        var source = new Source(); source.complete(5);
+        try {
+            var child = source.thenRunAsync(() -> {
+                calls.incrementAndGet(); entered.countDown();
+                while (true) try { release.await(); return; } catch (InterruptedException ignored) { }
+            });
+            require(entered.await(5, TimeUnit.SECONDS) && source.defaults == 1 && source.overloads == 0,
+                "default-async-not-dispatched");
+            held(1, 1, 1);
+            require(owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 1, "default-async-worker-not-owned");
+            pool.shutdown(); closeRoot();
+            require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools"), "default-async-root-not-fenced");
+            release.countDown(); selected.get().join(5000);
+            require(!selected.get().isAlive() && calls.get() == 1 && child.join() == null
+                && owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 0, "default-async-not-retired");
+            held(0, 0, 0); invoke("retireIdlePools"); finishRoot(root);
+        } finally { release.countDown(); }
+    }
     public static void main(String[] args) throws Exception {
         String mode = args[0];
         if (mode.equals("scan-mutation") || mode.equals("retirement-scan-mutation"))
@@ -641,6 +679,7 @@ public final class ScheduledNullFactoryActivationControl {
                 || mode.equals("managed-graceful-executor-denied-root"))
             managedGracefulSoleRoot(mode.substring("managed-graceful-".length(), mode.length() - "-root".length()));
         else if (mode.equals("managed-obtrude-root")) managedObtrudeRoot();
+        else if (mode.equals("managed-default-async-root")) managedDefaultAsyncRoot();
         else if (mode.equals("recovery") || mode.equals("reentrant")) recovery(mode.equals("reentrant"));
         else if (mode.equals("cancel") || mode.equals("remove") || mode.equals("factory-throw") || mode.equals("wait-denied")
                 || mode.equals("settle-result-denied") || mode.equals("settle-queue-denied")) noWorker(mode);
