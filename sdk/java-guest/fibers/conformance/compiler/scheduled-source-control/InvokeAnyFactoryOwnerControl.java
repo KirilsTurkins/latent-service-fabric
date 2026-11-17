@@ -163,10 +163,14 @@ public final class InvokeAnyFactoryOwnerControl {
             catch (Throwable error) { outcome.set(error); }
         }, "invoke-any-withdrawn-caller");
         try {
+            var queueField = pool.getClass().getDeclaredField("queue"); queueField.setAccessible(true);
             caller.start();
             long deadline = System.nanoTime() + 5_000_000_000L;
-            while (!counts().equals("1:1:1")) {
-                require(System.nanoTime() - deadline < 0, "withdraw-not-admitted-" + counts()); Thread.sleep(1);
+            while (true) {
+                boolean queued;
+                synchronized (pool) { queued = !((java.util.ArrayDeque<?>)queueField.get(pool)).isEmpty(); }
+                if (queued && counts().equals("1:1:1")) break;
+                require(System.nanoTime() - deadline < 0, "withdraw-not-queued-" + counts()); Thread.sleep(1);
             }
             List<Runnable> removed = pool.shutdownNow();
             require(removed.size() == 1 && removed.get(0) instanceof RunnableFuture<?>

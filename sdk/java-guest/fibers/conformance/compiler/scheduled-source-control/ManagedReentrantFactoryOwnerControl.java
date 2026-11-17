@@ -86,29 +86,21 @@ public final class ManagedReentrantFactoryOwnerControl {
         AtomicReference<List<Runnable>> removed = new AtomicReference<>();
         var failure = new IllegalStateException("managed-factory-after-shutdown");
         var pool = Executors.newFixedThreadPool(1, target -> {
-            ExecutorService current = selected.get();
-            removed.set(current.shutdownNow());
-            require(removed.get().size() == 1);
-            held(0, 0, 1);
+            ExecutorService current = selected.get(); removed.set(current.shutdownNow());
+            require(removed.get().isEmpty()); held(1, 1, 1);
             var managed = (Activation.ManagedPool)current;
             require(managed.hasPendingWork() && !managed.isRetired());
-            managed.closeAtRoot();
-            require(managed.hasPendingWork() && !managed.isRetired());
+            managed.closeAtRoot(); require(managed.hasPendingWork() && !managed.isRetired());
             if (mode.equals("throw")) throw failure;
             if (mode.equals("null")) return null;
             return new Thread(target);
         });
         selected.set(pool);
         try {
-            if (!mode.equals("throw")) pool.submit(() -> { throw new AssertionError("withdrawn-work-ran"); });
-            else {
-                try { pool.submit(() -> { throw new AssertionError("withdrawn-work-ran"); });
-                    throw new AssertionError("missing-factory-failure"); }
-                catch (RuntimeException error) { require(error == failure); }
-            }
+            try { pool.submit(() -> { throw new AssertionError("rejected-work-ran"); });
+                throw new AssertionError("missing-factory-rejection"); }
+            catch (RuntimeException error) { require(mode.equals("throw") ? error == failure : error instanceof RejectedExecutionException); }
             require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0, 0);
-            var task = (Future<?>)removed.get().get(0);
-            require(!task.isDone() && task.cancel(false));
         } finally { pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
         Activation.idle();
     }
@@ -149,26 +141,20 @@ public final class ManagedReentrantFactoryOwnerControl {
         AtomicReference<ExecutorService> selected = new AtomicReference<>();
         AtomicReference<Future<?>> nested = new AtomicReference<>();
         AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
-        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
         var pool = Executors.newFixedThreadPool(1, command -> {
-            if (attempts.incrementAndGet() == 1) {
-                nested.set(selected.get().submit(() -> {
-                    calls.incrementAndGet(); entered.countDown();
-                    try { release.await(); } catch (InterruptedException error) { Thread.currentThread().interrupt(); }
-                }));
-                selected.get().shutdown(); return returnsNull ? null : new Thread(command);
-            }
-            return new Thread(command);
+            attempts.incrementAndGet(); nested.set(selected.get().submit(calls::incrementAndGet));
+            selected.get().shutdown(); return returnsNull ? null : new Thread(command);
         });
         selected.set(pool);
         try {
-            var outer = pool.submit(calls::incrementAndGet);
-            await(entered);
-            if (returnsNull) { require(attempts.get() == 2 && !outer.isDone()); held(1, 2, 1); }
-            else { outer.get(5, TimeUnit.SECONDS); require(attempts.get() == 1); held(0, 1, 1); }
-            release.countDown(); nested.get().get(5, TimeUnit.SECONDS); outer.get(5, TimeUnit.SECONDS);
-            require(calls.get() == 2 && pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0, 0);
-        } finally { release.countDown(); pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
+            try { pool.submit(calls::incrementAndGet); throw new AssertionError("accepted-outer-after-shutdown"); }
+            catch (RejectedExecutionException expected) { }
+            require(attempts.get() == 1 && calls.get() == 0 && !nested.get().isDone()
+                && ((Activation.ManagedPool)pool).hasPendingWork()); held(1, 1, 1);
+            var removed = pool.shutdownNow();
+            require(removed.size() == 1 && removed.get(0) == nested.get() && nested.get().cancel(false));
+            require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0, 0);
+        } finally { pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
         Activation.idle();
     }
     private static void gracefulSharedResult() throws Exception {
@@ -209,23 +195,14 @@ public final class ManagedReentrantFactoryOwnerControl {
     }
     private static void gracefulAlreadyRunning(boolean returnsNull) throws Exception {
         AtomicReference<ExecutorService> selected = new AtomicReference<>();
-        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
-        CountDownLatch firstEntered = new CountDownLatch(1), releaseFirst = new CountDownLatch(1);
-        CountDownLatch outerEntered = new CountDownLatch(1), releaseOuter = new CountDownLatch(1);
+        AtomicReference<Future<?>> probe = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger(), outerCalls = new AtomicInteger();
+        CountDownLatch firstEntered = new CountDownLatch(1), releaseFirst = new CountDownLatch(1), probeRan = new CountDownLatch(1);
         var pool = Executors.newFixedThreadPool(2, target -> {
             if (attempts.incrementAndGet() == 1) return new Thread(target);
-            releaseFirst.countDown();
-            Object monitor = selected.get();
-            synchronized (monitor) {
-                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-                while (outerEntered.getCount() != 0) {
-                    long remaining = deadline - System.nanoTime();
-                    if (remaining <= 0) throw new AssertionError("outer-did-not-start");
-                    try { TimeUnit.NANOSECONDS.timedWait(monitor, remaining); }
-                    catch (InterruptedException error) { throw new AssertionError(error); }
-                }
-            }
-            selected.get().shutdown();
+            probe.set(selected.get().submit(probeRan::countDown)); releaseFirst.countDown();
+            try { await(probeRan); } catch (InterruptedException error) { throw new AssertionError(error); }
+            require(outerCalls.get() == 0); selected.get().shutdown();
             return returnsNull ? null : new Thread(target);
         });
         selected.set(pool);
@@ -235,27 +212,19 @@ public final class ManagedReentrantFactoryOwnerControl {
                 try { releaseFirst.await(); } catch (InterruptedException error) { Thread.currentThread().interrupt(); }
             });
             await(firstEntered);
-            var outer = pool.submit(() -> {
-                calls.incrementAndGet(); outerEntered.countDown();
-                synchronized (selected.get()) { selected.get().notifyAll(); }
-                while (true) try { releaseOuter.await(); return; } catch (InterruptedException ignored) { }
-            });
-            first.get(5, TimeUnit.SECONDS);
-            require(attempts.get() == 2 && calls.get() == 1 && !outer.isDone() && pool.isShutdown()); held(0, 1, 1);
-            releaseOuter.countDown(); outer.get(5, TimeUnit.SECONDS);
-            require(pool.awaitTermination(5, TimeUnit.SECONDS) && calls.get() == 1); held(0, 0, 0);
-        } finally {
-            releaseFirst.countDown(); releaseOuter.countDown();
-            pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS));
-        }
+            try { pool.submit(outerCalls::incrementAndGet); throw new AssertionError("accepted-outer-after-shutdown"); }
+            catch (RejectedExecutionException expected) { }
+            first.get(5, TimeUnit.SECONDS); probe.get().get(5, TimeUnit.SECONDS);
+            require(attempts.get() == 2 && outerCalls.get() == 0 && pool.isShutdown());
+            require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0, 0);
+        } finally { releaseFirst.countDown(); pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
         Activation.idle();
     }
     private static void uncertainRetirement(String fault) throws Exception {
         AtomicReference<ExecutorService> selected = new AtomicReference<>();
         var original = new IllegalStateException("factory-after-shutdown");
         var pool = Executors.newFixedThreadPool(1, target -> {
-            require(selected.get().shutdownNow().size() == 1);
-            held(0, 0, 1);
+            require(selected.get().shutdownNow().isEmpty()); held(1, 1, 1);
             if (fault.equals("denied")) Activation.denyCloseNext = "Executor";
             else Activation.loseCloseAckNext = "Executor";
             throw original;

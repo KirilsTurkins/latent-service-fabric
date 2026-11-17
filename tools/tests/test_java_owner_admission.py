@@ -24,6 +24,12 @@ NULL_FACTORY_CASES = (
 )
 SETTLEMENT_CASES = preparation.OWNER_SETTLEMENT_CASES
 WORK_CASES = preparation.WORK_FINISH_CASES
+FIRST_ADMISSION_CASES = ('withdrawn', 'registering', 'identity-reentry', 'identity-concurrent',
+                         'identity-ordinary', 'identity-task', 'identity-refused', 'identity-unknown',
+                         'identity-factory', 'identity-independent')
+FIRST_ADMISSION_CASES += tuple(pool + '-' + kind + '-' + fault
+    for pool in ('fixed', 'cached') for kind in ('queue', 'result')
+    for fault in ('admission', 'denied', 'lost', 'unknown', 'now'))
 SLEEP_RESULT = ('TIMER_SLEEP_ADMISSION_SOURCE PASS zero-raw-frame;zero-interrupt;typed-refusal;'
                 'wait-return;same-work-retry;raw-hook-finally')
 
@@ -54,6 +60,8 @@ class RecordingCompiler:
             return 'SCHEDULED_EXECUTOR_STATUS_ACTIVATION PASS interrupt;owned;root-fenced;retired'
         if stage.startswith('scheduled-factory-concurrency-activation-'):
             return 'SCHEDULED_FACTORY_CONCURRENCY_ACTIVATION PASS ' + argv[-1]
+        if stage.startswith('managed-first-admission-activation-'):
+            return 'MANAGED_FIRST_ADMISSION_ACTIVATION PASS ' + argv[-1]
         if stage == 'timer-worker-admission-source-control':
             return 'TIMER_WAIT_ADMISSION_SOURCE PASS typed-refusal;accepted-callback-not-run;owners-retired;root-refused'
         if stage.startswith('owner-admission-source-'):
@@ -79,6 +87,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
             *('scheduled-null-factory-activation-' + case for case in NULL_FACTORY_CASES),
             'managed-executor-status-activation', 'scheduled-executor-status-activation',
             'scheduled-factory-concurrency-activation-withdrawn', 'scheduled-factory-concurrency-activation-registering',
+            *('managed-first-admission-activation-' + mode for mode in FIRST_ADMISSION_CASES),
             'completable-minimal-activation-source',
             'future-task-interrupt-monitor-activation',
             'timer-worker-admission-source-compile', 'timer-worker-admission-source-control',
@@ -96,6 +105,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
             'fibers/conformance/compiler/timer-source-control/ManagedExecutorStatusActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/ScheduledExecutorStatusActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/ScheduledFactoryConcurrencyActivationControl.java',
+            'fibers/conformance/compiler/timer-source-control/ManagedFirstAdmissionActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/CompletableMinimalStageActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/FutureTaskInterruptMonitorActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java',
@@ -123,7 +133,8 @@ class OwnerAdmissionPreparation(unittest.TestCase):
         for case, (_, argv) in zip(NULL_FACTORY_CASES, compiler.calls[2:2 + len(NULL_FACTORY_CASES)], strict=True):
             self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
             self.assertEqual(argv[-2:], ('ScheduledNullFactoryActivationControl', case))
-        start = 10 + len(NULL_FACTORY_CASES)
+        self.assertEqual(receipt['managedFirstAdmissionActivation'], list(FIRST_ADMISSION_CASES))
+        start = 10 + len(NULL_FACTORY_CASES) + len(FIRST_ADMISSION_CASES)
         for case, (_, argv) in zip(OWNER_CASES, compiler.calls[start:start + len(OWNER_CASES)], strict=True):
             self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
             self.assertEqual(argv[-2:], ('OwnerAdmissionSourceControl', case))
@@ -215,6 +226,17 @@ class OwnerAdmissionPreparation(unittest.TestCase):
                         self.run_control(compiler)
                     self.assertEqual(compiler.calls[-1][0], stage)
 
+    def test_managed_first_admission_activation_output_matches_each_mode(self):
+        for mode in FIRST_ADMISSION_CASES:
+            stage = 'managed-first-admission-activation-' + mode
+            good = 'MANAGED_FIRST_ADMISSION_ACTIVATION PASS ' + mode
+            for invalid in ('', good + '\n' + good, 'MANAGED_FIRST_ADMISSION_ACTIVATION PASS other'):
+                with self.subTest(mode=mode, output=invalid):
+                    compiler = RecordingCompiler(lambda actual: invalid if actual == stage else None)
+                    with self.assertRaisesRegex(ValueError, 'managed first admission activation control did not complete: ' + mode):
+                        self.run_control(compiler)
+                    self.assertEqual(compiler.calls[-1][0], stage)
+
     def test_null_factory_outputs_must_match_each_selected_mode(self):
         for case in NULL_FACTORY_CASES:
             stage = 'scheduled-null-factory-activation-' + case
@@ -243,6 +265,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
                   *('scheduled-null-factory-activation-' + case for case in NULL_FACTORY_CASES),
                   'managed-executor-status-activation', 'scheduled-executor-status-activation',
                   'scheduled-factory-concurrency-activation-withdrawn', 'scheduled-factory-concurrency-activation-registering',
+            *('managed-first-admission-activation-' + mode for mode in FIRST_ADMISSION_CASES),
                   'completable-minimal-activation-source',
                   'future-task-interrupt-monitor-activation',
                   'timer-worker-admission-source-compile', 'timer-worker-admission-source-control',
@@ -272,6 +295,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
                      'fibers/conformance/compiler/timer-source-control/ManagedExecutorStatusActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/ScheduledExecutorStatusActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/ScheduledFactoryConcurrencyActivationControl.java',
+            'fibers/conformance/compiler/timer-source-control/ManagedFirstAdmissionActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/CompletableMinimalStageActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/FutureTaskInterruptMonitorActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java'):

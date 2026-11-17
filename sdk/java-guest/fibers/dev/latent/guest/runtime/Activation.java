@@ -30,6 +30,10 @@ public final class Activation {
     private static int poolRetirementUnstableRemaining;
     private static volatile boolean poisoned;
     private static Work failedStarts;
+    // Claim a Thread identity before an owner-registration host call can
+    // reenter another pool. The intrusive nodes are the original Work objects.
+    private static final Object startingLock = new Object();
+    private static volatile Work startingWorks;
     private static final java.util.concurrent.atomic.AtomicReference<Lease> failedQueuedOwners =
         new java.util.concurrent.atomic.AtomicReference<>();
     private static Address result;
@@ -56,6 +60,8 @@ public final class Activation {
         ManagedPool pool;
         Thread failedThread;
         Work nextFailed;
+        Thread startingThread;
+        Work nextStarting;
         boolean rollbackPending;
         boolean finishing;
         boolean finishRefused;
@@ -70,6 +76,36 @@ public final class Activation {
         for (Work work = failedStarts; work != null; work = work.nextFailed)
             if (work.failedThread == thread) return work;
         return threads.get(thread);
+    }
+
+    private static void reserveStarting(Thread thread, Work work) {
+        synchronized (startingLock) {
+            for (Work current = startingWorks; current != null; current = current.nextStarting)
+                if (current.startingThread == thread) throw new IllegalThreadStateException();
+            if (lookup(thread) != null) throw new IllegalThreadStateException();
+            work.startingThread = thread;
+            work.nextStarting = startingWorks;
+            startingWorks = work;
+        }
+    }
+
+    private static void releaseStarting(Work selected) {
+        synchronized (startingLock) {
+            Work previous = null;
+            for (Work current = startingWorks; current != null; current = current.nextStarting) {
+                if (current == selected) {
+                    if (previous == null) startingWorks = current.nextStarting;
+                    else previous.nextStarting = current.nextStarting;
+                    current.startingThread = null;
+                    current.nextStarting = null;
+                    return;
+                }
+                previous = current;
+            }
+            // Never allow completion if the original identity claim was lost.
+            fenceUncertainCompletion();
+            throw new IllegalStateException("activation-runtime-start-reservation-lost");
+        }
     }
 
     private static Bindings.LatentRuntimeActivationToken register(Bindings.LatentRuntimeActivationOwnerKind kind) {
@@ -120,9 +156,17 @@ public final class Activation {
         }
         // Allocate custody before admission so an OOM cannot lose a new token.
         Work work = new Work(null);
-        work.token = register(Bindings.LatentRuntimeActivationOwnerKind.Task);
-        try { threads.put(thread, work); }
-        catch (Throwable error) { rollbackInsertion(thread, work); throw error; }
+        reserveStarting(thread, work);
+        Throwable failure = null;
+        try {
+            work.token = register(Bindings.LatentRuntimeActivationOwnerKind.Task);
+            try { threads.put(thread, work); }
+            catch (Throwable error) { rollbackInsertion(thread, work); throw error; }
+        } catch (Throwable error) { failure = error; throw error; }
+        finally {
+            try { releaseStarting(work); }
+            catch (Throwable uncertain) { if (failure == null) throw uncertain; }
+        }
     }
 
     /** SDK-managed workers remain real independently scheduled Java threads. */
@@ -132,12 +176,20 @@ public final class Activation {
         if (thread == null || lookup(thread) != null) throw new IllegalThreadStateException();
         if (pool != null && !containsPool(pool)) throw new IllegalStateException("activation-runtime-pool-entry");
         Work work = new Work(null);
-        work.token = register(Bindings.LatentRuntimeActivationOwnerKind.ManagedIdleWorker);
-        work.prepared = true;
-        work.managed = true;
-        work.pool = pool;
-        try { threads.put(thread, work); }
-        catch (Throwable error) { rollbackInsertion(thread, work); throw error; }
+        reserveStarting(thread, work);
+        Throwable failure = null;
+        try {
+            work.token = register(Bindings.LatentRuntimeActivationOwnerKind.ManagedIdleWorker);
+            work.prepared = true;
+            work.managed = true;
+            work.pool = pool;
+            try { threads.put(thread, work); }
+            catch (Throwable error) { rollbackInsertion(thread, work); throw error; }
+        } catch (Throwable error) { failure = error; throw error; }
+        finally {
+            try { releaseStarting(work); }
+            catch (Throwable uncertain) { if (failure == null) throw uncertain; }
+        }
         try { thread.start(); }
         catch (Throwable error) {
             // Keep accepted or rollback-uncertain work through a failed entry.
@@ -320,6 +372,8 @@ public final class Activation {
 
     /** No current or later invocation may succeed after ownership becomes uncertain. */
     public static void fenceUncertainCompletion() { poisoned = true; }
+    /** Keep pre-admission pool custody while a host admission is unconfirmed. */
+    public static boolean admissionPoisoned() { return poisoned; }
     public static void fenceUncertainResultSettlement() { fenceUncertainCompletion(); }
 
     /** Keep an admitted owner with uncertain settlement rooted until Store destruction.
@@ -388,7 +442,7 @@ public final class Activation {
         if (pendingTimerStarts != 0) poisoned = true;
     }
     private static void fencePendingRegistrations() {
-        if (pendingRegistrations != 0) poisoned = true;
+        if (pendingRegistrations != 0 || startingWorks != null) poisoned = true;
     }
     private static void fencePendingOwnerSettlements() {
         if (pendingOwnerSettlements != 0 || settlingOwners != null) poisoned = true;
@@ -718,6 +772,7 @@ public final class Activation {
 
     private static boolean pending() {
         if (!rootComplete) return true;
+        if (startingWorks != null) return true;
         for (Work work = failedStarts; work != null; work = work.nextFailed)
             if (!work.complete) return true;
         for (Work work : threads.values()) {
