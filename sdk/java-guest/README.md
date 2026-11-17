@@ -206,11 +206,14 @@ is not reinserted. This scans and rotates the existing bounded queue under its
 monitor without adding entries or changing owners. A synthetic one-shot queue
 failure exercises restoration; repeated failures during restoration have not
 been qualified.
-A reentrant `shutdownNow()`
-can also withdraw an outer SDK submission that then returns, while the tested
-JDK rejects it. If the first null factory reenters graceful `shutdown()`, the
-SDK may run its already-queued outer task on the retry; the tested JDK rejects
-that submission.
+A reentrant `shutdownNow()` can also withdraw an outer SDK submission that
+then returns, while the tested JDK rejects it. If the first factory calls
+graceful `shutdown()` and the outer submission remains the sole queued entry,
+fixed and single pools reject it and settle its original owners before pool
+retirement. A settlement failure preserves the rejection and fences activation
+completion. If other work is queued or the outer task has already started, the
+SDK retains existing accepted-work behavior; this can still differ from the
+tested JDK.
 Compiler progress checks distinguish suspendable checkpoints from finite
 nonsuspendable loops; source that cannot establish bounded progress is rejected.
 GC roots across parked continuations have a separate

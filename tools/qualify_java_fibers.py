@@ -940,7 +940,9 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
                           'manual-factory-throw', 'manual-worker-admission-denied',
                           'managed-factory-thread', 'managed-factory-null', 'managed-factory-throw',
                           'managed-null-pending', 'managed-null-fallback-throw', 'managed-null-worker-denied',
-                          'managed-null-worker-uncertain', 'managed-preferred-root', 'managed-nested-null-root')
+                          'managed-null-worker-uncertain', 'managed-preferred-root', 'managed-nested-null-root',
+                          'managed-graceful-null-root', 'managed-graceful-thread-root',
+                          'managed-graceful-executor-denied-root')
     for mode in null_factory_modes:
         actual = compiler.run('scheduled-null-factory-activation-' + mode, 'java', '-Xmx256m', '-cp',
             str(output) + os.pathsep + classpath, 'ScheduledNullFactoryActivationControl', mode).strip()
@@ -1240,7 +1242,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('manual-periodic-throw-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ManualPeriodicThrowReferenceControl').strip()
     if result != expected_manual_throw: raise ValueError('Java manual periodic throwing-factory reference did not complete')
-    expected_managed_factory = 'MANAGED_REENTRANT_FACTORY PASS fixed-one;single;fixed-two;cached'
+    expected_managed_factory = 'MANAGED_REENTRANT_FACTORY PASS fixed-one;single;fixed-two;cached;graceful-sole'
     result = compiler.run('managed-reentrant-factory-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ManagedReentrantFactoryReferenceControl').strip()
     if result != expected_managed_factory: raise ValueError('Java managed reentrant factory reference did not complete')
@@ -1393,7 +1395,11 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ManagedReentrantFactoryReferenceControl').strip()
     if managed_factory_result != expected_managed_factory: raise ValueError('Java managed reentrant factory source differs from reference')
     managed_factory_modes = ('capacity', 'nested-throw', 'nested-null', 'shutdown-thread', 'shutdown-null',
-                             'shutdown-throw', 'uncertain-denied', 'uncertain-lost')
+                             'shutdown-throw', 'graceful-null', 'graceful-thread', 'graceful-queue-denied',
+                             'graceful-queue-lost', 'graceful-result-denied', 'graceful-result-lost',
+                             'graceful-executor-denied', 'graceful-executor-lost', 'graceful-nested',
+                             'graceful-nested-thread', 'graceful-shared-result', 'graceful-completable', 'graceful-running-null',
+                             'graceful-running-thread', 'uncertain-denied', 'uncertain-lost')
     for mode in managed_factory_modes:
         result = compiler.run('managed-reentrant-factory-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
             'ManagedReentrantFactoryOwnerControl', mode).strip()
