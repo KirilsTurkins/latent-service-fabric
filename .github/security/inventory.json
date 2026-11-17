@@ -300,6 +300,27 @@
       "sha256": "cdd6f0b4e4b9c72196431282fc7f42508e52e0f6a10b88a948a157bbdabd220b"
     },
     {
+      "absent_when_directory_missing": "sdk/dotnet-guest/tests/fixtures/task-wait-finite-context-control",
+      "kind": "no-external-packages",
+      "path": "sdk/dotnet-guest/tests/fixtures/task-wait-finite-context-control/FiniteContextControl.csproj",
+      "reason": "Host-only finite Task.Wait context reference fixture using the net10.0 SDK framework; no package, project, assembly or import reference. It does not qualify a guest component.",
+      "sha256": "cdd6f0b4e4b9c72196431282fc7f42508e52e0f6a10b88a948a157bbdabd220b"
+    },
+    {
+      "absent_when_directory_missing": "sdk/dotnet-guest/tests/fixtures/task-wait-finite-il-control",
+      "kind": "no-external-packages",
+      "path": "sdk/dotnet-guest/tests/fixtures/task-wait-finite-il-control/FiniteIlControl.csproj",
+      "reason": "Host-only emitted-IL control has no package resolver graph. It references Mono.Cecil through the caller-supplied LsfCecilPath; callers must verify that assembly separately. The existing SDK's Mono.Cecil originates in the scanned Microsoft.NET.ILLink.Tasks 10.0.0 graph.",
+      "sha256": "5bf4549e9c5a199e345ceed8aedfe7432ce19062b0b561ff63202b19afcf1043"
+    },
+    {
+      "absent_when_directory_missing": "tools/tests/fixtures/c-feature-probe",
+      "kind": "no-external-packages",
+      "path": "tools/tests/fixtures/c-feature-probe/CMakeLists.txt",
+      "reason": "CMake feature-detection test fixture uses built-in check modules and captured C sources; it declares no external package or download.",
+      "sha256": "880c1b4916c53920caebe4094711b3af11e5c7c1c42f0b80e04a0ed76205e453"
+    },
+    {
       "absent_when_directory_missing": "sdk/dotnet-guest/tools/managed-entropy",
       "kind": "no-external-packages",
       "path": "sdk/dotnet-guest/tools/managed-entropy/ManagedEntropy.csproj",
