@@ -24,7 +24,9 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private volatile Activation.Lease owner;
     private final java.util.concurrent.atomic.AtomicBoolean ownerSettlementStarted =
         new java.util.concurrent.atomic.AtomicBoolean();
-    private boolean shutdown;
+    // Status observations must remain available while an application holds
+    // the executor monitor or a worker interrupt hook runs under it.
+    private volatile boolean shutdown;
     private boolean interrupting;
     private volatile boolean retiring;
     private int running;
@@ -387,8 +389,8 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         settleIfTerminated();
         return pending;
     }
-    @Override public synchronized boolean isShutdown() { return shutdown || retiring; }
-    @Override public synchronized boolean isTerminated() { return (shutdown || retiring) && owner == null; }
+    @Override public boolean isShutdown() { return shutdown || retiring; }
+    @Override public boolean isTerminated() { return (shutdown || retiring) && owner == null; }
     @Override public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         long nanos = Objects.requireNonNull(unit).toNanos(timeout);
         long started = System.nanoTime();

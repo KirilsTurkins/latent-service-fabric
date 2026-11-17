@@ -48,6 +48,8 @@ class RecordingCompiler:
             return 'COMPLETABLE_MINIMAL_STAGE_ACTIVATION PASS copy-cancel;running;root-fenced;retired'
         if stage == 'future-task-interrupt-monitor-activation':
             return 'FUTURE_TASK_INTERRUPT_MONITOR_ACTIVATION PASS visible;interrupt-pending;root-fenced;retired'
+        if stage == 'managed-executor-status-activation':
+            return 'MANAGED_EXECUTOR_STATUS_ACTIVATION PASS interrupt;owned;root-fenced;retired'
         if stage == 'timer-worker-admission-source-control':
             return 'TIMER_WAIT_ADMISSION_SOURCE PASS typed-refusal;accepted-callback-not-run;owners-retired;root-refused'
         if stage.startswith('owner-admission-source-'):
@@ -71,6 +73,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
         self.assertEqual([stage for stage, _ in compiler.calls], [
             'timer-sleep-admission-source-compile', 'timer-sleep-admission-source-control',
             *('scheduled-null-factory-activation-' + case for case in NULL_FACTORY_CASES),
+            'managed-executor-status-activation',
             'completable-minimal-activation-source',
             'future-task-interrupt-monitor-activation',
             'timer-worker-admission-source-compile', 'timer-worker-admission-source-control',
@@ -85,6 +88,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
             'fibers/conformance/compiler/timer-source-control/OwnerSettlementSourceControl.java',
             'fibers/conformance/compiler/timer-source-control/WorkFinishSourceControl.java',
             'fibers/conformance/compiler/timer-source-control/ScheduledNullFactoryActivationControl.java',
+            'fibers/conformance/compiler/timer-source-control/ManagedExecutorStatusActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/CompletableMinimalStageActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/FutureTaskInterruptMonitorActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java',
@@ -106,10 +110,11 @@ class OwnerAdmissionPreparation(unittest.TestCase):
         self.assertEqual(receipt['scheduledNullFactoryActivation'], list(NULL_FACTORY_CASES))
         self.assertEqual(receipt['completableMinimalActivation'], 'private-host-running-root-fence-passed')
         self.assertEqual(receipt['futureTaskInterruptMonitorActivation'], 'private-host-running-root-fence-passed')
+        self.assertEqual(receipt['managedExecutorStatusActivation'], 'private-host-running-root-fence-passed')
         for case, (_, argv) in zip(NULL_FACTORY_CASES, compiler.calls[2:2 + len(NULL_FACTORY_CASES)], strict=True):
             self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
             self.assertEqual(argv[-2:], ('ScheduledNullFactoryActivationControl', case))
-        start = 6 + len(NULL_FACTORY_CASES)
+        start = 7 + len(NULL_FACTORY_CASES)
         for case, (_, argv) in zip(OWNER_CASES, compiler.calls[start:start + len(OWNER_CASES)], strict=True):
             self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
             self.assertEqual(argv[-2:], ('OwnerAdmissionSourceControl', case))
@@ -170,6 +175,16 @@ class OwnerAdmissionPreparation(unittest.TestCase):
                     self.run_control(compiler)
                 self.assertEqual(compiler.calls[-1][0], stage)
 
+    def test_managed_status_activation_output_must_match_exactly(self):
+        stage = 'managed-executor-status-activation'
+        good = 'MANAGED_EXECUTOR_STATUS_ACTIVATION PASS interrupt;owned;root-fenced;retired'
+        for invalid in ('', good + '\n' + good, good + '\nunexpected'):
+            with self.subTest(output=invalid):
+                compiler = RecordingCompiler(lambda actual: invalid if actual == stage else None)
+                with self.assertRaisesRegex(ValueError, 'managed executor status activation control did not complete'):
+                    self.run_control(compiler)
+                self.assertEqual(compiler.calls[-1][0], stage)
+
     def test_null_factory_outputs_must_match_each_selected_mode(self):
         for case in NULL_FACTORY_CASES:
             stage = 'scheduled-null-factory-activation-' + case
@@ -196,6 +211,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
     def test_compiler_sleep_and_owner_failures_preserve_the_primary_error(self):
         stages = ('timer-sleep-admission-source-compile', 'timer-sleep-admission-source-control',
                   *('scheduled-null-factory-activation-' + case for case in NULL_FACTORY_CASES),
+                  'managed-executor-status-activation',
                   'completable-minimal-activation-source',
                   'future-task-interrupt-monitor-activation',
                   'timer-worker-admission-source-compile', 'timer-worker-admission-source-control',
@@ -222,6 +238,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
                      'fibers/conformance/compiler/timer-source-control/OwnerSettlementSourceControl.java',
                      'fibers/conformance/compiler/timer-source-control/WorkFinishSourceControl.java',
                      'fibers/conformance/compiler/timer-source-control/ScheduledNullFactoryActivationControl.java',
+                     'fibers/conformance/compiler/timer-source-control/ManagedExecutorStatusActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/CompletableMinimalStageActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/FutureTaskInterruptMonitorActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java'):
