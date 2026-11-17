@@ -119,6 +119,18 @@ not production-node measurements. This finite source selection does not
 establish fairness for other standard-library loops or constitute signed
 execution evidence.
 
+For the pinned Go 1.27.4 default JSON implementation, the compiler also
+instruments the authenticated `encoding/json/internal/jsonwire/decode.go`
+when that transitive standard package is selected. A two-million-byte
+`json.Valid` string scan in the core-Wasm test dispatcher allowed a runnable
+sibling to progress; the uninstrumented scan did not. With no application
+sibling it still made 1,953 yields. Four alternating local runs after warmup,
+including Node process startup, measured median elapsed time of 414.25 ms
+without and 425.29 ms with the JSON checkpoints (+2.7%); median child CPU was
+148.84 ms and 201.08 ms respectively (+35.1%). These noisy test-pump numbers
+are not production-node cost or signed-component qualification. The default
+`go-component-async-v1` profile does not install these checkpoints.
+
 Original source bytes remain unchanged. Derived copies retain original
 diagnostic line/column positions, source and output digests, and suspension
 sites in the build transformation materials. The host parser is built and

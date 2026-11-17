@@ -811,6 +811,73 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                                  'wrong-sites', 'non-suspendable', 'changed-after-selection'):
                     with self.subTest(names=names, mutation=mutation): run_case(names, mutation)
 
+    def test_json_wire_checkpoints_select_exact_standard_source_and_reject_drift(self):
+        from tools.go_guest import checkpoints
+        from tools.rust_capsule_project import digest
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            generated, goroot = root/'module', root/'goroot'
+            generated.mkdir()
+            source = goroot/'src/encoding/json/internal/jsonwire/decode.go'
+            source.parent.mkdir(parents=True)
+            original = b'package jsonwire\nfunc Run(){}\n'
+            source.write_bytes(original)
+            other = source.parent/'encode.go'
+            other.write_bytes(b'package jsonwire\n')
+            pin = hashlib.sha256(original).hexdigest()
+            expected = [{'line': line, 'column': column, 'suspendable': True}
+                        for line, column in checkpoints.STANDARD_JSON_WIRE_SITES]
+
+            def run_case(mutation):
+                output = root/mutation
+                output.mkdir()
+                package = {'ImportPath': 'encoding/json/internal/jsonwire', 'Standard': True,
+                           'Dir': str(source.parent), 'GoFiles': ['decode.go', 'encode.go']}
+                packages = [package]
+                if mutation == 'nonstandard': package['Standard'] = False
+                if mutation == 'foreign-directory': package['Dir'] = str(generated)
+                if mutation == 'missing-source': package['GoFiles'] = ['encode.go']
+                if mutation == 'duplicate': packages.append(dict(package))
+                if mutation == 'changed-source': source.write_bytes(original+b'changed')
+                def execute(_label, _tool, request, destination):
+                    self.assertEqual([row['path'] for row in json.loads(request.read_bytes())], [str(source)])
+                    destination.mkdir()
+                    adapted = destination/'selected.go'
+                    adapted.write_bytes(original+b'// checkpoint\n')
+                    sites = [dict(site) for site in expected]
+                    if mutation == 'wrong-sites': sites.pop()
+                    if mutation == 'non-suspendable': sites[0]['suspendable'] = False
+                    if mutation == 'changed-after-selection': source.write_bytes(original+b'changed')
+                    return json.dumps([{'path': str(source), 'adapted': str(adapted), 'sites': sites,
+                                        'upstreamDigest': digest(original), 'adaptedDigest': digest(adapted.read_bytes())}])
+                compiler = SimpleNamespace(run=execute, goroot=goroot)
+                try:
+                    with patch.object(checkpoints, 'STANDARD_JSON_WIRE_SHA256', pin):
+                        if mutation != 'valid':
+                            with self.assertRaisesRegex(ValueError, 'standard-iterator-(source|output)-drift'):
+                                checkpoints.transform(compiler, generated, packages, set(), output)
+                            return
+                        replacements, rows = checkpoints.transform(compiler, generated, packages, set(), output)
+                    self.assertEqual(set(replacements), {str(source)})
+                    self.assertEqual(rows[0]['name'], 'go-compiler-checkpoints/standard/encoding/json/internal/jsonwire/decode.go')
+                    self.assertEqual(rows[0]['sites'], expected)
+                    self.assertEqual(other.read_bytes(), b'package jsonwire\n')
+                finally:
+                    source.write_bytes(original)
+            for mutation in ('valid', 'nonstandard', 'foreign-directory', 'missing-source', 'duplicate',
+                             'changed-source', 'wrong-sites', 'non-suspendable', 'changed-after-selection'):
+                with self.subTest(mutation=mutation): run_case(mutation)
+            output = root/'unselected'
+            output.mkdir()
+            def none_selected(_label, _tool, request, destination):
+                self.assertEqual(json.loads(request.read_bytes()), [])
+                destination.mkdir()
+                return '[]'
+            replacements, rows = checkpoints.transform(SimpleNamespace(run=none_selected, goroot=goroot),
+                generated, [{'ImportPath': 'encoding/json', 'Standard': True}], set(), output)
+            self.assertEqual((replacements, rows), ({}, []))
+
     def test_checkpoint_parser_cannot_omit_selected_application_or_dependency(self):
         from tools.go_guest import checkpoints
         from types import SimpleNamespace
