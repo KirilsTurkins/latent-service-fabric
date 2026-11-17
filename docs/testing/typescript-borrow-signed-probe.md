@@ -389,3 +389,27 @@ records with both raw output-channel hashes. The official successful artifact
 SHA256 `6fbb36b08d4ee7242e29ad97718aa560a99b41218a86b139e08bcd08719fcf55`.
 The5b source includes the reviewed Tokio safety patch. No previous failure or
 native-only prerequisite receipt is relabelled as a signed pass.
+
+## Current development source
+
+The default-off `qualify-current-borrow` selector in
+`typescript-guest.yml` builds the maintained source splicer, Promise library
+and import engine in that workflow run, then uses those exact outputs for the
+existing six signed borrow activations. The signed job requires both producer
+jobs and checks the current SDK, WIT, engine, splicer and their original build
+receipts before compilation. It uses a distinct proof format; the historical
+OWN prerequisite and its receipt are unchanged.
+
+```sh
+gh workflow run typescript-guest.yml \
+  --repo KirilsTurkins/latent-service-fabric --ref development \
+  -f qualify-current-borrow=true
+```
+
+This selector has a separate concurrency group from the normal development
+qualification. It exercises ordinary completed imports and the existing
+borrow cancellation, root trap, deadline and fresh-invocation cases. It does
+not inject a refused import Task acknowledgement or qualify the retry branch
+of #2130. It also does not establish production-provider or kernel retirement,
+aggregate physical costs, or complete #745. No signed execution is claimed
+until the selected run finishes and its original observations are reviewed.
