@@ -2,6 +2,9 @@
   "schemaVersion": "latent.c.owned-thread-source-abi.v1",
   "status": "source-prototype-unselected",
   "target": "wasm32-wasi",
+  "optionalPorts": {
+    "rwlock": "c-cooperative-rwlock-v1"
+  },
   "compiler": {
     "zig": "0.16.0",
     "clang": "21.1.0"
@@ -51,6 +54,13 @@
     "pthread_cond_signal",
     "pthread_cond_broadcast",
     "pthread_cond_destroy",
+    "pthread_rwlock_init",
+    "pthread_rwlock_destroy",
+    "pthread_rwlock_rdlock",
+    "pthread_rwlock_tryrdlock",
+    "pthread_rwlock_wrlock",
+    "pthread_rwlock_trywrlock",
+    "pthread_rwlock_unlock",
     "mtx_init",
     "mtx_lock",
     "mtx_trylock",
@@ -71,6 +81,7 @@
     "exitAndCancellationUnwind": "not implemented; no ordinary exit/cancel mapping advertised",
     "mutexConditionTimedWait": "source implementation only when the selected standard clock PAL is composed; actual timed component execution remains unqualified",
     "mutexConditionVariables": "source implementation: normal/recursive/errorcheck pthread mutexes, plain/recursive C11 mutexes, untimed condition waits, signal and broadcast; signed execution remains required",
+    "rwlock": "selected source only: default attributes, recursive shared readers and exclusive writers with admitted Wait owners; reader priority can starve writers; timed operations explicitly return ENOTSUP",
     "cpuCheckpointsAndAtomics": "not implemented; current transform rejects actual atomics",
     "setjmpLongjmp": "not supported by selected continuation ABI",
     "registryRecords": 32,

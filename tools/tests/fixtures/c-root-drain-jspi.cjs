@@ -106,6 +106,72 @@ async function oldLater(module){
  assert.equal(e.read_live(),1);assert.equal(e.read_released(),0);assert.equal(e.read_freed(),0);
  console.log('BASELINE REPRODUCED: root steals a later application join');
 }
+async function rwlockControls(module){
+ {
+  const h=harness(module,0),e=h.root.exports;e.rw_setup();
+  assert.equal(e.rw_init_default(),0);assert.equal(e.rw_read(),0);assert.equal(e.rw_read(),0);
+  assert.equal(e.rw_trywrite(),e.rw_busy());assert.equal(e.rw_destroy(),e.rw_busy());
+  const writer=WebAssembly.promising(h.first.exports.rw_write)();
+  await until(()=>h.parkCounts[11]===1,'writer waits for readers');assert.equal(e.read_live(),1);
+  assert.equal(h.second.exports.rw_read(),0,'reader priority admits a later reader');
+  assert.equal(e.rw_unlock(),0);assert.equal(e.rw_unlock(),0);assert.equal(e.read_live(),1);
+  assert.equal(h.second.exports.rw_unlock(),0);assert.equal(await writer,0);
+  assert.equal(e.read_live(),0);assert.equal(e.read_settled(),1);
+  assert.equal(e.rw_tryread(),e.rw_busy());assert.equal(e.rw_unlock(),e.rw_perm());
+  assert.equal(h.first.exports.rw_write(),e.rw_deadlock());
+  assert.equal(h.first.exports.rw_trywrite(),e.rw_busy());assert.equal(h.first.exports.rw_unlock(),0);
+  assert.equal(e.rw_destroy(),0);assert.equal(e.rw_errno(),37);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;e.rw_setup();assert.equal(e.rw_write(),0);
+  const a=WebAssembly.promising(h.first.exports.rw_read)(),b=WebAssembly.promising(h.second.exports.rw_read)();
+  await until(()=>h.parkCounts[11]===1 && h.parkCounts[12]===1,'readers wait for writer');
+  assert.equal(e.read_live(),2);assert.equal(e.rw_unlock(),0);assert.deepEqual(await Promise.all([a,b]),[0,0]);
+  assert.equal(e.read_live(),0);assert.equal(e.read_settled(),2);assert.equal(e.rw_trywrite(),e.rw_busy());
+  assert.equal(h.first.exports.rw_unlock(),0);assert.equal(h.second.exports.rw_unlock(),0);
+  assert.equal(e.rw_trywrite(),0);assert.equal(e.rw_unlock(),0);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;e.rw_setup();assert.equal(e.rw_read(),0);
+  const a=WebAssembly.promising(h.first.exports.rw_write)(),b=WebAssembly.promising(h.second.exports.rw_write)();
+  await until(()=>h.parkCounts[11]===1 && h.parkCounts[12]===1,'writers queue');
+  assert.equal(e.rw_unlock(),0);assert.equal(await a,0);assert.equal(e.read_live(),1);
+  assert.equal(h.first.exports.rw_unlock(),0);assert.equal(await b,0);assert.equal(e.read_live(),0);
+  assert.equal(h.second.exports.rw_unlock(),0);assert.equal(e.read_settled(),2);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;e.rw_setup();e.rw_set_shared();
+  assert.equal(e.rw_init_default(),e.rw_notsup());assert.equal(e.rw_read(),0);assert.equal(e.rw_unlock(),0);
+  assert.equal(e.rw_timedread(),e.rw_notsup());assert.equal(e.rw_timedwrite(),e.rw_notsup());
+  e.rw_set_reader_limit();assert.equal(e.rw_read(),e.rw_again());assert.equal(e.read_admitted(),0);
+  assert.equal(e.rw_errno(),37);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;e.rw_setup();assert.equal(e.rw_write(),0);e.rw_refuse_wait(1);
+  assert.equal(await WebAssembly.promising(h.first.exports.rw_read)(),e.rw_again());
+  assert.equal(e.read_live(),0);assert.equal(e.rw_tryread(),e.rw_busy());e.rw_refuse_wait(0);
+  assert.equal(e.rw_unlock(),0);assert.equal(h.first.exports.rw_read(),0);assert.equal(h.first.exports.rw_unlock(),0);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;e.rw_setup();assert.equal(e.rw_write(),0);e.rw_pause_admission();
+  const reader=WebAssembly.promising(h.first.exports.rw_read)();await h.admitted.promise;
+  assert.equal(e.read_live(),1);assert.equal(e.rw_unlock(),0);h.admit.resolve();assert.equal(await reader,0);
+  assert.equal(h.parkCounts[11],0);assert.equal(e.read_live(),0);assert.equal(e.read_settled(),1);
+  assert.equal(h.first.exports.rw_unlock(),0);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;e.rw_setup();assert.equal(e.rw_write(),0);
+  const reader=WebAssembly.promising(h.first.exports.rw_read)();
+  await until(()=>h.parkCounts[11]===1,'cancelled rwlock wait');h.queues[11].shift().resolve(1);
+  await assert.rejects(reader,WebAssembly.RuntimeError);assert.equal(e.read_live(),1);assert.equal(e.read_settled(),0);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;e.rw_setup();
+  assert.equal(e.rw_tryread(),0);assert.equal(e.rw_tryread(),0);assert.equal(e.rw_unlock(),0);
+  assert.equal(e.rw_trywrite(),e.rw_busy());assert.equal(e.rw_unlock(),0);assert.equal(e.rw_destroy(),0);
+ }
+ console.log('PASS rwlock source: readers, writers, wakeups, refusals and cancellation; JSPI test ports only');
+}
 function createHarness(module,options={}){
  const memory=new WebAssembly.Memory({initial:64,maximum:64});
  const contexts=[],last=[],admission=gate(),admissionReached=gate(),settle=gate(),settleReached=gate();
@@ -218,6 +284,7 @@ async function createControls(module){
 (async()=>{
  const module=new WebAssembly.Module(fs.readFileSync(process.argv[2]));
  const mode=process.argv[3]||'all';
+ if(mode==='rwlock'){await rwlockControls(module);return;}
  if(mode==='baseline-create'){await oldCreateLimit(module);return;}
  if(mode==='create'){await createControls(module);return;}
  if(mode==='baseline-preclaimed'){await oldPreclaimed(module);return;}

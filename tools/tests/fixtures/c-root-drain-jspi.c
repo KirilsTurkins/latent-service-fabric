@@ -113,7 +113,7 @@ static int fake_errno;
 #define errno fake_errno
 static struct lsf_c_thread root,first,second;
 static unsigned live,peak,admitted,settled,released,freed,parked,woken,tls_finished;
-static unsigned pause_admission,pause_park,hold_first,single_child;
+static unsigned pause_admission,pause_park,hold_first,single_child,refuse_wait;
 static unsigned allocations[4];
 
 __attribute__((import_module("test"),import_name("context"))) uint32_t test_context(void);
@@ -124,6 +124,11 @@ static void *memcpy(void *d,const void *s,size_t n) {
     unsigned char *out=d;const unsigned char *in=s;
     for(size_t i=0;i<n;++i)out[i]=in[i];return d;
 }
+#if defined(LSF_C_RWLOCKS) && LSF_C_RWLOCKS
+static void *memset(void *d,int value,size_t n) {
+    unsigned char *out=d;for(size_t i=0;i<n;++i)out[i]=(unsigned char)value;return d;
+}
+#endif
 static void require(int value) { if(!value)__builtin_trap(); }
 static struct lsf_c_thread *current(void) { return (struct lsf_c_thread *)(uintptr_t)test_context(); }
 static int ensure_root_owners(struct lsf_c_thread *value) {
@@ -131,8 +136,11 @@ static int ensure_root_owners(struct lsf_c_thread *value) {
 }
 static int acquire(unsigned kind,const struct lsf_c_token *parent,struct lsf_c_token *out) {
     require(kind==LSF_C_WAIT && parent && parent->id && live<2);
+    if(refuse_wait)return EAGAIN;
     ++admitted;++live;if(live>peak)peak=live;*out=(struct lsf_c_token){1,100+admitted};
-    if(current()==&root && pause_admission) { pause_admission=0;test_admit(); }
+    if((current()==&root && pause_admission==1) || (current()==&first && pause_admission==2)) {
+        pause_admission=0;test_admit();
+    }
     return 0;
 }
 static void settle(struct lsf_c_token *owner) {
@@ -174,7 +182,7 @@ void setup(unsigned scenario) {
     first.start.pthread=single_child?finish_immediately:join_second;
     second.start.pthread=finish_immediately;
     live=peak=admitted=settled=released=freed=parked=woken=tls_finished=0;
-    fake_errno=37;pause_admission=scenario==1;pause_park=scenario==2;hold_first=!single_child;
+    fake_errno=37;pause_admission=scenario==1;pause_park=scenario==2;hold_first=!single_child;refuse_wait=0;
 }
 uint32_t root_pointer(void) { return (uint32_t)(uintptr_t)&root; }
 uint32_t first_pointer(void) { return (uint32_t)(uintptr_t)&first; }
@@ -196,4 +204,28 @@ unsigned read_second_phase(void) { return second.phase; }
 unsigned read_second_claimed(void) { return second.joiner!=0; }
 unsigned read_second_joined(void) { return second.joined; }
 unsigned read_root_observer(void) { return root.drain_wait!=NULL; }
+#if defined(LSF_C_RWLOCKS) && LSF_C_RWLOCKS
+static pthread_rwlock_t test_rwlock;
+static pthread_rwlockattr_t test_rwattr;
+void rw_setup(void) { memset(&test_rwlock,0,sizeof(test_rwlock));memset(&test_rwattr,0,sizeof(test_rwattr)); }
+void rw_set_shared(void) { uint32_t flags[2]={1,0};memcpy(&test_rwattr,flags,sizeof(flags)); }
+void rw_set_reader_limit(void) { sync_rw_write(&test_rwlock,(struct sync_rwlock){.readers=UINT32_MAX}); }
+void rw_refuse_wait(unsigned value) { refuse_wait=value; }
+void rw_pause_admission(void) { pause_admission=2; }
+int rw_init_default(void) { return pthread_rwlock_init(&test_rwlock,&test_rwattr); }
+int rw_destroy(void) { return pthread_rwlock_destroy(&test_rwlock); }
+int rw_read(void) { return pthread_rwlock_rdlock(&test_rwlock); }
+int rw_write(void) { return pthread_rwlock_wrlock(&test_rwlock); }
+int rw_tryread(void) { return pthread_rwlock_tryrdlock(&test_rwlock); }
+int rw_trywrite(void) { return pthread_rwlock_trywrlock(&test_rwlock); }
+int rw_unlock(void) { return pthread_rwlock_unlock(&test_rwlock); }
+int rw_timedread(void) { return pthread_rwlock_timedrdlock(&test_rwlock,NULL); }
+int rw_timedwrite(void) { return pthread_rwlock_timedwrlock(&test_rwlock,NULL); }
+int rw_errno(void) { return fake_errno; }
+int rw_busy(void) { return EBUSY; }
+int rw_again(void) { return EAGAIN; }
+int rw_notsup(void) { return ENOTSUP; }
+int rw_perm(void) { return EPERM; }
+int rw_deadlock(void) { return EDEADLK; }
+#endif
 #endif

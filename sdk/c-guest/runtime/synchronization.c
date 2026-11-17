@@ -364,6 +364,135 @@ int cnd_timedwait(cnd_t *restrict object,mtx_t *restrict mutex,const struct time
 #endif
 }
 
+#if defined(LSF_C_RWLOCKS) && LSF_C_RWLOCKS
+/* Selected-source, invocation-local pthread rwlocks. The public memory32
+ * object carries only bounded state; each parked caller owns its original
+ * admitted Wait and stack node. New readers have priority over queued writers,
+ * so a sustained stream of readers may delay a writer indefinitely. */
+struct sync_rwlock {
+    uint32_t writer,readers,waiters;
+    struct sync_wait *head,*tail;
+    uint32_t reserved[3];
+};
+struct sync_rw_wait { struct sync_wait wait; unsigned writer; };
+_Static_assert(sizeof(struct sync_rwlock)==sizeof(pthread_rwlock_t),"pinned pthread rwlock layout");
+_Static_assert(sizeof(pthread_rwlockattr_t)==2*sizeof(uint32_t),"pinned pthread rwlock attribute layout");
+
+static struct sync_rwlock sync_rw_read(const void *object) {
+    struct sync_rwlock value;memcpy(&value,object,sizeof(value));return value;
+}
+static void sync_rw_write(void *object,struct sync_rwlock value) { memcpy(object,&value,sizeof(value)); }
+static int sync_rw_valid(struct sync_rwlock value) {
+    return !(value.writer && value.readers) && value.waiters<=RECORD_LIMIT+1u &&
+        ((value.head==NULL)==(value.tail==NULL)) && ((value.waiters==0)==(value.head==NULL)) &&
+        (!value.waiters || value.writer || value.readers) &&
+        !value.reserved[0] && !value.reserved[1] && !value.reserved[2];
+}
+static int sync_rw_try(void *object,int writer,int blocking) {
+    if (!object) return EINVAL;
+    struct sync_rwlock value=sync_rw_read(object);
+    if (!sync_rw_valid(value)) return EINVAL;
+    uint32_t identity=sync_identity();
+    if (value.writer==identity) return blocking?EDEADLK:EBUSY;
+    if (value.writer || (writer && value.readers)) return EBUSY;
+    if (writer) {
+        require(!value.waiters);value.writer=identity;
+    } else {
+        if (value.readers==UINT32_MAX) return EAGAIN;
+        ++value.readers;
+    }
+    sync_rw_write(object,value);__atomic_signal_fence(__ATOMIC_ACQUIRE);return 0;
+}
+static int sync_rw_lock(void *object,int writer) {
+    int error=sync_rw_try(object,writer,1);
+    if (error!=EBUSY) return error;
+    struct sync_rw_wait node={.writer=(unsigned)writer};
+    error=sync_begin(&node.wait);
+    if (error) return error;
+    /* Admission can suspend: recheck the actual lock before publishing. */
+    error=sync_rw_try(object,writer,1);
+    if (error==EBUSY) {
+        struct sync_rwlock value=sync_rw_read(object);
+        if (!sync_rw_valid(value)) error=EINVAL;
+        else if (value.waiters>=RECORD_LIMIT+1u) error=EAGAIN;
+        else {
+            node.wait.next=NULL;node.wait.linked=1;node.wait.notified=0;
+            if (value.tail) value.tail->next=&node.wait;else value.head=&node.wait;
+            value.tail=&node.wait;++value.waiters;sync_rw_write(object,value);
+            sync_await(&node.wait);
+            value=sync_rw_read(object);
+            require(!node.wait.linked && sync_rw_valid(value) &&
+                (writer ? value.writer==sync_identity() : value.readers!=0));
+            __atomic_signal_fence(__ATOMIC_ACQUIRE);error=0;
+        }
+    }
+    sync_end(&node.wait);return error;
+}
+static int sync_rw_unlock(void *object) {
+    if (!object) return EINVAL;
+    struct sync_rwlock value=sync_rw_read(object);
+    if (!sync_rw_valid(value)) return EINVAL;
+    if (value.writer) {
+        if (value.writer!=sync_identity()) return EPERM;
+        value.writer=0;
+    } else if (value.readers) --value.readers;
+    else return EPERM;
+    __atomic_signal_fence(__ATOMIC_RELEASE);
+    struct sync_wait *ready=NULL,*last=NULL;
+    if (!value.writer && !value.readers && value.head) {
+        unsigned writer=((struct sync_rw_wait *)value.head)->writer;
+        do {
+            struct sync_wait *next=value.head;
+            if (!next || ((struct sync_rw_wait *)next)->writer!=writer) break;
+            value.head=next->next;require(value.waiters);--value.waiters;
+            next->next=NULL;next->linked=0;
+            if (last) last->next=next;else ready=next;
+            last=next;
+            if (writer) { value.writer=(uint32_t)(uintptr_t)next->thread;break; }
+            ++value.readers;
+        } while (value.head);
+        if (!value.head) value.tail=NULL;
+    }
+    sync_rw_write(object,value);
+    while (ready) {
+        struct sync_wait *next=ready->next;ready->next=NULL;
+#if LSF_C_TIMED_CLOCK
+        /* This port admits untimed rwlock waiters only. */
+        require(!token_live(ready->timer));
+#endif
+        sync_notify(ready);ready=next;
+    }
+    return 0;
+}
+int pthread_rwlock_init(pthread_rwlock_t *restrict object,const pthread_rwlockattr_t *restrict attr) {
+    int saved=errno,error=0;
+    if (!object) error=EINVAL;
+    else if (attr) { uint32_t flags[2];memcpy(flags,attr,sizeof(flags));if (flags[0] || flags[1]) error=ENOTSUP; }
+    if (!error) sync_rw_write(object,(struct sync_rwlock){0});
+    errno=saved;return error;
+}
+int pthread_rwlock_destroy(pthread_rwlock_t *object) {
+    int saved=errno,error=0;
+    if (!object) error=EINVAL;
+    else { struct sync_rwlock value=sync_rw_read(object);
+        if (!sync_rw_valid(value)) error=EINVAL;
+        else if (value.writer || value.readers || value.waiters) error=EBUSY;
+        else sync_rw_write(object,(struct sync_rwlock){0}); }
+    errno=saved;return error;
+}
+int pthread_rwlock_rdlock(pthread_rwlock_t *object) { int saved=errno,error=sync_rw_lock(object,0);errno=saved;return error; }
+int pthread_rwlock_wrlock(pthread_rwlock_t *object) { int saved=errno,error=sync_rw_lock(object,1);errno=saved;return error; }
+int pthread_rwlock_tryrdlock(pthread_rwlock_t *object) { int saved=errno,error=sync_rw_try(object,0,0);errno=saved;return error; }
+int pthread_rwlock_trywrlock(pthread_rwlock_t *object) { int saved=errno,error=sync_rw_try(object,1,0);errno=saved;return error; }
+int pthread_rwlock_unlock(pthread_rwlock_t *object) { int saved=errno,error=sync_rw_unlock(object);errno=saved;return error; }
+int pthread_rwlock_timedrdlock(pthread_rwlock_t *restrict object,const struct timespec *restrict deadline) {
+    (void)object;(void)deadline;return ENOTSUP;
+}
+int pthread_rwlock_timedwrlock(pthread_rwlock_t *restrict object,const struct timespec *restrict deadline) {
+    (void)object;(void)deadline;return ENOTSUP;
+}
+#endif
+
 /* The pinned pthread_once_t and once_flag are the same memory32 int. A
  * running initializer publishes a record on its already-admitted C stack;
  * 0 and 1 retain the original libc's initial and completed representations.

@@ -61,7 +61,7 @@ def public_abi(headers):
         wasi = one(r'^#define ' + name + r' (__WASI_ERRNO_\w+)$', errors)
         parts.extend([one(r'^#define ' + wasi + r' .*$', api) + '\n',
             '#define ' + name + ' ' + wasi + '\n'])
-    for name in ('pthread_mutex_t', 'pthread_cond_t', 'pthread_mutexattr_t',
+    for name in ('pthread_mutex_t', 'pthread_cond_t', 'pthread_mutexattr_t', 'pthread_rwlock_t', 'pthread_rwlockattr_t',
             'pthread_condattr_t', 'mtx_t', 'cnd_t'):
         parts.append(one(r'^typedef struct .* ' + name + r';$', types) + '\n')
     parts.append(one(r'^typedef int pthread_once_t;$', types) + '\n')
@@ -147,9 +147,15 @@ def run(output, zig, node):
         runtime = ROOT / 'sdk/c-guest/runtime'
         wasi = [part for family in ('wasm-wasi-musl', 'generic-musl') for part in
             ('-isystem', str(lib / 'libc/include' / family))]
+        rwlock_symbols = ('pthread_rwlock_init', 'pthread_rwlock_destroy', 'pthread_rwlock_rdlock',
+            'pthread_rwlock_tryrdlock', 'pthread_rwlock_wrlock', 'pthread_rwlock_trywrlock',
+            'pthread_rwlock_unlock', 'pthread_rwlock_timedrdlock', 'pthread_rwlock_timedwrlock')
+        rwlock_flags = ('-DLSF_C_RWLOCKS=1', *('-D' + name + '=__lsf_c_' + name for name in rwlock_symbols))
         # Compile the full actual production TU against original WASI headers.
         command([zig, *flags, '-matomics', '-mbulk-memory', '-pthread', *wasi,
             '-c', runtime / 'threads.c', '-o', output / 'threads.o'])
+        command([zig, *flags, '-matomics', '-mbulk-memory', '-pthread', *wasi, *rwlock_flags,
+            '-c', runtime / 'threads.c', '-o', output / 'threads-rwlock.o'])
         # Execute identical source bodies with explicit serialized ports, not
         # canonical Wasmtime intrinsics or the activation broker.
         command([zig, *flags, '-fno-builtin', '-fno-stack-protector', '-nostdlib',
@@ -176,8 +182,12 @@ def run(output, zig, node):
             'start_root', 'start_first', 'start_second', 'read_live', 'read_peak', 'read_admitted',
             'read_settled', 'read_released', 'read_freed', 'read_parked', 'read_woken', 'read_tls',
             'read_first_phase', 'read_second_phase', 'read_second_claimed', 'read_second_joined',
-            'read_root_observer')
+            'read_root_observer', 'rw_setup', 'rw_set_shared', 'rw_set_reader_limit', 'rw_refuse_wait',
+            'rw_pause_admission', 'rw_init_default', 'rw_destroy', 'rw_read', 'rw_write', 'rw_tryread',
+            'rw_trywrite', 'rw_unlock', 'rw_timedread', 'rw_timedwrite', 'rw_errno', 'rw_busy',
+            'rw_again', 'rw_notsup', 'rw_perm', 'rw_deadlock')
         command([zig, *flags, '-fno-builtin', '-fno-stack-protector', '-nostdlib',
+            *rwlock_flags,
             '-Wl,--no-entry', '-Wl,--import-memory', '-Wl,--initial-memory=4194304',
             '-Wl,--max-memory=4194304', '-Wl,-z,stack-size=65536',
             *('-Wl,--export=' + name for name in drain_exports), '-I', output, '-I', runtime,
@@ -187,6 +197,11 @@ def run(output, zig, node):
         require(stdout == b'PASS root drain: existing and later joins, admission and park races, cancellation custody; JSPI test ports only\n',
             'c-root-drain-jspi-source-control-result')
         report['rootDrainScenarios'] = 5
+        stdout = command([node, '--max-old-space-size=64', '--experimental-wasm-jspi',
+            ROOT / 'tools/tests/fixtures/c-root-drain-jspi.cjs', output / 'root-drain-jspi.wasm', 'rwlock'])
+        require(stdout == b'PASS rwlock source: readers, writers, wakeups, refusals and cancellation; JSPI test ports only\n',
+            'c-thread-rwlock-jspi-source-control-result')
+        report['rwlockScenarios'] = 8
         create_exports = ('__stack_pointer', 'setup_create', 'caller_pointer', 'start_create',
             'close_create_root', 'create_count', 'create_list_count', 'create_live',
             'create_settled', 'create_admissions', 'create_allocations', 'create_frees',
@@ -222,7 +237,7 @@ def run(output, zig, node):
             'c-sync-pinned-gnu-join-result')
         report['gnuJoinCases'] = 2
         report['outputs'] = {name: identity(output / name, 1024 * 1024) for name in
-            ('threads.o', 'reference.wasm', 'once-jspi.wasm', 'root-drain-jspi.wasm', 'create-jspi.wasm',
+            ('threads.o', 'threads-rwlock.o', 'reference.wasm', 'once-jspi.wasm', 'root-drain-jspi.wasm', 'create-jspi.wasm',
              'pinned-pthread-join.o', 'gnu-join-reference.wasm',
              abi.name, body.name, drain_body.name, creation_body.name, gnu_join_body.name)}
         require(header_ids == {name: identity(lib / name, 1024 * 1024) for name in HEADERS},

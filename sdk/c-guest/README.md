@@ -59,6 +59,13 @@ as the initializer and waking contenders only after publication. See
 the separate signed contention owner. Neither path supplies general POSIX or
 unqualified native thread support.
 
+New cooperative-runtime captures also select a source-level pthread rwlock
+port. It supports default attributes, recursive shared reads, exclusive writes,
+try operations and admitted blocking waiters. New readers have priority, so
+sustained readers can starve a writer. Timed rwlock operations return `ENOTSUP`,
+and process-shared attributes are refused. Calls inside prebuilt libc objects
+are not remapped; this source port is not signed runtime qualification.
+
 `include/lsf/ownership.h` defines an explicit bounded scope (32 entries plus a
 caller-selected byte limit). Allocation, adoption, detach and release have
 separate ownership meanings. Close runs remaining cleanup in reverse order;
