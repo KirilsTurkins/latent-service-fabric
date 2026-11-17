@@ -14,6 +14,9 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
     // Application code may synchronize on a FutureTask independently of its
     // completion and ownership state.
     final Object stateLock = new Object();
+    // A runner cannot return to its pool while an earlier cancellation still
+    // has the right to interrupt that same physical thread.
+    private final Object interruptLock = new Object();
     private Callable<V> callable;
     private V value;
     private Throwable failure;
@@ -104,20 +107,39 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
         if (runner == null && completed && internalPhysicalClaims == 0 && owner != null) settleResultOnce();
     }
     @Override public boolean cancel(boolean interrupt) {
+        // A reentrant application interrupt hook may ask another thread to
+        // cancel this already-completed future. Let it return immediately
+        // without waiting for the interrupt hook's separate retirement gate.
+        synchronized (stateLock) { if (completed) return false; }
         boolean notifyCompletion = false;
         try {
-            synchronized (stateLock) {
-                if (completed) return false;
-                cancelled = completed = true;
-                try {
-                    if (interrupt && runner != null) runner.interrupt();
-                } finally {
-                    // A custom Thread.interrupt() may throw before or after
-                    // delivery. Cancellation still wakes waiters and runs done().
+            if (interrupt) {
+                synchronized (interruptLock) {
+                    Thread target;
+                    synchronized (stateLock) {
+                        if (completed) return false;
+                        cancelled = completed = true;
+                        target = runner;
+                    }
+                    try { if (target != null) target.interrupt(); }
+                    finally {
+                        synchronized (stateLock) {
+                            // A custom Thread.interrupt() may throw before or
+                            // after delivery. Publish cancellation exactly once.
+                            if (runner == null) callable = null;
+                            stateLock.notifyAll();
+                            releaseIfPhysicalComplete();
+                            notifyCompletion = true;
+                        }
+                    }
+                }
+            } else {
+                synchronized (stateLock) {
+                    if (completed) return false;
+                    cancelled = completed = true;
                     if (runner == null) callable = null;
                     stateLock.notifyAll();
                     releaseIfPhysicalComplete();
-                    // Preserve fail-closed behavior if owner settlement fails.
                     notifyCompletion = true;
                 }
             }
@@ -143,7 +165,9 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
             set(result);
         }
         finally {
-            synchronized (stateLock) { runner = null; callable = null; releaseIfPhysicalComplete(); }
+            synchronized (interruptLock) {
+                synchronized (stateLock) { runner = null; callable = null; releaseIfPhysicalComplete(); }
+            }
         }
     }
     /** A recurring owner stays pending until a later completion or cancellation. */
@@ -158,7 +182,9 @@ public class FutureTask<V> implements java.util.concurrent.RunnableFuture<V> {
             try { callable.call(); ran = true; }
             catch (Throwable error) { setException(error); }
         } finally {
-            synchronized (stateLock) { runner = null; if (completed) callable = null; releaseIfPhysicalComplete(); }
+            synchronized (interruptLock) {
+                synchronized (stateLock) { runner = null; if (completed) callable = null; releaseIfPhysicalComplete(); }
+            }
         }
         synchronized (stateLock) { return ran && !completed; }
     }
