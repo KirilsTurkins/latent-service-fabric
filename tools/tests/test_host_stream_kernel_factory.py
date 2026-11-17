@@ -119,16 +119,22 @@ class HostStreamKernelFactory(unittest.TestCase):
         start = raw.index("impl SocketMemory {")
         reserve = raw[start:raw.index("\n}\n", start) + len("\n}\n")]
         self.assertIn("if mode.retains_unproved()", reserve)
-        self.assertIn("call.reserve_stream_kernel_ownership(scope, bytes)", reserve)
+        self.assertIn("call.reserve_shared_stream_kernel_ownership(scope, bytes)", reserve)
         self.assertIn("scope.reserve_host_memory(bytes).map(Self::Logical)", reserve)
         self.assertIn(".map(Self::Kernel)", reserve)
-        self.assertEqual(reserve.count("reserve_stream_kernel_ownership("), 1)
+        self.assertEqual(reserve.count("reserve_shared_stream_kernel_ownership("), 1)
         self.assertEqual(reserve.count("reserve_host_memory("), 1)
         self.assertLess(reserve.index("if mode.retains_unproved()"),
-                        reserve.index("call.reserve_stream_kernel_ownership(scope, bytes)"))
-        self.assertLess(reserve.index("call.reserve_stream_kernel_ownership(scope, bytes)"),
+                        reserve.index("call.reserve_shared_stream_kernel_ownership(scope, bytes)"))
+        self.assertLess(reserve.index("call.reserve_shared_stream_kernel_ownership(scope, bytes)"),
                         reserve.index("} else {"))
         self.assertLess(reserve.index("} else {"), reserve.index("scope.reserve_host_memory(bytes)"))
+        protocol = (ROOT / "crates/latent-capabilities/src/broker/pools/protocol.rs").read_text()
+        shared = protocol[protocol.index("pub fn reserve_shared_stream_kernel_ownership("):
+                          protocol.index("fn reserve_stream_kernel_ownership_inner(")]
+        self.assertIn("self.reserve_stream_kernel_ownership_inner(", shared)
+        self.assertIn("StreamKernelScope::Shared", shared)
+        self.assertIn("_scope: scope.clone()", shared)
         self.assertIn(".quarantine(value)", raw)
         self.assertIn("original.quarantine()", raw)
 
