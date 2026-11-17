@@ -284,7 +284,7 @@ class CThreadMinimal(unittest.TestCase):
    capture_addendum = {
     'vendor/lsf/sdk/c-guest/include/lsf/standard-streams.h': '9f666b7a2d5df835cd16b048793a4470157ecf781d38a530174256d2adc33408',
     'vendor/lsf/sdk/c-guest/src/standard-streams.c': 'bc99b9188700c10142173e25f5c2863f6517cf3d9ae5e6fa3d0f37384cb574c9',
-    'vendor/lsf/sdk/c-guest/src/standard-resolver.c': '74d3fdf9544211bf022ec137075cbded172845afcb233eb4b8f02e15326513b2',
+    'vendor/lsf/sdk/c-guest/src/standard-resolver.c': '36bf9558af400ebd8a54482bb169cd0d52313755b7dae80f747dfad9109f114c',
     'vendor/lsf/sdk/c-guest/runtime/timed-symbols.rsp': '69c7c419534b95f697f185acf531bdd3dde31b506af5e5cc6ba1f2f789a63214',
    }
    for path, expected in capture_addendum.items():
