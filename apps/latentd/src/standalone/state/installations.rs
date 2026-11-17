@@ -70,20 +70,29 @@ impl InstalledHttpEffects {
         installation: Option<&crate::config::HttpInstallation>,
         events: Option<&crate::config::providers::EventInstallation>,
     ) -> Result<Self, PlatformError> {
+        #[allow(unused_mut, reason = "Only Linux installs deferred adapters")]
         let mut installed = Self::empty();
         if let Some(installation) = installation {
-            let provider = provider.ok_or_else(super::unavailable)?;
-            installed.adapters = provider
-                .typed_deferred_http_adapters(installation, installed.clock.clone())?
-                .into_iter()
-                .map(|adapter| {
-                    // The typed adapter was just constructed from the original provider.
-                    let adapter = Arc::try_unwrap(adapter).map_err(|_| super::unavailable())?;
-                    Ok(Arc::new(
-                        adapter.with_authorization(installed.registry.clone()),
-                    ))
-                })
-                .collect::<Result<Vec<_>, PlatformError>>()?;
+            #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+            {
+                let provider = provider.ok_or_else(super::unavailable)?;
+                installed.adapters = provider
+                    .typed_deferred_http_adapters(installation, installed.clock.clone())?
+                    .into_iter()
+                    .map(|adapter| {
+                        // The typed adapter was just constructed from the original provider.
+                        let adapter = Arc::try_unwrap(adapter).map_err(|_| super::unavailable())?;
+                        Ok(Arc::new(
+                            adapter.with_authorization(installed.registry.clone()),
+                        ))
+                    })
+                    .collect::<Result<Vec<_>, PlatformError>>()?;
+            }
+            #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+            {
+                let _ = (provider, installation);
+                return Err(super::unavailable());
+            }
         }
         if let Some(events) = events.filter(|events| !events.deferred.is_empty()) {
             #[cfg(all(target_os = "linux", target_arch = "x86_64"))]

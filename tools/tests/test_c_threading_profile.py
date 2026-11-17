@@ -1,5 +1,6 @@
 """Source/contract controls only; no C compiler or guest is executed."""
 import copy
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -47,6 +48,9 @@ class CThreadingProfile(unittest.TestCase):
             files = snapshot(project)
             actual, _, _ = c_capsule_project.validate(files)
             self.assertTrue(threading.selected(actual))
+            self.assertTrue(threading.captured_rwlock_port(project / 'vendor/lsf/sdk/c-guest/runtime'))
+            self.assertTrue(threading.captured_semaphore_port(project / 'vendor/lsf/sdk/c-guest/runtime'))
+            self.assertTrue(threading.captured_barrier_port(project / 'vendor/lsf/sdk/c-guest/runtime'))
             selected = {name for name in files if name.startswith('vendor/lsf/sdk/c-guest/runtime/')}
             self.assertEqual(selected, {'vendor/lsf/sdk/c-guest/runtime/' + name for name in
                                        ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c', 'synchronization.c', 'timed-symbols.rsp')})
@@ -123,6 +127,193 @@ class CThreadingProfile(unittest.TestCase):
         for name in (*expected, *('__lsf_c_' + item for item in expected)):
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned-tls-symbol'):
                 threading.linked_defines((name + '=foreign',))
+
+    def test_rwlock_port_is_capture_selected_and_its_symbols_are_compiler_owned(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            runtime = Path(temporary)
+            abi = runtime / 'thread-abi.json'
+            abi.write_text('{}')
+            self.assertFalse(threading.captured_rwlock_port(runtime))
+            abi.write_text('[]')
+            with self.assertRaisesRegex(ValueError, 'invalid-abi'):
+                threading.captured_rwlock_port(runtime)
+            abi.write_text('{"optionalPorts":{},"optionalPorts":{"rwlock":"c-cooperative-rwlock-v1"}}')
+            with self.assertRaises(ValueError):
+                threading.captured_rwlock_port(runtime)
+            abi.write_text(json.dumps({'optionalPorts': {'rwlock': threading.RWLOCK_PORT}}))
+            self.assertTrue(threading.captured_rwlock_port(runtime))
+            self.assertFalse(threading.captured_semaphore_port(runtime))
+            for bad in ({}, {'rwlock': 'foreign'}, {'rwlock': threading.RWLOCK_PORT, 'extra': True}, []):
+                abi.write_text(json.dumps({'optionalPorts': bad}))
+                with self.subTest(ports=bad), self.assertRaisesRegex(ValueError, 'invalid-optional-ports'):
+                    threading.captured_rwlock_port(runtime)
+        expected = ('pthread_rwlock_init', 'pthread_rwlock_destroy', 'pthread_rwlock_rdlock',
+                    'pthread_rwlock_tryrdlock', 'pthread_rwlock_wrlock', 'pthread_rwlock_trywrlock',
+                    'pthread_rwlock_unlock', 'pthread_rwlock_timedrdlock', 'pthread_rwlock_timedwrlock')
+        self.assertEqual(threading.RWLOCK_SYMBOLS, expected)
+        self.assertEqual(threading.rwlock_defines(('OWNED=7',)),
+            ('OWNED=7', 'LSF_C_RWLOCKS=1', *(name + '=__lsf_c_' + name for name in expected)))
+        for name in ('LSF_C_RWLOCKS', *expected, *('__lsf_c_' + item for item in expected)):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned-rwlock-symbol'):
+                threading.rwlock_defines((name + '=foreign',))
+
+    def test_semaphore_port_is_captured_private_and_rechecks_original_header(self):
+        from types import SimpleNamespace
+        from tools.c_guest.compiler import Compiler
+        from tools.build_observation import file_identity
+        expected = ('sem_init', 'sem_destroy', 'sem_getvalue', 'sem_trywait',
+                    'sem_wait', 'sem_post', 'sem_timedwait')
+        self.assertEqual(threading.SEMAPHORE_SYMBOLS, expected)
+        self.assertEqual(threading.semaphore_defines(('OWNED=7',)),
+            ('OWNED=7', 'LSF_C_SEMAPHORES=1', *(name + '=__lsf_c_' + name for name in expected)))
+        for name in ('LSF_C_SEMAPHORES', *expected, *('__lsf_c_' + item for item in expected)):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned-semaphore-symbol'):
+                threading.semaphore_defines((name + '=foreign',))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); abi = root / 'thread-abi.json'
+            abi.write_text(json.dumps({'optionalPorts': {'rwlock': threading.RWLOCK_PORT,
+                                                       'semaphore': threading.SEMAPHORE_PORT}}))
+            self.assertTrue(threading.captured_rwlock_port(root))
+            self.assertTrue(threading.captured_semaphore_port(root))
+            self.assertFalse(threading.captured_barrier_port(root))
+            for invalid in ({'semaphore': threading.SEMAPHORE_PORT},
+                            {'rwlock': threading.RWLOCK_PORT, 'semaphore': 'foreign'},
+                            {'rwlock': threading.RWLOCK_PORT, 'semaphore': threading.SEMAPHORE_PORT, 'extra': True}):
+                abi.write_text(json.dumps({'optionalPorts': invalid}))
+                with self.subTest(ports=invalid), self.assertRaisesRegex(ValueError, 'invalid-optional-ports'):
+                    threading.captured_semaphore_port(root)
+            zig = root / 'zig'; zig.write_bytes(b'compiler')
+            header = root / 'semaphore.h'; original = b'authenticated semaphore header\n'; header.write_bytes(original)
+            compiler = Compiler.__new__(Compiler)
+            compiler.paths = {'zig': zig};compiler.materials = {'zig': file_identity(zig, 'zig')}
+            compiler.threading_inputs = {};compiler.threading_semaphore_inputs = {}
+            compiler.closed_filesystem = SimpleNamespace(check_unchanged=lambda: None);compiler.isolation = None
+            with patch.object(threading, 'SEMAPHORE_LIBC', {'semaphore.h': hashlib.sha256(original).hexdigest()}):
+                compiler.select_threading_semaphore_inputs()
+                self.assertEqual(compiler.threading_semaphore_inputs, {'semaphore.h': header})
+                self.assertEqual(compiler.materials['semaphore.h']['name'], 'c-threading-semaphore-0')
+                compiler.check_unchanged()
+                header.write_bytes(original + b'changed')
+                with self.assertRaisesRegex(ValueError, 'semaphore-preimage'):
+                    compiler.check_unchanged()
+                with self.assertRaisesRegex(ValueError, 'semaphore-material-path'):
+                    threading.semaphore_libc_material_name('foreign.h')
+
+    def test_barrier_port_is_captured_private_and_rechecks_original_layout(self):
+        from types import SimpleNamespace
+        from tools.c_guest.compiler import Compiler
+        from tools.build_observation import file_identity
+        expected = ('pthread_barrier_init', 'pthread_barrier_destroy', 'pthread_barrier_wait')
+        self.assertEqual(threading.BARRIER_SYMBOLS, expected)
+        self.assertEqual(threading.barrier_defines(('OWNED=7',)),
+            ('OWNED=7', 'LSF_C_BARRIERS=1', *(name + '=__lsf_c_' + name for name in expected)))
+        for name in ('LSF_C_BARRIERS', *expected, *('__lsf_c_' + item for item in expected)):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned-barrier-symbol'):
+                threading.barrier_defines((name + '=foreign',))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); abi = root / 'thread-abi.json'
+            abi.write_text(json.dumps({'optionalPorts': {'rwlock': threading.RWLOCK_PORT,
+                'semaphore': threading.SEMAPHORE_PORT, 'barrier': threading.BARRIER_PORT}}))
+            self.assertTrue(threading.captured_rwlock_port(root))
+            self.assertTrue(threading.captured_semaphore_port(root))
+            self.assertTrue(threading.captured_barrier_port(root))
+            for invalid in ({'barrier': threading.BARRIER_PORT},
+                            {'rwlock': threading.RWLOCK_PORT, 'barrier': threading.BARRIER_PORT},
+                            {'rwlock': threading.RWLOCK_PORT, 'semaphore': threading.SEMAPHORE_PORT,
+                             'barrier': 'foreign'}):
+                abi.write_text(json.dumps({'optionalPorts': invalid}))
+                with self.subTest(ports=invalid), self.assertRaisesRegex(ValueError, 'invalid-optional-ports'):
+                    threading.captured_barrier_port(root)
+            zig = root / 'zig';zig.write_bytes(b'compiler')
+            header = root / 'alltypes.h';original = b'authenticated barrier layout\n';header.write_bytes(original)
+            compiler = Compiler.__new__(Compiler)
+            compiler.paths = {'zig': zig};compiler.materials = {'zig': file_identity(zig, 'zig')}
+            compiler.threading_inputs = {};compiler.threading_barrier_inputs = {}
+            compiler.closed_filesystem = SimpleNamespace(check_unchanged=lambda: None);compiler.isolation = None
+            with patch.object(threading, 'BARRIER_LIBC', {'alltypes.h': hashlib.sha256(original).hexdigest()}):
+                compiler.select_threading_barrier_inputs()
+                self.assertEqual(compiler.threading_barrier_inputs, {'alltypes.h': header})
+                self.assertEqual(compiler.materials['alltypes.h']['name'], 'c-threading-barrier-0')
+                compiler.check_unchanged()
+                header.write_bytes(original+b'changed')
+                with self.assertRaisesRegex(ValueError, 'barrier-preimage'):
+                    compiler.check_unchanged()
+                with self.assertRaisesRegex(ValueError, 'barrier-material-path'):
+                    threading.barrier_libc_material_name('foreign.h')
+
+    def test_optional_port_materials_are_selected_before_the_build_snapshot(self):
+        import ast
+        import inspect
+        from tools.c_guest.compiler import Compiler
+        # The production build must freeze the helper's returned rows before
+        # compilation; a detached pre-compile list used to omit later pins.
+        tree=ast.parse(inspect.getsource(c_capsule_build.build))
+        snapshots=[node for node in ast.walk(tree) if isinstance(node,ast.Assign)
+                   and any(isinstance(target,ast.Name) and target.id=='materials' for target in node.targets)
+                   and isinstance(node.value,ast.Call) and isinstance(node.value.func,ast.Name)
+                   and node.value.func.id=='observed_compiler_materials']
+        compiles=[node for node in ast.walk(tree) if isinstance(node,ast.Call)
+                  and isinstance(node.func,ast.Attribute) and node.func.attr=='compile'
+                  and isinstance(node.func.value,ast.Name) and node.func.value.id=='compiler']
+        self.assertEqual((len(snapshots),len(compiles)),(1,1))
+        self.assertLess(snapshots[0].lineno,compiles[0].lineno)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary);zig=root/'zig';zig.write_bytes(b'compiler')
+            sdk=root/'sdk';runtime=sdk/'runtime';runtime.mkdir(parents=True)
+            abi=runtime/'thread-abi.json'
+            abi.write_text(json.dumps({'optionalPorts': {'rwlock': threading.RWLOCK_PORT,
+                'semaphore': threading.SEMAPHORE_PORT, 'barrier': threading.BARRIER_PORT}}))
+            sem=root/'sem.h';limits=root/'limits.h';layout=root/'alltypes.h'
+            sem.write_bytes(b'sem');limits.write_bytes(b'limits');layout.write_bytes(b'layout')
+            sem_pins={name: hashlib.sha256(data).hexdigest() for name,data in
+                      (('sem.h',b'sem'),('limits.h',b'limits'))}
+            barrier_pins={'alltypes.h': hashlib.sha256(b'layout').hexdigest()}
+            compiler=Compiler.__new__(Compiler);compiler.sdk=sdk;compiler.paths={'zig':zig}
+            compiler.materials={};compiler.threading_semaphore_inputs={};compiler.threading_barrier_inputs={}
+            with patch.object(threading,'SEMAPHORE_LIBC',sem_pins), patch.object(threading,'BARRIER_LIBC',barrier_pins):
+                observed=c_capsule_build.observed_compiler_materials(compiler,threaded=True)
+                self.assertEqual({row['name'] for row in observed},
+                                 {'c-threading-semaphore-0','c-threading-semaphore-1','c-threading-barrier-0'})
+                self.assertEqual(len(observed),3)
+                compiler.materials['later']={'name':'later'}
+                self.assertEqual(len(observed),3)
+                sem.write_bytes(b'changed')
+                with self.assertRaisesRegex(ValueError,'semaphore-preimage'):
+                    compiler.select_threading_semaphore_inputs()
+            abi.write_text(json.dumps({'optionalPorts': {'rwlock': threading.RWLOCK_PORT}}))
+            legacy=Compiler.__new__(Compiler);legacy.sdk=sdk;legacy.materials={}
+            self.assertEqual(c_capsule_build.observed_compiler_materials(legacy,threaded=True),[])
+            abi.unlink()
+            self.assertEqual(c_capsule_build.observed_compiler_materials(legacy,threaded=False),[])
+
+    def test_composed_profile_material_budget_preserves_existing_limit(self):
+        from tools import guest_runtime_receipts
+        from tools.c_guest import closed_filesystem,closed_headers
+        # Largest combination: signed package, cooperative threading, timed
+        # clock/poll, optional ports, closed headers, dependency capture and a
+        # generated-input receipt. This checks names/counts, not a guest run.
+        names=['zig','wit-bindgen','wasm-tools','c-threading-transformer']
+        names += [threading.libc_material_name(name) for name in threading.LIBC]
+        names += ['c-closed-filesystem-libc-'+str(i) for i in range(len(closed_filesystem.SOURCES))]
+        names += [closed_filesystem.PROFILE,'contracts-tool','packager','c-threading-compatibility',
+                  'c-compiler-sysroot-and-isolation','c-threading-derivation','source-snapshot',
+                  'build-recipe','package-inputs','toolchain-config','compiler-call-edges']
+        names += [threading.semaphore_libc_material_name(name) for name in threading.SEMAPHORE_LIBC]
+        names += [threading.barrier_libc_material_name(name) for name in threading.BARRIER_LIBC]
+        names += [threading.clock_libc_material_name(name) for name in threading.CLOCK_LIBC]
+        names += [threading.poll_libc_material_name(name) for name in (*threading.POLL_LIBC,*threading.POLL_FD_LIBC)]
+        names += ['c-threading-time-alias-response']
+        names += ['c-closed-headers-libc-'+str(i) for i in range(len(closed_headers.LIBC))]
+        names += ['c-closed-signal-guard-source','application-dependencies','c-libraries','c-resources',
+                  'c-generator-inputs']
+        self.assertEqual(len(names),62)
+        self.assertEqual(len(set(names)),62)
+        materials=[{'name':name,'digest':'sha256:'+'0'*64,'size':1} for name in names]
+        self.assertEqual(len(guest_runtime_receipts.material_inputs(materials)),62)
+        # Emitting the runtime-selection receipt adds exactly one row; the
+        # pre-existing signed observation and context limit remains 64.
+        self.assertEqual(len(materials)+1,63)
+        self.assertLessEqual(len(materials)+1,64)
 
     def test_timed_clock_namespace_is_explicit_and_preserves_untimed_defines(self):
         plain = threading.linked_defines(())

@@ -101,6 +101,65 @@ public final class ManagedNullFactoryReferenceControl {
             require(attempts.get() == 2 && calls.get() == 2);
         } finally { pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
     }
+    private static void nestedInitialOrder(boolean single, boolean noWorker) throws Exception {
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<Future<?>> firstNested = new AtomicReference<>(), secondNested = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger();
+        StringBuffer calls = new StringBuffer();
+        var pool = create(single, target -> {
+            if (attempts.incrementAndGet() == 1) {
+                firstNested.set(selected.get().submit(() -> calls.append('N')));
+                secondNested.set(selected.get().submit(() -> calls.append('P')));
+                return null;
+            }
+            return noWorker ? null : new Thread(target);
+        });
+        selected.set(pool);
+        try {
+            var outer = pool.submit(() -> calls.append('A'));
+            if (noWorker) {
+                require(attempts.get() == 2 && calls.length() == 0);
+                List<Runnable> removed = pool.shutdownNow();
+                require(removed.size() == 3 && removed.get(0) == firstNested.get()
+                    && removed.get(1) == secondNested.get() && removed.get(2) == outer);
+                require(firstNested.get().cancel(false) && secondNested.get().cancel(false) && outer.cancel(false));
+            } else {
+                outer.get(5, TimeUnit.SECONDS); firstNested.get().get(5, TimeUnit.SECONDS);
+                secondNested.get().get(5, TimeUnit.SECONDS);
+                require(attempts.get() == 2 && calls.toString().equals("NPA"));
+            }
+        } finally { pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
+    }
+    private static void nestedInitialWithOlder(boolean noWorker) throws Exception {
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<Future<?>> nested = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger();
+        StringBuffer calls = new StringBuffer();
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            int attempt = attempts.incrementAndGet();
+            if (attempt <= 2) return null;
+            if (attempt == 3) {
+                nested.set(selected.get().submit(() -> calls.append('N')));
+                return null;
+            }
+            return noWorker ? null : new Thread(target);
+        });
+        selected.set(pool);
+        try {
+            var older = pool.submit(() -> calls.append('X'));
+            var outer = pool.submit(() -> calls.append('A'));
+            if (noWorker) {
+                List<Runnable> removed = pool.shutdownNow();
+                require(removed.size() == 3 && removed.get(0) == older && removed.get(1) == nested.get()
+                    && removed.get(2) == outer && calls.length() == 0);
+                require(older.cancel(false) && nested.get().cancel(false) && outer.cancel(false));
+            } else {
+                older.get(5, TimeUnit.SECONDS); nested.get().get(5, TimeUnit.SECONDS); outer.get(5, TimeUnit.SECONDS);
+                require(calls.toString().equals("XNA"));
+            }
+            require(attempts.get() == 4);
+        } finally { pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
+    }
     private static void nestedFallbackThrows() throws Exception {
         AtomicReference<ExecutorService> selected = new AtomicReference<>();
         AtomicReference<Future<?>> nested = new AtomicReference<>();
@@ -208,8 +267,10 @@ public final class ManagedNullFactoryReferenceControl {
         require(args.length == 1 && (args[0].equals("jdk") || args[0].equals("source")));
         for (boolean single : new boolean[]{false, true}) {
             unavailable(single); immediateRecovery(single); laterRecovery(single); fallbackThrows(single, false); fallbackThrows(single, true);
+            nestedInitialOrder(single, false); nestedInitialOrder(single, true);
         }
-        existingWorker(); nested(); nestedFallbackThrows(); cached(); fallbackCompletable(); fallbackLiveThread(); recoveryOrder(); reentrantRecoveryOrder();
-        System.out.println("MANAGED_NULL_FACTORY PASS fixed;single;two-attempts;recovery;fallback-throw;existing-worker;nested;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order");
+        existingWorker(); nested(); nestedInitialWithOlder(false); nestedInitialWithOlder(true);
+        nestedFallbackThrows(); cached(); fallbackCompletable(); fallbackLiveThread(); recoveryOrder(); reentrantRecoveryOrder();
+        System.out.println("MANAGED_NULL_FACTORY PASS fixed;single;two-attempts;recovery;fallback-throw;existing-worker;nested;nested-initial-order;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order");
     }
 }

@@ -35,7 +35,7 @@ struct Native final : PromiseAccounting {
 struct Import final : ImportAccounting {
   unsigned tasks=0,native=0,result=0,completions=0;
   bool admit(JSContext*,JobOwners& work,NativeOwner& a,NativeOwner& b) override { work.task_live=work.queued_live=true; ++tasks; a={{1,2},true}; b={{1,3},true}; ++native; ++result; return true; }
-  bool rollback(JSContext*,JobOwners& work,NativeOwner& a,NativeOwner& b) override { if(work.task_live) { --tasks; work={}; } if(a.live) { --native; a.live=false; } if(b.live) { --result; b.live=false; } return true; }
+  bool rollbackWork(JSContext*,JobOwners& work) override { if(work.task_live) { --tasks; work={}; } return true; }
   bool park(JSContext*,JobOwners& work) override { work.queued_live=false; return true; }
   bool resume(JSContext*,JobOwners&) override { return true; }
   bool complete(JSContext*,JobOwners& work) override { ++completions; if(work.task_live) { --tasks; work={}; } return true; }

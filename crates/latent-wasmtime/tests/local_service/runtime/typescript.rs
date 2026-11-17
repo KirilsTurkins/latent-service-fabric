@@ -221,7 +221,7 @@ async fn retirement_success(f: &Fixture, identity: &str, mode: u32) -> serde_jso
             .start(retirement_request(f, identity, mode))
             .unwrap(),
     );
-    let pending = if mode == 5 {
+    let pending = if mode == 5 || mode == 6 {
         super::pending_timer(invocation.as_mut(), f).await;
         Some(retirement_pending(f))
     } else {
@@ -289,6 +289,11 @@ async fn retirement_interrupt(f: &Fixture, identity: &str, cancel: bool) -> serd
 #[ignore = "requires current maintained TypeScript retirement compiler outputs with actual build observations"]
 async fn signed_pending_promise_cancellation_deadline_and_timer_failures_retire_before_fresh_state()
 {
+    assert_eq!(
+        std::env::var("LSF_TYPESCRIPT_ROOT_DRAIN_TIMER_OBSERVER").as_deref(),
+        Ok("1"),
+        "the signed gate must independently observe root close before the nested timer"
+    );
     let root = tempfile::tempdir().unwrap();
     let f = fixture("typescript-runtime-retirement", root.path()).await;
     let mut observations = Vec::new();
@@ -314,7 +319,9 @@ async fn signed_pending_promise_cancellation_deadline_and_timer_failures_retire_
     observations.push(serde_json::json!({"case": "typescript-root-trap-mode", "mode": 2,
         "outcome": format!("{:?}", trapped.code), "callbackOriginProven": false, "idle": retirement_idle(&f).await}));
     observations.push(retirement_success(&f, "typescript-fresh-after-root-trap", 1).await);
-    assert_eq!(observations.len(), 10);
+    observations.push(retirement_success(&f, "typescript-accepted-after-root", 6).await);
+    observations.push(retirement_success(&f, "typescript-fresh-after-accepted-work", 1).await);
+    assert_eq!(observations.len(), 12);
     println!(
         "TYPESCRIPT_RETIREMENT {}",
         serde_json::json!({

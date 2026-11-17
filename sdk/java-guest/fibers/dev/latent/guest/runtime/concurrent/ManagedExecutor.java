@@ -24,7 +24,9 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private volatile Activation.Lease owner;
     private final java.util.concurrent.atomic.AtomicBoolean ownerSettlementStarted =
         new java.util.concurrent.atomic.AtomicBoolean();
-    private boolean shutdown;
+    // Status observations must remain available while an application holds
+    // the executor monitor or a worker interrupt hook runs under it.
+    private volatile boolean shutdown;
     private boolean interrupting;
     private volatile boolean retiring;
     private int running;
@@ -89,6 +91,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         Item item = null;
         boolean installed = false;
         boolean fallbackAccepted = false;
+        boolean withdrawnForShutdown = false;
         try {
             if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
                 throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
@@ -101,19 +104,41 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
             installed = true;
             if (workers.size() < parallelism && (!cached || queue.size() > workers.size() - running)) {
                 if (cached) startWorker();
-                else if (tryStartWorker(false, item) && workers.isEmpty() && startingWorkers == 0
-                        && !interrupting && !retiring && !queue.isEmpty()) {
-                    // Fixed pools retry once after the first null factory when
-                    // no worker exists, keeping already-admitted queue owners.
-                    fallbackAccepted = true;
-                    tryStartWorker(true, null);
+                else if (tryStartWorker(false, item)) {
+                    if (soleGracefulShutdown(item)) {
+                        var rejection = new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
+                        queue.removeFirst(); pendingWork--;
+                        withdrawnForShutdown = true;
+                        try {
+                            closeQueued(queued);
+                            if (acceptedResult) future.removeQueueCopy(true);
+                            CompletableFuture.removedFromQueue(command, acceptedAction, true);
+                            CompletableFuture.rejectedBeforeAcceptance(command, this);
+                            // The startup finally saw the entry still queued;
+                            // finish retirement only after its rollback.
+                            settleIfTerminated();
+                        } catch (Throwable uncertain) {
+                            // The original rejection remains primary. A failed
+                            // settlement keeps the activation from succeeding.
+                            Activation.fenceUncertainCompletion();
+                        } finally { notifyAll(); }
+                        throw rejection;
+                    }
+                    deferAfterReentrantSubmissions(item);
+                    if (workers.isEmpty() && startingWorkers == 0
+                            && !interrupting && !retiring && !queue.isEmpty()) {
+                        // Fixed pools retry once after the first null factory when
+                        // no worker exists, keeping already-admitted queue owners.
+                        fallbackAccepted = true;
+                        tryStartWorker(true, null);
+                    }
                 }
             }
             notifyAll();
         } catch (Throwable error) {
             // Any fallback startup failure follows queue acceptance. Keep the
             // exact entry, or its existing physical disposition, owned.
-            if (fallbackAccepted) throw error;
+            if (fallbackAccepted || withdrawnForShutdown) throw error;
             if (!installed || queue.remove(item)) {
                 if (installed) pendingWork--;
                 if (queued != null) closeQueued(queued);
@@ -147,7 +172,8 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         if (tryStartWorker(false, null)) throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
     }
 
-    // True means this attempted factory returned null; false also covers a
+    // True means no worker was admitted after a null factory or a graceful
+    // shutdown with only this submission queued. False also covers a
     // reentrant call whose worker slot was already reserved.
     private boolean tryStartWorker(boolean fallback, Item first) {
         // Callers hold the pool monitor, including reentrant admissions.
@@ -172,6 +198,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                     throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
                 }
                 if (Activation.alive(thread)) throw new IllegalThreadStateException();
+                if (soleGracefulShutdown(first)) { worker.clear(); return true; }
                 addedAt = workers.size();
                 workers.add(thread);
                 worker.prepare(thread);
@@ -214,6 +241,34 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private void removeWorker(Thread thread) {
         for (int index = 0; index < workers.size(); index++) {
             if (workers.get(index) == thread) { workers.remove(index); return; }
+        }
+    }
+
+    // Do not reject after the entry has run, been withdrawn, or other queued
+    // work has already been accepted. Immediate shutdown has its own custody.
+    private boolean soleGracefulShutdown(Item item) {
+        return item != null && shutdown && !interrupting && queue.size() == 1 && queue.peekFirst() == item;
+    }
+
+    // The JDK enqueues the outer submission after a null factory returns, so
+    // reentrant submissions precede it. All entries here are already owned;
+    // rotate only under the pool monitor, without readmission or a larger deque.
+    private void deferAfterReentrantSubmissions(Item outer) {
+        int count = queue.size();
+        if (count < 2 || queue.peekLast() == outer) return;
+        Item current = null, delayed = null;
+        try {
+            for (int index = 0; index < count; index++) {
+                current = queue.removeFirst();
+                if (current == outer) delayed = current;
+                else queue.addLast(current);
+                current = null;
+            }
+        } finally {
+            // Restore any detached entries before propagating a failure. Each
+            // add replaces an entry removed above, so capacity does not grow.
+            if (current != null && current != delayed) queue.addLast(current);
+            if (delayed != null) queue.addLast(delayed);
         }
     }
 
@@ -334,8 +389,8 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         settleIfTerminated();
         return pending;
     }
-    @Override public synchronized boolean isShutdown() { return shutdown || retiring; }
-    @Override public synchronized boolean isTerminated() { return (shutdown || retiring) && owner == null; }
+    @Override public boolean isShutdown() { return shutdown || retiring; }
+    @Override public boolean isTerminated() { return (shutdown || retiring) && owner == null; }
     @Override public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         long nanos = Objects.requireNonNull(unit).toNanos(timeout);
         long started = System.nanoTime();

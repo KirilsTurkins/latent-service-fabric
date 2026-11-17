@@ -45,6 +45,12 @@ export async function lifecycle(mode) {
   if (mode === 5) {
     return await new Promise(resolve => { setTimeout(() => resolve(42), 1000); });
   }
+  if (mode === 6) {
+    setTimeout(() => {
+      Promise.resolve().then(() => { setTimeout(() => {}, 1000); });
+    }, 0);
+    return 42;
+  }
   throw new Error('retirement-mode');
 }
 '''
@@ -96,7 +102,7 @@ def capture(app, outside):
         'acceptedLock': digest(read_file(app/'latent.dependencies.lock.json')), 'outsideOriginalRemoved': True,
         'publishedLibrary': False, 'compilerExecuted': False, 'signedRetirement': 'pending',
         'operations': ['pending-root', 'fresh', 'root-trap-with-timer', 'clear-before-fire',
-                       'accepted-callback-error', 'pending-then-resolved']}
+                       'accepted-callback-error', 'pending-then-resolved', 'accepted-nested-timer']}
 
 
 def compile_fixture(output, tools, contracts, packager, engine, envelope):

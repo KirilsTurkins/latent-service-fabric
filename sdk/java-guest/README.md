@@ -168,14 +168,51 @@ The opt-in [Java fiber profile](../../docs/runtime/java-activation-fibers.md)
 includes ordinary scheduled executors as well as thread/future ownership.
 Nested executor withdrawal, stopped wrappers, repeated occurrences and ambiguous
 queue/result settlement keep their original owners until confirmed retirement.
+`CompletableFuture.obtrudeValue` and `obtrudeException` replace the observed
+outcome without cancelling a queued or running producer; its original owners
+remain charged until physical retirement. Cancellation observations create a
+new exception with the original cancellation as its cause, as in the tested
+JDK 25; that exception uses the existing guest heap.
+`completedStage`, `failedStage` and `minimalCompletionStage` provide the tested
+restricted stage operations and independent `toCompletableFuture` copies. The
+view uses the existing CompletableFuture class with a restricted-state field,
+so its concrete class identity differs from the JDK's private MinimalStage.
+The field and stage objects use the original bounded Java heap; their exact
+TeaVM object-size cost has not been measured. Creating a view or converting it
+to a future uses the original queued-work and Result owners, even for a ready
+stage, and can be refused under those limits. Timeout conveniences remain
+unsupported. Source and host-double controls do not qualify a signed guest.
+`FutureTask` exposes its cancelled state while an application thread's
+`interrupt()` hook runs. A separate private gate prevents its runner from being
+reused until that interrupt attempt returns, retaining the original Result owner
+through physical completion. Each FutureTask allocates one additional private
+monitor object in the existing bounded Java heap; contended acquisition can
+suspend the runner, and the exact TeaVM memory cost has not been measured.
+The default-executor asynchronous stage methods honor subclass overrides of
+`defaultExecutor()` and `newIncompleteFuture()` without invoking a separate
+overridable explicit-executor overload.
 Scheduled futures from different pools compare their deadlines at one monotonic
 clock reading. Equal deadlines use each task's original queued-work admission
 identity, including across pools. As with concurrently submitted JDK tasks,
 overlapping or reentrant submissions need not have a predetermined order.
+`invokeAny` uses an executor subclass's `newTaskFor` result and submits a distinct
+delivery future. Each accepted delivery uses its own Result owner under the
+existing limit; an SDK `FutureTask` also admits its Result when it starts, and a
+scheduled pool retains its existing scheduled-task owners. A
+refused admission does not run the task. Cancelled or running deliveries retain
+their owners until withdrawal or physical return. If task delivery throws before
+completing its result, `invokeAny` reports the failure rather than waiting
+indefinitely on that incomplete result.
 Scheduled pools count a worker being constructed by a `ThreadFactory` toward
-their configured parallelism. If the factory itself throws after a submission
-is queued, the original exception reaches the caller but that task and any
-nested accepted tasks keep their owners; a later worker can still run them.
+their configured parallelism. They release their own pool monitor before calling
+the factory, so another thread can submit or shut down while it runs; a caller
+already holding that monitor can still prevent progress. A factory or managed
+worker registration in progress fences root retirement. This adds one counter
+to each scheduled pool within the existing Java heap limit. `Thread.start` and
+other pool operations keep their existing locking. If the factory itself throws
+after a submission is queued, the original exception reaches the caller but
+that task and any nested accepted tasks keep their owners; a later worker can
+still run them.
 With no worker, `shutdownNow()` can return the retained tasks. A scheduled pool
 also retains work when a factory
 returns `null`: root drain remains pending until the work runs or is withdrawn.
@@ -189,6 +226,10 @@ case, that call returned fewer entries than the queue held.
 Fixed and cached managed pools also count an in-progress factory call toward
 their worker limit. A nested task already accepted by such a pool keeps its
 original owners if the outer factory fails, until it runs or is withdrawn.
+`isShutdown` and `isTerminated` for managed and scheduled pools do not acquire
+the public executor monitor. Termination becomes visible only after the original
+Executor owner settles; a denied or uncertain settlement keeps termination
+false. Other pool operations retain their existing locks.
 For fixed and single-thread pools, a null factory is retried once when no other
 worker exists or is starting. If it still returns `null`, accepted work remains
 charged and root drain waits until a worker runs it or it is withdrawn. Cached
@@ -199,13 +240,21 @@ and worker carries a primitive preference in the existing Java heap; locating a
 preferred entry scans the queue and creates a transient iterator. The worker
 does not retain a withdrawn entry. Preferences are never reused: once the
 executor has issued `Long.MAX_VALUE` preferences, it falls back to FIFO for new
-workers. This does not add a host owner.
-If a null factory reentrantly submits another task, their relative order still
-differs in the tested JDK and SDK. A reentrant `shutdownNow()`
-can also withdraw an outer SDK submission that then returns, while the tested
-JDK rejects it. If the first null factory reenters graceful `shutdown()`, the
-SDK may run its already-queued outer task on the retry; the tested JDK rejects
-that submission.
+workers. This does not add a host owner. When an initial null factory submits
+other work reentrantly, its outer entry, if still queued, is moved behind those
+submissions, matching the tested JDK order. An entry already taken or withdrawn
+is not reinserted. This scans and rotates the existing bounded queue under its
+monitor without adding entries or changing owners. A synthetic one-shot queue
+failure exercises restoration; repeated failures during restoration have not
+been qualified.
+A reentrant `shutdownNow()` can also withdraw an outer SDK submission that
+then returns, while the tested JDK rejects it. If the first factory calls
+graceful `shutdown()` and the outer submission remains the sole queued entry,
+fixed and single pools reject it and settle its original owners before pool
+retirement. A settlement failure preserves the rejection and fences activation
+completion. If other work is queued or the outer task has already started, the
+SDK retains existing accepted-work behavior; this can still differ from the
+tested JDK.
 Compiler progress checks distinguish suspendable checkpoints from finite
 nonsuspendable loops; source that cannot establish bounded progress is rejected.
 GC roots across parked continuations have a separate

@@ -49,6 +49,14 @@ await assert.rejects(vm.runInContext('lifecycle(1)',held.context),/module-state-
 const clear=realm();assert.equal(await vm.runInContext('lifecycle(3)',clear.context),42);assert.equal(clear.timers.size,0);
 const late=realm();assert.equal(await vm.runInContext('lifecycle(4)',late.context),42);assert.equal(late.timers.size,1);
 assert.throws(()=>[...late.timers.values()][0].callback(),/accepted-callback-must-not-disappear/);
+// The export settles before its already accepted timer runs. Only that timer's
+// Promise job may create the distinct one-second wait observed by signed tests.
+const cascade=realm();assert.equal(await vm.runInContext('lifecycle(6)',cascade.context),42);
+assert.equal(cascade.timers.size,1);const [outerId,outer]=[...cascade.timers.entries()][0];
+assert.equal(outer.millis,0);cascade.timers.delete(outerId);outer.callback();
+assert.equal(cascade.timers.size,0);await Promise.resolve();
+assert.equal(cascade.timers.size,1);const nested=[...cascade.timers.values()][0];
+assert.equal(nested.millis,1000);nested.callback();
 const trap=realm();await assert.rejects(vm.runInContext('lifecycle(2)',trap.context),/root-trap-with-accepted-timer/);
 assert.equal(trap.timers.size,1);assert.equal(await vm.runInContext('lifecycle(1)',realm().context),42);
 '''

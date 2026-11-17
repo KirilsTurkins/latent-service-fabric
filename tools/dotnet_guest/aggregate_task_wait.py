@@ -124,7 +124,7 @@ def exact(value, expected):
 
 # Keep the historical v2 receipt exact. The selected v3 helper adds only the
 # original ThreadPool dispatcher's read-only prefetched-slot predicate.
-PREFETCH_POLL_EXPECTED = {
+PREFETCH_POLL_V3_EXPECTED = {
     **EXPECTED,
     'patch': 'latent.dotnet.wait-all.v3',
     'profile': 'dotnet-aggregate-task-wait-candidate-v3',
@@ -134,9 +134,32 @@ PREFETCH_POLL_EXPECTED = {
             '4eabc2f11e2f7eac8a6d4a67812a51d356b7654101845c01458b5f85754cb5a7'},
 }
 
+# The v4 producer additionally masks the outer aggregate target during a
+# finite single-task join. Keep v2/v3 as historical identities; current
+# producers must bind the exact changed finite helper as well as the poll guard.
+FINITE_NESTING_EXPECTED = {
+    **PREFETCH_POLL_V3_EXPECTED,
+    'patch': 'latent.dotnet.wait-all.v4',
+    'profile': 'dotnet-aggregate-task-wait-candidate-v4',
+    'nesting': 'single-finite-and-aggregate-save-restore-depth32',
+    'finiteMask': {
+        'originalBodyIdentity': '8606fa511dc66800891d7d1d6aa9a39e581e1de59a27e4524356ef292002dd1e',
+        'rewrittenBodyIdentity': '28c962130eac6aabab096d74cf2a6ef1775fc2a317fc5bf60e9fbe9706cab002',
+        'inverseExact': True, 'generatedFields': 0, 'nativeOwners': 0,
+    },
+    'rewrittenBodies': {**PREFETCH_POLL_V3_EXPECTED['rewrittenBodies'],
+        'System.Boolean System.Threading.WasiEventLoop::LsfWaitForActualTaskOrTimeout(System.Threading.Tasks.Task,System.Int32,System.Threading.CancellationToken)':
+            '28c962130eac6aabab096d74cf2a6ef1775fc2a317fc5bf60e9fbe9706cab002'},
+}
+
+# Existing consumers of this name select the current prefetched-poll receipt.
+PREFETCH_POLL_EXPECTED = FINITE_NESTING_EXPECTED
+
 
 def validate(value):
     expected = (PREFETCH_POLL_EXPECTED if type(value) is dict
-                and value.get('patch') == PREFETCH_POLL_EXPECTED['patch'] else EXPECTED)
+                and value.get('patch') == PREFETCH_POLL_EXPECTED['patch'] else
+                PREFETCH_POLL_V3_EXPECTED if type(value) is dict
+                and value.get('patch') == PREFETCH_POLL_V3_EXPECTED['patch'] else EXPECTED)
     if not exact(value, expected):
         raise ValueError('task-wait-aggregate-rewrite-receipt')

@@ -8,6 +8,10 @@
 #include <stdint.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#if defined(readv) || defined(writev) || defined(__lsf_c_net_readv) || defined(__lsf_c_net_writev)
+#error vector I/O names are owned by the selected C stream profile
+#endif
+#include <sys/uio.h>
 #include <unistd.h>
 #include <poll.h>
 #include <fcntl.h>
@@ -30,6 +34,8 @@ ssize_t __lsf_c_net_send(int, const void *, size_t, int);
 ssize_t __lsf_c_net_recv(int, void *, size_t, int);
 ssize_t __lsf_c_net_read(int, void *, size_t);
 ssize_t __lsf_c_net_write(int, const void *, size_t);
+ssize_t __lsf_c_net_readv(int, const struct iovec *, int);
+ssize_t __lsf_c_net_writev(int, const struct iovec *, int);
 int __lsf_c_net_shutdown(int, int);
 int __lsf_c_net_close(int);
 int __lsf_c_net_poll(struct pollfd *, nfds_t, int);
@@ -58,6 +64,13 @@ int __lsf_c_net_setsockopt(int, int, int, const void *, socklen_t);
 #ifndef SO_KEEPALIVE
 #define SO_KEEPALIVE 9
 #endif
+/* The pinned 32-bit WASI libc's upstream socket constants use 66. Naming
+ * this option does not enable socket timeouts: setsockopt returns ENOTSUP. */
+#ifndef SO_RCVTIMEO
+#define SO_RCVTIMEO 66
+#elif defined(__wasm__) && SO_RCVTIMEO != 66
+#error incompatible SO_RCVTIMEO value for the C stream profile
+#endif
 #ifndef SOL_IP
 #define SOL_IP 0
 #endif
@@ -69,6 +82,8 @@ int __lsf_c_net_setsockopt(int, int, int, const void *, socklen_t);
 #define recv __lsf_c_net_recv
 #define read __lsf_c_net_read
 #define write __lsf_c_net_write
+#define readv __lsf_c_net_readv
+#define writev __lsf_c_net_writev
 #define shutdown __lsf_c_net_shutdown
 #define close __lsf_c_net_close
 #define poll __lsf_c_net_poll

@@ -100,8 +100,10 @@ impl Delivery {
         body: Vec<u8>,
         fence: Arc<dyn DeliveryFence>,
     ) -> Result<Self, HttpError> {
-        if !matches!(status, 200 | 202 | 409 | 410 | 422 | 503)
-            || body.len() > super::MAX_RESPONSE_BODY
+        if !matches!(
+            status,
+            200 | 202 | 400 | 401 | 403 | 404 | 409 | 410 | 422 | 502 | 503 | 504
+        ) || body.len() > super::MAX_RESPONSE_BODY
         {
             return Err(HttpError::InvalidResponse);
         }

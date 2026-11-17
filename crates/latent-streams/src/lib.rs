@@ -8,6 +8,7 @@ mod kernel;
 mod lifecycle;
 mod maintenance;
 mod provider;
+mod strong_owner;
 mod tls;
 mod transport;
 

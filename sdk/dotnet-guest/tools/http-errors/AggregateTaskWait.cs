@@ -291,6 +291,53 @@ internal static class AggregateTaskWait
         var restoreTarget = Instruction.Create(OpCodes.Ldloc, previousTarget);
         code.InsertAfter(restoreMain, restoreTarget); code.InsertAfter(restoreTarget, Instruction.Create(OpCodes.Stsfld, target));
 
+        // A finite single-task join has its own frame and finally. It must
+        // mask the same outer aggregate target while its original WhenAny
+        // task is the current poll target, including during context callbacks.
+        var finite = loop.Methods.Single(method => method.Name == "LsfWaitForActualTaskOrTimeout");
+        Need(TaskWait.BodyIdentity(finite) == "8606fa511dc66800891d7d1d6aa9a39e581e1de59a27e4524356ef292002dd1e");
+        var finiteSave = finite.Body.Instructions.Single(instruction => instruction.OpCode == OpCodes.Stloc
+            && instruction.Operand is VariableDefinition variable && variable.VariableType.FullName == task.FullName
+            && instruction.Previous.OpCode == OpCodes.Ldsfld && instruction.Previous.Operand == current);
+        var finitePreviousMain = (VariableDefinition)finiteSave.Operand;
+        var finiteFrame = finite.Body.ExceptionHandlers.Single(handler => handler.HandlerType == ExceptionHandlerType.Finally
+            && handler.HandlerStart.OpCode == OpCodes.Ldloc && handler.HandlerStart.Operand == finitePreviousMain
+            && handler.HandlerStart.Next.OpCode == OpCodes.Stsfld && handler.HandlerStart.Next.Operand == current);
+        var finitePreviousTarget = new VariableDefinition(mres); finite.Body.Variables.Add(finitePreviousTarget);
+        code = finite.Body.GetILProcessor();
+        var saveFiniteTarget = Instruction.Create(OpCodes.Ldsfld, target);
+        var saveFiniteLocal = Instruction.Create(OpCodes.Stloc, finitePreviousTarget);
+        code.InsertAfter(finiteSave, saveFiniteTarget);
+        code.InsertAfter(saveFiniteTarget, saveFiniteLocal);
+        var finiteFrameStart = finiteFrame.TryStart;
+        var clearFiniteTarget = Instruction.Create(OpCodes.Ldnull);
+        var clearFiniteField = Instruction.Create(OpCodes.Stsfld, target);
+        code.InsertBefore(finiteFrameStart, clearFiniteTarget);
+        code.InsertBefore(finiteFrameStart, clearFiniteField);
+        Retarget(finite, finiteFrameStart, clearFiniteTarget);
+        var restoreFiniteMain = finiteFrame.HandlerStart.Next;
+        var restoreFiniteTarget = Instruction.Create(OpCodes.Ldloc, finitePreviousTarget);
+        var restoreFiniteField = Instruction.Create(OpCodes.Stsfld, target);
+        code.InsertAfter(restoreFiniteMain, restoreFiniteTarget);
+        code.InsertAfter(restoreFiniteTarget, restoreFiniteField);
+        var finiteIdentity = TaskWait.BodyIdentity(finite);
+        // Inverse the exact six instructions and one local to prove the
+        // original wake, cancellation and two cleanup paths are untouched.
+        Retarget(finite, clearFiniteTarget, finiteFrameStart);
+        foreach (var instruction in new[] { saveFiniteTarget, saveFiniteLocal, clearFiniteTarget,
+                                            clearFiniteField, restoreFiniteTarget, restoreFiniteField }) code.Remove(instruction);
+        finite.Body.Variables.Remove(finitePreviousTarget);
+        try { Need(TaskWait.BodyIdentity(finite) == "8606fa511dc66800891d7d1d6aa9a39e581e1de59a27e4524356ef292002dd1e"); }
+        finally
+        {
+            finite.Body.Variables.Add(finitePreviousTarget);
+            code.InsertAfter(finiteSave, saveFiniteTarget); code.InsertAfter(saveFiniteTarget, saveFiniteLocal);
+            code.InsertBefore(finiteFrameStart, clearFiniteTarget); code.InsertBefore(finiteFrameStart, clearFiniteField);
+            Retarget(finite, finiteFrameStart, clearFiniteTarget);
+            code.InsertAfter(restoreFiniteMain, restoreFiniteTarget); code.InsertAfter(restoreFiniteTarget, restoreFiniteField);
+        }
+        Need(TaskWait.BodyIdentity(finite) == finiteIdentity);
+
         var body = New(loop, Prefix + "Dispatch", module.TypeSystem.Void,
             MethodAttributes.Private | MethodAttributes.Static, module.TypeSystem.Object);
         il = body.Body.GetILProcessor();
@@ -414,13 +461,17 @@ internal static class AggregateTaskWait
         var timerPump = DetachTimerPumpBatch(module, reader);
 
         var receipt = new {
-            patch = "latent.dotnet.wait-all.v3", profile = "dotnet-aggregate-task-wait-candidate-v3",
+            patch = "latent.dotnet.wait-all.v4", profile = "dotnet-aggregate-task-wait-candidate-v4",
             prefetchedPollReadiness = "original-dispatch-slot-before-blocking-poll",
             originalMethods = Originals.Select((row, index) => new {
                 method = members[index].FullName, token = row.Token, ilBytes = row.Bytes, ilSha256 = "sha256:" + row.Sha256 }).ToArray(),
             originalRemainders = remainders,
-            rewrittenBodies = members.Append(check).Append(single).Append(ready).Append(body).Append(entry).Append(shim).Append(timerPump.Method)
+            rewrittenBodies = members.Append(check).Append(single).Append(finite).Append(ready).Append(body).Append(entry).Append(shim).Append(timerPump.Method)
                 .ToDictionary(method => method.FullName, method => TaskWait.BodyIdentity(method)),
+            finiteMask = new {
+                originalBodyIdentity = "8606fa511dc66800891d7d1d6aa9a39e581e1de59a27e4524356ef292002dd1e",
+                rewrittenBodyIdentity = finiteIdentity, inverseExact = true, generatedFields = 0, nativeOwners = 0,
+            },
             timerPump = new {
                 method = timerPump.Method.FullName, originalToken = 0x06003c90, originalIlBytes = 214,
                 originalIlSha256 = "sha256:e486da68fcceeed848c7b35adbf5956f7345b9e3e63a05553148b83d2d7ba44b",
@@ -434,7 +485,7 @@ internal static class AggregateTaskWait
             deadline = "one-original-monotonic-interval-original-Task.Delay-wake",
             cancellation = "entry-token-before-IsSet;later-IsSet-before-token",
             context = "original-RunInternal-default-and-finally-restore",
-            nesting = "single-and-aggregate-save-restore-depth32",
+            nesting = "single-finite-and-aggregate-save-restore-depth32",
             zeroPoll = "original-bounded-pollable-detach-dispose",
             infiniteClock = "no-added-clock-read-or-timeout-wake",
             nonWasi = "original-MRES-Wait-entry-without-duplicate-validation",
@@ -479,9 +530,9 @@ internal static class AggregateTaskWait
                 || method.DeclaringType.FullName == "System.Threading.Tasks.Task"
                     && (method.Name is "WaitAll" or "WaitAllCore" or "WaitAllBlockingCore")
                 || method.DeclaringType.FullName == "System.Threading.WasiEventLoop"
-                    && (method.Name is "CheckPollables" or "LsfWaitForActualTaskCompletion")
+                    && (method.Name is "CheckPollables" or "LsfWaitForActualTaskCompletion" or "LsfWaitForActualTaskOrTimeout")
                 || method.DeclaringType.FullName == "System.Threading.TimerQueue" && method.Name == "PumpTimerQueue").ToArray();
-        Need(selected.Length == 16);
+        Need(selected.Length == 17);
         foreach (var method in selected)
         {
             var instructions = method.Body.Instructions.ToArray();

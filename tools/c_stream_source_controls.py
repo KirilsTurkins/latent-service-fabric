@@ -53,7 +53,7 @@ def run(output: Path, zig: Path, wit: Path, node: Path) -> dict:
                  ROOT / SOURCES[0], ROOT / SOURCES[4], '-o', output / 'controls.wasm']
         commands.run('compile', zig, *args)
         observed = commands.run('controls', node, ROOT / SOURCES[5], output / 'controls.wasm')
-        require(observed == b'PASS descriptor_controls\nPASS send_nosignal_controls\nPASS descriptor_flags_controls\nPASS readiness_controls\nPASS full_shutdown_refusal_controls\nPASS half_close_controls\n',
+        require(observed == b'PASS descriptor_controls\nPASS send_nosignal_controls\nPASS descriptor_flags_controls\nPASS readiness_controls\nPASS full_shutdown_refusal_controls\nPASS half_close_controls\nPASS vector_controls\n',
                 'c-stream-source-exact-outcome')
         # The composed profile uses the same maintained C bodies and genuine
         # generated WIT types, with explicit finite log/network/libc doubles.
@@ -113,7 +113,7 @@ def run(output: Path, zig: Path, wit: Path, node: Path) -> dict:
                 'c-stream-source-input-changed')
         result.update(status='passed', commands=commands.records,
                       cases=['descriptor_controls', 'send_nosignal_controls', 'descriptor_flags_controls', 'readiness_controls', 'full_shutdown_refusal_controls',
-                             'half_close_controls', 'libc-entropy',
+                             'half_close_controls', 'vector_controls', 'libc-entropy',
                              'application_abort', 'original_libc_abort',
                              'stdio_stream_controls', 'stdio_missing_log_authority',
                              'numeric_resolver_controls', 'numeric_resolver_allocation_refusal'])

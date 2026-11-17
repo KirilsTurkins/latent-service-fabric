@@ -61,6 +61,23 @@ injected join failure that retains the original
 subtask and owners until a later retry and terminal event. They do not qualify
 a signed guest, production host, or physical Store destruction.
 
+## Partial import-admission rollback
+
+If import admission fails before any WIT-layout buffer or subtask is created,
+the manager closes new admission and retries any surviving original Task or
+QueuedWork settlement. It retains the separately paid record and its persistent
+roots while that rollback is refused. Once logical rollback succeeds, the
+record is destroyed before its lowering Native, Result, and record Native
+owners are acknowledged. A failed physical acknowledgement keeps the same
+token in the existing bounded retry slot; it does not acknowledge a different
+record or repeat an already successful settlement.
+
+Production-header controls using host and JS doubles cover refusals of each
+original Task, QueuedWork, and Native owner, repeated cancellation, recovery,
+and result-buffer allocation failure. They observe roots and buffers at the
+acknowledgement boundary and check each original token settles once. These are
+not a SpiderMonkey, signed-component, or Store-destruction qualification.
+
 ## Budget mapping and lifecycle
 
 `ActivationBudget` is the existing authority. The bridge does not mint a new
@@ -198,3 +215,26 @@ The existing `activation-runtime-unselected-native-async-task-denied` and
 `activation-runtime-opaque-pending-work-on-close` diagnostics remain in force,
 but they do not close these gaps. Keep #745 open and do not promote the current
 profile on the strength of these local controls.
+
+## Import cleanup refusal fence
+
+If an unpublished import fails while allocating its parameter or result
+buffer, capture array, or Promise, it now attempts to retire the original
+logical work and physically destroy the record immediately. A refusal keeps
+the original owners live and retains any surviving buffers and roots, and it
+stops further import admission. A later `cancelAll` can retry the original
+unacknowledged owners;
+already acknowledged owners are not settled twice. If cleanup succeeds, the
+caller can catch the allocation error and admit a fresh import.
+
+Cleanup refusal after dispatch now also stops the import manager when no
+optional borrow observer exists, including direct cancellation. The existing
+readiness set can still observe a pending subtask, and cleanup remains pending
+until the actual terminal event and required disposal occur. The change does
+not add another byte ledger or change guest-memory page charges.
+
+The production-header controls use finite JSAPI and host doubles to exercise
+these paths, including repeated settlement refusal, post-destruction
+acknowledgement refusal, and eventual recovery. They do not establish real
+SpiderMonkey GC, signed-component, provider, or Store-retirement evidence;
+the remaining qualifications above still apply.

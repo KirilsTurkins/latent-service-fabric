@@ -78,6 +78,23 @@ python3 tools/c_capsule.py feature-probes-verify "$LSF_C_PROJECT" \
 
 Regenerate the kit after changing the project or SDK recipe.
 
+The selected stream profile routes source-level `readv` and `writev` calls
+through the same descriptor and grant as `read` and `write`. One call accepts
+at most 16 vectors and transfers at most 4096 bytes, so callers must handle a
+short result. All vector metadata and memory ranges are checked before the one
+underlying operation, and reads snapshot the metadata before scattering bytes.
+With the combined stdio profile, `writev` on stdout or stderr uses the existing
+bounded UTF-8 log sink and may return a shorter accepted prefix. Invalid ranges
+return `EFAULT`; a negative count, more than 16 vectors or a total beyond
+`SSIZE_MAX` returns `EINVAL`. These source-level controls do not qualify a
+complete unchanged client or extend the supported socket profile. Unlike Linux
+vector calls, even an empty vector on an uncertain or failed stream returns
+`EIO`: the original SDK descriptor's terminal failure fence still applies. An
+empty call on an otherwise unconnected or send-shut socket returns zero without
+provider I/O. A nonempty call on an unconnected socket returns `ENOTCONN` for
+both directions, following the SDK's scalar stream behavior; Linux may instead
+return `EPIPE` for `writev`.
+
 ## Capturing C libraries
 
 For a C application or resource artifact in `tar` or `zip` format, an optional

@@ -150,6 +150,7 @@ async fn expiry(dns: bool) {
     let baseline = fixture.pools.snapshot().unwrap().metadata_bytes;
     let unpolled = lifecycle.maintenance().unwrap();
     let stop = unpolled.stop_handle();
+    let retained_stop = stop.clone();
     assert_eq!(
         lifecycle.maintenance().err().unwrap().code,
         StreamErrorCode::Exhausted
@@ -167,6 +168,11 @@ async fn expiry(dns: bool) {
         baseline + 8192
     );
     drop(stop);
+    assert_eq!(
+        fixture.pools.snapshot().unwrap().metadata_bytes,
+        baseline + 8192
+    );
+    drop(retained_stop);
     assert_eq!(fixture.pools.snapshot().unwrap().metadata_bytes, baseline);
 
     let maintenance = lifecycle.maintenance().unwrap();

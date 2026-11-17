@@ -105,17 +105,31 @@ current real goroutine through the canonical async callback, allowing runnable
 siblings and the host executor to progress. This path creates no timer, wall
 deadline, sleeping worker or application-visible scheduling facade.
 
-When the selected program imports the standard `slices` package, the compiler
-also instruments the authenticated Go 1.27.4 `slices/iter.go` source. This
-allows iteration entirely inside `slices.Values` and `slices.AppendSeq` to
-reach the same checkpoints. The existing checkpoint quantum still suspends
-without checking for runnable siblings: these added sites can allocate and
-yield even for a program with no application sibling, under the same guest and
-host limits. In a core-Wasm control with a test dispatcher pump, a one-million
-element `Values`/`AppendSeq` pass made 1,953 such yields without an application
-sibling; that is not a production-node measurement. This finite source
-selection does not establish fairness for other standard-library loops or
-constitute signed execution evidence.
+When the selected program imports the standard `slices`, `maps`, `strings` or
+`bytes` package, the compiler also instruments its authenticated Go 1.27.4
+`iter.go` source. This lets work entirely inside `slices.Values`/`slices.AppendSeq`,
+`maps.All`/`maps.Insert`, and the text packages' iterator functions reach the
+same checkpoints. The existing checkpoint quantum still suspends without
+checking for runnable siblings: these sites can allocate and yield even for a
+program with no application sibling, under the same guest and host limits. In
+core-Wasm controls with a test dispatcher pump, a one-million-element slices or
+maps pass, and a two-million-byte unbroken `FieldsSeq` scan in either text
+package, each made 1,953 such yields without an application sibling. These are
+not production-node measurements. This finite source selection does not
+establish fairness for other standard-library loops or constitute signed
+execution evidence.
+
+For the pinned Go 1.27.4 default JSON implementation, the compiler also
+instruments the authenticated `encoding/json/internal/jsonwire/decode.go`
+when that transitive standard package is selected. A two-million-byte
+`json.Valid` string scan in the core-Wasm test dispatcher allowed a runnable
+sibling to progress; the uninstrumented scan did not. With no application
+sibling it still made 1,953 yields. Four alternating local runs after warmup,
+including Node process startup, measured median elapsed time of 414.25 ms
+without and 425.29 ms with the JSON checkpoints (+2.7%); median child CPU was
+148.84 ms and 201.08 ms respectively (+35.1%). These noisy test-pump numbers
+are not production-node cost or signed-component qualification. The default
+`go-component-async-v1` profile does not install these checkpoints.
 
 Original source bytes remain unchanged. Derived copies retain original
 diagnostic line/column positions, source and output digests, and suspension

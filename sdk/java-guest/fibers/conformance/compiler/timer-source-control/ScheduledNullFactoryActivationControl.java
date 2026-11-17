@@ -2,6 +2,8 @@ import dev.latent.generated.Bindings;
 import dev.latent.generated.Bindings.LatentRuntimeActivationOwnerKind;
 import dev.latent.guest.Option;
 import dev.latent.guest.runtime.Activation;
+import dev.latent.guest.runtime.concurrent.AbstractExecutorService;
+import dev.latent.guest.runtime.concurrent.CompletableFuture;
 import dev.latent.guest.runtime.concurrent.Executors;
 import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;
 import java.lang.reflect.Field;
@@ -9,10 +11,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -517,6 +525,215 @@ public final class ScheduledNullFactoryActivationControl {
             held(0, 0, 0); invoke("retireIdlePools"); finishRoot(root);
         } finally { release.countDown(); }
     }
+    private static void managedNestedNullRoot() throws Exception {
+        Object root = enter();
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<Future<?>> first = new AtomicReference<>(), second = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            if (attempts.incrementAndGet() == 1) {
+                first.set(selected.get().submit(calls::incrementAndGet));
+                second.set(selected.get().submit(calls::incrementAndGet));
+            }
+            return null;
+        });
+        selected.set(pool);
+        var outer = pool.submit(calls::incrementAndGet);
+        require(attempts.get() == 2 && calls.get() == 0, "nested-null-unexpected-callback");
+        held(3, 3, 1); closeRoot();
+        require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools"), "nested-null-root-not-fenced");
+        List<Runnable> removed = pool.shutdownNow();
+        require(removed.size() == 3 && removed.get(0) == first.get() && removed.get(1) == second.get()
+            && removed.get(2) == outer && calls.get() == 0, "nested-null-queue-order");
+        held(0, 0, 0);
+        require(first.get().cancel(false) && second.get().cancel(false) && outer.cancel(false), "nested-null-cancel");
+        invoke("retireIdlePools"); finishRoot(root);
+    }
+    private static void managedGracefulSoleRoot(String mode) throws Exception {
+        Object root = enter();
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<Thread> offered = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            attempts.incrementAndGet(); selected.get().shutdown(); held(1, 1, 1);
+            if (mode.equals("executor-denied")) {
+                Bindings.LatentRuntimeActivation.settleObservation = () -> {
+                    Bindings.LatentRuntimeActivation.settleObservation = () -> {
+                        Bindings.LatentRuntimeActivation.settleObservation = () -> Bindings.LatentRuntimeActivation.denySettle = true;
+                    };
+                };
+            }
+            if (!mode.equals("thread")) return null;
+            var thread = new Thread(target); offered.set(thread); return thread;
+        });
+        selected.set(pool);
+        try { pool.submit(calls::incrementAndGet); throw new AssertionError("graceful-sole-accepted"); }
+        catch (RejectedExecutionException expected) {
+            require(expected.getMessage().equals("activation-executor-closed"), "wrong-graceful-rejection");
+        }
+        require(attempts.get() == 1 && calls.get() == 0
+            && (offered.get() == null || offered.get().getState() == Thread.State.NEW), "graceful-worker-started");
+        closeRoot();
+        if (mode.equals("executor-denied")) {
+            Bindings.LatentRuntimeActivation.denySettle = false;
+            held(0, 0, 1);
+            require(field("poisoned").getBoolean(null) && !pool.isTerminated(), "graceful-owner-not-fenced");
+            int attemptsBefore = Bindings.LatentRuntimeActivation.settlementAttempts;
+            pool.shutdownNow();
+            require(Bindings.LatentRuntimeActivation.settlementAttempts == attemptsBefore, "graceful-owner-retried");
+            try { invoke("requireHealthyCompletion"); throw new AssertionError("graceful-root-succeeded"); }
+            catch (InvocationTargetException error) {
+                require(error.getCause() instanceof IllegalStateException, "wrong-graceful-root-failure");
+            }
+            // The original Executor owner remains fenced until Store teardown.
+        } else {
+            held(0, 0, 0);
+            require(pool.isTerminated() && !(boolean)invoke("pending"), "graceful-pool-not-retired");
+            invoke("retireIdlePools"); finishRoot(root);
+        }
+    }
+    private static void managedObtrudeRoot() throws Exception {
+        Object root = enter();
+        AtomicReference<Thread> selected = new AtomicReference<>();
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            Thread thread = new Thread(() -> {
+                try { Activation.starting(Thread.currentThread()); target.run(); }
+                finally { Activation.finished(Thread.currentThread()); }
+            });
+            selected.set(thread); return thread;
+        });
+        var result = new CompletableFuture<Integer>();
+        try {
+            result.completeAsync(() -> {
+                calls.incrementAndGet(); entered.countDown();
+                while (true) try { release.await(); return 42; } catch (InterruptedException ignored) { }
+            }, pool);
+            require(entered.await(5, TimeUnit.SECONDS), "obtrude-producer-not-started");
+            held(1, 1, 1);
+            require(owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 1, "obtrude-worker-not-owned");
+            result.obtrudeValue(7);
+            require(result.join() == 7, "obtrude-result-not-visible"); held(1, 1, 1);
+            pool.shutdown(); closeRoot();
+            require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools"), "obtrude-root-not-fenced");
+            release.countDown(); selected.get().join(5000);
+            require(!selected.get().isAlive() && calls.get() == 1 && result.join() == 7
+                && owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 0, "obtrude-producer-not-retired");
+            held(0, 0, 0); invoke("retireIdlePools"); finishRoot(root);
+        } finally { release.countDown(); }
+    }
+    private static void managedDefaultAsyncRoot() throws Exception {
+        Object root = enter();
+        AtomicReference<Thread> selected = new AtomicReference<>();
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            Thread thread = new Thread(() -> {
+                try { Activation.starting(Thread.currentThread()); target.run(); }
+                finally { Activation.finished(Thread.currentThread()); }
+            });
+            selected.set(thread); return thread;
+        });
+        class Source extends CompletableFuture<Integer> {
+            int defaults, overloads;
+            @Override public Executor defaultExecutor() { defaults++; return pool; }
+            @Override public CompletableFuture<Void> thenRunAsync(Runnable action, Executor executor) {
+                overloads++; throw new AssertionError("unexpected-explicit-overload");
+            }
+        }
+        var source = new Source(); source.complete(5);
+        try {
+            var child = source.thenRunAsync(() -> {
+                calls.incrementAndGet(); entered.countDown();
+                while (true) try { release.await(); return; } catch (InterruptedException ignored) { }
+            });
+            require(entered.await(5, TimeUnit.SECONDS) && source.defaults == 1 && source.overloads == 0,
+                "default-async-not-dispatched");
+            held(1, 1, 1);
+            require(owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 1, "default-async-worker-not-owned");
+            pool.shutdown(); closeRoot();
+            require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools"), "default-async-root-not-fenced");
+            release.countDown(); selected.get().join(5000);
+            require(!selected.get().isAlive() && calls.get() == 1 && child.join() == null
+                && owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 0, "default-async-not-retired");
+            held(0, 0, 0); invoke("retireIdlePools"); finishRoot(root);
+        } finally { release.countDown(); }
+    }
+    private static void managedInvokeAnyFactoryRoot(boolean wrapped) throws Exception {
+        Object root = enter();
+        var workers = new java.util.concurrent.CopyOnWriteArrayList<Thread>();
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        AtomicInteger interrupts = new AtomicInteger(), calls = new AtomicInteger();
+        var pool = Executors.newFixedThreadPool(2, target -> {
+            Thread thread = new Thread(() -> {
+                try { Activation.starting(Thread.currentThread()); target.run(); }
+                finally { Activation.finished(Thread.currentThread()); }
+            });
+            workers.add(thread); return thread;
+        });
+        class Factory extends AbstractExecutorService {
+            @Override protected <T> RunnableFuture<T> newTaskFor(Callable<T> task) {
+                RunnableFuture<T> inner = super.newTaskFor(task);
+                if (!wrapped) return inner;
+                return new RunnableFuture<>() {
+                    @Override public void run() { inner.run(); }
+                    @Override public boolean cancel(boolean interrupt) { return inner.cancel(interrupt); }
+                    @Override public boolean isCancelled() { return inner.isCancelled(); }
+                    @Override public boolean isDone() { return inner.isDone(); }
+                    @Override public T get() throws InterruptedException, ExecutionException { return inner.get(); }
+                    @Override public T get(long n, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                        return inner.get(n, unit);
+                    }
+                };
+            }
+            @Override public void execute(Runnable task) { pool.execute(task); }
+            @Override public void shutdown() { pool.shutdown(); }
+            @Override public List<Runnable> shutdownNow() { return pool.shutdownNow(); }
+            @Override public boolean isShutdown() { return pool.isShutdown(); }
+            @Override public boolean isTerminated() { return pool.isTerminated(); }
+            @Override public boolean awaitTermination(long n, TimeUnit unit) throws InterruptedException {
+                return pool.awaitTermination(n, unit);
+            }
+        }
+        try {
+            Callable<Integer> held = () -> {
+                calls.incrementAndGet(); entered.countDown();
+                while (true) try { release.await(); return 1; } catch (InterruptedException ignored) { interrupts.incrementAndGet(); }
+            };
+            Callable<Integer> winner = () -> {
+                require(entered.await(5, TimeUnit.SECONDS), "invoke-any-loser-not-started"); return 42;
+            };
+            require(new Factory().invokeAny(List.of(held, winner)) == 42, "invoke-any-winner");
+            long deadline = System.nanoTime() + 5_000_000_000L;
+            while (owners(LatentRuntimeActivationOwnerKind.Result) != 2 || interrupts.get() == 0) {
+                require(System.nanoTime() - deadline < 0, "invoke-any-original-owners-not-held"); Thread.sleep(1);
+            }
+            held(0, 2, 1); pool.shutdown(); closeRoot();
+            require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools"), "invoke-any-root-not-fenced");
+            release.countDown();
+            for (Thread worker : workers) { worker.join(5000); require(!worker.isAlive(), "invoke-any-worker-not-retired"); }
+            require(calls.get() == 1 && owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 0,
+                    "invoke-any-worker-ownership");
+            held(0, 0, 0); invoke("retireIdlePools"); finishRoot(root);
+        } finally { release.countDown(); }
+    }
+    private static void pendingInvokeAnyRoot(boolean scheduled) throws Exception {
+        Object root = enter();
+        ExecutorService pool = scheduled ? new ScheduledThreadPoolExecutor(1, target -> null)
+                                         : Executors.newFixedThreadPool(1, target -> null);
+        AtomicInteger calls = new AtomicInteger();
+        Callable<Integer> task = () -> { calls.incrementAndGet(); return 42; };
+        try {
+            try { pool.invokeAny(List.of(task, task), 0, TimeUnit.NANOSECONDS); throw new AssertionError("invoke-any-not-timed-out"); }
+            catch (TimeoutException expected) { }
+            held(2, scheduled ? 4 : 2, 1);
+            closeRoot();
+            require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools"), "invoke-any-queued-root-not-fenced");
+            require(pool.shutdownNow().size() == 2 && calls.get() == 0, "invoke-any-queued-withdrawal");
+            held(0, 0, 0); invoke("retireIdlePools"); finishRoot(root);
+        } finally { pool.shutdownNow(); }
+    }
     public static void main(String[] args) throws Exception {
         String mode = args[0];
         if (mode.equals("scan-mutation") || mode.equals("retirement-scan-mutation"))
@@ -536,6 +753,16 @@ public final class ScheduledNullFactoryActivationControl {
             managedNullRoot(mode.substring("managed-null-".length()));
         else if (mode.equals("managed-null-worker-uncertain")) managedNullUncertainWorker();
         else if (mode.equals("managed-preferred-root")) managedPreferredRoot();
+        else if (mode.equals("managed-nested-null-root")) managedNestedNullRoot();
+        else if (mode.equals("managed-graceful-null-root") || mode.equals("managed-graceful-thread-root")
+                || mode.equals("managed-graceful-executor-denied-root"))
+            managedGracefulSoleRoot(mode.substring("managed-graceful-".length(), mode.length() - "-root".length()));
+        else if (mode.equals("managed-obtrude-root")) managedObtrudeRoot();
+        else if (mode.equals("managed-default-async-root")) managedDefaultAsyncRoot();
+        else if (mode.equals("managed-invoke-any-factory-root") || mode.equals("managed-invoke-any-default-root"))
+            managedInvokeAnyFactoryRoot(mode.equals("managed-invoke-any-factory-root"));
+        else if (mode.equals("managed-invoke-any-pending-root") || mode.equals("scheduled-invoke-any-pending-root"))
+            pendingInvokeAnyRoot(mode.equals("scheduled-invoke-any-pending-root"));
         else if (mode.equals("recovery") || mode.equals("reentrant")) recovery(mode.equals("reentrant"));
         else if (mode.equals("cancel") || mode.equals("remove") || mode.equals("factory-throw") || mode.equals("wait-denied")
                 || mode.equals("settle-result-denied") || mode.equals("settle-queue-denied")) noWorker(mode);

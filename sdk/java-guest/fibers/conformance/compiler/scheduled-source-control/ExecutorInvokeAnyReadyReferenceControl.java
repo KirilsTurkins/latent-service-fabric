@@ -6,13 +6,15 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Compares local JDK behavior and explicitly checks the SDK's full null validation. */
 public final class ExecutorInvokeAnyReadyReferenceControl {
     private static final class Marker extends RuntimeException { }
-    private static final class Direct extends AbstractExecutorService {
+    private static class Direct extends AbstractExecutorService {
         final boolean rejectSecond;
         int executed;
         Direct(boolean rejectSecond) { this.rejectSecond = rejectSecond; }
@@ -26,6 +28,46 @@ public final class ExecutorInvokeAnyReadyReferenceControl {
         @Override public boolean isShutdown() { return false; }
         @Override public boolean isTerminated() { return false; }
         @Override public boolean awaitTermination(long timeout, TimeUnit unit) { return false; }
+    }
+    private static final class Factory extends Direct {
+        final boolean wrap, throwFirstGet, throwOnIsDone, throwAfterRun;
+        int factories, decorated, cancellations;
+        RunnableFuture<?> created;
+        boolean distinct = true;
+        Factory(boolean wrap, boolean throwFirstGet) {
+            this(wrap, throwFirstGet, false, false);
+        }
+        Factory(boolean wrap, boolean throwFirstGet, boolean throwOnIsDone, boolean throwAfterRun) {
+            super(false); this.wrap = wrap; this.throwFirstGet = throwFirstGet;
+            this.throwOnIsDone = throwOnIsDone; this.throwAfterRun = throwAfterRun;
+        }
+        @Override protected <T> RunnableFuture<T> newTaskFor(Callable<T> task) {
+            int number = ++factories;
+            RunnableFuture<T> actual = super.newTaskFor(() -> { decorated++; return task.call(); });
+            if (!wrap) { created = actual; return actual; }
+            RunnableFuture<T> result = new RunnableFuture<>() {
+                @Override public void run() {
+                    actual.run();
+                    if (throwAfterRun) throw new IllegalStateException("custom-run-after-completion");
+                }
+                @Override public boolean cancel(boolean interrupt) { cancellations++; return actual.cancel(interrupt); }
+                @Override public boolean isCancelled() { return actual.isCancelled(); }
+                @Override public boolean isDone() {
+                    if (throwOnIsDone) throw new IllegalStateException("custom-is-done");
+                    return actual.isDone();
+                }
+                @Override public T get() throws InterruptedException, ExecutionException {
+                    if (throwFirstGet && number == 1) throw new IllegalStateException("custom-get");
+                    return actual.get();
+                }
+                @Override public T get(long n, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+                    return actual.get(n, unit);
+                }
+            };
+            created = result;
+            return result;
+        }
+        @Override public void execute(Runnable task) { distinct &= task != created; super.execute(task); }
     }
     private static final class Inputs extends AbstractCollection<Callable<Integer>> {
         final String mode;
@@ -74,6 +116,28 @@ public final class ExecutorInvokeAnyReadyReferenceControl {
             require(direct.executed == 2 && expected.getCause() instanceof IllegalStateException, "all failed");
         }
     }
+    private static void taskFactories() throws Exception {
+        for (boolean wrapped : new boolean[] {false, true}) {
+            for (boolean timed : new boolean[] {false, true}) {
+                Factory factory = new Factory(wrapped, false);
+                int result = timed ? factory.invokeAny(List.of(() -> 42), 0, TimeUnit.NANOSECONDS)
+                                   : factory.invokeAny(List.of(() -> 42));
+                require(result == 42 && factory.factories == 1 && factory.decorated == 1 && factory.executed == 1,
+                        "task factory " + wrapped + " " + timed);
+                require(factory.distinct, "delivery must be distinct from factory result");
+                if (wrapped) require(factory.cancellations == 1, "custom cancellation");
+            }
+        }
+        Factory customGet = new Factory(true, true);
+        require(customGet.<Integer>invokeAny(List.of(() -> 1, () -> 42)) == 42 && customGet.factories == 2
+                && customGet.decorated == 2 && customGet.cancellations == 2, "custom get failure");
+        Factory customStatus = new Factory(true, false, true, false);
+        require(customStatus.<Integer>invokeAny(List.of(() -> 42)) == 42 && customStatus.decorated == 1,
+                "unnecessary custom isDone");
+        Factory customRun = new Factory(true, false, false, true);
+        require(customRun.<Integer>invokeAny(List.of(() -> 42)) == 42 && customRun.decorated == 1,
+                "custom run failed after completion");
+    }
     private static void iterator(String mode, boolean source) throws Exception {
         Direct direct = new Direct(false);
         AtomicInteger callbacks = new AtomicInteger();
@@ -91,8 +155,8 @@ public final class ExecutorInvokeAnyReadyReferenceControl {
     public static void main(String[] args) throws Exception {
         boolean source = args[0].equals("source");
         if (!source && !args[0].equals("jdk")) throw new AssertionError("scope");
-        ready(false); ready(true); failurePaths();
+        ready(false); ready(true); failurePaths(); taskFactories();
         for (String mode : List.of("normal", "throw", "cancel", "null")) iterator(mode, source);
-        System.out.println("EXECUTOR_INVOKE_ANY_READY PASS one;zero;failure;rejection;all-failed;null-rule;iterator-observed");
+        System.out.println("EXECUTOR_INVOKE_ANY_READY PASS one;zero;failure;rejection;all-failed;null-rule;iterator-observed;task-factories");
     }
 }

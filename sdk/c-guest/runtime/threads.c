@@ -143,28 +143,39 @@ static int create(struct lsf_c_thread **out,void *(*pthread_start)(void *),
                   int (*c11_start)(void *),void *argument,unsigned api) {
     struct lsf_c_thread *caller=current(),*root=caller->root;
     if (root->closing || root->started_count>=RECORD_LIMIT) return EAGAIN;
+    /* Count pending creations before any broker or native admission can
+     * suspend. A successful record keeps this slot as its tombstone; a
+     * refusal returns it only after the original owners have been settled. */
+    ++root->started_count;
     int error=ensure_root_owners(root);
-    if (error) return error;
+    if (error) goto release_reservation;
     error=ensure_template(root);
-    if (error) return error;
+    if (error) goto release_reservation;
     struct lsf_c_token task={0},owner={0},result={0};
     error=acquire(LSF_C_TASK,&caller->task,&task);
     if (!error) error=acquire(LSF_C_NATIVE,&task,&owner);
     if (!error) error=acquire(LSF_C_RESULT,&task,&result);
-    if (error) { settle(&result);settle(&owner);settle(&task);return error; }
+    if (error) { settle(&result);settle(&owner);settle(&task);goto release_reservation; }
+    /* A sibling can close the root while broker admission is suspended.
+     * Refuse before requesting a native start, after retiring these owners. */
+    if (root->closing) {
+        settle(&result);settle(&owner);settle(&task);error=EAGAIN;goto release_reservation;
+    }
     /* All logical owners exist BEFORE any context, stack or TLS allocation.
      * Linear allocations remain under the original Wasm memory limiter.
      * The allocator/registry cannot contain suspension checkpoints.
      */
     size_t bytes=(sizeof(struct lsf_c_thread)+15u)&~(size_t)15u;
     struct lsf_c_thread *thread=aligned_alloc(16,bytes);
-    if (thread==NULL) { settle(&result);settle(&owner);settle(&task);return ENOMEM; }
+    if (thread==NULL) {
+        settle(&result);settle(&owner);settle(&task);error=ENOMEM;goto release_reservation;
+    }
     memset(thread,0,bytes);thread->task=task;thread->context_owner=owner;thread->result_owner=result;
     thread->stack_allocation=aligned_alloc(16,STACK_BYTES);
     size_t extent=(root->tls_bytes+15u)&~(size_t)15u;
     thread->tls_allocation=aligned_alloc(16,extent);
     if (thread->stack_allocation==NULL || thread->tls_allocation==NULL) {
-        discard_unstarted(thread);return ENOMEM;
+        discard_unstarted(thread);error=ENOMEM;goto release_reservation;
     }
     uintptr_t low=(uintptr_t)thread->stack_allocation,tls=(uintptr_t)thread->tls_allocation;
     require(low!=0 && low%16u==0 && low<=UINT32_MAX-STACK_BYTES && tls!=0 && tls%16u==0
@@ -176,19 +187,24 @@ static int create(struct lsf_c_thread **out,void *(*pthread_start)(void *),
     thread->parent=caller->canonical_id;thread->api=api;thread->argument=argument;thread->root=root;
     if (api==LSF_C_PTHREAD) thread->start.pthread=pthread_start;else thread->start.c11=c11_start;
     thread->admission[0]=thread->admission[1]=255;
+    /* Native admission can suspend. If root closure starts during that call,
+     * the still-live creator publishes any accepted child before it returns. */
     uint32_t canonical=lsf_c_thread_new((uint32_t)(uintptr_t)&__lsf_c_owned_thread_entry,thread);
     if (thread->creation_started==0) {
         require(thread->admission[0]==1);error=runtime_error(thread->admission[1]);
-        discard_unstarted(thread);return error;
+        discard_unstarted(thread);goto release_reservation;
     }
     require(thread->creation_started==1 && thread->admission[0]==0 && canonical!=caller->canonical_id);
-    thread->canonical_id=canonical;thread->next=root->next;root->next=thread;++root->started_count;
+    thread->canonical_id=canonical;thread->next=root->next;root->next=thread;
     /* A real child runs only its context/identity handshake, then yields back.
      * No user start function runs inline in pthread_create/thrd_create.
      */
     (void)lsf_c_thread_switch(canonical);
     require(current()==caller && thread->creation_started==2 && thread->phase==LSF_C_RUNNING);
     *out=thread;return 0;
+release_reservation:
+    require(root->started_count!=0);
+    --root->started_count;return error;
 }
 
 /* Retain the complete original creation ABI even without an application child:

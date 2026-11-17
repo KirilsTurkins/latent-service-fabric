@@ -22,9 +22,9 @@ python3 -B tools/typescript_runtime_retirement_fixture.py \
 ```
 
 The generated caller and synchronous fixture companion retain actual build
-observations. With `LSF_GUEST_SDK_LANGUAGE=typescript` and
-`LSF_GUEST_CAPSULES` pointing to that output, the existing native signed-node
-suite can select this ignored case explicitly:
+observations. With `LSF_GUEST_SDK_LANGUAGE=typescript`, `LSF_GUEST_CAPSULES`
+pointing to that output, and `LSF_TYPESCRIPT_ROOT_DRAIN_TIMER_OBSERVER=1`, the
+existing native signed-node suite can select this ignored case explicitly:
 
 ```sh
 cargo test --locked -p latent-wasmtime --test local_service -- \
@@ -49,11 +49,25 @@ ordinary timer also establishes pending state before resolving its Promise
 to 42. A third failure path observes the root-trap mode; a generic trap alone
 does not prove callback execution or timer registration. Each outcome must retire the original
 activation, Store, call and result owners before a fresh module returns 42.
-All ten outcomes retain the original six backend owner counters, broker
+The ten historical outcomes retain the original six backend owner counters, broker
 calls/sessions/handles/results/buffers, read waits, quota activations,
 instance reservations and cancellation registrations at the idle boundary.
 The original runtime ceilings, five-second pending witness and two-second
 physical-idle bound remain unchanged.
+
+The current gate also requires an accepted-work case and a subsequent fresh
+invocation. The application returns 42 while scheduling a due timer; that
+timer's Promise job alone starts a distinct one-second timer. The signed test
+must observe the nested wait and then return 42 with all owners idle. An opt-in,
+bounded host witness independently requires root admission, first timer
+admission, root close, settlement of that same original root Task, and only
+then the nested timer admission. It compares the token privately and records
+only the match and owner-count reduction, never token values. The observer
+does not grant admission or alter scheduling, and it is absent by default.
+
+This extension is a qualification prerequisite, not a new signed result. The
+historical ten-outcome run below does not satisfy it. A fresh run with the
+selected source-bound engine and current native test is still required.
 
 Focused source controls include actual native JavaScript execution of
 the outside library with controlled timers. A bounded local normal npm

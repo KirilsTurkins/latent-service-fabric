@@ -1,6 +1,7 @@
 /* Actual selected-source getaddrinfo control, compiled for pinned wasm32. */
 #include <netdb.h>
 #include <netinet/in.h>
+#include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -59,7 +60,28 @@ int numeric_resolver_controls(void) {
     freeaddrinfo(first);
 
     first = NULL;
-    CHECK(getaddrinfo("example.com", "443", &hints, &first) == EAI_NONAME && first == NULL);
+    int lookup_status = getaddrinfo("example.com", "443", &hints, &first);
+    CHECK(lookup_status == EAI_NONAME && first == NULL);
+    const char *saved_diagnostic = gai_strerror(lookup_status);
+    CHECK(same_text(saved_diagnostic, "Name does not resolve"));
+    CHECK(same_text(gai_strerror(EAI_BADFLAGS), "Invalid flags"));
+    CHECK(same_text(gai_strerror(EAI_AGAIN), "Try again"));
+    CHECK(same_text(gai_strerror(EAI_FAIL), "Non-recoverable error"));
+#ifdef EAI_NODATA
+    CHECK(same_text(gai_strerror(EAI_NODATA), "Name has no usable address"));
+#endif
+    CHECK(same_text(gai_strerror(EAI_FAMILY), "Unrecognized address family or invalid length"));
+    CHECK(same_text(gai_strerror(EAI_SOCKTYPE), "Unrecognized socket type"));
+    CHECK(same_text(gai_strerror(EAI_SERVICE), "Unrecognized service"));
+    CHECK(same_text(gai_strerror(EAI_MEMORY), "Out of memory"));
+    CHECK(same_text(gai_strerror(EAI_SYSTEM), "System error"));
+    CHECK(same_text(gai_strerror(EAI_OVERFLOW), "Overflow"));
+    CHECK(same_text(gai_strerror(0), "Unknown error"));
+    CHECK(same_text(gai_strerror(123456), "Unknown error"));
+    CHECK(same_text(gai_strerror(-123456), "Unknown error"));
+    CHECK(same_text(gai_strerror(INT_MIN), "Unknown error"));
+    CHECK(same_text(gai_strerror(INT_MAX), "Unknown error"));
+    CHECK(same_text(saved_diagnostic, "Name does not resolve"));
     CHECK(getaddrinfo("localhost", "443", &hints, &first) == EAI_NONAME && first == NULL);
     CHECK(getaddrinfo("127.0.0.01", "443", &hints, &first) == EAI_NONAME && first == NULL);
     CHECK(getaddrinfo("256.0.0.1", "443", &hints, &first) == EAI_NONAME && first == NULL);
@@ -96,6 +118,58 @@ int numeric_resolver_controls(void) {
     CHECK(getaddrinfo("203.0.113.9", NULL, &hints, &first) == 0 && first);
     CHECK(((const uint8_t *)&((const struct sockaddr_in *)first->ai_addr)->sin_port)[0] == 0);
     CHECK(((const uint8_t *)&((const struct sockaddr_in *)first->ai_addr)->sin_port)[1] == 0);
+    char host[16], service[6];
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, host, sizeof(host), service, sizeof(service),
+                      NI_NUMERICHOST | NI_NUMERICSERV) == 0);
+    CHECK(same_text(host, "203.0.113.9") && same_text(service, "0"));
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, host, sizeof(host), NULL, 0, NI_NUMERICHOST) == 0);
+    CHECK(same_text(host, "203.0.113.9"));
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, NULL, 0, service, sizeof(service), NI_NUMERICSERV) == 0);
+    CHECK(same_text(service, "0"));
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, NULL, 0, NULL, 0, 0) == 0);
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, NULL, 7, NULL, 9, 0) == 0);
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, NULL, 7, service, sizeof(service), NI_NUMERICSERV) == 0);
+    CHECK(same_text(service, "0"));
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, host, sizeof(host), NULL, 9, NI_NUMERICHOST) == 0);
+    CHECK(same_text(host, "203.0.113.9"));
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, host, 0, service, sizeof(service), NI_NUMERICSERV) == 0);
+    CHECK(same_text(service, "0"));
+    host[0] = 'H'; service[0] = 'S';
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, host, 0, service, 0, 0) == 0);
+    CHECK(host[0] == 'H' && service[0] == 'S');
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, host, sizeof(host), NULL, 0, 0) == EAI_NONAME);
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, NULL, 0, service, sizeof(service), 0) == EAI_NONAME);
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, host, sizeof(host), service, sizeof(service),
+                      NI_NUMERICHOST) == EAI_NONAME);
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, host, sizeof(host), NULL, 0,
+                      NI_NUMERICHOST | NI_NAMEREQD) == EAI_BADFLAGS);
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, host, sizeof(host), NULL, 0,
+                      NI_NUMERICHOST | NI_NOFQDN) == EAI_BADFLAGS);
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen - 1, host, sizeof(host), NULL, 0,
+                      NI_NUMERICHOST) == EAI_FAMILY);
+    CHECK(getnameinfo(NULL, 0, host, sizeof(host), NULL, 0, NI_NUMERICHOST) == EAI_FAMILY);
+    struct sockaddr_in6 ipv6 = {0}; ipv6.sin6_family = AF_INET6;
+    CHECK(getnameinfo((struct sockaddr *)&ipv6, sizeof(ipv6), host, sizeof(host), NULL, 0,
+                      NI_NUMERICHOST) == EAI_FAMILY);
+#ifdef LSF_C_RESOLVER_TEST_ALLOC
+    CHECK(live_allocations == 1 && !bad_free);
+#endif
+    freeaddrinfo(first); first = NULL;
+    CHECK(getaddrinfo("203.0.113.9", "443", &hints, &first) == 0 && first);
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, host, sizeof(host), service, sizeof(service),
+                      NI_NUMERICHOST | NI_NUMERICSERV) == 0);
+    CHECK(same_text(host, "203.0.113.9") && same_text(service, "443"));
+    freeaddrinfo(first); first = NULL;
+    CHECK(getaddrinfo("255.255.255.255", "65535", &hints, &first) == 0 && first);
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, host, sizeof(host), service, sizeof(service),
+                      NI_NUMERICHOST | NI_NUMERICSERV) == 0);
+    CHECK(same_text(host, "255.255.255.255") && same_text(service, "65535"));
+    host[sizeof(host) - 1] = 'H'; service[sizeof(service) - 1] = 'S';
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, host, sizeof(host) - 1, NULL, 0,
+                      NI_NUMERICHOST) == EAI_OVERFLOW);
+    CHECK(getnameinfo(first->ai_addr, first->ai_addrlen, NULL, 0, service, sizeof(service) - 1,
+                      NI_NUMERICSERV) == EAI_OVERFLOW);
+    CHECK(host[sizeof(host) - 1] == 'H' && service[sizeof(service) - 1] == 'S');
     freeaddrinfo(first); first = NULL;
     hints.ai_family = AF_INET6;
     CHECK(getaddrinfo("127.0.0.1", "80", &hints, &first) == EAI_FAMILY && first == NULL);

@@ -840,6 +840,32 @@ impl Drop for RuntimeOwner {
         }) {
             let record = slot.take().expect("matching live owner");
             state.owners[record.kind.index()] -= 1;
+            if state.phase == RuntimePhase::Running
+                && record.kind.index() == 0
+                && !record.parked
+                && state.owners[0] != 0
+            {
+                // A runnable sibling can finish while all remaining tasks are
+                // parked. Mirror `park`'s task scan without changing closing,
+                // cancellation, or any of the still-live original owners.
+                let mut parked = false;
+                let mut runnable = false;
+                if let Some(slab) = &state.slab {
+                    for remaining in slab.records.iter().flatten() {
+                        if remaining.kind.index() == 0 {
+                            if remaining.parked {
+                                parked = true;
+                            } else {
+                                runnable = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if parked && !runnable {
+                    state.phase = RuntimePhase::Waiting;
+                }
+            }
         }
     }
 }

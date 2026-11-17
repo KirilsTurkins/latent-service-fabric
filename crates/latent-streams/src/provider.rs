@@ -79,7 +79,7 @@ pub(crate) struct Inner {
     pub installed: InstalledProvider,
     pub pools: Arc<ProviderPools>,
     pub resolvers: Vec<Option<Resolver>>,
-    pub tls: Vec<Option<Arc<crate::tls::InstalledTls>>>,
+    pub tls: Vec<Option<crate::tls::InstalledTlsOwner>>,
     pub connections: Arc<crate::connection_registry::Registry>,
     #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
     native: Mutex<Option<crate::kernel::native::NativeOwner>>,
@@ -624,10 +624,12 @@ impl StreamProvider {
                         return Err(error(StreamErrorCode::Unsupported));
                     }
                     let metadata = pools.reserve_protocol_metadata(crate::tls::ROOT_ALLOWANCE)?;
-                    Some(Arc::new(crate::tls::InstalledTls {
-                        config: crate::tls::configure(input)?,
-                        _metadata: metadata,
-                    }))
+                    Some(crate::tls::InstalledTlsOwner::new(
+                        crate::tls::InstalledTls {
+                            config: crate::tls::configure(input)?,
+                            _metadata: metadata,
+                        },
+                    ))
                 }
                 None => None,
             });

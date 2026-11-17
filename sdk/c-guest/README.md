@@ -59,6 +59,31 @@ as the initializer and waking contenders only after publication. See
 the separate signed contention owner. Neither path supplies general POSIX or
 unqualified native thread support.
 
+New cooperative-runtime captures also select a source-level pthread rwlock
+port. It supports default attributes, recursive shared reads, exclusive writes,
+try operations and admitted blocking waiters. New readers have priority, so
+sustained readers can starve a writer. Timed rwlock operations return `ENOTSUP`,
+and process-shared attributes are refused. Calls inside prebuilt libc objects
+are not remapped; this source port is not signed runtime qualification.
+
+New cooperative-runtime captures also select bounded, unnamed process-local
+semaphores. `sem_wait` parks its original admitted Wait and `sem_post` hands a
+permit to one waiting caller before waking it. The port supports `sem_init`,
+`sem_destroy`, `sem_getvalue`, `sem_trywait`, `sem_wait` and `sem_post`, with
+`-1`/`errno` errors and the pinned `INT_MAX` count bound. Timed waits
+and process-shared semaphores return `ENOTSUP`; named semaphores and calls
+inside prebuilt libc objects are not supported. Cancellation traps the
+activation and retains the existing owners rather than reporting a successful
+wait. Source controls are not signed-node or actual-engine qualification.
+
+New cooperative-runtime captures also select reusable process-local pthread
+barriers for 1 through 33 participants. Each nonfinal participant retains its
+own admitted Wait until the last arrival releases that generation; exactly one
+participant receives `PTHREAD_BARRIER_SERIAL_THREAD`. A zero count returns
+`EINVAL`, counts above 33 return `EAGAIN`, and process-shared attributes return
+`ENOTSUP`. Calls inside prebuilt libc objects are not remapped. This is source
+compatibility, not signed-node or actual-engine qualification.
+
 `include/lsf/ownership.h` defines an explicit bounded scope (32 entries plus a
 caller-selected byte limit). Allocation, adoption, detach and release have
 separate ownership meanings. Close runs remaining cleanup in reverse order;
@@ -115,7 +140,14 @@ Flags such as `AI_ADDRCONFIG` and `AI_PASSIVE` return `EAI_BADFLAGS`. IPv6 retur
 `EAI_FAMILY`, and datagram or non-TCP requests return `EAI_SOCKTYPE`. Each
 successful call owns a separate result in the original bounded guest memory;
 `freeaddrinfo` releases it. The result is not an endpoint grant, and legacy
-hostname lookup functions remain unavailable.
+hostname lookup functions remain unavailable. `gai_strerror` provides static
+C-locale messages for resolver error codes without consulting a host resolver.
+`getnameinfo` renders a supplied IPv4 address or port only when the requested
+output has `NI_NUMERICHOST` or `NI_NUMERICSERV`, respectively; it performs no
+reverse lookup or service-name lookup and creates no endpoint grant. A requested
+non-numeric result returns `EAI_NONAME`, and a short output returns
+`EAI_OVERFLOW`. Other flags return `EAI_BADFLAGS`; for example, unlike native
+implementations, `NI_NUMERICHOST | NI_NAMEREQD` is rejected as unsupported.
 
 The captured component build selects this implementation when it is present
 in the project's verified SDK snapshot. Previously captured projects without
@@ -136,13 +168,20 @@ descriptor is refused. Exceptional descriptor sets, descriptor `poll`, nonblocki
 socket option changes, local bind, IPv6 and unsupported message flags are refused;
 `SO_TYPE` is observable, with output truncated to the supplied buffer length,
 and TLS is not supplied by this profile.
+`SO_RCVTIMEO` can be named by selected source, but `setsockopt` returns
+`ENOTSUP` for it, including a zero value. Libraries that ignore this error do
+not receive their requested socket deadline; use only their untimed mode with
+this profile, subject to the original provider and activation deadlines.
 Selected-source `send` accepts `MSG_NOSIGNAL` (using the pinned WASI preview2
 value `0x4000`) with the same write and error behavior as flag zero. The adapter
 does not raise `SIGPIPE`, with or without this flag. The flag does not enable
 signals or other message flags. Other `send` flags and every nonzero `recv` flag
 are refused.
 `SOCK_CLOEXEC` at creation and `F_GETFD`/`F_SETFD` retain the descriptor's
-`FD_CLOEXEC` flag. Other descriptor flags and duplication remain unsupported;
+`FD_CLOEXEC` flag. `F_SETFL` accepts only `0` or `O_RDWR`, which preserve the
+already-blocking descriptor state; nonblocking and other status flags are
+refused. This operation does not qualify a TLS client. Other descriptor flags
+and duplication remain unsupported;
 this profile does not provide process execution or descriptor inheritance.
 `POLLPRI` for a live descriptor is never silently ignored. Descriptor-free
 timer polls retain the existing timed runtime and accept at most 64 ignored

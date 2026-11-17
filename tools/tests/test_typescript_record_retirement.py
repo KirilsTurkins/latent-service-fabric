@@ -324,13 +324,30 @@ OWNER_RETRY_CASES = (
     'import-result-retry', 'import-lowering-retry', 'import-record-retry',
     'import-turn-fence', 'import-lower-fence', 'import-lift-fence',
     'import-partial-admission', 'import-partial-buffer',
+    'import-param-cleanup-queue-fence', 'import-param-cleanup-task-fence',
+    'import-result-cleanup-queue-fence', 'import-result-cleanup-task-fence',
+    'import-array-cleanup-queue-fence', 'import-array-cleanup-task-fence',
+    'import-promise-cleanup-queue-fence', 'import-promise-cleanup-task-fence',
+    'import-allocation-result-ack-fence', 'import-allocation-native-ack-fence',
+    'import-allocation-record-ack-fence',
+    'import-dispatched-cleanup-fence', 'import-dispatched-cancel-fence',
+    'import-partial-rollback-native', 'import-partial-rollback-queue', 'import-partial-rollback-task',
+    'import-partial-admission-physical-order',
     'import-readiness-denied-before-dispatch',
-    'import-immediate-readiness-retired',
+    'import-immediate-readiness-retired', 'import-delivered-completion',
+    'import-delivered-completion-retry', 'import-delivered-completion-then-result-retry',
+    'borrow-delivered-completion', 'borrow-delivered-completion-retry',
+    'import-undelivered-lift-quarantine', 'borrow-undelivered-lift-quarantine',
     'import-park-refused-late-return', 'import-park-refused-late-cancel',
     'import-queue-refused-late-return', 'import-queue-refused-late-cancel',
     'import-park-refused-immediate-return', 'import-queue-refused-immediate-return',
     'import-join-refusal-retains-subtask',
-    'import-disposer-quarantine', 'lazy-synchronous', 'repeated-generations',
+    'import-disposer-quarantine', 'borrow-unallocated-cleanup', 'borrow-unallocated-ack-retry',
+    'borrow-partial-setup-quarantine', 'borrow-published-release',
+    'partial-cancel-undispatched', 'partial-delivered-completion-retry',
+    'partial-borrow-completion-retry', 'partial-cancel-retry',
+    'partial-cancel-pending', 'partial-cancel-returned', 'partial-regular-ack-retry', 'partial-failed-ack-fences-prepare',
+    'partial-cancel-reentrant-ack', 'partial-cancel-quarantine', 'lazy-synchronous', 'repeated-generations',
     'native-live-slot', 'snapshot-live-slot', 'accepted-after-root',
     'timer-false-return', 'timer-exception',
 )
@@ -341,7 +358,7 @@ def write_owner_retry_includes(directory: Path) -> None:
     (directory / 'js').mkdir(parents=True)
     shutil.copyfile(ROOT / 'tools/tests/fixtures/typescript_record_retirement/owner_retry.h', directory / 'jsapi.h')
     for name in ('Array', 'BigInt', 'CallAndConstruct', 'Class', 'Conversions',
-                 'GCAPI', 'Object', 'Promise', 'Realm', 'RootingAPI', 'TypeDecls', 'ValueArray'):
+                 'GCAPI', 'Id', 'Object', 'Promise', 'PropertyAndElement', 'Realm', 'RootingAPI', 'TypeDecls', 'ValueArray'):
         (directory / 'js' / (name + '.h')).write_text('#pragma once\n#include "../jsapi.h"\n')
     original = ROOT / 'tools/tests/fixtures/typescript_record_retirement/jobs.h'
     (directory / 'jobs.h').write_text(
@@ -388,9 +405,11 @@ class OwnerRetryTests(unittest.TestCase):
                 self.assertEqual(row['case'], case)
                 self.assertIs(row['passed'], True)
                 self.assertIs(row['engineQualified'], False)
-                # Refused non-retryable disposal is retention, never successful
-                # cleanup. Every other scenario proves all original ACKs once.
-                if case == 'import-disposer-quarantine':
+                # Quarantined physical state retains its original owners.
+                # Every other scenario proves all original ACKs once.
+                if case in ('import-disposer-quarantine', 'borrow-partial-setup-quarantine',
+                            'import-undelivered-lift-quarantine', 'borrow-undelivered-lift-quarantine', 'partial-cancel-quarantine',
+                            'partial-cancel-reentrant-ack'):
                     self.assertGreater(row['retainedOwners'], 0)
                 else:
                     self.assertEqual(row['retainedOwners'], 0)
@@ -398,6 +417,17 @@ class OwnerRetryTests(unittest.TestCase):
                     self.assertEqual(row['peakNativeOwners'], 0)
                     self.assertEqual(row['peakLoweringBufferBytes'], 0)
                     self.assertEqual(row['callbacks'], 0)
+
+    def test_engine_cancellation_retires_imports_before_partial_sidecars(self):
+        source = (ROOT / 'sdk/typescript-guest/activation/native_engine.cpp').read_text(encoding='utf-8')
+        start = 'bool cancel_job_dispatch(JSContext* cx) {'
+        end = '\n}\n\nbool start_timer'
+        self.assertEqual(source.count(start), 1)
+        self.assertEqual(source.count(end), 1)
+        body = source.split(start, 1)[1].split(end, 1)[0]
+        self.assertLess(body.index('partial_own.cancelAll();'),
+                        body.index('imports.cancelAll(cx) && partial_own.collectCancelled(cx)'))
+        self.assertIn('imports_retired && readiness.retire(cx)', body)
 
 
 class QueueCancellationTests(unittest.TestCase):

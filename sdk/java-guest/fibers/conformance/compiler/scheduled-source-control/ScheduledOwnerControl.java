@@ -208,6 +208,19 @@ public final class ScheduledOwnerControl {
             }
         }
     }
+    // Exercise the same private identity check after the scheduler reserves a
+    // startup slot. The fixed executor retains its original startWorker path.
+    private static void startWorker(java.util.concurrent.ExecutorService pool, boolean scheduled) throws Exception {
+        if (!scheduled) {
+            var start = pool.getClass().getDeclaredMethod("startWorker"); start.setAccessible(true); start.invoke(pool);
+            return;
+        }
+        var reserve = pool.getClass().getDeclaredMethod("reserveWorker"); reserve.setAccessible(true);
+        require((boolean)reserve.invoke(pool));
+        var entry = Class.forName(pool.getClass().getName() + "$Entry");
+        var start = pool.getClass().getDeclaredMethod("startReserved", entry); start.setAccessible(true);
+        start.invoke(pool, (Object)null);
+    }
     private static void duplicateRetainedWorker() throws Exception {
         for (boolean scheduled : new boolean[]{false, true}) {
             AtomicReference<Runnable> first = new AtomicReference<>(), second = new AtomicReference<>();
@@ -219,13 +232,12 @@ public final class ScheduledOwnerControl {
                 if (first.get() == null) first.set(task); else second.set(task);
                 return shared;
             });
-            var start = pool.getClass().getDeclaredMethod("startWorker"); start.setAccessible(true);
             Activation.retainFailedStart = true;
             try {
                 synchronized (pool) {
-                    try { start.invoke(pool); throw new AssertionError("first-start-succeeded"); }
+                    try { startWorker(pool, scheduled); throw new AssertionError("first-start-succeeded"); }
                     catch (java.lang.reflect.InvocationTargetException error) { require(error.getCause() == failure); }
-                    try { start.invoke(pool); throw new AssertionError("duplicate-start-succeeded"); }
+                    try { startWorker(pool, scheduled); throw new AssertionError("duplicate-start-succeeded"); }
                     catch (java.lang.reflect.InvocationTargetException error) { require(error.getCause() instanceof IllegalThreadStateException); }
                 }
                 require(workers(pool).size() == 1 && workers(pool).get(0) == shared
@@ -255,9 +267,8 @@ public final class ScheduledOwnerControl {
                 release.countDown(); pool.shutdown(); require(pool.awaitTermination(5, TimeUnit.SECONDS));
                 original.get().join(5000); require(!original.get().isAlive());
             }
-            var start = pool.getClass().getDeclaredMethod("startWorker"); start.setAccessible(true);
             synchronized (pool) {
-                try { start.invoke(pool); throw new AssertionError("duplicate-start-succeeded"); }
+                try { startWorker(pool, scheduled); throw new AssertionError("duplicate-start-succeeded"); }
                 catch (java.lang.reflect.InvocationTargetException error) {
                     if (completed) require(error.getCause() instanceof IllegalThreadStateException);
                     else require(error.getCause() instanceof java.util.concurrent.RejectedExecutionException);

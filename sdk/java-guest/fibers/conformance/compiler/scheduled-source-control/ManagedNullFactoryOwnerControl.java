@@ -237,6 +237,142 @@ public final class ManagedNullFactoryOwnerControl {
         }
         Activation.idle();
     }
+    private static void nestedInitialWithdrawal() throws Exception {
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<Future<?>> first = new AtomicReference<>(), second = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            if (attempts.incrementAndGet() == 1) {
+                first.set(selected.get().submit(calls::incrementAndGet));
+                second.set(selected.get().submit(calls::incrementAndGet));
+            }
+            return null;
+        });
+        selected.set(pool);
+        var outer = pool.submit(calls::incrementAndGet);
+        require(attempts.get() == 2 && ((Activation.ManagedPool)pool).hasPendingWork()); held(3, 3, 1);
+        List<Runnable> removed = pool.shutdownNow();
+        require(removed.size() == 3 && removed.get(0) == first.get() && removed.get(1) == second.get()
+            && removed.get(2) == outer && calls.get() == 0);
+        require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0, 0);
+        require(first.get().cancel(false) && second.get().cancel(false) && outer.cancel(false)); Activation.idle();
+    }
+    private static void nestedInitialFallbackThrow() throws Exception {
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<Future<?>> nested = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        var failure = new IllegalStateException("nested-initial-fallback-failed");
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            if (attempts.incrementAndGet() == 1) {
+                nested.set(selected.get().submit(calls::incrementAndGet));
+                return null;
+            }
+            throw failure;
+        });
+        selected.set(pool);
+        Runnable outer = calls::incrementAndGet;
+        try { pool.execute(outer); throw new AssertionError("missing-fallback-failure"); }
+        catch (IllegalStateException actual) { require(actual == failure); }
+        require(attempts.get() == 2 && ((Activation.ManagedPool)pool).hasPendingWork()); held(2, 1, 1);
+        List<Runnable> removed = pool.shutdownNow();
+        require(removed.size() == 2 && removed.get(0) == nested.get() && removed.get(1) == outer && calls.get() == 0);
+        require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0, 0);
+        require(nested.get().cancel(false)); Activation.idle();
+    }
+    private static void nestedInitialShutdown() throws Exception {
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<Future<?>> nested = new AtomicReference<>();
+        AtomicReference<List<Runnable>> removed = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            attempts.incrementAndGet();
+            nested.set(selected.get().submit(calls::incrementAndGet));
+            removed.set(selected.get().shutdownNow());
+            return null;
+        });
+        selected.set(pool);
+        var outer = pool.submit(calls::incrementAndGet);
+        require(attempts.get() == 1 && removed.get().size() == 2 && removed.get().get(0) == outer
+            && removed.get().get(1) == nested.get() && calls.get() == 0);
+        require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0, 0);
+        require(nested.get().cancel(false) && outer.cancel(false)); Activation.idle();
+    }
+    private static void nestedInitialRotationFailure() throws Exception {
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<Future<?>> nested = new AtomicReference<>();
+        AtomicInteger calls = new AtomicInteger();
+        var failure = new IllegalStateException("synthetic-queue-append-failure");
+        class FaultDeque<E> extends java.util.ArrayDeque<E> {
+            boolean armed;
+            @Override public void addLast(E item) {
+                if (armed) { armed = false; throw failure; }
+                super.addLast(item);
+            }
+        }
+        var queue = new FaultDeque<>();
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            nested.set(selected.get().submit(calls::incrementAndGet));
+            queue.armed = true;
+            return null;
+        });
+        selected.set(pool);
+        var field = pool.getClass().getDeclaredField("queue"); field.setAccessible(true);
+        field.set(pool, queue);
+        try { pool.submit(calls::incrementAndGet); throw new AssertionError("missing-queue-failure"); }
+        catch (IllegalStateException actual) { require(actual == failure); }
+        require(((Activation.ManagedPool)pool).hasPendingWork() && calls.get() == 0); held(1, 1, 1);
+        List<Runnable> removed = pool.shutdownNow();
+        require(removed.size() == 1 && removed.get(0) == nested.get() && calls.get() == 0);
+        require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0, 0);
+        require(nested.get().cancel(false)); Activation.idle();
+    }
+    private static void nestedOuterAlreadyRunning() throws Exception {
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<Future<?>> nested = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        CountDownLatch firstEntered = new CountDownLatch(1), releaseFirst = new CountDownLatch(1);
+        CountDownLatch outerEntered = new CountDownLatch(1), releaseOuter = new CountDownLatch(1);
+        var pool = Executors.newFixedThreadPool(2, target -> {
+            if (attempts.incrementAndGet() == 1) return new Thread(target);
+            nested.set(selected.get().submit(() -> { throw new AssertionError("withdrawn-nested-ran"); }));
+            releaseFirst.countDown();
+            Object monitor = selected.get();
+            synchronized (monitor) {
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+                while (outerEntered.getCount() != 0) {
+                    long remaining = deadline - System.nanoTime();
+                    if (remaining <= 0) throw new AssertionError("outer-did-not-start");
+                    try { TimeUnit.NANOSECONDS.timedWait(monitor, remaining); }
+                    catch (InterruptedException error) { throw new AssertionError(error); }
+                }
+            }
+            return null;
+        });
+        selected.set(pool);
+        try {
+            var first = pool.submit(() -> {
+                firstEntered.countDown();
+                try { releaseFirst.await(); } catch (InterruptedException error) { Thread.currentThread().interrupt(); }
+            });
+            await(firstEntered);
+            var outer = pool.submit(() -> {
+                calls.incrementAndGet(); outerEntered.countDown();
+                synchronized (selected.get()) { selected.get().notifyAll(); }
+                while (true) try { releaseOuter.await(); return; } catch (InterruptedException ignored) { }
+            });
+            first.get(5, TimeUnit.SECONDS);
+            require(attempts.get() == 2 && calls.get() == 1 && !outer.isDone()); held(1, 2, 1);
+            List<Runnable> removed = pool.shutdownNow();
+            require(removed.size() == 1 && removed.get(0) == nested.get()); held(0, 1, 1);
+            releaseOuter.countDown(); outer.get(5, TimeUnit.SECONDS);
+            require(pool.awaitTermination(5, TimeUnit.SECONDS) && calls.get() == 1 && nested.get().cancel(false));
+            held(0, 0, 0);
+        } finally {
+            releaseFirst.countDown(); releaseOuter.countDown();
+            pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS));
+        }
+        Activation.idle();
+    }
     private static void nestedFallbackThrow() throws Exception {
         AtomicReference<ExecutorService> selected = new AtomicReference<>();
         AtomicReference<Future<?>> nested = new AtomicReference<>();
@@ -410,6 +546,11 @@ public final class ManagedNullFactoryOwnerControl {
             case "preferred-running-shutdown" -> preferredRunningShutdown();
             case "preferred-withdrawn" -> preferredWithdrawn();
             case "preference-exhaustion" -> preferenceExhaustion();
+            case "nested-initial-withdrawal" -> nestedInitialWithdrawal();
+            case "nested-initial-fallback-throw" -> nestedInitialFallbackThrow();
+            case "nested-initial-shutdown" -> nestedInitialShutdown();
+            case "nested-initial-rotation-failure" -> nestedInitialRotationFailure();
+            case "nested-outer-already-running" -> nestedOuterAlreadyRunning();
             case "fallback-shutdown" -> fallbackShutdown("none");
             case "fallback-denied" -> fallbackShutdown("denied");
             case "fallback-lost" -> fallbackShutdown("lost");
