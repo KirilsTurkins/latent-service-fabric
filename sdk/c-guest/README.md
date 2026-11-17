@@ -66,6 +66,16 @@ sustained readers can starve a writer. Timed rwlock operations return `ENOTSUP`,
 and process-shared attributes are refused. Calls inside prebuilt libc objects
 are not remapped; this source port is not signed runtime qualification.
 
+New cooperative-runtime captures also select bounded, unnamed process-local
+semaphores. `sem_wait` parks its original admitted Wait and `sem_post` hands a
+permit to one waiting caller before waking it. The port supports `sem_init`,
+`sem_destroy`, `sem_getvalue`, `sem_trywait`, `sem_wait` and `sem_post`, with
+`-1`/`errno` errors and the pinned `INT_MAX` count bound. Timed waits
+and process-shared semaphores return `ENOTSUP`; named semaphores and calls
+inside prebuilt libc objects are not supported. Cancellation traps the
+activation and retains the existing owners rather than reporting a successful
+wait. Source controls are not signed-node or actual-engine qualification.
+
 `include/lsf/ownership.h` defines an explicit bounded scope (32 entries plus a
 caller-selected byte limit). Allocation, adoption, detach and release have
 separate ownership meanings. Close runs remaining cleanup in reverse order;

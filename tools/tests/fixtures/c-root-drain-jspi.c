@@ -1,4 +1,13 @@
-#if defined(LSF_C_CREATE_CONTROL)
+#if defined(LSF_C_SEMAPHORE_CLIENT)
+/* Ordinary caller compiled with the real pinned semaphore.h and SDK defines. */
+#include <semaphore.h>
+int semaphore_client(sem_t *object,const struct timespec *deadline,int *value) {
+    int result=sem_init(object,0,1);
+    result+=sem_getvalue(object,value);result+=sem_trywait(object);result+=sem_wait(object);
+    result+=sem_post(object);result+=sem_timedwait(object,deadline);result+=sem_destroy(object);
+    return result;
+}
+#elif defined(LSF_C_CREATE_CONTROL)
 /* Actual create/discard source with explicit finite broker and JSPI ports.
  * No libc errno getter, canonical runtime or real activation ledger runs. */
 #include <errno.h>
@@ -227,5 +236,26 @@ int rw_again(void) { return EAGAIN; }
 int rw_notsup(void) { return ENOTSUP; }
 int rw_perm(void) { return EPERM; }
 int rw_deadlock(void) { return EDEADLK; }
+#endif
+#if defined(LSF_C_SEMAPHORES) && LSF_C_SEMAPHORES
+static sem_t test_semaphore;
+int ss_setup(unsigned count) { memset(&test_semaphore,0,sizeof(test_semaphore));return sem_init(&test_semaphore,0,count); }
+int ss_shared(void) { return sem_init(&test_semaphore,1,0); }
+int ss_invalid(void) { return sem_init(&test_semaphore,0,UINT32_MAX); }
+int ss_destroy(void) { return sem_destroy(&test_semaphore); }
+int ss_getvalue(void) { int value=-1;return sem_getvalue(&test_semaphore,&value)==0?value:-1; }
+int ss_wait(void) { return sem_wait(&test_semaphore); }
+int ss_trywait(void) { return sem_trywait(&test_semaphore); }
+int ss_post(void) { return sem_post(&test_semaphore); }
+int ss_timedwait(void) { return sem_timedwait(&test_semaphore,NULL); }
+void ss_pause_admission(void) { pause_admission=2; }
+void ss_refuse_wait(unsigned value) { refuse_wait=value; }
+int ss_errno(void) { return fake_errno; }
+int ss_eagain(void) { return EAGAIN; }
+int ss_ebusy(void) { return EBUSY; }
+int ss_einval(void) { return EINVAL; }
+int ss_overflow(void) { return EOVERFLOW; }
+int ss_notsup(void) { return ENOTSUP; }
+int ss_intmax(void) { return INT_MAX; }
 #endif
 #endif

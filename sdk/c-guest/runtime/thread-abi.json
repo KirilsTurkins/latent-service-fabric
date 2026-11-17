@@ -3,7 +3,8 @@
   "status": "source-prototype-unselected",
   "target": "wasm32-wasi",
   "optionalPorts": {
-    "rwlock": "c-cooperative-rwlock-v1"
+    "rwlock": "c-cooperative-rwlock-v1",
+    "semaphore": "c-cooperative-semaphore-v1"
   },
   "compiler": {
     "zig": "0.16.0",
@@ -61,6 +62,12 @@
     "pthread_rwlock_wrlock",
     "pthread_rwlock_trywrlock",
     "pthread_rwlock_unlock",
+    "sem_init",
+    "sem_destroy",
+    "sem_getvalue",
+    "sem_trywait",
+    "sem_wait",
+    "sem_post",
     "mtx_init",
     "mtx_lock",
     "mtx_trylock",
@@ -82,6 +89,7 @@
     "mutexConditionTimedWait": "source implementation only when the selected standard clock PAL is composed; actual timed component execution remains unqualified",
     "mutexConditionVariables": "source implementation: normal/recursive/errorcheck pthread mutexes, plain/recursive C11 mutexes, untimed condition waits, signal and broadcast; signed execution remains required",
     "rwlock": "selected source only: default attributes, recursive shared readers and exclusive writers with admitted Wait owners; reader priority can starve writers; timed operations explicitly return ENOTSUP",
+    "semaphore": "selected source only: unnamed process-local counting semaphores with admitted Wait owners; timed waits and process sharing return ENOTSUP; named semaphores are not supported",
     "cpuCheckpointsAndAtomics": "not implemented; current transform rejects actual atomics",
     "setjmpLongjmp": "not supported by selected continuation ABI",
     "registryRecords": 32,

@@ -6,6 +6,9 @@
  * Robust and process-shared synchronization remain unsupported.
  */
 #include <limits.h>
+#if defined(LSF_C_SEMAPHORES) && LSF_C_SEMAPHORES && !defined(_SEMAPHORE_H)
+#include <semaphore.h>
+#endif
 
 __attribute__((import_module("$root"),import_name("[thread-suspend]")))
 uint32_t __lsf_c_sync_suspend(void);
@@ -490,6 +493,105 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *restrict object,const struct ti
 }
 int pthread_rwlock_timedwrlock(pthread_rwlock_t *restrict object,const struct timespec *restrict deadline) {
     (void)object;(void)deadline;return ENOTSUP;
+}
+#endif
+
+#if defined(LSF_C_SEMAPHORES) && LSF_C_SEMAPHORES
+/* Unnamed, process-local semaphores in the pinned memory32 sem_t. A posted
+ * permit is handed to one original admitted Wait before it can resume; it is
+ * never recreated if the activation is cancelled while that waiter owns it. */
+#define SYNC_SEM_INITIALIZED UINT32_C(0x80000000)
+struct sync_sem {
+    uint32_t tagged_value;
+    struct sync_wait *head,*tail;
+    uint32_t waiters;
+};
+_Static_assert(sizeof(struct sync_sem)==sizeof(sem_t),"pinned semaphore layout");
+_Static_assert(INT_MAX==2147483647,"pinned semaphore value bound");
+#ifdef SEM_VALUE_MAX
+_Static_assert(SEM_VALUE_MAX==INT_MAX,"pinned public semaphore maximum");
+#endif
+static struct sync_sem sync_sem_read(const sem_t *object) {
+    struct sync_sem value;memcpy(&value,object,sizeof(value));return value;
+}
+static void sync_sem_write(sem_t *object,struct sync_sem value) { memcpy(object,&value,sizeof(value)); }
+static int sync_sem_valid(struct sync_sem value) {
+    return (value.tagged_value&SYNC_SEM_INITIALIZED) && value.waiters<=RECORD_LIMIT+1u &&
+        ((value.head==NULL)==(value.tail==NULL)) && ((value.waiters==0)==(value.head==NULL)) &&
+        (!value.waiters || value.tagged_value==SYNC_SEM_INITIALIZED);
+}
+static int sync_sem_error(int error) { errno=error;return -1; }
+int sem_init(sem_t *object,int shared,unsigned initial) {
+    if (!object || initial>(unsigned)INT_MAX) return sync_sem_error(EINVAL);
+    if (shared) return sync_sem_error(ENOTSUP);
+    sync_sem_write(object,(struct sync_sem){.tagged_value=SYNC_SEM_INITIALIZED|initial});return 0;
+}
+int sem_destroy(sem_t *object) {
+    if (!object) return sync_sem_error(EINVAL);
+    struct sync_sem value=sync_sem_read(object);
+    if (!sync_sem_valid(value)) return sync_sem_error(EINVAL);
+    if (value.waiters) return sync_sem_error(EBUSY);
+    sync_sem_write(object,(struct sync_sem){0});return 0;
+}
+int sem_getvalue(sem_t *restrict object,int *restrict result) {
+    if (!object || !result) return sync_sem_error(EINVAL);
+    struct sync_sem value=sync_sem_read(object);
+    if (!sync_sem_valid(value)) return sync_sem_error(EINVAL);
+    *result=(int)(value.tagged_value&~SYNC_SEM_INITIALIZED);return 0;
+}
+static int sync_sem_take(sem_t *object) {
+    if (!object) return EINVAL;
+    struct sync_sem value=sync_sem_read(object);
+    if (!sync_sem_valid(value)) return EINVAL;
+    if (value.tagged_value==SYNC_SEM_INITIALIZED) return EAGAIN;
+    --value.tagged_value;sync_sem_write(object,value);
+    __atomic_signal_fence(__ATOMIC_ACQUIRE);return 0;
+}
+int sem_trywait(sem_t *object) {
+    int error=sync_sem_take(object);return error?sync_sem_error(error):0;
+}
+int sem_wait(sem_t *object) {
+    int saved=errno,error=sync_sem_take(object);
+    if (!error) { errno=saved;return 0; }
+    if (error!=EAGAIN) return sync_sem_error(error);
+    struct sync_wait node;error=sync_begin(&node);
+    if (error) return sync_sem_error(error);
+    /* Owner admission can suspend; consume a newly posted permit first. */
+    error=sync_sem_take(object);
+    if (error==EAGAIN) {
+        struct sync_sem value=sync_sem_read(object);
+        if (value.waiters>=RECORD_LIMIT+1u) error=EAGAIN;
+        else {
+            node.next=NULL;node.linked=1;node.notified=0;
+            if (value.tail) value.tail->next=&node;else value.head=&node;
+            value.tail=&node;++value.waiters;sync_sem_write(object,value);
+            sync_await(&node);require(!node.linked && node.notified);
+            __atomic_signal_fence(__ATOMIC_ACQUIRE);error=0;
+        }
+    }
+    sync_end(&node);
+    if (error) return sync_sem_error(error);
+    errno=saved;return 0;
+}
+int sem_post(sem_t *object) {
+    if (!object) return sync_sem_error(EINVAL);
+    int saved=errno;struct sync_sem value=sync_sem_read(object);
+    if (!sync_sem_valid(value)) return sync_sem_error(EINVAL);
+    struct sync_wait *next=value.head;
+    __atomic_signal_fence(__ATOMIC_RELEASE);
+    if (next) {
+        value.head=next->next;if (!value.head) value.tail=NULL;
+        require(value.waiters);--value.waiters;next->next=NULL;next->linked=0;
+        sync_sem_write(object,value);
+        sync_notify(next); /* no access to its stack node after notification */
+    } else {
+        if ((value.tagged_value&~SYNC_SEM_INITIALIZED)==(uint32_t)INT_MAX) return sync_sem_error(EOVERFLOW);
+        ++value.tagged_value;sync_sem_write(object,value);
+    }
+    errno=saved;return 0;
+}
+int sem_timedwait(sem_t *restrict object,const struct timespec *restrict deadline) {
+    (void)object;(void)deadline;return sync_sem_error(ENOTSUP);
 }
 #endif
 
