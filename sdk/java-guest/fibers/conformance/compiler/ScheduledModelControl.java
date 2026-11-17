@@ -148,7 +148,7 @@ public final class ScheduledModelControl {
         constructedIdentities(models.get(4));
         generatedCallback(models.get(4), "callable", source);
         generatedCallback(models.get(3), "startWorker", source);
-        generatedCallback(managed, "startWorker", source);
+        generatedCallback(managed, "tryStartWorker", source);
         ClassHolder pool = models.get(3);
         require(pool.getField("pendingWork") != null && pool.getField("owner") != null,
             "actual-owned-scheduled-body-selected");
