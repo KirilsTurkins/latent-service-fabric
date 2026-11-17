@@ -215,8 +215,8 @@ impl Owner {
         let waker = self
             .lock_physical()
             .waiter
-            .as_ref()
-            .and_then(|(_, waiter)| waiter.clone());
+            .as_mut()
+            .and_then(|(_, waiter)| waiter.take());
         if let Some(waker) = waker {
             waker.wake();
         }
