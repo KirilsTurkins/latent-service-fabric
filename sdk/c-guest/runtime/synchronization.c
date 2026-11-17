@@ -496,6 +496,94 @@ int pthread_rwlock_timedwrlock(pthread_rwlock_t *restrict object,const struct ti
 }
 #endif
 
+#if defined(LSF_C_BARRIERS) && LSF_C_BARRIERS
+/* A generation keeps each admitted waiter on its original charged stack. The
+ * last participant detaches that generation before exposing any continuation,
+ * so a fast caller can enter the next generation without borrowing old nodes. */
+#define SYNC_BARRIER_MARKER UINT32_C(0x4c534642)
+struct sync_barrier {
+    uint32_t threshold,arrived;
+    struct sync_wait *head,*tail;
+    uint32_t marker;
+};
+_Static_assert(sizeof(struct sync_barrier)==sizeof(pthread_barrier_t),"pinned barrier layout");
+_Static_assert(sizeof(pthread_barrierattr_t)==sizeof(uint32_t),"pinned barrier attribute layout");
+static struct sync_barrier sync_barrier_read(const pthread_barrier_t *object) {
+    struct sync_barrier value;memcpy(&value,object,sizeof(value));return value;
+}
+static void sync_barrier_write(pthread_barrier_t *object,struct sync_barrier value) {
+    memcpy(object,&value,sizeof(value));
+}
+static int sync_barrier_valid(struct sync_barrier value) {
+    return value.marker==SYNC_BARRIER_MARKER && value.threshold>0 && value.threshold<=RECORD_LIMIT+1u &&
+        value.arrived<value.threshold && ((value.head==NULL)==(value.tail==NULL)) &&
+        ((value.arrived==0)==(value.head==NULL));
+}
+int pthread_barrier_init(pthread_barrier_t *restrict object,const pthread_barrierattr_t *restrict attr,
+                         unsigned count) {
+    int saved=errno,error=0;uint32_t flags=0;
+    if (!object || !count) error=EINVAL;
+    else if (count>RECORD_LIMIT+1u) error=EAGAIN;
+    else {
+        if (attr) memcpy(&flags,attr,sizeof(flags));
+        if (flags) error=ENOTSUP;
+        else sync_barrier_write(object,(struct sync_barrier){.threshold=count,.marker=SYNC_BARRIER_MARKER});
+    }
+    errno=saved;return error;
+}
+int pthread_barrier_destroy(pthread_barrier_t *object) {
+    int saved=errno,error=0;
+    if (!object) error=EINVAL;
+    else {
+        struct sync_barrier value=sync_barrier_read(object);
+        if (!sync_barrier_valid(value)) error=EINVAL;
+        else if (value.arrived) error=EBUSY;
+        else sync_barrier_write(object,(struct sync_barrier){0});
+    }
+    errno=saved;return error;
+}
+static void sync_barrier_release(pthread_barrier_t *object,struct sync_barrier value) {
+    struct sync_wait *node=value.head;
+    __atomic_signal_fence(__ATOMIC_RELEASE);
+    value.arrived=0;value.head=value.tail=NULL;sync_barrier_write(object,value);
+    while (node) {
+        struct sync_wait *next=node->next;
+        node->next=NULL;node->linked=0;
+#if LSF_C_TIMED_CLOCK
+        /* Barrier waits have no timer; notification therefore cannot await. */
+        require(!token_live(node->timer));
+#endif
+        sync_notify(node);node=next;
+    }
+    __atomic_signal_fence(__ATOMIC_ACQUIRE);
+}
+int pthread_barrier_wait(pthread_barrier_t *object) {
+    int saved=errno,error;
+    if (!object) { errno=saved;return EINVAL; }
+    struct sync_barrier value=sync_barrier_read(object);
+    if (!sync_barrier_valid(value)) { errno=saved;return EINVAL; }
+    if (value.arrived+1u==value.threshold) {
+        sync_barrier_release(object,value);errno=saved;return PTHREAD_BARRIER_SERIAL_THREAD;
+    }
+    struct sync_wait node;error=sync_begin(&node);
+    if (error) { errno=saved;return error; }
+    /* Admission can suspend. Re-read the active generation before arrival. */
+    value=sync_barrier_read(object);
+    if (!sync_barrier_valid(value)) error=EINVAL;
+    else if (value.arrived+1u==value.threshold) {
+        sync_barrier_release(object,value);error=PTHREAD_BARRIER_SERIAL_THREAD;
+    } else {
+        node.next=NULL;node.linked=1;node.notified=0;
+        if (value.tail) value.tail->next=&node;else value.head=&node;
+        value.tail=&node;++value.arrived;
+        __atomic_signal_fence(__ATOMIC_RELEASE);sync_barrier_write(object,value);
+        sync_await(&node);require(!node.linked && node.notified);
+        __atomic_signal_fence(__ATOMIC_ACQUIRE);error=0;
+    }
+    sync_end(&node);errno=saved;return error;
+}
+#endif
+
 #if defined(LSF_C_SEMAPHORES) && LSF_C_SEMAPHORES
 /* Unnamed, process-local semaphores in the pinned memory32 sem_t. A posted
  * permit is handed to one original admitted Wait before it can resume; it is

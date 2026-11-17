@@ -35,6 +35,8 @@ RWLOCK_PORT = 'c-cooperative-rwlock-v1'
 SEMAPHORE_SYMBOLS = ('sem_init', 'sem_destroy', 'sem_getvalue', 'sem_trywait',
                      'sem_wait', 'sem_post', 'sem_timedwait')
 SEMAPHORE_PORT = 'c-cooperative-semaphore-v1'
+BARRIER_SYMBOLS = ('pthread_barrier_init', 'pthread_barrier_destroy', 'pthread_barrier_wait')
+BARRIER_PORT = 'c-cooperative-barrier-v1'
 YIELD_SYMBOLS = ('thrd_yield',)
 ONCE_SYMBOLS = ('pthread_once', '__pthread_once', 'call_once')
 LEGACY_TIME_SYMBOLS = ('nanosleep', 'thrd_sleep')
@@ -118,6 +120,9 @@ SEMAPHORE_LIBC = {
     'lib/libc/include/generic-musl/semaphore.h': '75b08ab57e6dc8d1fd6745404375d3caef99dec66f4bcbd423c77a9078c52912',
     'lib/libc/include/wasm-wasi-musl/limits.h': '1254342638cdb1a152ec700d47d566893fa81427ef151c1d9a69544e007e7733',
 }
+BARRIER_LIBC = {
+    'lib/libc/include/wasm-wasi-musl/bits/alltypes.h': '64fc420ff336e0b2e67f5b0ed78d108aa419d5d1ad093acb1e25b38a6d9eb038',
+}
 
 
 def linked_defines(defines, *, timed_clock=False, time_response=False):
@@ -147,7 +152,8 @@ def captured_optional_ports(runtime):
     if ports is None:
         return {}
     if type(ports) is not dict or ports not in (
-            {'rwlock': RWLOCK_PORT}, {'rwlock': RWLOCK_PORT, 'semaphore': SEMAPHORE_PORT}):
+            {'rwlock': RWLOCK_PORT}, {'rwlock': RWLOCK_PORT, 'semaphore': SEMAPHORE_PORT},
+            {'rwlock': RWLOCK_PORT, 'semaphore': SEMAPHORE_PORT, 'barrier': BARRIER_PORT}):
         raise ValueError('c-threading-invalid-optional-ports')
     return ports
 
@@ -158,6 +164,10 @@ def captured_rwlock_port(runtime):
 
 def captured_semaphore_port(runtime):
     return 'semaphore' in captured_optional_ports(runtime)
+
+
+def captured_barrier_port(runtime):
+    return 'barrier' in captured_optional_ports(runtime)
 
 
 def rwlock_defines(defines):
@@ -172,6 +182,13 @@ def semaphore_defines(defines):
     if any(value.split('=', 1)[0] in reserved for value in defines):
         raise ValueError('c-threading-compiler-owned-semaphore-symbol')
     return (*defines, 'LSF_C_SEMAPHORES=1', *(name + '=__lsf_c_' + name for name in SEMAPHORE_SYMBOLS))
+
+
+def barrier_defines(defines):
+    reserved = {'LSF_C_BARRIERS', *BARRIER_SYMBOLS, *('__lsf_c_' + name for name in BARRIER_SYMBOLS)}
+    if any(value.split('=', 1)[0] in reserved for value in defines):
+        raise ValueError('c-threading-compiler-owned-barrier-symbol')
+    return (*defines, 'LSF_C_BARRIERS=1', *(name + '=__lsf_c_' + name for name in BARRIER_SYMBOLS))
 
 
 def timed_alias_response(sdk):
@@ -215,6 +232,19 @@ def semaphore_libc_material_name(path):
     if path not in SEMAPHORE_LIBC:
         raise ValueError('c-threading-original-libc-semaphore-material-path')
     return 'c-threading-semaphore-' + str(sorted(SEMAPHORE_LIBC).index(path))
+
+
+def barrier_libc_inputs(zig):
+    paths = {name: zig.parent / name for name in BARRIER_LIBC}
+    if any(digest(read_file(path, 32768)) != 'sha256:' + BARRIER_LIBC[name] for name, path in paths.items()):
+        raise ValueError('c-threading-original-libc-barrier-preimage')
+    return paths
+
+
+def barrier_libc_material_name(path):
+    if path not in BARRIER_LIBC:
+        raise ValueError('c-threading-original-libc-barrier-material-path')
+    return 'c-threading-barrier-' + str(sorted(BARRIER_LIBC).index(path))
 
 
 def clock_libc_inputs(zig):

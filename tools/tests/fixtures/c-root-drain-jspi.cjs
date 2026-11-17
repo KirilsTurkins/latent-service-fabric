@@ -250,6 +250,74 @@ async function semaphoreControls(module){
  }
  console.log('PASS semaphore source: permits, wait ownership, races, refusal and cancellation; JSPI test ports only');
 }
+async function barrierControls(module){
+ {
+  const h=harness(module,0),e=h.root.exports;
+  assert.equal(e.bar_setup(1),0);assert.equal(e.bar_wait(),e.bar_serial());
+  assert.equal(e.bar_wait(),e.bar_serial());assert.equal(e.read_admitted(),0);
+  assert.equal(e.bar_invalid(),e.bar_einval());assert.equal(e.bar_above(),e.bar_eagain());
+  assert.equal(e.bar_shared(),e.bar_notsup());assert.equal(e.bar_wait(),e.bar_serial());
+  assert.equal(e.bar_destroy(),0);assert.equal(e.bar_wait(),e.bar_einval());assert.equal(e.bar_errno(),37);
+  assert.equal(e.bar_setup(33),0);assert.equal(e.bar_destroy(),0);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;assert.equal(e.bar_setup(3),0);
+  const a=WebAssembly.promising(h.first.exports.bar_wait)(),b=WebAssembly.promising(h.second.exports.bar_wait)();
+  await until(()=>h.parkCounts[11]===1 && h.parkCounts[12]===1,'three-party barrier waiters');
+  assert.equal(e.read_live(),2);assert.equal(e.bar_destroy(),e.bar_ebusy());
+  assert.equal(e.bar_wait(),e.bar_serial());assert.deepEqual(await Promise.all([a,b]),[0,0]);
+  assert.equal(e.read_admitted(),2);assert.equal(e.read_settled(),2);assert.equal(e.read_live(),0);
+  assert.equal(e.bar_destroy(),0);assert.equal(e.bar_errno(),37);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;assert.equal(e.bar_setup(2),0);
+  const first=WebAssembly.promising(h.first.exports.bar_wait)();
+  await until(()=>h.parkCounts[11]===1,'first barrier generation');
+  assert.equal(e.bar_wait(),e.bar_serial());
+  const next=WebAssembly.promising(e.bar_wait)();
+  await until(()=>h.parkCounts[10]===1,'next generation before first waiter returns');
+  assert.equal(await first,0);assert.equal(h.first.exports.bar_wait(),e.bar_serial());
+  assert.equal(await next,0);assert.equal(e.read_admitted(),2);assert.equal(e.read_settled(),2);
+  assert.equal(e.read_live(),0);assert.equal(e.bar_destroy(),0);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;assert.equal(e.bar_setup(2),0);e.bar_refuse_wait(1);
+  assert.equal(await WebAssembly.promising(h.first.exports.bar_wait)(),e.bar_eagain());
+  assert.equal(e.bar_errno(),37);assert.equal(e.read_live(),0);assert.equal(e.read_admitted(),0);
+  assert.equal(e.bar_destroy(),0);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;assert.equal(e.bar_setup(2),0);e.bar_pause_admission();
+  const first=WebAssembly.promising(h.first.exports.bar_wait)();await h.admitted.promise;
+  const second=WebAssembly.promising(h.second.exports.bar_wait)();
+  await until(()=>h.parkCounts[12]===1,'arrival while another admission is held');
+  assert.equal(e.read_live(),2);assert.equal(e.bar_destroy(),e.bar_ebusy());h.admit.resolve();
+  assert.equal(await first,e.bar_serial());assert.equal(await second,0);
+  assert.equal(e.read_settled(),2);assert.equal(e.read_live(),0);assert.equal(e.bar_destroy(),0);
+ }
+ {
+  const h=harness(module,2),e=h.root.exports;assert.equal(e.bar_setup(2),0);
+  const first=WebAssembly.promising(e.bar_wait)();await h.parked.promise;
+  assert.equal(h.first.exports.bar_wait(),e.bar_serial());h.park.resolve();
+  assert.equal(await first,0);assert.equal(h.parkCounts[10],0);
+  assert.equal(e.read_settled(),1);assert.equal(e.read_live(),0);assert.equal(e.bar_destroy(),0);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;assert.equal(e.bar_setup(2),0);
+  const waiter=WebAssembly.promising(h.first.exports.bar_wait)();
+  await until(()=>h.parkCounts[11]===1,'cancelled barrier waiter');h.queues[11].shift().resolve(1);
+  await assert.rejects(waiter,WebAssembly.RuntimeError);
+  assert.equal(e.read_live(),1);assert.equal(e.read_settled(),0);assert.equal(e.bar_destroy(),e.bar_ebusy());
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;assert.equal(e.bar_setup(2),0);
+  const waiter=WebAssembly.promising(h.first.exports.bar_wait)();
+  await until(()=>h.parkCounts[11]===1,'released then cancelled barrier waiter');h.cancelOnResume.add(11);
+  assert.equal(e.bar_wait(),e.bar_serial());await assert.rejects(waiter,WebAssembly.RuntimeError);
+  assert.equal(e.read_live(),1);assert.equal(e.read_settled(),0);
+ }
+ console.log('PASS barrier source: reusable generations, wait ownership, races, refusal and cancellation; JSPI test ports only');
+}
 function createHarness(module,options={}){
  const memory=new WebAssembly.Memory({initial:64,maximum:64});
  const contexts=[],last=[],admission=gate(),admissionReached=gate(),settle=gate(),settleReached=gate();
@@ -362,6 +430,20 @@ async function createControls(module){
 (async()=>{
  const module=new WebAssembly.Module(fs.readFileSync(process.argv[2]));
  const mode=process.argv[3]||'all';
+ if(mode==='barrier-baseline'){
+  const e=new WebAssembly.Instance(module,{}).exports;
+  assert.equal(e.baseline_single(),1);assert.equal(e.baseline_attributes(),1);
+  assert.throws(()=>e.baseline_multiple(),WebAssembly.RuntimeError);
+  console.log('PASS pinned WASI barrier: one participant returns, two participants trap, attributes match');return;
+ }
+ if(mode==='barrier-imports'){
+  const imports=WebAssembly.Module.imports(module).filter(value=>value.kind==='function').map(value=>value.name);
+  for(const name of ['pthread_barrier_init','pthread_barrier_destroy','pthread_barrier_wait']){
+   assert.ok(imports.includes('__lsf_c_'+name));assert.ok(!imports.includes(name));
+  }
+  console.log('PASS captured barrier caller: three private SDK imports');return;
+ }
+ if(mode==='barrier'){await barrierControls(module);return;}
  if(mode==='semaphore-imports'){
   const imports=WebAssembly.Module.imports(module).filter(value=>value.kind==='function').map(value=>value.name);
   const expected=['sem_init','sem_destroy','sem_getvalue','sem_trywait','sem_wait','sem_post','sem_timedwait'];

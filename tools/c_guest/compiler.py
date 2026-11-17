@@ -106,6 +106,7 @@ class Compiler:
         self.threading_clock_inputs = {}
         self.threading_poll_inputs = {}
         self.threading_semaphore_inputs = {}
+        self.threading_barrier_inputs = {}
         self.threading_time_alias_checked = False
         self.threading_time_alias = None
         self.threading_time_alias_identity = None
@@ -150,6 +151,19 @@ class Compiler:
                              self.environment, timeout_seconds=min(remaining, 300),
                              max_output_bytes=4 * 1024 * 1024)
         return result.stdout.decode("utf-8")
+
+    def select_threading_barrier_inputs(self) -> None:
+        from tools.c_guest import threading
+        inputs = threading.barrier_libc_inputs(self.paths['zig'])
+        identities = {name: file_identity(path, threading.barrier_libc_material_name(name), 32768)
+                      for name, path in inputs.items()}
+        if self.threading_barrier_inputs:
+            if inputs != self.threading_barrier_inputs or any(
+                    self.materials[name] != identity for name, identity in identities.items()):
+                raise ValueError('c-threading-libc-barrier-input-changed')
+        else:
+            self.threading_barrier_inputs = inputs
+            self.materials.update(identities)
 
     def select_threading_semaphore_inputs(self) -> None:
         from tools.c_guest import threading
@@ -260,6 +274,13 @@ class Compiler:
             for name, path in self.threading_semaphore_inputs.items():
                 if file_identity(path, threading.semaphore_libc_material_name(name), 32768) != self.materials[name]:
                     raise ValueError('c-threading-libc-semaphore-input-changed')
+        if getattr(self, 'threading_barrier_inputs', None):
+            from tools.c_guest import threading
+            if threading.barrier_libc_inputs(self.paths['zig']) != self.threading_barrier_inputs:
+                raise ValueError('c-threading-libc-barrier-input-changed')
+            for name, path in self.threading_barrier_inputs.items():
+                if file_identity(path, threading.barrier_libc_material_name(name), 32768) != self.materials[name]:
+                    raise ValueError('c-threading-libc-barrier-input-changed')
         if getattr(self, 'threading_clock_inputs', None):
             from tools.c_guest import threading
             if threading.clock_libc_inputs(self.paths['zig']) != self.threading_clock_inputs:
@@ -425,6 +446,9 @@ class Compiler:
             if threading.captured_semaphore_port(runtime):
                 self.select_threading_semaphore_inputs()
                 defines = threading.semaphore_defines(defines)
+            if threading.captured_barrier_port(runtime):
+                self.select_threading_barrier_inputs()
+                defines = threading.barrier_defines(defines)
         numeric_resolver = (runtime_profile in standard_facilities.STREAM_PROFILES and
                             self.sdk / 'src' / standard_facilities.RESOLVER_SOURCE in sources)
         defines = standard_facilities.compiler_defines(runtime_profile, defines, numeric_resolver=numeric_resolver)
