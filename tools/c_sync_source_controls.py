@@ -125,6 +125,10 @@ def run(output, zig, node):
         abi = output / 'c-sync-reference-abi.h'
         abi.write_bytes(public_abi(headers))
         original = (ROOT / 'sdk/c-guest/runtime/threads.c').read_text()
+        creation = original[original.index('static void discard_unstarted('):
+            original.index('/* Retain the complete original creation ABI')]
+        creation_body = output / 'c-create-reference-body.h'
+        creation_body.write_bytes(creation.encode())
         find = original[original.index('static struct lsf_c_thread *find('):
             original.index('static int ensure_root_owners(')]
         join = original[original.index('static int join_claim('):original.index('int pthread_join(')]
@@ -183,6 +187,20 @@ def run(output, zig, node):
         require(stdout == b'PASS root drain: existing and later joins, admission and park races, cancellation custody; JSPI test ports only\n',
             'c-root-drain-jspi-source-control-result')
         report['rootDrainScenarios'] = 5
+        create_exports = ('__stack_pointer', 'setup_create', 'caller_pointer', 'start_create',
+            'close_create_root', 'create_count', 'create_list_count', 'create_live',
+            'create_settled', 'create_admissions', 'create_allocations', 'create_frees',
+            'create_eagain', 'create_enomem')
+        command([zig, *flags, '-fno-builtin', '-fno-stack-protector', '-nostdlib',
+            '-DLSF_C_CREATE_CONTROL=1', *wasi, '-Wl,--no-entry', '-Wl,--import-memory',
+            '-Wl,--initial-memory=4194304', '-Wl,--max-memory=4194304', '-Wl,-z,stack-size=65536',
+            *('-Wl,--export=' + name for name in create_exports), '-I', output, '-I', runtime,
+            ROOT / 'tools/tests/fixtures/c-root-drain-jspi.c', '-o', output / 'create-jspi.wasm'])
+        stdout = command([node, '--max-old-space-size=64', '--experimental-wasm-jspi',
+            ROOT / 'tools/tests/fixtures/c-root-drain-jspi.cjs', output / 'create-jspi.wasm', 'create'])
+        require(stdout == b'PASS create source: concurrent capacity, closing, paid cleanup and refusal paths; JSPI test ports only\n',
+            'c-thread-create-jspi-source-control-result')
+        report['createAdmissionScenarios'] = 19
         libc = lib / 'libc'
         wasi_musl, musl = libc / 'wasi/libc-top-half/musl', libc / 'musl'
         private = (wasi_musl / 'src/internal', musl / 'src/internal', wasi_musl / 'src/include',
@@ -204,9 +222,9 @@ def run(output, zig, node):
             'c-sync-pinned-gnu-join-result')
         report['gnuJoinCases'] = 2
         report['outputs'] = {name: identity(output / name, 1024 * 1024) for name in
-            ('threads.o', 'reference.wasm', 'once-jspi.wasm', 'root-drain-jspi.wasm',
+            ('threads.o', 'reference.wasm', 'once-jspi.wasm', 'root-drain-jspi.wasm', 'create-jspi.wasm',
              'pinned-pthread-join.o', 'gnu-join-reference.wasm',
-             abi.name, body.name, drain_body.name, gnu_join_body.name)}
+             abi.name, body.name, drain_body.name, creation_body.name, gnu_join_body.name)}
         require(header_ids == {name: identity(lib / name, 1024 * 1024) for name in HEADERS},
             'c-sync-header-input-changed')
         require(gnu_join_inputs == {name: identity(lib / name, 1024 * 1024) for name in GNU_JOIN_INPUTS},

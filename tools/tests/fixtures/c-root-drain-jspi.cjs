@@ -106,9 +106,120 @@ async function oldLater(module){
  assert.equal(e.read_live(),1);assert.equal(e.read_released(),0);assert.equal(e.read_freed(),0);
  console.log('BASELINE REPRODUCED: root steals a later application join');
 }
+function createHarness(module,options={}){
+ const memory=new WebAssembly.Memory({initial:64,maximum:64});
+ const contexts=[],last=[],admission=gate(),admissionReached=gate(),settle=gate(),settleReached=gate();
+ const native=gate(),nativeReached=gate();let nativeCalls=0;
+ const memoryView=()=>new DataView(memory.buffer);
+ function admitted(index,ptr){
+  last[index]=ptr;
+  memoryView().setUint8(ptr+80,options.denyNative?1:0);
+  memoryView().setUint8(ptr+81,options.denyNative?2:0);
+  if(options.denyNative)return 0;
+  memoryView().setUint8(ptr+82,1);
+  return 100+index;
+ }
+ const imports=index=>({env:{memory},test:{context:()=>contexts[index],
+  'hold-admission':new WebAssembly.Suspending(()=>{admissionReached.resolve();return admission.promise;}),
+  'hold-settle':new WebAssembly.Suspending(()=>{settleReached.resolve();return settle.promise;})},
+  '$root':{'[thread-new-indirect-v0]':new WebAssembly.Suspending((table,ptr)=>{
+   assert.ok(table>0);++nativeCalls;
+   if(index===0 && options.pauseNative){nativeReached.resolve();return native.promise.then(()=>admitted(index,ptr));}
+   return admitted(index,ptr);
+  }),
+  '[thread-yield-then-promote]':()=>{
+   assert.ok(last[index]);memoryView().setUint8(last[index]+82,2);
+   memoryView().setUint32(last[index]+20,2,true);return 0;
+  }}});
+ const a=new WebAssembly.Instance(module,imports(0)),b=new WebAssembly.Instance(module,imports(1));
+ a.exports.__stack_pointer.value=0x110000;b.exports.__stack_pointer.value=0x210000;
+ a.exports.setup_create(options.existing||31,options.stage||0,
+  options.failKind===undefined?0xffffffff:options.failKind,
+  options.pauseKind===undefined?0xffffffff:options.pauseKind,options.pauseSettle?1:0);
+ contexts[0]=a.exports.caller_pointer(0);contexts[1]=a.exports.caller_pointer(1);
+ return {a,b,admission,admissionReached,settle,settleReached,native,nativeReached,
+  nativeCalls:()=>nativeCalls};
+}
+async function oldCreateLimit(module){
+ const h=createHarness(module,{pauseKind:0}),e=h.a.exports;
+ const first=WebAssembly.promising(e.start_create)();await h.admissionReached.promise;
+ assert.equal(await WebAssembly.promising(h.b.exports.start_create)(),0);
+ h.admission.resolve();assert.equal(await first,0);
+ assert.equal(e.create_count(),33);assert.equal(e.create_list_count(),33);
+ console.log('BASELINE REPRODUCED: concurrent creation exceeds the 32-record bound');
+}
+async function createControls(module){
+ {
+  const h=createHarness(module,{pauseKind:0}),e=h.a.exports;
+  const first=WebAssembly.promising(e.start_create)();await h.admissionReached.promise;
+  assert.equal(e.create_count(),32);assert.equal(e.create_list_count(),31);
+  assert.equal(await WebAssembly.promising(h.b.exports.start_create)(),e.create_eagain());
+  assert.equal(e.create_admissions(),1);h.admission.resolve();assert.equal(await first,0);
+  assert.equal(e.create_count(),32);assert.equal(e.create_list_count(),32);assert.equal(e.create_live(),3);
+ }
+ {
+  const h=createHarness(module,{pauseNative:true}),e=h.a.exports;
+  const first=WebAssembly.promising(e.start_create)();await h.nativeReached.promise;
+  assert.equal(e.create_count(),32);assert.equal(e.create_list_count(),31);assert.equal(e.create_live(),3);
+  assert.equal(await WebAssembly.promising(h.b.exports.start_create)(),e.create_eagain());
+  h.native.resolve();assert.equal(await first,0);
+  assert.equal(e.create_count(),32);assert.equal(e.create_list_count(),32);assert.equal(h.nativeCalls(),1);
+ }
+ for(const pauseKind of [0,7,6]){
+  const h=createHarness(module,{existing:2,pauseKind}),e=h.a.exports;
+  const first=WebAssembly.promising(e.start_create)();await h.admissionReached.promise;
+  assert.equal(e.create_count(),3);assert.equal(e.create_list_count(),2);
+  e.close_create_root();h.admission.resolve();assert.equal(await first,e.create_eagain());
+  assert.equal(e.create_count(),2);assert.equal(e.create_list_count(),2);assert.equal(e.create_live(),0);
+  assert.equal(e.create_settled(),3);assert.equal(e.create_allocations(),0);assert.equal(h.nativeCalls(),0);
+ }
+ {
+  const h=createHarness(module,{existing:2,pauseNative:true}),e=h.a.exports;
+  const first=WebAssembly.promising(e.start_create)();await h.nativeReached.promise;
+  e.close_create_root();h.native.resolve();assert.equal(await first,0);
+  assert.equal(e.create_count(),3);assert.equal(e.create_list_count(),3);assert.equal(e.create_live(),3);
+  assert.equal(await WebAssembly.promising(h.b.exports.start_create)(),e.create_eagain());
+ }
+ {
+  const h=createHarness(module,{existing:2,pauseNative:true,denyNative:true}),e=h.a.exports;
+  const first=WebAssembly.promising(e.start_create)();await h.nativeReached.promise;
+  e.close_create_root();h.native.resolve();assert.equal(await first,e.create_eagain());
+  assert.equal(e.create_count(),2);assert.equal(e.create_list_count(),2);assert.equal(e.create_live(),0);
+  assert.equal(e.create_settled(),3);assert.equal(e.create_allocations(),e.create_frees());
+ }
+ for(const [failKind,live] of [[7,1],[6,2]]){
+  const h=createHarness(module,{failKind,pauseSettle:true}),e=h.a.exports;
+  const first=WebAssembly.promising(e.start_create)();await h.settleReached.promise;
+  assert.equal(e.create_count(),32);assert.equal(e.create_live(),live);
+  assert.equal(await WebAssembly.promising(h.b.exports.start_create)(),e.create_eagain());
+  h.settle.resolve();assert.equal(await first,e.create_eagain());
+  assert.equal(e.create_count(),31);assert.equal(e.create_live(),0);assert.equal(e.create_settled(),live);
+ }
+ {
+  const h=createHarness(module,{denyNative:true,pauseSettle:true}),e=h.a.exports;
+  const first=WebAssembly.promising(e.start_create)();await h.settleReached.promise;
+  assert.equal(e.create_count(),32);assert.equal(e.create_live(),3);
+  assert.equal(e.create_allocations(),3);assert.equal(e.create_frees(),2);
+  assert.equal(await WebAssembly.promising(h.b.exports.start_create)(),e.create_eagain());
+  h.settle.resolve();assert.equal(await first,e.create_eagain());
+  assert.equal(e.create_count(),31);assert.equal(e.create_live(),0);assert.equal(e.create_settled(),3);
+  assert.equal(e.create_frees(),3);
+ }
+ for(const options of [{stage:1},{stage:2},{failKind:0},{failKind:7},{failKind:6},
+                       {stage:11},{stage:12},{stage:13},{denyNative:true}]){
+  const h=createHarness(module,{existing:2,...options}),e=h.a.exports;
+  const result=await WebAssembly.promising(e.start_create)();
+  assert.ok(result===e.create_eagain() || result===e.create_enomem());
+  assert.equal(e.create_count(),2);assert.equal(e.create_list_count(),2);assert.equal(e.create_live(),0);
+  assert.equal(e.create_allocations(),e.create_frees());
+ }
+ console.log('PASS create source: concurrent capacity, closing, paid cleanup and refusal paths; JSPI test ports only');
+}
 (async()=>{
  const module=new WebAssembly.Module(fs.readFileSync(process.argv[2]));
  const mode=process.argv[3]||'all';
+ if(mode==='baseline-create'){await oldCreateLimit(module);return;}
+ if(mode==='create'){await createControls(module);return;}
  if(mode==='baseline-preclaimed'){await oldPreclaimed(module);return;}
  if(mode==='baseline-later'){await oldLater(module);return;}
  if(mode==='all'||mode==='preclaimed')await joinChain(module,true);
