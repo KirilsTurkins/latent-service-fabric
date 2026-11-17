@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -478,6 +479,44 @@ public final class ScheduledNullFactoryActivationControl {
         require(Bindings.LatentRuntimeActivation.settlementAttempts == before + 2, "uncertain-worker-retried");
         // The original worker and executor remain owned until Store teardown.
     }
+    private static void managedPreferredRoot() throws Exception {
+        Object root = enter();
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        AtomicReference<Thread> selected = new AtomicReference<>();
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            if (attempts.incrementAndGet() <= 2) return null;
+            Thread thread = new Thread(() -> {
+                try { Activation.starting(Thread.currentThread()); target.run(); }
+                finally { Activation.finished(Thread.currentThread()); }
+            });
+            selected.set(thread); return thread;
+        });
+        try {
+            var older = pool.submit(() -> { throw new AssertionError("withdrawn-older-ran"); });
+            held(1, 1, 1);
+            var preferred = pool.submit(() -> {
+                calls.incrementAndGet(); entered.countDown();
+                while (true) try { release.await(); return; } catch (InterruptedException ignored) { }
+            });
+            require(entered.await(5, TimeUnit.SECONDS), "preferred-work-not-started");
+            held(1, 2, 1);
+            require(owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 1, "preferred-worker-not-owned");
+            closeRoot();
+            require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools"), "preferred-root-not-fenced");
+            List<Runnable> removed = pool.shutdownNow();
+            require(removed.size() == 1 && removed.get(0) == older && !older.isDone(), "older-not-withdrawn");
+            held(0, 1, 1);
+            require((boolean)invoke("pending") && owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 1,
+                "running-preferred-owner-lost");
+            release.countDown(); preferred.get(5, TimeUnit.SECONDS);
+            require(pool.awaitTermination(5, TimeUnit.SECONDS), "preferred-pool-not-retired");
+            selected.get().join(5000);
+            require(!selected.get().isAlive() && owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 0
+                && calls.get() == 1 && older.cancel(false), "preferred-work-not-retired");
+            held(0, 0, 0); invoke("retireIdlePools"); finishRoot(root);
+        } finally { release.countDown(); }
+    }
     public static void main(String[] args) throws Exception {
         String mode = args[0];
         if (mode.equals("scan-mutation") || mode.equals("retirement-scan-mutation"))
@@ -496,6 +535,7 @@ public final class ScheduledNullFactoryActivationControl {
                 || mode.equals("managed-null-worker-denied"))
             managedNullRoot(mode.substring("managed-null-".length()));
         else if (mode.equals("managed-null-worker-uncertain")) managedNullUncertainWorker();
+        else if (mode.equals("managed-preferred-root")) managedPreferredRoot();
         else if (mode.equals("recovery") || mode.equals("reentrant")) recovery(mode.equals("reentrant"));
         else if (mode.equals("cancel") || mode.equals("remove") || mode.equals("factory-throw") || mode.equals("wait-denied")
                 || mode.equals("settle-result-denied") || mode.equals("settle-queue-denied")) noWorker(mode);

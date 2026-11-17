@@ -940,7 +940,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
                           'manual-factory-throw', 'manual-worker-admission-denied',
                           'managed-factory-thread', 'managed-factory-null', 'managed-factory-throw',
                           'managed-null-pending', 'managed-null-fallback-throw', 'managed-null-worker-denied',
-                          'managed-null-worker-uncertain')
+                          'managed-null-worker-uncertain', 'managed-preferred-root')
     for mode in null_factory_modes:
         actual = compiler.run('scheduled-null-factory-activation-' + mode, 'java', '-Xmx256m', '-cp',
             str(output) + os.pathsep + classpath, 'ScheduledNullFactoryActivationControl', mode).strip()
@@ -1245,7 +1245,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ManagedReentrantFactoryReferenceControl').strip()
     if result != expected_managed_factory: raise ValueError('Java managed reentrant factory reference did not complete')
     expected_managed_null = ('MANAGED_NULL_FACTORY PASS fixed;single;two-attempts;recovery;fallback-throw;'
-        'existing-worker;nested;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order-difference')
+        'existing-worker;nested;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order')
     result = compiler.run('managed-null-factory-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ManagedNullFactoryReferenceControl', 'jdk').strip()
     if result != expected_managed_null: raise ValueError('Java managed null factory reference did not complete')
@@ -1404,7 +1404,8 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     if managed_null_result != expected_managed_null: raise ValueError('Java managed null factory source differs from reference')
     managed_null_modes = ('unavailable', 'immediate-recovery', 'later-recovery', 'fallback-throw',
                           'nested-fallback-throw', 'fallback-completable', 'fallback-start-failure', 'fallback-start-uncertain', 'fallback-live-thread',
-                          'cached-null', 'existing-worker', 'fallback-shutdown',
+                          'cached-null', 'existing-worker', 'preferred-running-shutdown', 'preferred-withdrawn',
+                          'preference-exhaustion', 'fallback-shutdown',
                           'fallback-denied', 'fallback-lost')
     for mode in managed_null_modes:
         result = compiler.run('managed-null-factory-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
@@ -1532,7 +1533,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'throwFactory': 'matched-jdk-accept-recovery-and-withdrawal',
         'manualThrowFactory': 'matched-jdk-deadline-and-queued-copy-count',
         'managedReentrantFactory': list(managed_factory_modes),
-        'managedNullFactory': {'cases': list(managed_null_modes), 'recoveryOrder': 'JDK-new-first-SDK-FIFO'},
+        'managedNullFactory': {'cases': list(managed_null_modes), 'recoveryOrder': 'matched-jdk-new-first'},
         'futureCancelInterrupt': interrupt_control, 'executorOwnerSettlement': executor_settlement,
         'executorInvokeInterrupt': 'matched-14-preinterrupted-and-two-blocked-JDK-cases',
         'executorAwaitTermination': 'matched-16-preinterrupted-two-blocked-and-overridden-state-JDK-cases',
