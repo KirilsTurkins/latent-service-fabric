@@ -448,11 +448,46 @@ export function validateIndependentAudit(value: RecordValue): void {
   if (value.auditAck !== undefined) enumeration(object(value.auditAck).status, 4, "audit.status");
 }
 
+/** Check retained recovery data before asking structuredClone to allocate it. */
+function boundedRecoveryClone(source: unknown, budget: { bytes: number; nodes: number }): unknown {
+  const pending: Array<{ value: unknown; depth: number }> = [{ value: source, depth: 0 }];
+  const seen = new Set<object>();
+  while (pending.length) {
+    const { value, depth } = pending.pop()!;
+    if (--budget.nodes < 0 || depth > 16 || (budget.bytes -= 64) < 0) throw new ShapeError();
+    if (typeof value === "string") {
+      if (value.length > budget.bytes || (budget.bytes -= Buffer.byteLength(value)) < 0) throw new ShapeError();
+    } else if (value === null || value === undefined || typeof value === "boolean"
+      || typeof value === "number" || typeof value === "bigint") {
+      continue;
+    } else if (value instanceof Uint8Array) {
+      // structuredClone copies the backing buffer, even for a short view.
+      if (!(value.buffer instanceof ArrayBuffer) || (budget.bytes -= value.buffer.byteLength) < 0) throw new ShapeError();
+    } else if (typeof value === "object") {
+      if (seen.has(value)) continue;
+      seen.add(value);
+      if (Array.isArray(value)) {
+        if (value.length > budget.nodes) throw new ShapeError();
+      } else if (![Object.prototype, null].includes(Object.getPrototypeOf(value))) throw new ShapeError();
+      for (const key in value) {
+        if (!Object.hasOwn(value, key)) continue;
+        if (key.length > budget.bytes || (budget.bytes -= Buffer.byteLength(key) + 64) < 0) throw new ShapeError();
+        const descriptor = Object.getOwnPropertyDescriptor(value, key);
+        if (!descriptor || !("value" in descriptor)) throw new ShapeError();
+        pending.push({ value: descriptor.value, depth: depth + 1 });
+        if (pending.length > budget.nodes) throw new ShapeError();
+      }
+    } else throw new ShapeError();
+  }
+  return structuredClone(source);
+}
+
 /** Snapshot only bounded recovery data, without retaining application input. */
 export function identity(operation: Operation, raw: unknown): RecoveryIdentity {
   try {
     const value = object(raw), result: RecordValue = {};
-    const assign = (key: string, source: unknown) => { if (source !== undefined) result[key] = structuredClone(source); };
+    const budget = { bytes: 8 * 1024 * 1024, nodes: 65536 };
+    const assign = (key: string, source: unknown) => { if (source !== undefined) result[key] = boundedRecoveryClone(source, budget); };
     const invocationValue = value.invocation === undefined ? {} : object(value.invocation);
     if (invocationValue.activationId !== undefined) { id(invocationValue.activationId); assign("activationId", invocationValue.activationId); }
     let inspected: RecordValue | undefined, selectedCommand: RecordValue | undefined;
