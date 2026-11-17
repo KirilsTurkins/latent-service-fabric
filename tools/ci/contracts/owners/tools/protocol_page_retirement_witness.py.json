@@ -1,8 +1,8 @@
 {
   "schemaVersion": "latent.ci.contracts.v1",
   "kind": "owner",
-  "reviewReason": "Build and run the bounded allocator observer using the source-matched production protocol page and original provider pool.",
+  "reviewReason": "Run the source-matched protocol page and native-capacity allocation witnesses against their original owners.",
   "path": "tools/protocol_page_retirement_witness.py",
-  "sha256": "a9869b863a68c902bc0e8e2b67f71b6ec40ea36b7f44ed9492dfff48c634efbe",
+  "sha256": "b6917a23394c660c6926c7e2248360c219a22f079abaeac19a273edece2023e3",
   "reviewBoundary": "committed-fingerprint"
 }

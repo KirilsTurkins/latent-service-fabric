@@ -6,6 +6,8 @@ on:
     paths:
       - 'crates/vendor/bytes/**'
       - 'crates/latent-core/src/result_payload.rs'
+      - 'crates/latent-core/src/native_capacity.rs'
+      - 'crates/latent-core/src/native_capacity/**'
       - 'crates/latent-http/src/protocol.rs'
       - 'crates/latent-http/src/protocol/**'
       - 'crates/latent-http/src/deferred/request.rs'
@@ -29,11 +31,14 @@ on:
       - 'crates/latent-blobs/src/s3/provider/seal.rs'
       - 'tools/protocol_page_retirement_witness.py'
       - 'tools/protocol_page_retirement_witness.rs'
+      - 'tools/native_capacity_retirement_witness.rs'
       - '.github/workflows/result-owner-retirement.yml'
   pull_request:
     paths:
       - 'crates/vendor/bytes/**'
       - 'crates/latent-core/src/result_payload.rs'
+      - 'crates/latent-core/src/native_capacity.rs'
+      - 'crates/latent-core/src/native_capacity/**'
       - 'crates/latent-http/src/protocol.rs'
       - 'crates/latent-http/src/protocol/**'
       - 'crates/latent-http/src/deferred/request.rs'
@@ -57,6 +62,7 @@ on:
       - 'crates/latent-blobs/src/s3/provider/seal.rs'
       - 'tools/protocol_page_retirement_witness.py'
       - 'tools/protocol_page_retirement_witness.rs'
+      - 'tools/native_capacity_retirement_witness.rs'
       - '.github/workflows/result-owner-retirement.yml'
   workflow_dispatch:
 

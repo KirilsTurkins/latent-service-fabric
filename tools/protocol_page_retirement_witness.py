@@ -8,6 +8,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'tools/protocol_page_retirement_witness.rs'
+CAPACITY_SOURCE = ROOT / 'tools/native_capacity_retirement_witness.rs'
 PACKAGES = ('latent-http', 'latent-capabilities', 'latent-artifacts', 'latent-policy', 'latent-core')
 TARGETS = {name.replace('-', '_') for name in PACKAGES} | {'tokio'}
 
@@ -55,6 +56,15 @@ def main():
         env = os.environ.copy()
         env['LSF_PROTOCOL_WITNESS_ROOT'] = str(fixture)
         subprocess.run([str(binary)], cwd=ROOT, check=True, timeout=30, env=env)
+        # Reuse the same source-matched latent-core artifact to pause the actual
+        # native-capacity Arc deallocator and observe its original node charge.
+        capacity = Path(out) / 'native-capacity-owner-witness'
+        command = ['rustc', '--edition=2021', str(CAPACITY_SOURCE), '-o', str(capacity)]
+        for path in sorted(map(str, directories)):
+            command += ['-L', 'dependency=' + path]
+        command += ['--extern', f'latent_core={found["latent_core"]}']
+        subprocess.run(command, cwd=ROOT, check=True, timeout=120)
+        subprocess.run([str(capacity)], cwd=ROOT, check=True, timeout=30)
 
 if __name__ == '__main__':
     main()
