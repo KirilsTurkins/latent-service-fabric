@@ -1,3 +1,105 @@
+#if defined(LSF_C_CREATE_CONTROL)
+/* Actual create/discard source with explicit finite broker and JSPI ports.
+ * No libc errno getter, canonical runtime or real activation ledger runs. */
+#include <errno.h>
+#include <pthread.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include "thread-abi.h"
+
+#define RECORD_LIMIT 32u
+#define STACK_BYTES 65536u
+#define TEMPLATE_LIMIT (1024u*1024u)
+static struct lsf_c_thread root,callers[31];
+static unsigned char template_bytes[16];
+__attribute__((aligned(16))) static unsigned char heap[262144];
+static unsigned heap_used,allocations,frees,allocation_attempts;
+static unsigned token_serial,live_tokens,settled_tokens,admit_calls;
+static unsigned fail_stage,fail_kind,pause_kind,pause_settle;
+static void *owned[8];
+
+__attribute__((import_module("test"),import_name("context"))) uint32_t test_context(void);
+__attribute__((import_module("test"),import_name("hold-admission"))) void test_hold_admission(void);
+__attribute__((import_module("test"),import_name("hold-settle"))) void test_hold_settle(void);
+static void require(int value) { if (!value) __builtin_trap(); }
+static int token_live(struct lsf_c_token value) { return value.generation && value.id; }
+static struct lsf_c_thread *current(void) { return (struct lsf_c_thread *)(uintptr_t)test_context(); }
+static int runtime_error(unsigned value) { return value==2 ? EAGAIN : EINVAL; }
+
+void *memset(void *destination,int value,size_t size) {
+    unsigned char *out=destination;for(size_t i=0;i<size;++i)out[i]=(unsigned char)value;return destination;
+}
+void *memcpy(void *destination,const void *source,size_t size) {
+    unsigned char *out=destination;const unsigned char *in=source;
+    for(size_t i=0;i<size;++i)out[i]=in[i];return destination;
+}
+void *aligned_alloc(size_t alignment,size_t size) {
+    require(alignment==16 && size%16==0);++allocation_attempts;
+    if (fail_stage==10+allocation_attempts) return NULL;
+    require(heap_used<=sizeof(heap) && size<=sizeof(heap)-heap_used && allocations<8);
+    void *result=heap+heap_used;heap_used+=(unsigned)size;owned[allocations++]=result;return result;
+}
+void free(void *pointer) {
+    if (!pointer) return;
+    for(unsigned index=0;index<allocations;++index) if(owned[index]==pointer) {
+        owned[index]=NULL;++frees;return;
+    }
+    __builtin_trap();
+}
+static int ensure_root_owners(struct lsf_c_thread *value) {
+    require(value==&root && token_live(value->task));return fail_stage==1 ? EAGAIN : 0;
+}
+static int ensure_template(struct lsf_c_thread *value) {
+    require(value==&root && value->initial_template);return fail_stage==2 ? ENOMEM : 0;
+}
+static int acquire(unsigned kind,const struct lsf_c_token *parent,struct lsf_c_token *out) {
+    require(parent && token_live(*parent));++admit_calls;
+    if (current()==&callers[0] && pause_kind==kind) { pause_kind=UINT32_MAX;test_hold_admission(); }
+    if (fail_kind==kind) return EAGAIN;
+    ++live_tokens;*out=(struct lsf_c_token){1,++token_serial+100};return 0;
+}
+static void settle(struct lsf_c_token *token) {
+    if (!token_live(*token)) return;
+    if (current()==&callers[0] && pause_settle) { pause_settle=0;test_hold_settle(); }
+    require(live_tokens);--live_tokens;++settled_tokens;*token=(struct lsf_c_token){0};
+}
+#include "c-create-reference-body.h"
+
+static void *start(void *argument) { return argument; }
+void setup_create(unsigned existing,unsigned stage,unsigned kind,unsigned pause,unsigned settle_pause) {
+    require(existing>=2 && existing<=31);
+    memset(&root,0,sizeof(root));memset(callers,0,sizeof(callers));memset(owned,0,sizeof(owned));
+    heap_used=allocations=frees=allocation_attempts=token_serial=live_tokens=settled_tokens=admit_calls=0;
+    fail_stage=stage;fail_kind=kind;pause_kind=pause;pause_settle=settle_pause;
+    root.root=&root;root.phase=LSF_C_RUNNING;root.api=LSF_C_ROOT;root.task=(struct lsf_c_token){1,1};
+    root.tls_bytes=sizeof(template_bytes);root.initial_template=template_bytes;root.started_count=existing;
+    root.next=&callers[0];
+    for(unsigned i=0;i<existing;++i) {
+        callers[i].root=&root;callers[i].phase=LSF_C_RUNNING;callers[i].canonical_id=i+1;
+        callers[i].task=(struct lsf_c_token){1,i+2};callers[i].next=i+1<existing?&callers[i+1]:NULL;
+    }
+}
+uint32_t caller_pointer(unsigned index) { require(index<2);return (uint32_t)(uintptr_t)&callers[index]; }
+int start_create(void) { struct lsf_c_thread *out=NULL;return create(&out,start,NULL,NULL,LSF_C_PTHREAD); }
+void close_create_root(void) { root.closing=1; }
+unsigned create_count(void) { return root.started_count; }
+unsigned create_list_count(void) {
+    unsigned total=0;for(struct lsf_c_thread *thread=root.next;thread;thread=thread->next) {
+        require(++total<=33);
+    }
+    return total;
+}
+unsigned create_live(void) { return live_tokens; }
+unsigned create_settled(void) { return settled_tokens; }
+unsigned create_admissions(void) { return admit_calls; }
+unsigned create_allocations(void) { return allocations; }
+unsigned create_frees(void) { return frees; }
+int create_eagain(void) { return EAGAIN; }
+int create_enomem(void) { return ENOMEM; }
+
+#else
 /* Actual maintained C join/drain bodies with explicit JSPI scheduler and
  * broker doubles. This is not an engine, ledger or signed guest result. */
 #include <stdint.h>
@@ -94,3 +196,4 @@ unsigned read_second_phase(void) { return second.phase; }
 unsigned read_second_claimed(void) { return second.joiner!=0; }
 unsigned read_second_joined(void) { return second.joined; }
 unsigned read_root_observer(void) { return root.drain_wait!=NULL; }
+#endif
