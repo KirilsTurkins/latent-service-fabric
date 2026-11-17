@@ -15,7 +15,7 @@ pub(crate) struct InstalledTls {
     pub config: Arc<rustls::ClientConfig>,
     pub _metadata: latent_capabilities::broker::pools::ProviderMetadata,
 }
-pub(crate) type InstalledTlsOwner = crate::tls_owner::TlsOwner<InstalledTls>;
+pub(crate) type InstalledTlsOwner = crate::strong_owner::StrongOwner<InstalledTls>;
 
 pub(crate) fn configure(input: &StreamTlsConfig) -> Result<Arc<rustls::ClientConfig>, StreamError> {
     let mut roots = rustls::RootCertStore::empty();

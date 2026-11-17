@@ -12,8 +12,8 @@ use std::sync::atomic::{AtomicBool, AtomicPtr, AtomicUsize, Ordering::SeqCst};
 use std::sync::{Arc, Barrier};
 use std::time::{Duration, Instant};
 
-#[path = "../crates/latent-streams/src/tls_owner.rs"]
-mod tls_owner;
+#[path = "../crates/latent-streams/src/strong_owner.rs"]
+mod strong_owner;
 
 // The runner owns and cleans the private temporary root. This small shim lets
 // the unchanged authenticated fixture use its existing TempDir interface
@@ -131,21 +131,21 @@ fn wait_for_deallocator() {
     }
 }
 
-// Exercise the exact private wrapper used by the TLS configuration. The
-// marker stands for the value's trailing metadata charge; this does not
-// measure rustls allocations or qualify the host TLS profile.
-struct TlsChargeMarker(Arc<AtomicBool>);
-impl Drop for TlsChargeMarker {
+// Exercise the exact private wrapper used by TLS configuration and the
+// maintenance stop state. The marker stands for the value's trailing charge;
+// this does not measure rustls allocations or qualify the host TLS profile.
+struct StrongChargeMarker(Arc<AtomicBool>);
+impl Drop for StrongChargeMarker {
     fn drop(&mut self) {
         self.0.store(false, SeqCst);
     }
 }
 
-fn tls_configuration_backing() {
+fn strong_owner_backing() {
     for mode in 0..3 {
         let charged = Arc::new(AtomicBool::new(true));
         start_capture();
-        let owner = tls_owner::TlsOwner::new(TlsChargeMarker(Arc::clone(&charged)));
+        let owner = strong_owner::StrongOwner::new(StrongChargeMarker(Arc::clone(&charged)));
         stop_capture();
         assert_eq!(CAPTURE_COUNT.load(SeqCst), 1);
         let pointer = CAPTURE_PTR[0].load(SeqCst);
@@ -183,12 +183,12 @@ fn tls_configuration_backing() {
             worker.join().unwrap();
         }
         assert!(FREED.load(SeqCst) && held && !charged.load(SeqCst));
-        println!("TLS configuration backing mode={mode} marker held through deallocation");
+        println!("Strong owner backing mode={mode} marker held through deallocation");
     }
 }
 
 fn main() {
-    tls_configuration_backing();
+    strong_owner_backing();
     let fixture = fixture::Fixture::new(CapabilityBrokerLimits::default());
     let (request, mut control) = fixture.request("scope-allocation-witness");
     let deadline = control.budget.deadline();

@@ -9,7 +9,7 @@ mod lifecycle;
 mod maintenance;
 mod provider;
 mod tls;
-mod tls_owner;
+mod strong_owner;
 mod transport;
 
 pub use config::{
