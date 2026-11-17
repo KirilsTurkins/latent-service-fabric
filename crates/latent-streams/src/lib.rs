@@ -8,8 +8,8 @@ mod kernel;
 mod lifecycle;
 mod maintenance;
 mod provider;
-mod tls;
 mod strong_owner;
+mod tls;
 mod transport;
 
 pub use config::{
