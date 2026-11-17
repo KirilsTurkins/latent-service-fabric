@@ -96,11 +96,13 @@ class FutureCancellationControl(unittest.TestCase):
                                'null-default', 'invalid-null', 'invalid-default-throw')
         minimal_modes = ('copies', 'queue', 'result', 'rollback-denied', 'rollback-lost', 'copy-denied', 'running')
         interrupt_monitor_modes = ('run', 'reset', 'denied', 'lost')
+        managed_status_modes = ('denied', 'lost', 'inflight', 'running')
         new_reference_stages = ('scheduled-periodic-validation-reference-jdk', 'scheduled-null-factory-reference-jdk',
             'scheduled-throw-factory-reference-jdk', 'manual-periodic-throw-reference-jdk',
             'managed-reentrant-factory-reference-jdk', 'completable-obtrude-reference-jdk',
             'completable-default-async-reference-jdk', 'completable-minimal-reference-jdk',
-            'future-task-interrupt-monitor-reference-jdk', 'managed-null-factory-reference-jdk')
+            'future-task-interrupt-monitor-reference-jdk', 'managed-null-factory-reference-jdk',
+            'managed-executor-status-reference-jdk')
         new_source_stages = ('completable-obtrude-source', *('completable-obtrude-owner-' + mode for mode in obtrude_modes),
             'completable-default-async-source', *('completable-default-async-owner-' + mode for mode in default_async_modes),
             'completable-minimal-source', *('completable-minimal-owner-' + mode for mode in minimal_modes),
@@ -108,7 +110,8 @@ class FutureCancellationControl(unittest.TestCase):
             'scheduled-periodic-validation-source', 'scheduled-null-factory-source',
             'scheduled-throw-factory-source', 'manual-periodic-throw-source', 'managed-reentrant-factory-source',
             *('managed-reentrant-factory-owner-' + mode for mode in managed_factory_modes),
-            'managed-null-factory-source', *('managed-null-factory-owner-' + mode for mode in managed_null_modes))
+            'managed-null-factory-source', *('managed-null-factory-owner-' + mode for mode in managed_null_modes),
+            'managed-executor-status-source', *('managed-executor-status-owner-' + mode for mode in managed_status_modes))
 
         def run(stage, *argv):
             calls.append((stage, argv))
@@ -154,6 +157,10 @@ class FutureCancellationControl(unittest.TestCase):
                         'existing-worker;nested;nested-initial-order;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order')
             if stage.startswith('managed-null-factory-owner-'):
                 return 'MANAGED_NULL_FACTORY_OWNER PASS ' + argv[-1]
+            if stage in ('managed-executor-status-reference-jdk', 'managed-executor-status-source'):
+                return 'MANAGED_EXECUTOR_STATUS PASS open;shutdown;terminated;interrupt-hook'
+            if stage.startswith('managed-executor-status-owner-'):
+                return 'MANAGED_EXECUTOR_STATUS_OWNER PASS ' + argv[-1]
             if stage in ('executor-invoke-interrupt-reference-jdk', 'executor-invoke-interrupt-source'):
                 return ('EXECUTOR_INVOKE_INTERRUPT PASS preinterrupted-ready;empty;zero;pending-cancel;'
                     'blocked-interrupt')
@@ -216,6 +223,7 @@ class FutureCancellationControl(unittest.TestCase):
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/CompletableDefaultAsyncOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/CompletableMinimalStageOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskInterruptMonitorOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedExecutorStatusOwnerControl.java', argv)
         for stage in new_reference_stages:
             self.assertIn(stage, [name for name, _ in calls])
         reference_argv = next(args for stage, args in calls if stage == 'scheduled-stopped-reference-compile')
@@ -228,6 +236,8 @@ class FutureCancellationControl(unittest.TestCase):
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/CompletableMinimalStageReferenceControl.java',
                       reference_argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskInterruptMonitorReferenceControl.java',
+                      reference_argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedExecutorStatusReferenceControl.java',
                       reference_argv)
         for missing in ('executor-invoke-interrupt-reference-jdk', 'executor-invoke-interrupt-source',
                         'executor-invoke-interrupt-owner', 'executor-await-termination-reference-jdk',
