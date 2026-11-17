@@ -8,6 +8,99 @@ artifact IDs in `dependencies`; arbitrary configure/shell/compiler hooks are not
 executed. Use the separately [approved source and header generation step](c-generators.md)
 for executable tools, then build offline from its captured output and provenance.
 
+## Captured CMake feature probes
+
+For a separate CMake configuration step, the selected C stream SDK can prepare
+link probes for its numeric IPv4 resolver and blocking IPv4 stream socket. This
+uses the project's verified SDK snapshot and pinned compiler inside the existing
+Linux compiler sandbox:
+
+```bash
+python3 tools/c_capsule.py feature-probes "$LSF_C_PROJECT" --output "$LSF_FEATURE_KIT"
+# Review feature-probes.json and compiler-inputs.json before selecting this kit.
+LSF_FEATURE_EXPECT=$(python3 -c 'import hashlib,sys; print("sha256:" + hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())' "$LSF_FEATURE_KIT/feature-probes.json")
+```
+
+For CMake 3.24 or newer, pass the following arguments to the **separate**
+approved configuration stage, along with its normal source and output paths.
+`LSF_SDK_RECIPE` is the authenticated SDK recipe root, `LSF_ZIG` is its pinned
+Zig executable, and `LSF_PYTHON` is the SDK's Python executable:
+
+```bash
+-DCMAKE_SYSTEM_NAME=WASI
+-DCMAKE_C_COMPILER="$LSF_ZIG"
+-DCMAKE_C_COMPILER_ARG1=cc
+-DCMAKE_C_COMPILER_TARGET=wasm32-wasi
+-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="$LSF_SDK_RECIPE/tools/c_guest/feature_loader.cmake"
+-DLSF_C_FEATURE_PROJECT="$LSF_C_PROJECT"
+-DLSF_C_FEATURE_KIT="$LSF_FEATURE_KIT"
+-DLSF_C_FEATURE_EXPECT="$LSF_FEATURE_EXPECT"
+-DLSF_C_FEATURE_PYTHON="$LSF_PYTHON"
+```
+
+The fixed SDK loader checks the reviewed receipt, current captured project,
+resolver and socket sources, generated network bindings, and complete Zig
+distribution. It adds the resolver object and the captured stream source to the
+link checks. A declaration-only alias makes a socket check link the real SDK
+implementation; it does not fabricate a successful socket operation. The stream
+source is compiled by the configure stage under its sandbox for each link check.
+The loader does not execute a generated CMake include. Configure inside a read-only
+isolated environment for the project, kit and compiler, with network denied,
+and recheck the inputs before accepting its output. Outside that environment,
+another process could replace the object after verification and before a link.
+The loader is trusted SDK recipe code; its own integrity depends on the
+authenticated SDK installation. Paths containing quotes, semicolons, dollar
+signs, backticks, control characters or POSIX backslashes are refused. Spaces
+are supported when passed as individual arguments.
+
+An older verified capture without the resolver produces no resolver probe object;
+it can still detect the stream socket if that captured profile includes its
+source and header. Resolver detection means numeric-only `getaddrinfo`; socket
+detection means the bounded blocking IPv4 stream subset, with unsupported calls
+still returning their actual errors. Neither provides DNS, nonblocking sockets,
+an endpoint grant, or proof that a complete client is supported. Dependency
+configuration must also disable features outside the selected runtime profile;
+for example, curl 8.23.0 defaults to IPv6 and a threaded resolver even when
+only this IPv4/numeric subset is selected. Configure it with
+`-DENABLE_IPV6=OFF -DENABLE_THREADED_RESOLVER=OFF` until those broader paths
+are qualified. The kit does not run CMake or alter the project. Adopt configuration
+outputs through the existing approved generator and dependency-review flow;
+the kit receipt alone does not authenticate the external configure process or
+qualify an HTTP client. The approved stage must make the captured project, kit,
+SDK recipe, Python and exact Zig distribution available read-only inside its
+own sandbox; the kit does not create those mounts. If the stage cannot expose
+them, it cannot use the kit. After configuration, recheck those same inputs:
+
+```bash
+python3 tools/c_capsule.py feature-probes-verify "$LSF_C_PROJECT" \
+  --kit "$LSF_FEATURE_KIT" --expect "$LSF_FEATURE_EXPECT" --zig "$LSF_ZIG"
+```
+
+Regenerate the kit after changing the project or SDK recipe.
+
+## Capturing C libraries
+
+For a C application or resource artifact in `tar` or `zip` format, an optional
+`cArchiveSelection` selects exact archive path prefixes before materialization:
+
+```json
+"cArchiveSelection": {
+  "formatVersion": 1,
+  "include": ["library-1.0/src", "library-1.0/include"]
+}
+```
+
+Put this object inside the artifact's `metadata`. Prefixes are case-sensitive,
+relative to the original archive root, and must each match at least one file.
+They cannot overlap or differ only by case. Selected paths retain their full
+archive names, so use those names in `cSources` and `includeDirectories`.
+All selected paths must satisfy the existing portable dependency path rules.
+The original archive is stored and reviewed in full, and every entry, including
+excluded entries, is checked for unsafe types, names, collisions and size limits.
+An excluded archive name may contain `~`; it is never materialized. Changing
+the selection requires a new reviewed lock. Without this explicit option, the
+existing archive behavior applies. This selection grants no runtime authority.
+
 ```json
 {
   "id": "developer/pure-library/1.0.0",

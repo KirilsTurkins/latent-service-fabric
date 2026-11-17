@@ -102,10 +102,16 @@ class TypeScriptOwnedControlsTests(unittest.TestCase):
         for key,value in [('owners',0),('expectedQuarantine',False),('exactAckRefusals',0),('dropOrderValid',False)]:
             with self.assertRaises(ValueError):controls.native_case(dict(row,**{key:value}),case)
         immediate=controls.LIFECYCLE_CASES[0]
-        reference=dict(case=immediate,status=0,subtaskDrops=0,joined=0,resultOwners=0,nativeOwners=0,tasks=0,idleWaits=0)
+        reference=dict(case=immediate,status=0,subtaskDrops=0,joined=0,resultOwners=0,nativeOwners=1,tasks=0,idleWaits=0)
         controls.lifecycle_case(reference,immediate)
-        for key,value in [('subtaskDrops',1),('tasks',1),('resultOwners',1),('nativeOwners',1),('status',False)]:
+        for key,value in [('subtaskDrops',1),('tasks',1),('resultOwners',1),('nativeOwners',0),('status',False)]:
             with self.assertRaises(ValueError):controls.lifecycle_case(dict(reference,**{key:value}),immediate)
+        fixture=(controls.ROOT/'tools/tests/fixtures/typescript_record_retirement/jsapi.h').read_bytes()
+        stub=controls.lifecycle_jsapi_stub(fixture)
+        self.assertIn(b'bool JS_IsExceptionPending(JSContext*);',stub)
+        self.assertIn(b'void JS_ReportErrorASCII(JSContext*,const char*,...);',stub)
+        with self.assertRaisesRegex(ValueError,'own-controls-lifecycle-stub-preimage'):
+            controls.lifecycle_jsapi_stub(stub)
 
     def test_workflow_requires_same_source_and_owning_workflow_head(self):
         commit='a'*40;ref='refs/heads/feat/typescript-owned-result-disposal-compose-20261024'

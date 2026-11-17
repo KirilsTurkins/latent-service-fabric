@@ -82,7 +82,7 @@ class FutureCancellationControl(unittest.TestCase):
             calls.append((stage, argv))
             if stage == 'scheduled-stopped-reference-jdk':
                 return ('SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;'
-                    'running;shutdown;shutdown-policy;physical-runner')
+                    'running;shutdown;shutdown-policy;physical-runner;worker-capacity;factory-failure-retry')
             if stage == 'scheduled-periodic-reference-jdk':
                 return ('SCHEDULED_PERIODIC_REFERENCE PASS fixed-rate;fixed-delay;reentrant;failure;self-cancel;'
                     'concurrent-manual;concurrent-worker;shutdown;continue-policy')

@@ -1537,7 +1537,7 @@ fn producer_inner_future_exact_admission_pin_and_origin_retirement() {
 }
 
 #[test]
-fn producer_inner_future_confirmation_and_uncertain_drop_keep_owner() {
+fn producer_inner_future_confirmation_and_unwinding_drop_retire_owner() {
     for panic_confirmation in [true, false] {
         let probe = Arc::new(ConsumerCellProbe::default());
         let calls = Arc::new(AtomicUsize::new(0));
@@ -1570,14 +1570,214 @@ fn producer_inner_future_confirmation_and_uncertain_drop_keep_owner() {
         } else {
             let future = factory.prepare_producer().unwrap();
             assert_eq!(probe.live.load(SeqCst), factory_bytes + exact);
+            probe.check_value_drop.store(true, SeqCst);
             assert!(
                 std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(future))).is_err()
             );
-            assert_eq!(probe.live.load(SeqCst), factory_bytes + exact);
+            assert_eq!(probe.value_drops.load(SeqCst), 1);
+            assert_eq!(probe.live.load(SeqCst), factory_bytes);
+            assert_eq!(*probe.refunds.lock().unwrap(), [2]);
             drop(factory);
-            assert_eq!(probe.live.load(SeqCst), exact);
+            assert_eq!(probe.live.load(SeqCst), 0);
+            assert_eq!(*probe.refunds.lock().unwrap(), [2, 1]);
         }
         assert_eq!(calls.load(SeqCst), 1);
+    }
+}
+
+// Use the source-private producer owner with the real global deallocator. The
+// inline-future tests provide their own allocator when all three features are
+// enabled, so this focused control uses the otherwise allocator-free profile.
+#[cfg(not(all(feature = "std", feature = "cranelift", feature = "wat")))]
+mod producer_physical_allocation_tests {
+    use super::*;
+    use std::alloc::{GlobalAlloc, Layout, System};
+
+    #[derive(Clone, Copy, Default)]
+    struct Watch {
+        pointer: usize,
+        bytes: usize,
+        align: usize,
+        freed: bool,
+        refund_after_free: bool,
+        refunds: usize,
+    }
+
+    std::thread_local! {
+        static WATCH: Cell<Watch> = Cell::new(Watch::default());
+    }
+
+    struct WatchingAllocator;
+    #[global_allocator]
+    static ALLOCATOR: WatchingAllocator = WatchingAllocator;
+
+    unsafe impl GlobalAlloc for WatchingAllocator {
+        unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+            unsafe { System.alloc(layout) }
+        }
+
+        unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
+            let _ = WATCH.try_with(|cell| {
+                let mut watch = cell.get();
+                if watch.pointer != 0 && pointer as usize == watch.pointer {
+                    watch.freed = true;
+                    watch.bytes = layout.size();
+                    watch.align = layout.align();
+                    cell.set(watch);
+                }
+            });
+            unsafe { System.dealloc(pointer, layout) }
+        }
+    }
+
+    #[derive(Default)]
+    struct PhysicalProbe {
+        requests: Mutex<Vec<usize>>,
+        live: AtomicUsize,
+        future_drop_live: AtomicUsize,
+        refunds: Mutex<Vec<usize>>,
+    }
+
+    struct PhysicalMemory(Arc<PhysicalProbe>);
+    struct PhysicalAllocation {
+        probe: Arc<PhysicalProbe>,
+        ordinal: usize,
+        bytes: usize,
+    }
+    impl crate::NativeMemory for PhysicalMemory {
+        fn reserve(&self, bytes: usize) -> Result<Box<dyn NativeAllocation>> {
+            let ordinal = {
+                let mut requests = self.0.requests.lock().unwrap();
+                requests.push(bytes);
+                requests.len()
+            };
+            self.0.live.fetch_add(bytes, SeqCst);
+            Ok(Box::new(PhysicalAllocation {
+                probe: self.0.clone(),
+                ordinal,
+                bytes,
+            }))
+        }
+    }
+    impl NativeAllocation for PhysicalAllocation {
+        fn allocated(&mut self) {}
+    }
+    impl Drop for PhysicalAllocation {
+        fn drop(&mut self) {
+            if self.ordinal == 2 {
+                let _ = WATCH.try_with(|cell| {
+                    let mut watch = cell.get();
+                    watch.refunds += 1;
+                    watch.refund_after_free = watch.freed;
+                    cell.set(watch);
+                });
+            }
+            self.probe.live.fetch_sub(self.bytes, SeqCst);
+            self.probe.refunds.lock().unwrap().push(self.ordinal);
+        }
+    }
+
+    // This separately owned Box remains paid after the producer future itself
+    // retires. The outside owner prevents its destruction during that unwind.
+    struct SeparateOwner {
+        _buffer: Box<[u8; 37]>,
+        _allocation: Box<dyn NativeAllocation>,
+    }
+
+    #[repr(align(256))]
+    struct PhysicalFuture {
+        probe: Arc<PhysicalProbe>,
+        address: Arc<AtomicUsize>,
+        _separate: Arc<Mutex<Option<SeparateOwner>>>,
+        panic_drop: bool,
+        _pinned: core::marker::PhantomPinned,
+    }
+    impl Future for PhysicalFuture {
+        type Output = Result<StreamResult>;
+        fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Self::Output> {
+            self.address
+                .store(self.as_ref().get_ref() as *const Self as usize, SeqCst);
+            Poll::Pending
+        }
+    }
+    impl Drop for PhysicalFuture {
+        fn drop(&mut self) {
+            self.probe
+                .future_drop_live
+                .store(self.probe.live.load(SeqCst), SeqCst);
+            assert!(!self.panic_drop, "producer-physical-destructor-control");
+        }
+    }
+
+    #[test]
+    fn producer_future_physical_deallocation_precedes_its_refund_on_unwind() {
+        for panic_drop in [false, true] {
+            let probe = Arc::new(PhysicalProbe::default());
+            let memory = Arc::new(PhysicalMemory(probe.clone()));
+            let original: crate::runtime::native_memory::Memory = Some(memory.clone());
+            let address = Arc::new(AtomicUsize::new(0));
+            let separate = Arc::new(Mutex::new(None));
+            let function = {
+                let probe = probe.clone();
+                let address = address.clone();
+                let separate = separate.clone();
+                move || PhysicalFuture {
+                    probe: probe.clone(),
+                    address: address.clone(),
+                    _separate: separate.clone(),
+                    panic_drop,
+                    _pinned: core::marker::PhantomPinned,
+                }
+            };
+            let prepared =
+                PreparedTypedProducerFactory::new(&original, move |()| function).unwrap();
+            let factory = prepared.finish_producer(());
+            let factory_bytes = probe.live.load(SeqCst);
+            let mut future = factory.prepare_producer().unwrap();
+            let exact = Layout::new::<PhysicalFuture>();
+            assert_eq!(probe.requests.lock().unwrap()[1], exact.size());
+            let mut separate_allocation = crate::NativeMemory::reserve(&*memory, 37).unwrap();
+            let separate_buffer = Box::new([0; 37]);
+            separate_allocation.allocated();
+            *separate.lock().unwrap() = Some(SeparateOwner {
+                _buffer: separate_buffer,
+                _allocation: separate_allocation,
+            });
+            let paid = factory_bytes + exact.size() + 37;
+            assert_eq!(probe.live.load(SeqCst), paid);
+            let mut cx = Context::from_waker(Waker::noop());
+            assert!(Pin::new(&mut future).poll(&mut cx).is_pending());
+            let pointer = address.load(SeqCst);
+            assert_ne!(pointer, 0);
+            WATCH.with(|cell| {
+                cell.set(Watch {
+                    pointer,
+                    ..Watch::default()
+                })
+            });
+
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(future)));
+            assert_eq!(result.is_err(), panic_drop);
+            if let Err(error) = result {
+                assert_eq!(
+                    error.downcast_ref::<&str>(),
+                    Some(&"producer-physical-destructor-control")
+                );
+            }
+            assert_eq!(probe.future_drop_live.load(SeqCst), paid);
+            let watch = WATCH.with(Cell::get);
+            assert!(watch.freed && watch.refund_after_free);
+            assert_eq!((watch.bytes, watch.align), (exact.size(), exact.align()));
+            assert_eq!(watch.refunds, 1);
+            assert_eq!(probe.live.load(SeqCst), factory_bytes + 37);
+            assert_eq!(*probe.refunds.lock().unwrap(), [2]);
+            WATCH.with(|cell| cell.set(Watch::default()));
+            drop(factory);
+            assert_eq!(probe.live.load(SeqCst), 37);
+            drop(separate.lock().unwrap().take());
+            assert_eq!(probe.live.load(SeqCst), 0);
+            assert_eq!(*probe.refunds.lock().unwrap(), [2, 1, 3]);
+        }
     }
 }
 
@@ -1797,6 +1997,189 @@ fn host_accept_factory_none_keeps_literal_box_and_no_reservation() {
     drop(factory);
     assert!(probe.requests.lock().unwrap().is_empty());
     assert_eq!(*trace.lock().unwrap(), ["call", "legacy"]);
+}
+
+// This future really borrows the input across polls. Its over-aligned layout
+// makes an erased-pointer-sized or unpadded reservation distinguishable.
+#[repr(align(256))]
+struct BorrowedAcceptFutureProbe<'a> {
+    input: &'a mut UntypedWriteBuffer<'a>,
+    probe: Arc<ConsumerCellProbe>,
+    polls: Arc<AtomicUsize>,
+    address: Arc<AtomicUsize>,
+    mode: u8,
+    panic_drop: bool,
+    _pinned: core::marker::PhantomPinned,
+}
+
+impl Future for BorrowedAcceptFutureProbe<'_> {
+    type Output = Result<StreamResult>;
+
+    fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<Self::Output> {
+        // SAFETY: no field moves while this original boxed future is pinned.
+        let this = unsafe { self.get_unchecked_mut() };
+        let address = this as *const Self as usize;
+        assert_eq!(address % 256, 0);
+        match this.address.compare_exchange(0, address, SeqCst, SeqCst) {
+            Ok(_) => {}
+            Err(old) => assert_eq!(old, address),
+        }
+        this.polls.fetch_add(1, SeqCst);
+        match this.mode {
+            0 => Poll::Pending,
+            1 => {
+                let input = this.input.get_mut::<u8>().unwrap();
+                assert_eq!(input.remaining(), &[42]);
+                input.skip(1);
+                Poll::Ready(Ok(StreamResult::Completed))
+            }
+            _ => Poll::Ready(Err(crate::Error::msg(FAILURE))),
+        }
+    }
+}
+
+impl Drop for BorrowedAcceptFutureProbe<'_> {
+    fn drop(&mut self) {
+        assert!(self.probe.live.load(SeqCst) >= core::mem::size_of::<Self>());
+        self.probe.value_drops.fetch_add(1, SeqCst);
+        assert!(!self.panic_drop, "borrowed-accept-future-drop");
+    }
+}
+
+fn borrowed_accept_probe_factory(
+    probe: Arc<ConsumerCellProbe>,
+    calls: Arc<AtomicUsize>,
+    polls: Arc<AtomicUsize>,
+    address: Arc<AtomicUsize>,
+    mode: u8,
+    panic_drop: bool,
+) -> impl for<'a> Fn(&'a mut UntypedWriteBuffer<'a>) -> Result<OwnedHostAcceptFuture<'a>>
++ Send
++ Sync
++ 'static {
+    let memory = consumer_cell_memory(&probe);
+    move |input| {
+        prepare_host_accept_future(&memory, input, |input| {
+            calls.fetch_add(1, SeqCst);
+            BorrowedAcceptFutureProbe {
+                input,
+                probe: probe.clone(),
+                polls: polls.clone(),
+                address: address.clone(),
+                mode,
+                panic_drop,
+                _pinned: core::marker::PhantomPinned,
+            }
+        })
+    }
+}
+
+#[test]
+fn borrowed_host_accept_exact_admission_and_original_retirement() {
+    let exact = core::alloc::Layout::new::<BorrowedAcceptFutureProbe<'static>>();
+    assert_eq!(exact.align(), 256);
+    assert_eq!(exact.size() % exact.align(), 0);
+    for mode in 0..3 {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        let calls = Arc::new(AtomicUsize::new(0));
+        let polls = Arc::new(AtomicUsize::new(0));
+        let address = Arc::new(AtomicUsize::new(0));
+        let function = borrowed_accept_probe_factory(
+            probe.clone(),
+            calls.clone(),
+            polls.clone(),
+            address.clone(),
+            mode,
+            false,
+        );
+        let factory =
+            own_typed_host_accept_factory(&consumer_cell_memory(&probe), function).unwrap();
+        let factory_bytes = probe.live.load(SeqCst);
+        assert!(factory_bytes > 0);
+        probe.refuse.store(2, SeqCst);
+        let mut buffer = SliceBuffer::new(vec![42], 0, 1);
+        {
+            let mut untyped = UntypedWriteBuffer::new(&mut buffer);
+            assert!(factory.invoke_accept(&mut untyped).is_err());
+        }
+        assert_eq!(calls.load(SeqCst), 0);
+        assert_eq!(polls.load(SeqCst), 0);
+        assert_eq!(probe.live.load(SeqCst), factory_bytes);
+        assert_eq!(probe.requests.lock().unwrap()[1], exact.size());
+        assert_eq!(buffer.remaining(), &[42]);
+
+        probe.refuse.store(0, SeqCst);
+        {
+            let mut untyped = UntypedWriteBuffer::new(&mut buffer);
+            let mut future = factory.invoke_accept(&mut untyped).unwrap();
+            assert_eq!(probe.requests.lock().unwrap()[2], exact.size());
+            assert_eq!(probe.live.load(SeqCst), factory_bytes + exact.size());
+            assert_eq!(calls.load(SeqCst), 1);
+            let mut cx = Context::from_waker(Waker::noop());
+            let result = Pin::new(&mut future).poll(&mut cx);
+            match mode {
+                0 => assert!(result.is_pending()),
+                1 => assert!(matches!(result, Poll::Ready(Ok(StreamResult::Completed)))),
+                _ => assert!(matches!(result, Poll::Ready(Err(_)))),
+            }
+            assert_eq!(probe.live.load(SeqCst), factory_bytes + exact.size());
+            probe.check_value_drop.store(true, SeqCst);
+            drop(future);
+            probe.check_value_drop.store(false, SeqCst);
+        }
+        assert_eq!(probe.value_drops.load(SeqCst), 1);
+        assert_eq!(probe.live.load(SeqCst), factory_bytes);
+        assert_ne!(address.load(SeqCst), 0);
+        assert_eq!(buffer.remaining().len(), if mode == 1 { 0 } else { 1 });
+        drop(factory);
+        assert_eq!(probe.live.load(SeqCst), 0);
+    }
+}
+
+#[test]
+fn borrowed_host_accept_confirmation_and_destructor_unwind_keep_original_owner() {
+    let exact = core::mem::size_of::<BorrowedAcceptFutureProbe<'static>>();
+    for confirmation_unwinds in [true, false] {
+        let probe = Arc::new(ConsumerCellProbe::default());
+        let calls = Arc::new(AtomicUsize::new(0));
+        let function = borrowed_accept_probe_factory(
+            probe.clone(),
+            calls.clone(),
+            Arc::new(AtomicUsize::new(0)),
+            Arc::new(AtomicUsize::new(0)),
+            0,
+            !confirmation_unwinds,
+        );
+        let factory =
+            own_typed_host_accept_factory(&consumer_cell_memory(&probe), function).unwrap();
+        let factory_bytes = probe.live.load(SeqCst);
+        let mut buffer = SliceBuffer::new(vec![42], 0, 1);
+        probe.check_value_drop.store(confirmation_unwinds, SeqCst);
+        if confirmation_unwinds {
+            probe.panic_confirmation.store(2, SeqCst);
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                let mut input = UntypedWriteBuffer::new(&mut buffer);
+                drop(factory.invoke_accept(&mut input));
+            }));
+            assert!(result.is_err());
+            assert_eq!(probe.value_drops.load(SeqCst), 1);
+            assert_eq!(probe.live.load(SeqCst), factory_bytes);
+        } else {
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                let mut input = UntypedWriteBuffer::new(&mut buffer);
+                let future = factory.invoke_accept(&mut input).unwrap();
+                drop(future);
+            }));
+            assert!(result.is_err());
+            assert_eq!(probe.value_drops.load(SeqCst), 1);
+            assert_eq!(probe.live.load(SeqCst), factory_bytes);
+        }
+        assert_eq!(probe.requests.lock().unwrap()[1], exact);
+        probe.check_value_drop.store(false, SeqCst);
+        drop(factory);
+        assert_eq!(probe.live.load(SeqCst), 0);
+        assert_eq!(calls.load(SeqCst), 1);
+    }
 }
 
 #[test]

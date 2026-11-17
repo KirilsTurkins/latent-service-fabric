@@ -357,6 +357,24 @@ async fn kernel_occupancy_retains_original_io_request_scope_and_memory() {
 }
 
 #[tokio::test]
+async fn shared_kernel_ownership_retains_the_original_scope_and_charge() {
+    let setup = kernel_setup(single());
+    let (session, control) = kernel_session(&setup, "shared-kernel-scope");
+    let call = kernel_call(&setup, &session).await;
+    let scope = session.reserve_stream().unwrap().share().unwrap();
+    let before = control.budget.host_memory_bytes();
+    let original = call
+        .reserve_shared_stream_kernel_ownership(&scope, 98_304)
+        .unwrap();
+    drop(scope);
+    assert_eq!(control.budget.host_memory_bytes(), before + 98_304);
+    drop(original);
+    assert!(control.budget.host_memory_bytes() < before);
+    drop((call, session));
+    clean(&setup.pools).await;
+}
+
+#[tokio::test]
 async fn kernel_occupancy_rejects_foreign_scope_and_nonoriginal_allowance() {
     let setup = kernel_setup(ProviderPoolLimits::default());
     let (session, control) = kernel_session(&setup, "kernel-scope-original");

@@ -110,6 +110,14 @@ retain their original input owner through Hyper. TCP send/receive buffers reques
 16/32 KiB; operating systems may round those sizes. These counters are logical
 ownership bounds, not a claim to measure every allocator or kernel RSS byte.
 
+For native-accounted activations, the buffered request's transport byte owner
+also reserves its actual Box from the same original activation and I/O metadata
+limits before allocation. On pinned Linux x86-64 this is 176 bytes per request
+hop (112-byte owner plus 64-byte bookkeeping); other targets use their computed
+layout. The charge persists until the final transport clone releases that Box,
+and an existing tight limit can refuse the request earlier, including an empty
+redirect hop. The legacy Phase 1 logical-only profile keeps its prior path.
+
 Identity, gzip and zlib `deflate` responses are supported. Encoded and decoded
 storage, decoder windows and optional gzip header storage are reserved separately.
 Decompression checks output capacity incrementally and yields between finite

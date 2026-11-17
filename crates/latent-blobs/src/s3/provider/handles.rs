@@ -9,10 +9,10 @@ use latent_capabilities::broker::{
     SessionResourceTableReservation,
 };
 use latent_core::BudgetDimension;
-use latent_http::protocol::{ProtocolPage, PROTOCOL_PAGE_BYTES};
+use latent_http::protocol::{SharedProtocolPage, PROTOCOL_PAGE_BYTES};
 
 pub(super) struct Staging {
-    pub pages: Vec<Arc<ProtocolPage>>,
+    pub pages: Vec<SharedProtocolPage>,
     pub written: usize,
     expected: Option<u64>,
     pub tenant: String,
@@ -35,13 +35,13 @@ impl Staging {
         let count = stage.maximum.div_ceil(PROTOCOL_PAGE_BYTES);
         let mut pages = Vec::with_capacity(count);
         for i in 0..count {
-            pages.push(Arc::new(
-                ProtocolPage::allocate(
+            pages.push(
+                SharedProtocolPage::allocate(
                     &inner.pools,
                     (stage.maximum - i * PROTOCOL_PAGE_BYTES).min(PROTOCOL_PAGE_BYTES),
                 )
                 .map_err(crate::s3::http)?,
-            ));
+            );
         }
         Ok(Self {
             pages,
@@ -60,10 +60,11 @@ impl Staging {
         self.full_hash.update(bytes);
         for mut bytes in bytes.chunks(PROTOCOL_PAGE_BYTES) {
             while !bytes.is_empty() {
-                let page = Arc::get_mut(&mut self.pages[self.written / PROTOCOL_PAGE_BYTES])
-                    .ok_or(BlobError::InvalidState)?;
+                let page = &mut self.pages[self.written / PROTOCOL_PAGE_BYTES];
                 let count = bytes.len().min(page.capacity() - page.bytes().len());
-                page.append(&bytes[..count]).map_err(crate::s3::http)?;
+                page.try_append(&bytes[..count])
+                    .ok_or(BlobError::InvalidState)?
+                    .map_err(crate::s3::http)?;
                 self.part_hash.update(&bytes[..count]);
                 self.written += count;
                 bytes = &bytes[count..];

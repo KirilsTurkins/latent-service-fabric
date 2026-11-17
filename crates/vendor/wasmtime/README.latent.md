@@ -909,3 +909,37 @@ teardown, supply a per-Store physical-retirement receipt, or account all guest
 and host bytes. Non-Linux mapping-reset refusal, signed SpiderMonkey cleanup,
 and complete cross-tenant runtime qualification remain separate obligations.
 The v38 teardown-panic guarantee remains unchanged.
+
+## v40: admit borrowed host-to-host accept futures
+
+The selected native-memory path reserves the concrete future layout before
+constructing, boxing or polling each host-to-host accept future. The affine
+reservation remains with the pinned future until its Box is deallocated; the
+legacy no-memory path keeps the original factory and boxed future. The inline
+future owner is part of the already-admitted producer future, while independent
+captures and buffers keep their own existing owners. The native binding adds
+its existing owner and allocator-bookkeeping allowance to this layout.
+
+The pinned Rust 1.97.1 [Box drop elaboration](https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/compiler/rustc_mir_transform/src/elaborate_drop.rs#L745-L753)
+invokes the [Box destructor](https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/alloc/src/boxed.rs#L1885-L1898)
+on both the normal and the payload-unwind edge. Its reservation guard therefore
+runs after that deallocation even if the future destructor unwinds. This concerns
+only the Box allocation, not the retirement or node-wide bound of separate captures.
+At v40 the outer producer-future guard still retained its charge on a
+destructor unwind; that slice did not establish a node-wide bound on such guards.
+Allocator-retained RSS, transitive buffers, whole-runtime accounting and signed
+guest qualification remain outside this slice.
+
+## v41: retire the outer producer-future Box on destructor unwind
+
+The selected producer future retains its original reservation in a stack local
+while its pinned Box is destroyed. The pinned Rust Box drop glue deallocates the
+Box on both normal and payload-destructor unwind edges, before that local guard
+is refunded. This changes only the outer future's own Box reservation; captures,
+buffers and other owners retain their original independent accounting.
+
+The source-private controls exercise original admission, pinning, confirmation
+unwind, destructor unwind and an over-aligned allocation through the real global
+deallocator. They do not establish an RSS bound or a node-wide bound on other
+retained owners. The legacy no-memory producer path and resource limits are
+unchanged.

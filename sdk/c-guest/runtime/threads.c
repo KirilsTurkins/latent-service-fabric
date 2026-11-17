@@ -97,12 +97,19 @@ static int ensure_root_owners(struct lsf_c_thread *root) {
     root->task=task;root->context_owner=owner;return 0;
 }
 
+#if defined(LSF_C_STREAM_STDIO) && LSF_C_STREAM_STDIO
+void __lsf_c_stdio_initialize(void);
+#endif
 int __lsf_c_root_initialize(struct lsf_c_thread *root,uint32_t extent) {
     require(root==lsf_c_context_get() && root->phase==LSF_C_RUNNING
             && root->low!=0 && root->low%16u==0 && root->high%16u==0 && root->high>root->low
             && extent==root->tls_bytes && extent>0 && extent<=TEMPLATE_LIMIT);
     root->root=root;root->initial_template=NULL;root->api=LSF_C_ROOT;
-    root->canonical_id=lsf_c_thread_index();return 0;
+    root->canonical_id=lsf_c_thread_index();
+#if defined(LSF_C_STREAM_STDIO) && LSF_C_STREAM_STDIO
+    __lsf_c_stdio_initialize();
+#endif
+    return 0;
 }
 
 static int ensure_template(struct lsf_c_thread *root) {

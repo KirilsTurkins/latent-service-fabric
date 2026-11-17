@@ -353,9 +353,11 @@ class StandardFacilities(unittest.TestCase):
             self.assertFalse(any(item.startswith('-Wl,--undefined') for item in command))
             self.assertFalse(any(item.startswith('-Wl,--export=__imported_wasi_') for item in command))
             self.assertFalse(any('allow-multiple-definition' in item or '--wrap' in item for item in command))
+            self.assertEqual('-Wl,--strip-debug' in command,
+                             selected in (*facilities.FETCH_PROFILES, facilities.STREAM_STDIO_PROFILE))
             for value in closed_defines:
                 expected = (selected in facilities.FETCH_PROFILES or
-                            (selected == facilities.STREAM_PROFILE and value == 'abort=__lsf_c_abort'))
+                            (selected in facilities.STREAM_PROFILES and value == 'abort=__lsf_c_abort'))
                 self.assertEqual('-D' + value in command, expected)
 
         # Run the normal owner's actual source/WIT selection for every profile;
@@ -380,7 +382,7 @@ class StandardFacilities(unittest.TestCase):
                 raise CommandCaptured()
         for ordinal, selected in enumerate(sorted(facilities.SUPPORTED)):
             application = project.create(self.root / ('source-profile-' + str(ordinal)), 'greeting',
-                threading_profile=threading_profile if selected in (*facilities.FETCH_PROFILES, facilities.STREAM_PROFILE) else None)
+                threading_profile=threading_profile if selected in (*facilities.FETCH_PROFILES, *facilities.STREAM_PROFILES) else None)
             configuration = json.loads((application / 'capsule-project.json').read_bytes())
             configuration['runtimeProfile'] = selected
             (application / 'capsule-project.json').write_text(json.dumps(configuration))
@@ -396,7 +398,7 @@ class StandardFacilities(unittest.TestCase):
             self.assertEqual(selected_sources, expected_sources)
             has_clock = 'src/standard-clock-entropy.c' in selected_sources
             self.assertEqual(has_clock, selected in (facilities.PROFILE, facilities.COMBINED_PROFILE,
-                                                    facilities.FETCH_STANDARD_PROFILE, facilities.STREAM_PROFILE))
+                                                    facilities.FETCH_STANDARD_PROFILE, *facilities.STREAM_PROFILES))
             for interface in facilities.IMPORTS:
                 self.assertEqual(('import ' + interface + ';') in selected_wit, has_clock)
         self.assertEqual(len(captured), len(facilities.SUPPORTED))

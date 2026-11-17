@@ -137,6 +137,68 @@ assert.equal(target.performance.now(),1.25);assert.equal(target.performance.time
 assert.deepEqual([wallCalls,monoCalls,originCalls],[3,1,1]);
 """.replace('SOURCE', json.dumps((ROOT/'sdk/typescript-guest/activation/clock_globals.js').read_bytes().decode())))
 
+    def test_date_now_descriptor_obeys_the_selected_and_unselected_clock_guards(self):
+        self.javascript(r"""
+let wallCalls=0,snapshot=true;
+target.__lsfSelectedClockBridge={wall(){wallCalls++;return 123;},now(){return 1;},origin(){return 0;}};
+vm.runInContext(SOURCE,context);installApplicationClocks(true,()=>snapshot,target);
+const descriptor=Object.getOwnPropertyDescriptor(target.Date,'now');
+assert.strictEqual(descriptor.value,target.Date.now);
+assert.throws(()=>descriptor.value(),/snapshot-time-clock-observation-unsupported/);
+assert.equal(wallCalls,0);
+snapshot=false;assert.equal(descriptor.value(),123);assert.equal(wallCalls,1);
+
+const otherContext=vm.createContext({performance:{}});
+const other=vm.runInContext('globalThis',otherContext);
+let unsupportedCalls=0;other.Date.now=()=>{unsupportedCalls++;return 456;};
+installApplicationClocks(false,()=>false,other);
+const unsupported=Object.getOwnPropertyDescriptor(other.Date,'now').value;
+assert.strictEqual(unsupported,other.Date.now);
+assert.throws(()=>unsupported(),/unsupported:standard-clock-without-approved-profile/);
+assert.equal(unsupportedCalls,0);
+""".replace('SOURCE', json.dumps((ROOT/'sdk/typescript-guest/activation/clock_globals.js').read_bytes().decode())))
+
+    def test_date_now_reassignment_and_freezing_match_a_standard_date(self):
+        self.javascript(r"""
+const referenceContext=vm.createContext({});
+const reference=vm.runInContext('globalThis',referenceContext);
+const replacement=()=>42;
+reference.Date.now=replacement;
+assert.strictEqual(reference.Date.now,replacement);
+Object.freeze(reference.Date);
+assert.equal(reference.Date.now(),42);
+
+installApplicationClocks(false,()=>false,target);
+target.Date.now=replacement;
+assert.strictEqual(target.Date.now,replacement);
+Object.freeze(target.Date);
+assert.equal(target.Date.now(),42);
+
+const frozenContext=vm.createContext({performance:{}});
+const frozen=vm.runInContext('globalThis',frozenContext);
+installApplicationClocks(false,()=>false,frozen);
+Object.freeze(frozen.Date);
+assert.throws(()=>frozen.Date.now(),/unsupported:standard-clock-without-approved-profile/);
+""")
+
+    def test_date_clock_installation_and_mutation_stay_in_each_fresh_realm(self):
+        self.javascript(r"""
+const secondContext=vm.createContext({performance:{}});
+const second=vm.runInContext('globalThis',secondContext);
+const secondDate=second.Date, secondNow=second.Date.now;
+assert.notStrictEqual(target.Date,secondDate);
+installApplicationClocks(false,()=>false,target);
+assert.strictEqual(second.Date,secondDate);
+assert.strictEqual(second.Date.now,secondNow);
+
+let calls=0;
+second.__lsfSelectedClockBridge={wall(){calls++;return 77;},now(){return 1;},origin(){return 0;}};
+vm.runInContext(SOURCE,secondContext);installApplicationClocks(true,()=>false,second);
+target.Date.now=()=>42;Object.freeze(target.Date);
+assert.equal(target.Date.now(),42);
+assert.equal(second.Date.now(),77);assert.equal(calls,1);
+""".replace('SOURCE', json.dumps((ROOT/'sdk/typescript-guest/activation/clock_globals.js').read_bytes().decode())))
+
     def test_backend_error_identity_and_full_millisecond_value_are_preserved_without_retry(self):
         self.javascript(r"""
 let calls=0,fail=false;const failure={kind:'closed-known-provider-failure'};

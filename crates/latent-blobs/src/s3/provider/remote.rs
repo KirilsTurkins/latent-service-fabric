@@ -1,8 +1,8 @@
-use super::{inventory, Arc, BlobError, Digest, Inner, PoolCall, ProviderMetadata, Result, Sha256};
+use super::{inventory, BlobError, Digest, Inner, PoolCall, ProviderMetadata, Result, Sha256};
 use crate::s3::{signing, xml::Document, PART_BYTES, XML_BYTES};
 use latent_capabilities::broker::{http::HttpError, io::IoBuffer};
 use latent_http::protocol::{
-    ProtocolBody, ProtocolPage, ProtocolRequest, ProtocolResponse, ProtocolScope,
+    ProtocolBody, ProtocolRequest, ProtocolResponse, ProtocolScope, SharedProtocolPage,
 };
 
 pub(super) struct Spec<'a> {
@@ -129,10 +129,12 @@ pub(super) fn body(inner: &Inner, bytes: &[u8]) -> Result<ProtocolBody> {
     if bytes.is_empty() {
         return ProtocolBody::empty(&inner.pools).map_err(crate::s3::http);
     }
-    let mut page = ProtocolPage::allocate(&inner.pools, bytes.len()).map_err(crate::s3::http)?;
-    page.append(bytes).map_err(crate::s3::http)?;
-    ProtocolBody::from_pages(&inner.pools, &[Arc::new(page)], 0..bytes.len())
-        .map_err(crate::s3::http)
+    let mut page =
+        SharedProtocolPage::allocate(&inner.pools, bytes.len()).map_err(crate::s3::http)?;
+    page.try_append(bytes)
+        .ok_or(BlobError::InvalidState)?
+        .map_err(crate::s3::http)?;
+    ProtocolBody::from_shared_pages(&inner.pools, &[page], 0..bytes.len()).map_err(crate::s3::http)
 }
 pub(super) async fn read(
     inner: &Inner,

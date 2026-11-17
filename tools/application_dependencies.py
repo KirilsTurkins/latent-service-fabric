@@ -80,6 +80,24 @@ def metadata(value):
     return value
 
 
+def c_archive_selection(item: dict, language: str | None) -> tuple[str, ...] | None:
+    if 'cArchiveSelection' not in item['metadata']:
+        return None
+    value = item['metadata']['cArchiveSelection']
+    if (language != 'c' or item['format'] not in {'tar', 'zip'}
+            or item['role'] not in {'application', 'resource'}
+            or not isinstance(value, dict) or set(value) != {'formatVersion', 'include'}
+            or type(value['formatVersion']) is not int or value['formatVersion'] != 1
+            or not isinstance(value['include'], list) or not 0 < len(value['include']) <= 64):
+        raise DependencyError('dependency-archive-selection-invalid')
+    prefixes = tuple(path_name(prefix) for prefix in value['include'])
+    folded = [prefix.casefold() for prefix in prefixes]
+    if len(set(folded)) != len(folded) or any(
+            left != right and right.startswith(left + '/') for left in folded for right in folded):
+        raise DependencyError('dependency-archive-selection-invalid')
+    return prefixes
+
+
 def validate_manifest(value: dict, language: str | None = None) -> dict:
     if (set(value) != {"formatVersion", "language", "selection", "nativeLocks", "artifacts", "transformations"}
             or type(value["formatVersion"]) is not int or value["formatVersion"] != 1
@@ -123,6 +141,7 @@ def validate_manifest(value: dict, language: str | None = None) -> dict:
         else:
             raise DependencyError("dependency-source-invalid")
         metadata(item["metadata"])
+        c_archive_selection(item, value['language'])
     for mount in mounts:
         if any(other != mount and other.startswith(mount + "/") for other in mounts):
             raise DependencyError("dependency-mount-collision")
@@ -218,7 +237,7 @@ def capture(project: Path, *, cache: Path | None = None, repositories: dict | No
             original_sources.append((path, item["format"], digest(data)))
         original = store.put(data)
         if item["format"] in {"zip", "tar"}:
-            files = archive_files(data, item["format"])
+            files = archive_files(data, item["format"], selected_prefixes=c_archive_selection(item, manifest['language']))
         if item["format"] == "file":
             files = {Path(item["mount"]).name: data}
         rows = captured_files(files, store)
@@ -265,7 +284,7 @@ def capture(project: Path, *, cache: Path | None = None, repositories: dict | No
             "executableInputs": [row["id"] for row in artifacts if row["role"] == "build-tool"]}
 
 
-def verify_artifact(item: dict, spec: dict, transforms: list[dict], store: Store) -> None:
+def verify_artifact(item: dict, spec: dict, transforms: list[dict], store: Store, language: str | None = None) -> None:
     """Reconstruct selection from original bytes and reviewed patch preimages."""
     original = store.get(**item["original"])
     if "digest" in spec["source"] and digest(original) != spec["source"]["digest"]:
@@ -285,7 +304,7 @@ def verify_artifact(item: dict, spec: dict, transforms: list[dict], store: Store
     elif item["format"] == "file":
         files = {Path(item["mount"]).name: original}
     else:
-        files = archive_files(original, item["format"])
+        files = archive_files(original, item["format"], selected_prefixes=c_archive_selection(spec, language))
     rows = [{"path": name, "digest": digest(data), "size": len(data)} for name, data in sorted(files.items())]
     for transform in transforms:
         if transform["artifact"] != item["id"]:
@@ -338,7 +357,7 @@ class Closure:
         manifest = decode_json(self.manifest)
         declared = {item["id"]: item for item in manifest["artifacts"]}
         for item in self.lock["artifacts"]:
-            verify_artifact(item, declared[item["id"]], manifest["transformations"], self.store)
+            verify_artifact(item, declared[item["id"]], manifest["transformations"], self.store, manifest['language'])
             destination = self.work / item["mount"]
             for row in item["files"]:
                 target = destination if item["format"] == "file" else destination / row["path"]
@@ -430,7 +449,7 @@ def verify_inputs(project: Path, language: str, *, cache: Path | None = None,
         total_bytes += sum(row["size"] for row in item["files"])
         if total_files > MAX_CLOSURE_FILES or total_bytes > MAX_CLOSURE_BYTES:
             raise DependencyError("dependency-closure-limit")
-        verify_artifact(item, spec, manifest["transformations"], store)
+        verify_artifact(item, spec, manifest["transformations"], store, language)
         for row in item["files"]:
             store.get(row["digest"], row["size"])
         if item["format"] == "file" and (len(item["files"]) != 1 or item["files"][0]["path"] != Path(item["mount"]).name):

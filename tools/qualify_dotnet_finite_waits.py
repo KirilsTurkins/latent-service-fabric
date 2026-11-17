@@ -77,8 +77,8 @@ def build_evidence(artifact, *, aggregate: bool=False):
         require(selected==[{'name':material,'digest':value['sha256'],'size':value['bytes']}], 'finite-wait-observed-selected-material')
     port = read_json(artifact/'task-wait-port.json')
     extras = {'profile','frameworkInput','tool','derived','sourceCaptureDigest','targetsDigest','nativeAotReferenceBinding','selection'}
-    task_wait.validate_receipt({k:v for k,v in port.items() if k not in extras},
-        finite=True, managed=aggregate, aggregate=aggregate)
+    task_wait.validate_current_receipt({k:v for k,v in port.items() if k not in extras},
+        finite=True, managed=aggregate, aggregate=aggregate, require_finite_observation=True)
     fs = read_json(artifact/'closed-filesystem-port.json')
     require(port['profile']==task_wait.PROFILE and port['frameworkInput']['digest']==task_wait.SOURCE
         and port['derived']['digest']==port['outputDigest']
@@ -92,7 +92,7 @@ def build_evidence(artifact, *, aggregate: bool=False):
     rows = [row for row in patches['patches'] if row['name']==task_wait.PROFILE]
     require(len(rows)==1 and rows[0]['selected']==port['derived'] and rows[0]['original']==port['frameworkInput']
         and all(rows[0]['selection'][k]==port[k] for k in ('finiteAndCancellableWaits','generatedHelperCount',
-            'finiteWaitCleanup','zeroTimeout','waitCancellation','publicWaitValidationAndExceptions')),
+            'finiteWaitCleanup','finiteWaitObservation','zeroTimeout','waitCancellation','publicWaitValidationAndExceptions')),
         'finite-wait-compiler-patch-selection')
     if aggregate:
         # The verified filesystem pass preserves 44,744 original bodies plus

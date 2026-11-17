@@ -32,6 +32,8 @@ mod control;
 mod limits;
 mod maintenance;
 pub use admission::{PoolAdmission, PoolCall, PoolReady};
+#[cfg(feature = "test-support")]
+pub use client::stream_retained_layout_bytes;
 pub use client::{ConnectionReservation, PooledConnection, ProviderClient};
 pub use control::{
     CleanupFuture, CleanupResult, ProviderJob, StreamKernelCloseJob, StreamKernelCloseObservation,
