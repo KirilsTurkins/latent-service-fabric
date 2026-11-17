@@ -617,25 +617,40 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     @Override public <U> CompletableFuture<U> thenApplyAsync(Function<? super T, ? extends U> fn) { Objects.requireNonNull(fn); return unary(fn, defaultExecutor()); }
     @Override public <U> CompletableFuture<U> thenApplyAsync(Function<? super T, ? extends U> fn, Executor executor) { return unary(fn, Objects.requireNonNull(executor)); }
     @Override public CompletableFuture<Void> thenAccept(Consumer<? super T> fn) { Objects.requireNonNull(fn); return unary(value -> { fn.accept(value); return null; }, null); }
-    @Override public CompletableFuture<Void> thenAcceptAsync(Consumer<? super T> fn) { Objects.requireNonNull(fn); return thenAcceptAsync(fn, defaultExecutor()); }
+    @Override public CompletableFuture<Void> thenAcceptAsync(Consumer<? super T> fn) {
+        Executor executor = defaultExecutor(); Objects.requireNonNull(fn);
+        return unary(value -> { fn.accept(value); return null; }, executor);
+    }
     @Override public CompletableFuture<Void> thenAcceptAsync(Consumer<? super T> fn, Executor executor) { Objects.requireNonNull(fn); return unary(value -> { fn.accept(value); return null; }, Objects.requireNonNull(executor)); }
     @Override public CompletableFuture<Void> thenRun(Runnable fn) { Objects.requireNonNull(fn); return unary(value -> { fn.run(); return null; }, null); }
-    @Override public CompletableFuture<Void> thenRunAsync(Runnable fn) { Objects.requireNonNull(fn); return thenRunAsync(fn, defaultExecutor()); }
+    @Override public CompletableFuture<Void> thenRunAsync(Runnable fn) {
+        Executor executor = defaultExecutor(); Objects.requireNonNull(fn);
+        return unary(value -> { fn.run(); return null; }, executor);
+    }
     @Override public CompletableFuture<Void> thenRunAsync(Runnable fn, Executor executor) { Objects.requireNonNull(fn); return unary(value -> { fn.run(); return null; }, Objects.requireNonNull(executor)); }
     @Override public <U, V> CompletableFuture<V> thenCombine(CompletionStage<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn) { return binary(other, fn, null); }
     @Override public <U, V> CompletableFuture<V> thenCombineAsync(CompletionStage<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn) { Objects.requireNonNull(other); Objects.requireNonNull(fn); return binary(other, fn, defaultExecutor()); }
     @Override public <U, V> CompletableFuture<V> thenCombineAsync(CompletionStage<? extends U> other, BiFunction<? super T, ? super U, ? extends V> fn, Executor executor) { return binary(other, fn, Objects.requireNonNull(executor)); }
     @Override public <U> CompletableFuture<Void> thenAcceptBoth(CompletionStage<? extends U> other, BiConsumer<? super T, ? super U> fn) { Objects.requireNonNull(fn); return binary(other, (left, right) -> { fn.accept(left, right); return null; }, null); }
-    @Override public <U> CompletableFuture<Void> thenAcceptBothAsync(CompletionStage<? extends U> other, BiConsumer<? super T, ? super U> fn) { Objects.requireNonNull(other); Objects.requireNonNull(fn); return thenAcceptBothAsync(other, fn, defaultExecutor()); }
+    @Override public <U> CompletableFuture<Void> thenAcceptBothAsync(CompletionStage<? extends U> other, BiConsumer<? super T, ? super U> fn) {
+        Executor executor = defaultExecutor(); Objects.requireNonNull(fn); Objects.requireNonNull(other);
+        return binary(other, (left, right) -> { fn.accept(left, right); return null; }, executor);
+    }
     @Override public <U> CompletableFuture<Void> thenAcceptBothAsync(CompletionStage<? extends U> other, BiConsumer<? super T, ? super U> fn, Executor executor) { Objects.requireNonNull(fn); return binary(other, (left, right) -> { fn.accept(left, right); return null; }, Objects.requireNonNull(executor)); }
     @Override public CompletableFuture<Void> runAfterBoth(CompletionStage<?> other, Runnable fn) { Objects.requireNonNull(fn); return binary(other, (left, right) -> { fn.run(); return null; }, null); }
-    @Override public CompletableFuture<Void> runAfterBothAsync(CompletionStage<?> other, Runnable fn) { Objects.requireNonNull(other); Objects.requireNonNull(fn); return runAfterBothAsync(other, fn, defaultExecutor()); }
+    @Override public CompletableFuture<Void> runAfterBothAsync(CompletionStage<?> other, Runnable fn) {
+        Executor executor = defaultExecutor(); Objects.requireNonNull(fn); Objects.requireNonNull(other);
+        return binary(other, (left, right) -> { fn.run(); return null; }, executor);
+    }
     @Override public CompletableFuture<Void> runAfterBothAsync(CompletionStage<?> other, Runnable fn, Executor executor) { Objects.requireNonNull(fn); return binary(other, (left, right) -> { fn.run(); return null; }, Objects.requireNonNull(executor)); }
     @Override public <U> CompletableFuture<U> applyToEither(CompletionStage<? extends T> other, Function<? super T, U> fn) { return either(other, fn, null); }
     @Override public <U> CompletableFuture<U> applyToEitherAsync(CompletionStage<? extends T> other, Function<? super T, U> fn) { Objects.requireNonNull(other); Objects.requireNonNull(fn); return either(other, fn, defaultExecutor()); }
     @Override public <U> CompletableFuture<U> applyToEitherAsync(CompletionStage<? extends T> other, Function<? super T, U> fn, Executor executor) { return either(other, fn, Objects.requireNonNull(executor)); }
     @Override public CompletableFuture<Void> acceptEither(CompletionStage<? extends T> other, Consumer<? super T> fn) { Objects.requireNonNull(fn); return either(other, value -> { fn.accept(value); return null; }, null); }
-    @Override public CompletableFuture<Void> acceptEitherAsync(CompletionStage<? extends T> other, Consumer<? super T> fn) { Objects.requireNonNull(other); Objects.requireNonNull(fn); return acceptEitherAsync(other, fn, defaultExecutor()); }
+    @Override public CompletableFuture<Void> acceptEitherAsync(CompletionStage<? extends T> other, Consumer<? super T> fn) {
+        Executor executor = defaultExecutor(); Objects.requireNonNull(fn); Objects.requireNonNull(other);
+        return either(other, value -> { fn.accept(value); return null; }, executor);
+    }
     @Override public CompletableFuture<Void> acceptEitherAsync(CompletionStage<? extends T> other, Consumer<? super T> fn, Executor executor) { Objects.requireNonNull(fn); return either(other, value -> { fn.accept(value); return null; }, Objects.requireNonNull(executor)); }
     @Override public CompletableFuture<Void> runAfterEither(CompletionStage<?> other, Runnable fn) { Objects.requireNonNull(fn); return eitherAny(other, fn, null); }
     @Override public CompletableFuture<Void> runAfterEitherAsync(CompletionStage<?> other, Runnable fn) { Objects.requireNonNull(other); Objects.requireNonNull(fn); return eitherAny(other, fn, defaultExecutor()); }

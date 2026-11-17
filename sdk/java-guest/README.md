@@ -173,6 +173,9 @@ outcome without cancelling a queued or running producer; its original owners
 remain charged until physical retirement. Cancellation observations create a
 new exception with the original cancellation as its cause, as in the tested
 JDK 25; that exception uses the existing guest heap.
+The default-executor asynchronous stage methods honor subclass overrides of
+`defaultExecutor()` and `newIncompleteFuture()` without invoking a separate
+overridable explicit-executor overload.
 Scheduled futures from different pools compare their deadlines at one monotonic
 clock reading. Equal deadlines use each task's original queued-work admission
 identity, including across pools. As with concurrently submitted JDK tasks,
