@@ -410,3 +410,28 @@ fn retry_requires_explicit_complete_original_fence_and_separate_request_identity
     )
     .is_err());
 }
+
+#[test]
+fn transaction_query_error_statuses_keep_current_delivery_and_no_store() {
+    let pool = pool();
+    for status in [400, 401, 403, 404, 409, 502, 503, 504] {
+        let fence = Arc::new(CurrentDelivery(AtomicBool::new(true)));
+        let mut delivery = invocation(&pool, "POST")
+            .complete_transaction(status, b"{}".to_vec(), fence.clone())
+            .unwrap();
+        delivery.enforce_browser_profile(Scheme::Https).unwrap();
+        assert_eq!(delivery.status(), status);
+        assert!(delivery
+            .headers()
+            .any(|header| header.name == "cache-control" && header.value == b"no-store"));
+        fence.0.store(false, Ordering::Release);
+        assert_eq!(delivery.remaining_body(), Err(HttpError::Forbidden));
+        drop(delivery);
+        assert_eq!(pool.snapshot().reserved_bytes, 0);
+    }
+    let fence = Arc::new(CurrentDelivery(AtomicBool::new(true)));
+    assert!(matches!(
+        invocation(&pool, "POST").complete_transaction(418, b"{}".to_vec(), fence),
+        Err(HttpError::InvalidResponse)
+    ));
+}
