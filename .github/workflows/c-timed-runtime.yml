@@ -55,6 +55,8 @@ on:
       - 'tools/c_guest/bindings.py'
       - 'tools/c_guest/closed_filesystem.py'
       - 'tools/c_guest/compiler.py'
+      - 'tools/c_guest/feature_detection.py'
+      - 'tools/c_guest/feature_loader.cmake'
       - 'tools/c_guest/language.py'
       - 'tools/c_guest/standard_facilities.py'
       - 'tools/c_guest/threading.py'
