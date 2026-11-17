@@ -191,14 +191,15 @@ class ManagedWorkContractTests(unittest.TestCase):
             arguments[-2].write_bytes(b'explicit-managed-tool-control')
             value = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-v2-controlled.json').read_text())
             value['managedAcceptedWork'] = copy.deepcopy(work.INLINE_PRIMARY_REWRITE_RECEIPT)
-            value['generatedHelperCount'] = 108
+            value['generatedHelperCount'] = 109
             value['unchangedOriginalMethods'] = 44708
+            value['finiteWaitObservation'] = task_wait.FINITE_OBSERVATION
             value['aggregateTaskWait'] = copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED)
             value['outputDigest'] = digest(b'explicit-managed-tool-control')
             write_json(arguments[-1], value)
         control.run_tool = run
         port = control.prepare(managed=True); control.references(port)
-        self.assertEqual(port.validated_helper_count(),108)
+        self.assertEqual(port.validated_helper_count(),109)
         self.assertEqual(port.finish(control.project,control.evidence)['selection']['requiredDeclarations'],sorted(DECLARED))
 
     def test_required_content_task_keeps_original_transport_error_channel(self):
