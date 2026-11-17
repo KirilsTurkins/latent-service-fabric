@@ -745,6 +745,72 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                              'nonsuspendable', 'wrong-digest', 'changed-after-selection'):
                 with self.subTest(mutation=mutation): run_case(mutation)
 
+    def test_text_iterator_selection_and_drift_are_independent(self):
+        from tools.go_guest import checkpoints
+        from tools.rust_capsule_project import digest
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            generated, goroot = root/'module', root/'goroot'
+            generated.mkdir()
+            paths = {name: goroot/'src'/name/'iter.go' for name in ('strings', 'bytes')}
+            originals = {}
+            for name, path in paths.items():
+                path.parent.mkdir(parents=True)
+                originals[name] = ('package ' + name + '\nfunc Run(){}\n').encode()
+                path.write_bytes(originals[name])
+                (path.parent/'other.go').write_bytes(b'package other\n')
+            pins = {name: hashlib.sha256(raw).hexdigest() for name, raw in originals.items()}
+            expected_sites = [{'line': line, 'column': column, 'suspendable': True}
+                              for line, column in checkpoints.STANDARD_TEXT_ITERATOR_SITES]
+
+            def run_case(names, mutation):
+                output = root/('-'.join(names)+'-'+mutation)
+                output.mkdir()
+                packages = [{'ImportPath': name, 'Standard': True, 'Dir': str(paths[name].parent),
+                             'GoFiles': ['iter.go', 'other.go']} for name in names]
+                if mutation == 'nonstandard': packages[0]['Standard'] = False
+                if mutation == 'foreign-directory': packages[0]['Dir'] = str(generated)
+                if mutation == 'missing-source': packages[0]['GoFiles'] = ['other.go']
+                if mutation == 'duplicate': packages.append(dict(packages[0]))
+                if mutation == 'changed-source': paths[names[0]].write_bytes(originals[names[0]]+b'changed')
+                def execute(_label, _tool, request, destination):
+                    selected = json.loads(request.read_bytes())
+                    self.assertEqual({row['path'] for row in selected}, {str(paths[name]) for name in names})
+                    destination.mkdir()
+                    rows = []
+                    for index, item in enumerate(selected):
+                        source = Path(item['path']); name = source.parent.name
+                        adapted = destination/(str(index)+'.go')
+                        adapted.write_bytes(originals[name]+b'// checkpoint\n')
+                        sites = [dict(site) for site in expected_sites]
+                        if name == names[0] and mutation == 'wrong-sites': sites.pop()
+                        if name == names[0] and mutation == 'non-suspendable': sites[0]['suspendable'] = False
+                        rows.append({'path': str(source), 'adapted': str(adapted), 'sites': sites,
+                                     'upstreamDigest': digest(originals[name]), 'adaptedDigest': digest(adapted.read_bytes())})
+                    if mutation == 'changed-after-selection': paths[names[0]].write_bytes(originals[names[0]]+b'changed')
+                    return json.dumps(rows)
+                compiler = SimpleNamespace(run=execute, goroot=goroot)
+                try:
+                    with patch.object(checkpoints, 'STANDARD_STRING_ITERATOR_SHA256', pins['strings']), \
+                            patch.object(checkpoints, 'STANDARD_BYTES_ITERATOR_SHA256', pins['bytes']):
+                        if mutation != 'valid':
+                            with self.assertRaisesRegex(ValueError, 'standard-iterator-(source|output)-drift'):
+                                checkpoints.transform(compiler, generated, packages, set(), output)
+                            return
+                        replacements, records = checkpoints.transform(compiler, generated, packages, set(), output)
+                    self.assertEqual(set(replacements), {str(paths[name]) for name in names})
+                    self.assertEqual({row['name'] for row in records},
+                                     {'go-compiler-checkpoints/standard/'+name+'/iter.go' for name in names})
+                    self.assertTrue(all(row['sites'] == expected_sites for row in records))
+                    for path in paths.values(): self.assertEqual((path.parent/'other.go').read_bytes(), b'package other\n')
+                finally:
+                    for name, path in paths.items(): path.write_bytes(originals[name])
+            for names in (('strings',), ('bytes',), ('strings', 'bytes')):
+                for mutation in ('valid', 'nonstandard', 'foreign-directory', 'missing-source', 'duplicate', 'changed-source',
+                                 'wrong-sites', 'non-suspendable', 'changed-after-selection'):
+                    with self.subTest(names=names, mutation=mutation): run_case(names, mutation)
+
     def test_checkpoint_parser_cannot_omit_selected_application_or_dependency(self):
         from tools.go_guest import checkpoints
         from types import SimpleNamespace

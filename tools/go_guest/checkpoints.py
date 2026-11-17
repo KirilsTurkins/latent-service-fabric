@@ -19,6 +19,13 @@ STANDARD_MAP_ITERATOR = 'maps/iter.go'
 STANDARD_MAP_ITERATOR_SHA256 = 'a803b5b1b09aa2dcedf90db32270f9cec310bc7cf8f141f87c2e6567db0c4208'
 STANDARD_MAP_ITERATOR_SITES = [(12, 69), (13, 38), (14, 24), (25, 66), (26, 35), (27, 21),
                                (38, 68), (39, 35), (40, 24), (50, 77), (51, 25), (58, 65)]
+STANDARD_STRING_ITERATOR = 'strings/iter.go'
+STANDARD_STRING_ITERATOR_SHA256 = '067603fe06f2cec8ec607f9c9d469493901820f76af7f9e3e51136824fe8b04a'
+STANDARD_BYTES_ITERATOR = 'bytes/iter.go'
+STANDARD_BYTES_ITERATOR_SHA256 = '628f8dc51af2c70325050c0125340ec01c6a7da84c53f2f5ae3ec040c7e5fc6f'
+STANDARD_TEXT_ITERATOR_SITES = [(18, 40), (19, 40), (20, 19), (36, 61), (37, 40),
+                                (39, 20), (48, 8), (67, 48), (75, 53), (83, 44),
+                                (84, 40), (86, 28), (116, 67), (117, 40), (119, 28)]
 
 
 def checkpoint_yield_template(sdk):
@@ -91,6 +98,8 @@ def transform(compiler, generated, packages, application_sources, output):
     standard_iterators = {
         'slices': (STANDARD_ITERATOR, STANDARD_ITERATOR_SHA256, STANDARD_ITERATOR_SITES),
         'maps': (STANDARD_MAP_ITERATOR, STANDARD_MAP_ITERATOR_SHA256, STANDARD_MAP_ITERATOR_SITES),
+        'strings': (STANDARD_STRING_ITERATOR, STANDARD_STRING_ITERATOR_SHA256, STANDARD_TEXT_ITERATOR_SITES),
+        'bytes': (STANDARD_BYTES_ITERATOR, STANDARD_BYTES_ITERATOR_SHA256, STANDARD_TEXT_ITERATOR_SITES),
     }
     dispatcher = generated / 'vendor/go.bytecodealliance.org/pkg'
     for package in packages:
