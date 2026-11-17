@@ -48,6 +48,7 @@ class PartialOwnLifts final {
   std::unique_ptr<Lift> lifts_;
   uint32_t expected_plans_ = 0, expected_slots_ = 0, bound_plans_ = 0, bound_slots_ = 0;
   bool begun_ = false, sealed_ = false, binding_failed_ = false, collecting_ = false, preparing_ = false;
+  bool collection_uncertain_ = false;
   NativeOwner failed_owner_{};
   bool invalid(JSContext* cx, const char* reason) {
     return Imports::invalid(cx, reason);
@@ -170,8 +171,13 @@ public:
     // complete-unlifted/unknown-quarantine route, with no extra runtime node.
     if (!selected) return true;
     if (preparing_ || collecting_) {
+      collection_uncertain_ = true;
       imports_.stopped_ = true; return invalid(cx, "own-plan-reentrant-admission");
     }
+    // Never overwrite a refused original ACK or admit another sidecar after
+    // the import manager has closed. This check precedes Native admission.
+    if (imports_.stopped_ || failed_owner_.live)
+      return invalid(cx, "own-plan-admission-stopped");
     auto* item = imports_.find(id);
     if (!sealed_ || binding_failed_ || !item || item->cx != cx || !getter || !disposer ||
         !item->record_owner.live || !item->record_owner.token.id ||
@@ -276,15 +282,29 @@ public:
     }
     return true;
   }
-  bool collect(JSContext* cx) {
+private:
+  bool collectImpl(JSContext* cx, bool cancellation) {
     if (collecting_ || preparing_) {
+      collection_uncertain_ = true;
       imports_.stopped_ = true;
       return invalid(cx, "own-plan-reentrant-ACK");
     }
+    // Stopping the imports manager permanently fences guest work. Only the
+    // cancellation path may retire an orphan after every import record and
+    // observer has physically retired; never use a stop as proof of that.
+    if (collection_uncertain_ || (cancellation &&
+        (!imports_.stopped_ || imports_.hasPending()))) return false;
     if (!hasPending()) return true;
-    if (imports_.stopped_ || failed_owner_.live) return false;
+    if (!cancellation && (imports_.stopped_ || failed_owner_.live)) return false;
     collecting_ = true;
     struct Reset { bool& value; ~Reset() { value = false; } } reset{collecting_};
+    // This exact owner has no physical Lift: prepare failed before publication,
+    // or a previous collection destroyed the node before its ACK was refused.
+    // A refused ACK retains the live token for the next cancellation attempt.
+    if (failed_owner_.live &&
+        (!imports_.native_.acknowledgeRetirement(cx, failed_owner_) || failed_owner_.live))
+      return false;
+    if (collection_uncertain_) return false;
     for (;;) {
       NativeOwner owner;
       {
@@ -295,13 +315,16 @@ public:
         auto physical = std::move(*link); *link = std::move(physical->next);
         physical.reset(); // Physical deletion precedes original ticket ACK.
       } // NO interior link or node/record pointer crosses the callback.
-      if (!imports_.native_.acknowledgeRetirement(cx, owner)) {
+      if (!imports_.native_.acknowledgeRetirement(cx, owner) || owner.live) {
         failed_owner_ = owner; imports_.stopped_ = true; return false;
       }
-      if (imports_.stopped_) return false;
+      if (collection_uncertain_ || (!cancellation && imports_.stopped_)) return false;
       // Restart at the current head after every potentially reentrant ACK.
     }
   }
+public:
+  bool collect(JSContext* cx) { return collectImpl(cx, false); }
+  bool collectCancelled(JSContext* cx) { return collectImpl(cx, true); }
   bool finish(JSContext* cx, uint32_t id) {
     uint32_t buffer = 0; uint64_t mask = 0; Token token{}; Disposer dispose = nullptr;
     const Plan* identity=nullptr; Getter getter=nullptr;
