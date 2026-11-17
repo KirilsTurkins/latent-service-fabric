@@ -421,8 +421,10 @@ public:
     // uses the already installed before_promise/PromiseRecords hooks.
     auto observer = std::unique_ptr<ImportBorrowObserver>(new (std::nothrow) ImportBorrowObserver(cx, id, item->record_owner.token));
     if (!observer) {
+      // No observer storage, JS handle or release promise was published. Its
+      // original Native owner can use the existing pre-physical retry slot;
+      // the stopped import manager still fences all new work until cleanup.
       failed_record_owner_ = observer_owner;
-      failed_observer_completion_ = true;
       stopped_ = true;
       JS_ReportOutOfMemory(cx);
       return false;
