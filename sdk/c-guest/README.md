@@ -108,9 +108,10 @@ decimal IPv4 addresses and a decimal port from 0 through 65535. A missing
 service selects port 0; a missing node or nonnumeric hostname returns
 `EAI_NONAME` without contacting a resolver. Named services return `EAI_SERVICE`
 (or `EAI_NONAME` with `AI_NUMERICSERV`), and ports beyond the five-digit,
-65535 bound return `EAI_SERVICE`. The only supported flags are
-`AI_NUMERICHOST` and `AI_NUMERICSERV`; flags such as `AI_CANONNAME`,
-`AI_ADDRCONFIG` and `AI_PASSIVE` return `EAI_BADFLAGS`. IPv6 returns
+65535 bound return `EAI_SERVICE`. The supported flags are `AI_NUMERICHOST`,
+`AI_NUMERICSERV` and `AI_CANONNAME`. The last returns an owned canonical
+numeric literal derived from the parsed address, not a hostname or a grant.
+Flags such as `AI_ADDRCONFIG` and `AI_PASSIVE` return `EAI_BADFLAGS`. IPv6 returns
 `EAI_FAMILY`, and datagram or non-TCP requests return `EAI_SOCKTYPE`. Each
 successful call owns a separate result in the original bounded guest memory;
 `freeaddrinfo` releases it. The result is not an endpoint grant, and legacy
