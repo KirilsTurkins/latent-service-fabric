@@ -6,13 +6,31 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
-from tools import c_capsule_project
+from tools import c_capsule_project, c_feature_probe_controls
 from tools.build_observation import file_identity
 from tools.c_guest import feature_detection, standard_facilities, threading
 from tools.rust_capsule_project import digest, inventory, snapshot
 
 
 class CFeatureDetection(unittest.TestCase):
+    def test_hosted_python_keeps_only_relocated_library_directories(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            prefix = root / 'hosted python'
+            (prefix / 'bin').mkdir(parents=True)
+            (prefix / 'lib').mkdir()
+            (prefix / 'lib64').mkdir()
+            executable = prefix / 'bin/python3.13'
+            executable.touch()
+            with patch.dict('os.environ', {'LD_LIBRARY_PATH': '/untrusted'}, clear=False):
+                python, options = c_feature_probe_controls.relocated_python(executable, prefix)
+            self.assertEqual(python, '/python/bin/python3.13')
+            self.assertEqual(options, ['--ro-bind', str(prefix), '/python',
+                                       '--setenv', 'LD_LIBRARY_PATH', '/python/lib:/python/lib64'])
+            self.assertNotIn('/untrusted', options)
+            with self.assertRaisesRegex(ValueError, 'c-feature-control-python-outside-prefix'):
+                c_feature_probe_controls.relocated_python(root / 'other-python', prefix)
+
     def test_old_capture_produces_no_probe_and_rejects_tampering(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

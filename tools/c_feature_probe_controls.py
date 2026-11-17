@@ -17,6 +17,22 @@ from tools.c_guest import feature_detection, standard_facilities, threading
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot, write_json
 
 
+def relocated_python(executable: Path, prefix: Path) -> tuple[str, list[str]]:
+    """Bind an external Python and retain only its own shared-library paths."""
+    if not executable.is_relative_to(prefix):
+        raise ValueError('c-feature-control-python-outside-prefix')
+    python = '/python/' + executable.relative_to(prefix).as_posix()
+    options = ['--ro-bind', str(prefix), '/python']
+    libraries = []
+    for name in ('lib', 'lib64'):
+        directory = prefix / name
+        if directory.is_dir() and directory.resolve(strict=True).is_relative_to(prefix):
+            libraries.append('/python/' + name)
+    if libraries:
+        options += ['--setenv', 'LD_LIBRARY_PATH', ':'.join(libraries)]
+    return python, options
+
+
 def configure(output: Path, project: Path, kit: Path, expected: str, zig: Path, cmake: Path,
               label: str, *, present: bool, wrong_compiler: bool = False,
               omit_socket: bool = False, sdk_root: Path = ROOT):
@@ -29,10 +45,7 @@ def configure(output: Path, project: Path, kit: Path, expected: str, zig: Path, 
     mounts = []
     if not executable.is_relative_to('/usr'):
         prefix = Path(sys.base_prefix).resolve(strict=True)
-        if not executable.is_relative_to(prefix):
-            raise ValueError('c-feature-control-python-outside-prefix')
-        mounts = ['--ro-bind', str(prefix), '/python']
-        python = '/python/' + executable.relative_to(prefix).as_posix()
+        python, mounts = relocated_python(executable, prefix)
     test_project = '/test/project with spaces'
     test_kit = '/test/kit with spaces'
     command = [sandbox, '--unshare-all', '--die-with-parent', '--new-session', '--clearenv',
