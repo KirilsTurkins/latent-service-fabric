@@ -50,6 +50,8 @@ on:
       - tools/tests/fixtures/go-checkpoint-maps/**
       - tools/tests/go_checkpoint_text_reference.py
       - tools/tests/fixtures/go-checkpoint-text/**
+      - tools/tests/go_checkpoint_json_reference.py
+      - tools/tests/fixtures/go-checkpoint-json/**
       - tools/qualify_go_synchronization.py
       - tools/tests/test_go_synchronization.py
       - tools/tests/test_go_admission.py
@@ -205,6 +207,8 @@ on:
       - tools/tests/fixtures/go-checkpoint-maps/**
       - tools/tests/go_checkpoint_text_reference.py
       - tools/tests/fixtures/go-checkpoint-text/**
+      - tools/tests/go_checkpoint_json_reference.py
+      - tools/tests/fixtures/go-checkpoint-json/**
       - tools/qualify_go_synchronization.py
       - tools/tests/test_go_synchronization.py
       - tools/tests/test_go_admission.py
@@ -475,6 +479,7 @@ jobs:
           python3 -B -m tools.tests.go_checkpoint_slices_reference --go "$RUNNER_TEMP/go-guest-tools/go/bin/go" --node "$(command -v node)"
           python3 -B tools/tests/go_checkpoint_maps_reference.py --go "$RUNNER_TEMP/go-guest-tools/go/bin/go" --node "$(command -v node)"
           python3 -B tools/tests/go_checkpoint_text_reference.py --go "$RUNNER_TEMP/go-guest-tools/go/bin/go" --node "$(command -v node)"
+          python3 -B tools/tests/go_checkpoint_json_reference.py --go "$RUNNER_TEMP/go-guest-tools/go/bin/go" --node "$(command -v node)"
           python3 -m unittest tools.tests.test_go_captured_checkpoints
           python3 tools/qualify_go_captured_checkpoints.py --output "$RUNNER_TEMP/go-checkpoints" --runtime-profile go-component-activation-v2
           python3 tools/qualify_go_captured_checkpoints.py --output "$RUNNER_TEMP/go-no-checkpoints" --runtime-profile go-component-activation-v1

@@ -26,6 +26,15 @@ STANDARD_BYTES_ITERATOR_SHA256 = '628f8dc51af2c70325050c0125340ec01c6a7da84c53f2
 STANDARD_TEXT_ITERATOR_SITES = [(18, 40), (19, 40), (20, 19), (36, 61), (37, 40),
                                 (39, 20), (48, 8), (67, 48), (75, 53), (83, 44),
                                 (84, 40), (86, 28), (116, 67), (117, 40), (119, 28)]
+STANDARD_JSON_WIRE = 'encoding/json/internal/jsonwire/decode.go'
+STANDARD_JSON_WIRE_SHA256 = '2ec579bfd801743cb8073f89d35c1f5540811e435b53793b2732cf57423e2eaa'
+STANDARD_JSON_WIRE_SITES = [(28, 43), (29, 43), (30, 43), (33, 43), (35, 83), (43, 33),
+                            (54, 34), (65, 33), (76, 63), (77, 47), (97, 45), (101, 69),
+                            (117, 88), (123, 115), (137, 30), (139, 34), (142, 49),
+                            (201, 39), (257, 60), (272, 32), (274, 34), (277, 53),
+                            (390, 69), (391, 25), (413, 56), (426, 45), (433, 52),
+                            (465, 50), (472, 125), (479, 64), (513, 63), (534, 63),
+                            (556, 63), (568, 52), (572, 20), (593, 47), (596, 57)]
 
 
 def checkpoint_yield_template(sdk):
@@ -100,6 +109,7 @@ def transform(compiler, generated, packages, application_sources, output):
         'maps': (STANDARD_MAP_ITERATOR, STANDARD_MAP_ITERATOR_SHA256, STANDARD_MAP_ITERATOR_SITES),
         'strings': (STANDARD_STRING_ITERATOR, STANDARD_STRING_ITERATOR_SHA256, STANDARD_TEXT_ITERATOR_SITES),
         'bytes': (STANDARD_BYTES_ITERATOR, STANDARD_BYTES_ITERATOR_SHA256, STANDARD_TEXT_ITERATOR_SITES),
+        'encoding/json/internal/jsonwire': (STANDARD_JSON_WIRE, STANDARD_JSON_WIRE_SHA256, STANDARD_JSON_WIRE_SITES),
     }
     dispatcher = generated / 'vendor/go.bytecodealliance.org/pkg'
     for package in packages:
