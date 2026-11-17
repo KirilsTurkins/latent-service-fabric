@@ -1002,7 +1002,23 @@ async fn concurrent_connection_drops_keep_original_charge_on_destructor_panic() 
             .unwrap();
         assert_eq!(lifecycle.status().unwrap().retired_generations, 2);
         assert!(control.budget.host_memory_bytes() >= baseline + 16 * 1024);
-        assert!(pools.snapshot().unwrap().metadata_bytes <= maximum_metadata);
+        let snapshot = tokio::time::timeout(Duration::from_secs(2), async {
+            loop {
+                match pools.snapshot() {
+                    Ok(snapshot) => break snapshot,
+                    Err(error)
+                        if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                            && error.message == "capability-busy" =>
+                    {
+                        tokio::task::yield_now().await;
+                    }
+                    Err(error) => panic!("pool snapshot failed during rotation: {error:?}"),
+                }
+            }
+        })
+        .await
+        .expect("bounded pool snapshot after rotation");
+        assert!(snapshot.metadata_bytes <= maximum_metadata);
     }
     drop(fixture);
     drop(lifecycle);
