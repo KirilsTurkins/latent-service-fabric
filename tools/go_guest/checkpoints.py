@@ -15,6 +15,10 @@ STANDARD_ITERATOR_SHA256 = '986cce7d58c65e6f87987544908ec138ae664c4bf5c8868d2177
 STANDARD_ITERATOR_SITES = [(14, 57), (15, 40), (16, 24), (26, 62), (27, 40), (28, 37),
                            (37, 54), (38, 35), (39, 24), (50, 68), (51, 22), (59, 43),
                            (66, 50), (75, 66), (86, 72), (97, 64), (102, 39), (103, 35)]
+STANDARD_MAP_ITERATOR = 'maps/iter.go'
+STANDARD_MAP_ITERATOR_SHA256 = 'a803b5b1b09aa2dcedf90db32270f9cec310bc7cf8f141f87c2e6567db0c4208'
+STANDARD_MAP_ITERATOR_SITES = [(12, 69), (13, 38), (14, 24), (25, 66), (26, 35), (27, 21),
+                               (38, 68), (39, 35), (40, 24), (50, 77), (51, 25), (58, 65)]
 
 
 def checkpoint_yield_template(sdk):
@@ -84,16 +88,22 @@ def prepare(compiler):
 def transform(compiler, generated, packages, application_sources, output):
     selected = set()
     standard = {}
+    standard_iterators = {
+        'slices': (STANDARD_ITERATOR, STANDARD_ITERATOR_SHA256, STANDARD_ITERATOR_SITES),
+        'maps': (STANDARD_MAP_ITERATOR, STANDARD_MAP_ITERATOR_SHA256, STANDARD_MAP_ITERATOR_SITES),
+    }
     dispatcher = generated / 'vendor/go.bytecodealliance.org/pkg'
     for package in packages:
-        if package.get('ImportPath') == 'slices':
-            path = compiler.goroot / 'src' / STANDARD_ITERATOR
-            if (standard or not package.get('Standard') or Path(package['Dir']) != path.parent
+        iterator = standard_iterators.get(package.get('ImportPath'))
+        if iterator:
+            source_name, source_sha256, sites = iterator
+            path = compiler.goroot / 'src' / source_name
+            if (path in standard or not package.get('Standard') or Path(package['Dir']) != path.parent
                     or package.get('GoFiles', []).count(path.name) != 1
-                    or hashlib.sha256(read_file(path)).hexdigest() != STANDARD_ITERATOR_SHA256):
+                    or hashlib.sha256(read_file(path)).hexdigest() != source_sha256):
                 raise ValueError('go-checkpoint-standard-iterator-source-drift')
             selected.add(path)
-            standard[path] = STANDARD_ITERATOR
+            standard[path] = (source_name, source_sha256, sites)
             continue
         if package.get('Standard'):
             continue
@@ -114,13 +124,14 @@ def transform(compiler, generated, packages, application_sources, output):
     for row in rows:
         path = Path(row['path'])
         if path in standard:
+            source_name, source_sha256, expected_sites = standard[path]
             sites = [{'line': line, 'column': column, 'suspendable': True}
-                     for line, column in STANDARD_ITERATOR_SITES]
+                     for line, column in expected_sites]
             if (row.get('sites') != sites
                     or any(type(site['line']) is not int or type(site['column']) is not int
                            or site['suspendable'] is not True for site in row['sites'])
-                    or row.get('upstreamDigest') != 'sha256:' + STANDARD_ITERATOR_SHA256
-                    or hashlib.sha256(read_file(path)).hexdigest() != STANDARD_ITERATOR_SHA256):
+                    or row.get('upstreamDigest') != 'sha256:' + source_sha256
+                    or hashlib.sha256(read_file(path)).hexdigest() != source_sha256):
                 raise ValueError('go-checkpoint-standard-iterator-output-drift')
         if not row['sites']:
             continue
@@ -130,7 +141,7 @@ def transform(compiler, generated, packages, application_sources, output):
         if digest(read_file(path)) != row['upstreamDigest'] or digest(read_file(adapted)) != row['adaptedDigest']:
             raise ValueError('go-checkpoint-parser-source-or-output-changed')
         replacements[str(path)] = str(adapted)
-        source_name = ('standard/' + standard[path] if path in standard else path.relative_to(generated).as_posix())
+        source_name = ('standard/' + standard[path][0] if path in standard else path.relative_to(generated).as_posix())
         transformations.append({'name': 'go-compiler-checkpoints/' + source_name,
             'upstreamDigest': row['upstreamDigest'], 'adaptedDigest': row['adaptedDigest'], 'sites': row['sites']})
     return replacements, transformations
