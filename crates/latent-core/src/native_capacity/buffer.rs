@@ -1,19 +1,19 @@
 use std::sync::Arc;
 
-use super::reservation::Lease;
+use super::reservation::LeaseHandle;
 use super::NativeBufferClass;
 
 /// Affine subreservation for one actual trusted native buffer. Attach the owned
 /// value immediately after allocation, or retain this permit beside its original
 /// worker/response owner. No cloning or independent ledger finalization refunds it.
 pub struct NativeBufferPermit {
-    lease: Arc<Lease>,
+    lease: LeaseHandle,
     class: NativeBufferClass,
     bytes: u64,
 }
 
 impl NativeBufferPermit {
-    pub(super) fn new(lease: Arc<Lease>, class: NativeBufferClass, bytes: u64) -> Self {
+    pub(super) fn new(lease: LeaseHandle, class: NativeBufferClass, bytes: u64) -> Self {
         Self {
             lease,
             class,
