@@ -173,6 +173,15 @@ outcome without cancelling a queued or running producer; its original owners
 remain charged until physical retirement. Cancellation observations create a
 new exception with the original cancellation as its cause, as in the tested
 JDK 25; that exception uses the existing guest heap.
+`completedStage`, `failedStage` and `minimalCompletionStage` provide the tested
+restricted stage operations and independent `toCompletableFuture` copies. The
+view uses the existing CompletableFuture class with a restricted-state field,
+so its concrete class identity differs from the JDK's private MinimalStage.
+The field and stage objects use the original bounded Java heap; their exact
+TeaVM object-size cost has not been measured. Creating a view or converting it
+to a future uses the original queued-work and Result owners, even for a ready
+stage, and can be refused under those limits. Timeout conveniences remain
+unsupported. Source and host-double controls do not qualify a signed guest.
 The default-executor asynchronous stage methods honor subclass overrides of
 `defaultExecutor()` and `newIncompleteFuture()` without invoking a separate
 overridable explicit-executor overload.

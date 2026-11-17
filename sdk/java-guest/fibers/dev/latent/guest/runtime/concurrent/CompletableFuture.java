@@ -22,12 +22,15 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     private T value;
     private Throwable failure;
     private boolean completed;
+    private final boolean restricted;
     private final ArrayList<Action> dependents = new ArrayList<>();
     private final ArrayList<Action> accepted = new ArrayList<>();
     private Activation.Lease resultOwner;
     private boolean resultSettlementAttempted;
 
-    public CompletableFuture() { }
+    public CompletableFuture() { this(false); }
+    private CompletableFuture(boolean restricted) { this.restricted = restricted; }
+    private void requireFullFuture() { if (restricted) throw new UnsupportedOperationException(); }
 
     private static final class DefaultExecutor implements Executor {
         // The executor is returned to application code, which may use its
@@ -50,7 +53,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         return Activation.defaultAsyncExecutor(DefaultExecutor::new);
     }
     public Executor defaultExecutor() { return asyncPool(); }
-    public <U> CompletableFuture<U> newIncompleteFuture() { return new CompletableFuture<>(); }
+    public <U> CompletableFuture<U> newIncompleteFuture() { return new CompletableFuture<>(restricted); }
 
     private boolean accept(Action action, boolean evenIfCompleted) {
         synchronized (stateLock) {
@@ -360,26 +363,29 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     // Internal continuation completion must not dispatch into an application
     // override of completeExceptionally on a destination subclass.
     private void asyncFailure(Throwable error) { finish(null, wrapped(error)); }
-    public boolean complete(T result) { return finish(result, null); }
-    public boolean completeExceptionally(Throwable error) { return finish(null, Objects.requireNonNull(error)); }
-    public void obtrudeValue(T result) { finish(result, null, true); }
-    public void obtrudeException(Throwable error) { finish(null, Objects.requireNonNull(error), true); }
+    public boolean complete(T result) { requireFullFuture(); return finish(result, null); }
+    public boolean completeExceptionally(Throwable error) { requireFullFuture(); return finish(null, Objects.requireNonNull(error)); }
+    public void obtrudeValue(T result) { requireFullFuture(); finish(result, null, true); }
+    public void obtrudeException(Throwable error) { requireFullFuture(); finish(null, Objects.requireNonNull(error), true); }
     @Override public boolean cancel(boolean interrupt) {
+        requireFullFuture();
         return finish(null, new CancellationException()) || isCancelled();
     }
-    @Override public boolean isCancelled() { synchronized (stateLock) { return completed && failure instanceof CancellationException; } }
-    @Override public boolean isDone() { synchronized (stateLock) { return completed; } }
+    @Override public boolean isCancelled() { requireFullFuture(); synchronized (stateLock) { return completed && failure instanceof CancellationException; } }
+    @Override public boolean isDone() { requireFullFuture(); synchronized (stateLock) { return completed; } }
     // Stage dispatch uses the recorded state, not an application override of
     // the public observation method. The same lock protects the result.
     private final boolean completionRecorded() { synchronized (stateLock) { return completed; } }
-    public boolean isCompletedExceptionally() { synchronized (stateLock) { return completed && failure != null; } }
+    public boolean isCompletedExceptionally() { requireFullFuture(); synchronized (stateLock) { return completed && failure != null; } }
     @Override public T resultNow() {
+        requireFullFuture();
         synchronized (stateLock) {
             if (!completed || failure != null) throw new IllegalStateException();
             return value;
         }
     }
     @Override public Throwable exceptionNow() {
+        requireFullFuture();
         Throwable error;
         synchronized (stateLock) {
             if (!completed || failure == null || failure instanceof CancellationException) throw new IllegalStateException();
@@ -392,6 +398,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         return error;
     }
     @Override public java.util.concurrent.Future.State state() {
+        requireFullFuture();
         synchronized (stateLock) {
             if (!completed) return java.util.concurrent.Future.State.RUNNING;
             if (failure == null) return java.util.concurrent.Future.State.SUCCESS;
@@ -422,6 +429,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         return result;
     }
     @Override public T get() throws InterruptedException, ExecutionException {
+        requireFullFuture();
         T result;
         Throwable error;
         synchronized (stateLock) {
@@ -436,6 +444,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         return getResult(result, error);
     }
     @Override public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+        requireFullFuture();
         long nanos = Objects.requireNonNull(unit).toNanos(timeout);
         long started = System.nanoTime();
         T result;
@@ -455,6 +464,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         return getResult(result, error);
     }
     public T join() {
+        requireFullFuture();
         boolean interrupted = false;
         try {
             T result;
@@ -470,6 +480,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         } finally { if (interrupted) Thread.currentThread().interrupt(); }
     }
     public T getNow(T otherwise) {
+        requireFullFuture();
         T result;
         Throwable error;
         synchronized (stateLock) {
@@ -478,8 +489,18 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         }
         return joinResult(result, error, "getNow");
     }
-    public int getNumberOfDependents() { synchronized (stateLock) { return dependents.size(); } }
-    @Override public CompletableFuture<T> toCompletableFuture() { return this; }
+    public int getNumberOfDependents() { requireFullFuture(); synchronized (stateLock) { return dependents.size(); } }
+    @Override public CompletableFuture<T> toCompletableFuture() {
+        if (!restricted) return this;
+        CompletableFuture<T> result = new CompletableFuture<>();
+        relay(result);
+        return result;
+    }
+    public CompletionStage<T> minimalCompletionStage() {
+        CompletableFuture<T> result = new CompletableFuture<>(true);
+        relay(result);
+        return result;
+    }
     // Do not dispatch through an overridable thenApply. The private stage
     // path still honors the source's newIncompleteFuture factory.
     public CompletableFuture<T> copy() { return unary(Function.identity(), null); }
@@ -513,10 +534,18 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     public static <U> CompletableFuture<U> failedFuture(Throwable error) {
         CompletableFuture<U> future = new CompletableFuture<>(); future.completeExceptionally(error); return future;
     }
+    public static <U> CompletionStage<U> completedStage(U result) {
+        CompletableFuture<U> future = new CompletableFuture<>(true); future.finish(result, null); return future;
+    }
+    public static <U> CompletionStage<U> failedStage(Throwable error) {
+        CompletableFuture<U> future = new CompletableFuture<>(true); future.finish(null, Objects.requireNonNull(error)); return future;
+    }
     public CompletableFuture<T> completeAsync(Supplier<? extends T> supplier) {
+        requireFullFuture();
         Objects.requireNonNull(supplier); return completeAsync(supplier, defaultExecutor());
     }
     public CompletableFuture<T> completeAsync(Supplier<? extends T> supplier, Executor executor) {
+        requireFullFuture();
         Objects.requireNonNull(supplier); Objects.requireNonNull(executor); submit(this, executor, supplier, true); return this;
     }
 
