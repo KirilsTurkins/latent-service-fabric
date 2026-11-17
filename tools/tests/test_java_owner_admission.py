@@ -9,6 +9,16 @@ from tools import qualify_java_fibers as preparation
 
 
 OWNER_CASES = ('normal', 'refused', 'lost', 'null', 'reentry', 'capacity')
+NULL_FACTORY_CASES = (
+    'cancel', 'remove', 'factory-throw', 'wait-denied', 'settle-result-denied',
+    'settle-queue-denied', 'recovery', 'reentrant', 'scan-mutation',
+    'retirement-scan-mutation', 'idle-scan-mutation', 'repeated-idle-scan-mutation',
+    'exhausted-scan-retry', 'retry-with-live-work', 'worker-admission-denied',
+    'manual-factory-throw', 'manual-worker-admission-denied',
+    'managed-factory-thread', 'managed-factory-null', 'managed-factory-throw',
+    'managed-null-pending', 'managed-null-fallback-throw', 'managed-null-worker-denied',
+    'managed-null-worker-uncertain', 'managed-preferred-root',
+)
 SETTLEMENT_CASES = preparation.OWNER_SETTLEMENT_CASES
 WORK_CASES = preparation.WORK_FINISH_CASES
 SLEEP_RESULT = ('TIMER_SLEEP_ADMISSION_SOURCE PASS zero-raw-frame;zero-interrupt;typed-refusal;'
@@ -29,6 +39,8 @@ class RecordingCompiler:
                 return result
         if stage == 'timer-sleep-admission-source-control':
             return SLEEP_RESULT
+        if stage.startswith('scheduled-null-factory-activation-'):
+            return 'SCHEDULED_NULL_FACTORY_ACTIVATION PASS ' + argv[-1]
         if stage == 'timer-worker-admission-source-control':
             return 'TIMER_WAIT_ADMISSION_SOURCE PASS typed-refusal;accepted-callback-not-run;owners-retired;root-refused'
         if stage.startswith('owner-admission-source-'):
@@ -51,6 +63,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
         receipt = self.run_control(compiler)
         self.assertEqual([stage for stage, _ in compiler.calls], [
             'timer-sleep-admission-source-compile', 'timer-sleep-admission-source-control',
+            *('scheduled-null-factory-activation-' + case for case in NULL_FACTORY_CASES),
             'timer-worker-admission-source-compile', 'timer-worker-admission-source-control',
             *('owner-admission-source-' + case for case in OWNER_CASES),
             *('owner-settlement-source-' + case for case in SETTLEMENT_CASES),
@@ -62,6 +75,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
             'fibers/conformance/compiler/timer-source-control/OwnerAdmissionSourceControl.java',
             'fibers/conformance/compiler/timer-source-control/OwnerSettlementSourceControl.java',
             'fibers/conformance/compiler/timer-source-control/WorkFinishSourceControl.java',
+            'fibers/conformance/compiler/timer-source-control/ScheduledNullFactoryActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java',
         )
         for name in required:
@@ -78,13 +92,18 @@ class OwnerAdmissionPreparation(unittest.TestCase):
             with self.subTest(source=name):
                 self.assertEqual(receipt['sourceInputs'][name], preparation.digest((compiler.sdk / name).read_bytes()))
         self.assertEqual(receipt['timerWorkerAdmission'], 'private-ledger-refusal-and-root-fence-passed')
-        for case, (_, argv) in zip(OWNER_CASES, compiler.calls[4:4 + len(OWNER_CASES)], strict=True):
+        self.assertEqual(receipt['scheduledNullFactoryActivation'], list(NULL_FACTORY_CASES))
+        for case, (_, argv) in zip(NULL_FACTORY_CASES, compiler.calls[2:2 + len(NULL_FACTORY_CASES)], strict=True):
+            self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
+            self.assertEqual(argv[-2:], ('ScheduledNullFactoryActivationControl', case))
+        start = 4 + len(NULL_FACTORY_CASES)
+        for case, (_, argv) in zip(OWNER_CASES, compiler.calls[start:start + len(OWNER_CASES)], strict=True):
             self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
             self.assertEqual(argv[-2:], ('OwnerAdmissionSourceControl', case))
-        for case, (_, argv) in zip(SETTLEMENT_CASES, compiler.calls[4 + len(OWNER_CASES):4 + len(OWNER_CASES) + len(SETTLEMENT_CASES)], strict=True):
+        for case, (_, argv) in zip(SETTLEMENT_CASES, compiler.calls[start + len(OWNER_CASES):start + len(OWNER_CASES) + len(SETTLEMENT_CASES)], strict=True):
             self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
             self.assertEqual(argv[-2:], ('OwnerSettlementSourceControl', case))
-        for case, (_, argv) in zip(WORK_CASES, compiler.calls[4 + len(OWNER_CASES) + len(SETTLEMENT_CASES):], strict=True):
+        for case, (_, argv) in zip(WORK_CASES, compiler.calls[start + len(OWNER_CASES) + len(SETTLEMENT_CASES):], strict=True):
             self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
             self.assertEqual(argv[-3:], ('WorkFinishSourceControl', *case))
         self.assertEqual(receipt['workFinishCases'], [list(case) for case in WORK_CASES])
@@ -118,6 +137,17 @@ class OwnerAdmissionPreparation(unittest.TestCase):
                     self.run_control(compiler)
                 self.assertEqual(compiler.calls[-1][0], stage)
 
+    def test_null_factory_outputs_must_match_each_selected_mode(self):
+        for case in NULL_FACTORY_CASES:
+            stage = 'scheduled-null-factory-activation-' + case
+            good = 'SCHEDULED_NULL_FACTORY_ACTIVATION PASS ' + case
+            for invalid in ('', 'SCHEDULED_NULL_FACTORY_ACTIVATION PASS other', good + '\n' + good):
+                with self.subTest(case=case, output=invalid):
+                    compiler = RecordingCompiler(lambda actual: invalid if actual == stage else None)
+                    with self.assertRaisesRegex(ValueError, 'null-factory activation control did not complete: ' + case):
+                        self.run_control(compiler)
+                    self.assertEqual(compiler.calls[-1][0], stage)
+
     def test_work_finish_outputs_cannot_omit_duplicate_or_mislabel_a_case(self):
         for kind, mode in WORK_CASES:
             stage = 'work-finish-source-' + kind + '-' + mode
@@ -132,6 +162,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
 
     def test_compiler_sleep_and_owner_failures_preserve_the_primary_error(self):
         stages = ('timer-sleep-admission-source-compile', 'timer-sleep-admission-source-control',
+                  *('scheduled-null-factory-activation-' + case for case in NULL_FACTORY_CASES),
                   'timer-worker-admission-source-compile', 'timer-worker-admission-source-control',
                   *('owner-admission-source-' + case for case in OWNER_CASES),
                   *('owner-settlement-source-' + case for case in SETTLEMENT_CASES),
@@ -155,6 +186,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
                      'fibers/conformance/compiler/timer-source-control/OwnerAdmissionSourceControl.java',
                      'fibers/conformance/compiler/timer-source-control/OwnerSettlementSourceControl.java',
                      'fibers/conformance/compiler/timer-source-control/WorkFinishSourceControl.java',
+                     'fibers/conformance/compiler/timer-source-control/ScheduledNullFactoryActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java'):
             with self.subTest(source=name):
                 compiler = RecordingCompiler()

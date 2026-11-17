@@ -192,9 +192,16 @@ original owners if the outer factory fails, until it runs or is withdrawn.
 For fixed and single-thread pools, a null factory is retried once when no other
 worker exists or is starting. If it still returns `null`, accepted work remains
 charged and root drain waits until a worker runs it or it is withdrawn. Cached
-pools retain their single-attempt rejection behavior. During later recovery the
-SDK consumes its FIFO queue; the tested JDK can run the new submission before
-an older queued task as the new worker's first task. A reentrant `shutdownNow()`
+pools retain their single-attempt rejection behavior. During recovery, a later
+successful worker prefers the submission that created it if it is still queued;
+the tested no-worker case matches the JDK's new-first order. Each queued entry
+and worker carries a primitive preference in the existing Java heap; locating a
+preferred entry scans the queue and creates a transient iterator. The worker
+does not retain a withdrawn entry. Preferences are never reused: once the
+executor has issued `Long.MAX_VALUE` preferences, it falls back to FIFO for new
+workers. This does not add a host owner.
+If a null factory reentrantly submits another task, their relative order still
+differs in the tested JDK and SDK. A reentrant `shutdownNow()`
 can also withdraw an outer SDK submission that then returns, while the tested
 JDK rejects it. If the first null factory reenters graceful `shutdown()`, the
 SDK may run its already-queued outer task on the retry; the tested JDK rejects
