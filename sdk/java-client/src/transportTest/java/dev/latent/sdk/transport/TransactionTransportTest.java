@@ -468,7 +468,7 @@ public final class TransactionTransportTest {
     }
 
     public static void main(String[] args) throws Exception {
-        inlineCommandAssociation(); sixteenOperationsAndOwnedSnapshots(); durableFormatsAuditAndExplicitRecovery(); lostResponseAndCancellationNeverResubmit(); malformedAndUnknownResponses(); localProfilesPresenceAndBounds(); effectPlansKeepOriginalCasAndIndependentFacts();
+        RecoverySnapshotTest.run(); inlineCommandAssociation(); sixteenOperationsAndOwnedSnapshots(); durableFormatsAuditAndExplicitRecovery(); lostResponseAndCancellationNeverResubmit(); malformedAndUnknownResponses(); localProfilesPresenceAndBounds(); effectPlansKeepOriginalCasAndIndependentFacts();
         System.out.println("Java transactions: six bounded transport suites; " + checks + " checks passed");
     }
 }
