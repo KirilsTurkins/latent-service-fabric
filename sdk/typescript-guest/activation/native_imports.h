@@ -86,8 +86,14 @@ class Imports final {
       if (!observerLink(cx, item->id, item->record_owner.token, observer_link)) return false;
       if (*observer_link && (*observer_link)->quarantined) return invalid(cx, "borrow-quarantined");
       ImportLifecycle::Retirement retirement;
-      if (!item->lifecycle.retryUnpublishedRollback(cx) ||
-          !item->lifecycle.releaseAfterPhysicalDestruction(cx, retirement)) {
+      if (!item->lifecycle.retryRetiringWork(cx)) {
+        if (*observer_link && !item->lifecycle.completionPending()) {
+          (*observer_link)->quarantined = true;
+          failed_observer_completion_ = stopped_ = true;
+        }
+        return false;
+      }
+      if (!item->lifecycle.releaseAfterPhysicalDestruction(cx, retirement)) {
         if (*observer_link) {
           (*observer_link)->quarantined = true;
           failed_observer_completion_ = stopped_ = true;
@@ -373,7 +379,14 @@ public:
       (void)invalid(cx,"partial-typed-lift");
       return quarantineBorrow(cx,*item);
     }
-    if (!item->lifecycle.liftCompleted(cx)) return quarantineBorrow(cx, *item);
+    if (!item->lifecycle.liftCompleted(cx)) {
+      if (!item->lifecycle.completionPending()) return quarantineBorrow(cx, *item);
+      // Typed lifting and the canonical subtask have already ended. The exact
+      // refused work owner can be retried without quarantining the observer;
+      // its release still waits for the entire original physical retirement.
+      stopped_ = true;
+      return false;
+    }
     return collect(cx);
   }
   bool delivered(JSContext* cx,uint32_t id) {

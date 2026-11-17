@@ -334,14 +334,18 @@ OWNER_RETRY_CASES = (
     'import-partial-rollback-native', 'import-partial-rollback-queue', 'import-partial-rollback-task',
     'import-partial-admission-physical-order',
     'import-readiness-denied-before-dispatch',
-    'import-immediate-readiness-retired',
+    'import-immediate-readiness-retired', 'import-delivered-completion',
+    'import-delivered-completion-retry', 'import-delivered-completion-then-result-retry',
+    'borrow-delivered-completion', 'borrow-delivered-completion-retry',
+    'import-undelivered-lift-quarantine', 'borrow-undelivered-lift-quarantine',
     'import-park-refused-late-return', 'import-park-refused-late-cancel',
     'import-queue-refused-late-return', 'import-queue-refused-late-cancel',
     'import-park-refused-immediate-return', 'import-queue-refused-immediate-return',
     'import-join-refusal-retains-subtask',
     'import-disposer-quarantine', 'borrow-unallocated-cleanup', 'borrow-unallocated-ack-retry',
     'borrow-partial-setup-quarantine', 'borrow-published-release',
-    'partial-cancel-undispatched', 'partial-cancel-retry',
+    'partial-cancel-undispatched', 'partial-delivered-completion-retry',
+    'partial-borrow-completion-retry', 'partial-cancel-retry',
     'partial-cancel-pending', 'partial-cancel-returned', 'partial-regular-ack-retry', 'partial-failed-ack-fences-prepare',
     'partial-cancel-reentrant-ack', 'partial-cancel-quarantine', 'lazy-synchronous', 'repeated-generations',
     'native-live-slot', 'snapshot-live-slot', 'accepted-after-root',
@@ -403,7 +407,8 @@ class OwnerRetryTests(unittest.TestCase):
                 self.assertIs(row['engineQualified'], False)
                 # Quarantined physical state retains its original owners.
                 # Every other scenario proves all original ACKs once.
-                if case in ('import-disposer-quarantine', 'borrow-partial-setup-quarantine', 'partial-cancel-quarantine',
+                if case in ('import-disposer-quarantine', 'borrow-partial-setup-quarantine',
+                            'import-undelivered-lift-quarantine', 'borrow-undelivered-lift-quarantine', 'partial-cancel-quarantine',
                             'partial-cancel-reentrant-ack'):
                     self.assertGreater(row['retainedOwners'], 0)
                 else:

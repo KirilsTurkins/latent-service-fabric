@@ -83,6 +83,12 @@ bool dispose(uint32_t) { ++disposals; return !refuse_disposer; }
 bool partial_init(JSContext*) { return true; }
 uint64_t partial_get(uint32_t) { return 0; }
 bool partial_dispose(uint32_t,uint32_t,uint32_t) { ++disposals; return !refuse_disposer; }
+uint32_t partial_expected_buffer=0;
+uint64_t partial_two_get(uint32_t index) { return index<2 ? (uint64_t(index*4)<<32)|1 : UINT64_MAX; }
+bool partial_two_dispose(uint32_t buffer,uint32_t low,uint32_t high) {
+  ++disposals;
+  return buffer==partial_expected_buffer && low==1 && high==0 && !refuse_disposer;
+}
 bool partial_bind(JSContext* cx,PartialOwnLifts& partial,JSObject* prototype) {
   JS::HandleId symbol; symbol.value=1;
   return partial.begin(cx,2,1,1) && partial.bind(cx,12,4,1,0,0,1,prototype,symbol) && partial.seal(cx);
@@ -529,6 +535,103 @@ bool import_immediate_readiness_retired() {
         !owners[set_owner].live && owners[set_owner].refunds==1 && set_drop==1);
   CHECK(e.finish()); return true;
 }
+bool import_delivered_completion_retry(bool borrowed, bool refused, bool physical_refused=false) {
+  Environment e; CHECK(e.begin()); uint32_t id=0;
+  const auto record=next_owner, task=record+1, queue=record+2, native=record+3, result=record+4;
+  CHECK(e.reserve(id));
+  JS::RootedObject handle(&e.cx), release(&e.cx), again(&e.cx), promise(&e.cx);
+  const auto observer=next_owner;
+  if (borrowed) CHECK(e.imports.watchBorrow(&e.cx,id,&handle) && handle.get() &&
+                      e.imports.observeBorrow(&e.cx,handle,false,&release) && release.get());
+  observed_record=record; observed_native=native; observed_result=result;
+  expected_roots_at_ack=borrowed ? 1 : 0; expected_buffers_at_ack=0;
+  if (borrowed) {
+    watched_sidecar=ImportBorrowControls::observer(e.imports); observed_borrow=observer;
+    CHECK(watched_sidecar && owners[observer].live);
+  }
+  CHECK(e.imports.beginLowering(&e.cx,id));
+  const auto wait=next_wait++; waits[wait].live=true; ++import_dispatches;
+  CHECK(e.imports.started(&e.cx,id,(wait<<4)|JOBS_SUBTASK_STARTED,&promise) && promise.get());
+  event={JOBS_EVENT_SUBTASK,wait,JOBS_SUBTASK_RETURNED};
+  CHECK(e.readiness.dispatch(&e.cx,true) && e.imports.turn(&e.cx) && fixture::resolutions==1);
+  void* buffer=nullptr;
+  CHECK(e.imports.beginLifting(&e.cx,id,buffer) && buffer && e.imports.delivered(&e.cx,id));
+  refuse_id=refused ? task : 0;
+  const bool finished=e.imports.liftCompleted(&e.cx,id);
+  CHECK(finished==!refused && drops==1 && !waits[wait].live && !waits[wait].joined);
+  if (refused) {
+    CHECK(e.cx.exception && owners[task].live && owners[task].attempts==1 &&
+          owners[queue].refunds==1 && owners[record].live && owners[native].live && owners[result].live &&
+          fixture::buffers==2 && fixture::roots==(borrowed ? 3u:2u) &&
+          fixture::resolutions==1 && !ImportBorrowControls::quarantined(e.imports));
+    const auto admitted=registrations; uint32_t rejected=99;
+    JS_ClearPendingException(&e.cx);
+    CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},rejected) &&
+          rejected==0 && registrations==admitted);
+    for (unsigned attempt=2;attempt<=3;++attempt) {
+      JS_ClearPendingException(&e.cx); CHECK(!e.imports.cancelAll(&e.cx));
+      CHECK(owners[task].live && owners[task].attempts==attempt && owners[task].refunds==0 &&
+            owners[queue].attempts==1 && owners[queue].refunds==1 &&
+            owners[record].live && owners[native].live && owners[result].live &&
+            fixture::buffers==2 && fixture::roots==(borrowed ? 3u:2u) &&
+            drops==1 && disposals==0 && fixture::resolutions==1);
+    }
+    if (physical_refused) {
+      // Once the exact Task ACK succeeds, a later Result ACK can still refuse
+      // after physical record destruction. It must not replay the Task ACK.
+      refuse_id=result; JS_ClearPendingException(&e.cx); CHECK(!e.imports.cancelAll(&e.cx));
+      CHECK(owners[task].refunds==1 && owners[task].attempts==4 && owners[result].live &&
+            owners[result].attempts==1 && owners[native].live && owners[record].live &&
+            fixture::buffers==0 && fixture::roots==0 && drops==1 && disposals==0);
+      for (unsigned attempt=2;attempt<=3;++attempt) {
+        JS_ClearPendingException(&e.cx); CHECK(!e.imports.cancelAll(&e.cx));
+        CHECK(owners[task].attempts==4 && owners[task].refunds==1 && owners[result].live &&
+              owners[result].attempts==attempt && owners[result].refunds==0 &&
+              owners[native].live && owners[record].live && fixture::buffers==0 && fixture::roots==0);
+      }
+    }
+    refuse_id=0; JS_ClearPendingException(&e.cx); CHECK(e.imports.cancelAll(&e.cx));
+  }
+  CHECK(!e.imports.hasPending() && owners[task].refunds==1 &&
+        owners[task].attempts==(refused ? 4u:1u) && owners[queue].attempts==1 &&
+        owners[record].refunds==1 && owners[native].refunds==1 && owners[result].refunds==1 &&
+        record_destroyed_before_ack && native_destroyed_before_ack && result_destroyed_before_ack &&
+        fixture::buffers==0 && fixture::roots==0 && drops==1 && disposals==0 &&
+        fixture::resolutions==(borrowed ? 2u:1u));
+  if (borrowed) {
+    CHECK(owners[observer].refunds==1 && owners[observer].attempts==1 && borrow_destroyed_before_ack &&
+          e.imports.observeBorrow(&e.cx,handle,false,&again) && again.get()==release.get());
+  }
+  CHECK(e.finish()); CHECK(import_dispatches==1 && drops==1 && disposals==0); return true;
+}
+bool import_undelivered_lift_quarantine(bool borrowed) {
+  Environment e; CHECK(e.begin()); uint32_t id=0;
+  const auto record=next_owner, task=record+1, native=record+3, result=record+4;
+  CHECK(e.reserve(id)); const auto observer=next_owner;
+  JS::RootedObject handle(&e.cx), release(&e.cx), promise(&e.cx);
+  if (borrowed) CHECK(e.imports.watchBorrow(&e.cx,id,&handle) &&
+                      e.imports.observeBorrow(&e.cx,handle,false,&release));
+  CHECK(e.imports.beginLowering(&e.cx,id));
+  const auto wait=next_wait++; waits[wait].live=true; ++import_dispatches;
+  CHECK(e.imports.started(&e.cx,id,(wait<<4)|JOBS_SUBTASK_STARTED,&promise));
+  event={JOBS_EVENT_SUBTASK,wait,JOBS_SUBTASK_RETURNED};
+  CHECK(e.readiness.dispatch(&e.cx,true) && e.imports.turn(&e.cx));
+  void* buffer=nullptr; CHECK(e.imports.beginLifting(&e.cx,id,buffer) && buffer);
+  // The typed lift has not declared delivery and may hold partial resources.
+  // It must never become the retryable completed-lift path.
+  CHECK(!e.imports.liftCompleted(&e.cx,id) && e.cx.exception && drops==0 && disposals==0 &&
+        owners[task].live && owners[task].attempts==0 && owners[record].live &&
+        owners[native].live && owners[result].live && fixture::buffers==2 &&
+        fixture::roots==(borrowed ? 3u:2u));
+  if (borrowed) CHECK(ImportBorrowControls::quarantined(e.imports) && owners[observer].live);
+  for (unsigned attempt=0;attempt<2;++attempt) {
+    JS_ClearPendingException(&e.cx); CHECK(!e.imports.cancelAll(&e.cx));
+    CHECK(owners[task].live && owners[task].attempts==0 && waits[wait].live && drops==0 &&
+          disposals==0 && fixture::buffers==2 && fixture::roots==(borrowed ? 3u:2u) &&
+          fixture::resolutions==1);
+  }
+  return true; // Uncertain typed ownership remains retained, not refunded.
+}
 bool import_start_refused(bool park, bool returned) {
   Environment e; CHECK(e.begin()); uint32_t id=0; CHECK(e.reserve(id));
   CHECK(e.imports.beginLowering(&e.cx,id));
@@ -652,6 +755,68 @@ bool partial_cancel_undispatched() {
   uint32_t rejected=99; const auto admitted=registrations;
   CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},rejected));
   CHECK(rejected==0 && registrations==admitted && !e.imports.hasPending());
+  CHECK(e.finish()); return true;
+}
+bool partial_delivered_completion_retry(bool borrowed) {
+  Environment e; CHECK(e.begin()); uint32_t id=0;
+  JS::HandleId symbol; symbol.value=1;
+  CHECK(e.partial.begin(&e.cx,2,1,2) &&
+        e.partial.bind(&e.cx,12,8,2,0,0,1,&e.callback,symbol) &&
+        e.partial.bind(&e.cx,12,8,2,1,4,1,&e.callback,symbol) && e.partial.seal(&e.cx));
+  const auto record=next_owner, task=record+1, queue=record+2, native=record+3, result=record+4;
+  CHECK(e.imports.reserve(&e.cx,8,16,ImportRawResult::Pointer,{},id) &&
+        e.imports.setDisposer(&e.cx,id,dispose,8) &&
+        e.partial.prepare(&e.cx,id,12,partial_two_get,partial_two_dispose,2));
+  const auto sidecar=PartialOwnLiftControls::owner(e.partial,id);
+  const auto observer=next_owner;
+  JS::RootedObject handle(&e.cx), release(&e.cx), attached(&e.cx), promise(&e.cx);
+  if (borrowed) CHECK(e.imports.watchBorrow(&e.cx,id,&handle) &&
+                      e.imports.observeBorrow(&e.cx,handle,false,&release));
+  auto* raw=static_cast<uint32_t*>(e.imports.resultBuffer(id)); CHECK(raw);
+  raw[0]=42; raw[1]=43; partial_expected_buffer=static_cast<uint32_t>(reinterpret_cast<uintptr_t>(raw));
+  observed_record=record; observed_native=native; observed_result=result;
+  expected_roots_at_ack=borrowed ? 1 : 0; expected_buffers_at_ack=0;
+  if (borrowed) {
+    watched_sidecar=ImportBorrowControls::observer(e.imports); observed_borrow=observer;
+    CHECK(watched_sidecar && owners[observer].live);
+  }
+  CHECK(e.imports.beginLowering(&e.cx,id));
+  const auto wait=next_wait++; waits[wait].live=true; ++import_dispatches;
+  CHECK(e.imports.started(&e.cx,id,(wait<<4)|JOBS_SUBTASK_STARTED,&promise));
+  event={JOBS_EVENT_SUBTASK,wait,JOBS_SUBTASK_RETURNED};
+  CHECK(e.readiness.dispatch(&e.cx,true) && e.imports.turn(&e.cx));
+  void* buffer=nullptr;
+  CHECK(e.imports.beginLifting(&e.cx,id,buffer) && buffer==raw && e.partial.attach(&e.cx,id,0,&attached));
+  const char* original="original-typed-lift-error";
+  JS_ReportErrorASCII(&e.cx,original); // Model a pre-existing engine error.
+  refuse_id=task;
+  CHECK(!e.partial.finish(&e.cx,id) && e.cx.exception && e.cx.detail==original && disposals==1 && drops==1 &&
+        owners[task].live && owners[task].attempts==1 && owners[sidecar.id].live &&
+        fixture::buffers==2 && fixture::roots==(borrowed ? 3u:2u) &&
+        !ImportBorrowControls::quarantined(e.imports));
+  const auto admitted=registrations; uint32_t rejected=99;
+  JS_ClearPendingException(&e.cx);
+  CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},rejected) &&
+        rejected==0 && registrations==admitted);
+  e.partial.cancelAll();
+  for (unsigned attempt=2;attempt<=3;++attempt) {
+    JS_ClearPendingException(&e.cx); CHECK(!e.imports.cancelAll(&e.cx) && !e.partial.collectCancelled(&e.cx));
+    CHECK(owners[task].live && owners[task].attempts==attempt && owners[queue].attempts==1 &&
+          owners[record].live && owners[native].live && owners[result].live && owners[sidecar.id].live &&
+          PartialOwnLiftControls::hasNode(e.partial,id) && fixture::buffers==2 &&
+          fixture::roots==(borrowed ? 3u:2u) && drops==1 && disposals==1);
+  }
+  refuse_id=0; JS_ClearPendingException(&e.cx); CHECK(e.imports.cancelAll(&e.cx));
+  CHECK(!e.imports.hasPending() && owners[task].refunds==1 && owners[task].attempts==4 &&
+        owners[record].refunds==1 && owners[native].refunds==1 && owners[result].refunds==1 &&
+        record_destroyed_before_ack && native_destroyed_before_ack && result_destroyed_before_ack &&
+        owners[sidecar.id].live && fixture::buffers==0 && fixture::roots==0 && drops==1 && disposals==1);
+  if (borrowed) CHECK(owners[observer].refunds==1 && borrow_destroyed_before_ack && fixture::resolutions==2);
+  watched_sidecar=PartialOwnLiftControls::node(e.partial,id); watched_sidecar_deleted=false;
+  observed_partial=sidecar.id; observed_partial_id=id; observed_partial_manager=&e.partial;
+  CHECK(e.partial.collectCancelled(&e.cx) && !e.partial.hasPending() &&
+        owners[sidecar.id].refunds==1 && partial_destroyed_before_ack && disposals==1);
+  CHECK(e.partial.collectCancelled(&e.cx) && owners[sidecar.id].attempts==1 && disposals==1);
   CHECK(e.finish()); return true;
 }
 bool borrow_unallocated_retry(bool refused) {
@@ -942,6 +1107,13 @@ bool run(const char* name) {
   if (!std::strcmp(name,"import-partial-admission-physical-order")) return import_partial_admission_physical_order();
   if (!std::strcmp(name,"import-readiness-denied-before-dispatch")) return import_readiness_denied();
   if (!std::strcmp(name,"import-immediate-readiness-retired")) return import_immediate_readiness_retired();
+  if (!std::strcmp(name,"import-delivered-completion")) return import_delivered_completion_retry(false,false);
+  if (!std::strcmp(name,"import-delivered-completion-retry")) return import_delivered_completion_retry(false,true);
+  if (!std::strcmp(name,"import-delivered-completion-then-result-retry")) return import_delivered_completion_retry(false,true,true);
+  if (!std::strcmp(name,"borrow-delivered-completion")) return import_delivered_completion_retry(true,false);
+  if (!std::strcmp(name,"borrow-delivered-completion-retry")) return import_delivered_completion_retry(true,true);
+  if (!std::strcmp(name,"import-undelivered-lift-quarantine")) return import_undelivered_lift_quarantine(false);
+  if (!std::strcmp(name,"borrow-undelivered-lift-quarantine")) return import_undelivered_lift_quarantine(true);
   if (!std::strcmp(name,"import-park-refused-late-return")) return import_start_refused(true,true);
   if (!std::strcmp(name,"import-park-refused-late-cancel")) return import_start_refused(true,false);
   if (!std::strcmp(name,"import-queue-refused-late-return")) return import_start_refused(false,true);
@@ -951,6 +1123,8 @@ bool run(const char* name) {
   if (!std::strcmp(name,"import-join-refusal-retains-subtask")) return import_join_refused();
   if (!std::strcmp(name,"import-disposer-quarantine")) return import_quarantine();
   if (!std::strcmp(name,"partial-cancel-undispatched")) return partial_cancel_undispatched();
+  if (!std::strcmp(name,"partial-delivered-completion-retry")) return partial_delivered_completion_retry(false);
+  if (!std::strcmp(name,"partial-borrow-completion-retry")) return partial_delivered_completion_retry(true);
   if (!std::strcmp(name,"borrow-unallocated-cleanup")) return borrow_unallocated_retry(false);
   if (!std::strcmp(name,"borrow-unallocated-ack-retry")) return borrow_unallocated_retry(true);
   if (!std::strcmp(name,"borrow-partial-setup-quarantine")) return borrow_partial_setup_quarantine();
