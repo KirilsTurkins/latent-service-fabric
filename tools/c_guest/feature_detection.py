@@ -23,7 +23,7 @@ def resolver_interface(observed: dict) -> bool:
     exported = observed['strongSymbols']
     legacy = ['freeaddrinfo', 'getaddrinfo']
     current = ['freeaddrinfo', 'gai_strerror', 'getaddrinfo', 'getnameinfo']
-    if exported not in (legacy, current):
+    if exported not in (legacy, current) or observed['nonlocalSymbols'] != exported:
         return False
     locals_allowed = {'numeric_canonical_name'}
     if exported == current:
