@@ -48,7 +48,7 @@ public final class InvokeAnyPendingOwnerProbe {
             if (caller.isAlive()) throw new AssertionError("caller-not-finished");
             if (!workerReady.await(5, TimeUnit.SECONDS)) throw new AssertionError("worker-not-ready");
             String expected = mode.equals("timeout") ? "timeout" : "interrupted";
-            if (!expected.equals(outcome.get()) || calls.get() != 0 || !counts().equals("1:2:0")
+            if (!expected.equals(outcome.get()) || calls.get() != 0 || !counts().equals("1:2:2")
                     || !((Activation.ManagedPool)pool).hasPendingWork())
                 throw new AssertionError("pending-custody-" + outcome.get() + ":" + counts());
             release.countDown();
@@ -56,7 +56,7 @@ public final class InvokeAnyPendingOwnerProbe {
             if (!pool.awaitTermination(5, TimeUnit.SECONDS)) throw new AssertionError("termination");
             Activation.idle();
             if (calls.get() != 0 || !counts().equals("0:0:0")) throw new AssertionError("cancelled-work-retirement");
-            System.out.println(mode + ":outcome=" + outcome.get() + ":held=1:2:0:pending=true:after=0:0:0");
+            System.out.println(mode + ":outcome=" + outcome.get() + ":held=1:2:2:pending=true:after=0:0:0");
         } finally {
             release.countDown();
             caller.join(5000);

@@ -113,23 +113,22 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
         try {
             ExecutionException last = null;
             while (true) {
-                Future<T> future;
-                synchronized (completion) { future = completion.ready.pollFirst(); }
-                if (future == null && remaining.hasNext()) {
+                CompletionEntry<T> entry;
+                synchronized (completion) { entry = completion.ready.pollFirst(); }
+                if (entry == null && remaining.hasNext()) {
                     Callable<T> task = Objects.requireNonNull(remaining.next());
-                    FutureTask<T> next = new FutureTask<>(task) {
-                        @Override protected void done() {
-                            synchronized (completion) { completion.ready.addLast(this); completion.notifyAll(); }
-                        }
-                    };
+                    RunnableFuture<T> next = Objects.requireNonNull(newTaskFor(task));
                     // An executor may accept the task and then throw, so retain
                     // its cancellation obligation before entering execute.
                     futures.add(next);
-                    execute(next);
+                    CompletionEntry<T> selected = new CompletionEntry<>(next);
+                    var delivery = new CompletionDelivery<>(next, selected, completion);
+                    selected.delivery = delivery;
+                    execute(delivery);
                     active++;
                     continue;
                 }
-                if (future == null) {
+                if (entry == null) {
                     if (active == 0) break;
                     synchronized (completion) {
                         while (completion.ready.isEmpty()) {
@@ -144,14 +143,24 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
                                 completion.wait(wait / 1_000_000, (int)(wait % 1_000_000));
                             }
                         }
-                        future = completion.ready.removeFirst();
+                        entry = completion.ready.removeFirst();
                     }
                 }
                 active--;
                 T value;
-                try { value = future.get(); }
+                try {
+                    // A custom task can throw before completing (including a
+                    // denied nested Result admission). Do not wait forever for
+                    // a result that this physical delivery failed to produce.
+                    if (entry.delivery != null && entry.delivery.state() == Future.State.FAILED
+                            && !entry.future.isDone()) {
+                        last = new ExecutionException(entry.delivery.exceptionNow());
+                        continue;
+                    }
+                    value = entry.future.get();
+                }
                 catch (ExecutionException failed) { last = failed; continue; }
-                catch (java.util.concurrent.CancellationException cancelled) { last = new ExecutionException(cancelled); continue; }
+                catch (RuntimeException failed) { last = new ExecutionException(failed); continue; }
                 // Preserve the public null-element check without submitting more
                 // work once an already-completed task supplied the result.
                 while (remaining.hasNext()) Objects.requireNonNull(remaining.next());
@@ -162,6 +171,29 @@ public abstract class AbstractExecutorService implements java.util.concurrent.Ex
     }
 
     private static final class Completion<T> {
-        final ArrayDeque<Future<T>> ready = new ArrayDeque<>();
+        final ArrayDeque<CompletionEntry<T>> ready = new ArrayDeque<>();
+        synchronized void publish(CompletionEntry<T> entry) { ready.addLast(entry); notifyAll(); }
+    }
+
+    private static final class CompletionEntry<T> {
+        final RunnableFuture<T> future;
+        CompletionDelivery<T> delivery;
+        CompletionEntry(RunnableFuture<T> future) { this.future = future; }
+    }
+
+    private static final class CompletionDelivery<T> extends FutureTask<Void> {
+        private CompletionEntry<T> entry;
+        private Completion<T> completion;
+        CompletionDelivery(RunnableFuture<T> future, CompletionEntry<T> entry, Completion<T> completion) {
+            super(future, null);
+            this.entry = entry;
+            this.completion = completion;
+        }
+        @Override protected void done() {
+            completion.publish(entry);
+            // A caller can retain a withdrawn Runnable. It must not keep the
+            // completed invokeAny queue and other tasks alive afterward.
+            completion = null; entry = null;
+        }
     }
 }
