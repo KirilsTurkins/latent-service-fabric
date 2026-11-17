@@ -483,6 +483,7 @@ async fn retiring_the_broker_wakes_existing_queues_and_denies_new_waiters() {
     assert_eq!(io.snapshot(), IoSnapshot::default());
 }
 
+mod http_body;
 mod transfer;
 
 pub(super) fn native_request(

@@ -1,0 +1,50 @@
+package main
+
+import (
+    "fmt"
+    "os"
+    "slices"
+    "sync/atomic"
+    "example.invalid/iteratorbridge/dispatch"
+)
+
+func semantics() {
+    var empty []int
+    if slices.Collect(slices.Values(empty)) != nil { panic("nil sequence changed") }
+    values := []int{3, 1, 4, 1, 5}
+    if !slices.Equal(slices.Collect(slices.Values(values)), values) { panic("values changed") }
+    seen := []int{}
+    for i, value := range slices.All(values) {
+        seen = append(seen, i, value)
+        if i == 1 { break }
+    }
+    if !slices.Equal(seen, []int{0, 3, 1, 1}) { panic("early iterator stop changed") }
+    seen = nil
+    for i, value := range slices.Backward(values) { seen = append(seen, i, value) }
+    if !slices.Equal(seen, []int{4, 5, 3, 1, 2, 4, 1, 1, 0, 3}) { panic("backward iterator changed") }
+    lengths := []int{}
+    for chunk := range slices.Chunk(values, 2) {
+        if len(chunk) != cap(chunk) { panic("chunk capacity changed") }
+        lengths = append(lengths, len(chunk))
+    }
+    if !slices.Equal(lengths, []int{2, 2, 1}) { panic("chunk lengths changed") }
+    fmt.Println("semantics=ok")
+}
+
+func main() {
+    if len(os.Args) > 1 && os.Args[1] == "semantics" { semantics(); return }
+    input := make([]int, 1000000)
+    for i := range input { input[i] = i }
+    var ran atomic.Bool
+    if len(os.Args) == 1 || os.Args[1] != "alone" {
+        start, ready := make(chan struct{}), make(chan struct{})
+        go func() { close(ready); <-start; ran.Store(true) }()
+        <-ready
+        close(start)
+    }
+    out := slices.AppendSeq(input[:0], slices.Values(input))
+    if len(out) != len(input) || out[42] != 42 || out[len(out)-1] != len(out)-1 {
+        panic("iterator results changed")
+    }
+    fmt.Printf("sibling-before-return=%t len=%d checkpoint-yields=%d\n", ran.Load(), len(out), dispatch.Count())
+}

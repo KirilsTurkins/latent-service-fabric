@@ -90,6 +90,7 @@ impl Counters {
                         _native: native,
                         kind,
                         amount,
+                        identity_tag: 0,
                     });
                 }
                 Err(actual) => current = actual,
@@ -127,6 +128,42 @@ pub(super) struct Charge {
     kind: Kind,
     amount: usize,
     _native: Option<NodeMetadataReservation>,
+    // Only stream-scope table slots use this session-local identity. Zero is
+    // the ordinary untagged charge; it does not alter authority or quotas.
+    identity_tag: u32,
+}
+// The tag uses existing padding, never uncharged additional owner storage.
+// Check the exact prior field layout at compile time on every target.
+#[allow(dead_code)]
+pub(super) struct OriginalChargeLayout {
+    owner: Counters,
+    kind: Kind,
+    amount: usize,
+    native: Option<NodeMetadataReservation>,
+}
+impl Drop for OriginalChargeLayout {
+    fn drop(&mut self) {}
+}
+const _: () = {
+    assert!(std::mem::size_of::<Charge>() == std::mem::size_of::<OriginalChargeLayout>());
+    assert!(std::mem::align_of::<Charge>() == std::mem::align_of::<OriginalChargeLayout>());
+    assert!(
+        std::mem::size_of::<Option<Charge>>()
+            == std::mem::size_of::<Option<OriginalChargeLayout>>()
+    );
+    assert!(
+        std::mem::size_of::<Result<Charge, PlatformError>>()
+            == std::mem::size_of::<Result<OriginalChargeLayout, PlatformError>>()
+    );
+};
+impl Charge {
+    pub(super) fn set_identity_tag(&mut self, tag: u32) {
+        debug_assert_eq!(self.identity_tag, 0);
+        self.identity_tag = tag;
+    }
+    pub(super) fn identity_tag(&self) -> u32 {
+        self.identity_tag
+    }
 }
 impl Drop for Charge {
     fn drop(&mut self) {
@@ -145,6 +182,29 @@ fn native_failure(failure: NodeMetadataError) -> PlatformError {
 #[cfg(test)]
 mod node_metadata_tests {
     use super::*;
+    #[test]
+    fn ordinary_charges_start_untagged_and_scope_tags_do_not_change_quotas() {
+        let counters = Counters::new(CapabilityBrokerLimits::default());
+        for kind in [
+            Kind::Provider,
+            Kind::Plan,
+            Kind::Session,
+            Kind::Handle,
+            Kind::Call,
+            Kind::Result,
+            Kind::Metadata,
+            Kind::Buffer,
+        ] {
+            let mut charge = counters.acquire(kind, 1).unwrap();
+            assert_eq!(charge.identity_tag(), 0);
+            let before = counters.snapshot();
+            charge.set_identity_tag(17);
+            assert_eq!(charge.identity_tag(), 17);
+            assert_eq!(counters.snapshot(), before);
+            drop(charge);
+        }
+        assert_eq!(counters.snapshot(), CapabilityBrokerSnapshot::default());
+    }
     #[test]
     fn original_node_bank_and_logical_broker_metadata_are_distinct_conserved_observations() {
         let limits = CapabilityBrokerLimits::default();

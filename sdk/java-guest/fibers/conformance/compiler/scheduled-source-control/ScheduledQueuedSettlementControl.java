@@ -83,15 +83,20 @@ public final class ScheduledQueuedSettlementControl {
     private static void requeue(String fault) throws Exception {
         AtomicInteger factories = new AtomicInteger(), calls = new AtomicInteger();
         AtomicReference<Thread> worker = new AtomicReference<>();
-        var original = new IllegalStateException("requeue-factory-error");
+        var original = new IllegalStateException("requeue-worker-start-error");
         var pool = new ScheduledThreadPoolExecutor(2, target -> {
-            if (factories.incrementAndGet() == 2) { failSettlement(fault); throw original; }
+            if (factories.incrementAndGet() == 2) {
+                failSettlement(fault);
+                // Model a failure after the factory returned, so the new copy
+                // still takes the rollback/uncertain-settlement path.
+                return new Thread(target) { @Override public void start() { throw original; } };
+            }
             Thread thread = new Thread(target); worker.set(thread); return thread;
         });
         try {
             ScheduledFuture<?> future = pool.scheduleAtFixedRate(calls::incrementAndGet, 1, 1, TimeUnit.DAYS);
             try { ((Runnable)future).run(); throw new AssertionError("missing-requeue-failure"); }
-            catch (IllegalStateException expected) { require(expected == original, "wrong-factory-error"); }
+            catch (IllegalStateException expected) { require(expected == original, "wrong-worker-start-error"); }
             require(factories.get() == 2 && calls.get() == 1 && !future.isDone(), "unexpected-requeue-effects");
             require(pool.hasPendingWork() && held() == (fault.equals("denied") ? 2 : 1), "requeue-custody-before-stop");
             checkFailure();
@@ -116,6 +121,35 @@ public final class ScheduledQueuedSettlementControl {
             require(held() == (fault.equals("denied") ? 1 : 0), "cancel-host-outcome");
             pool.shutdownNow();
             require(pool.hasPendingWork() && Activation.failedLeaseAttempts() == 1, "cancel-retried");
+        } finally { pool.shutdownNow(); }
+    }
+    private static void factoryWithdrawal(String fault) throws Exception {
+        AtomicInteger factories = new AtomicInteger(), calls = new AtomicInteger();
+        AtomicReference<ScheduledThreadPoolExecutor> selected = new AtomicReference<>();
+        var pool = new ScheduledThreadPoolExecutor(1, target -> {
+            if (factories.incrementAndGet() == 1) return null;
+            failSettlement(fault);
+            selected.get().shutdownNow();
+            throw new AssertionError("withdrawal-should-have-failed");
+        });
+        selected.set(pool);
+        try {
+            var future = pool.scheduleAtFixedRate(calls::incrementAndGet, 1, 1, TimeUnit.DAYS);
+            try { ((Runnable)future).run(); throw new AssertionError("missing-withdrawal-failure"); }
+            catch (IllegalStateException error) {
+                require(error.getMessage().startsWith("source-owner-settlement-"), "wrong-withdrawal-error");
+            }
+            require(factories.get() == 2 && calls.get() == 1 && !future.isDone() && pool.hasPendingWork(),
+                "factory-withdrawal-lost-custody");
+            require(held() == (fault.equals("denied") ? 2 : 1)
+                && Activation.count(LatentRuntimeActivationOwnerKind.Result) == 1, "factory-withdrawal-host-outcome");
+            checkFailure();
+            var remaining = pool.shutdownNow();
+            require(remaining.size() == 1 && remaining.get(0) == future, "factory-withdrawal-lost-original-copy");
+            require(pool.hasPendingWork() && held() == (fault.equals("denied") ? 1 : 0)
+                && Activation.count(LatentRuntimeActivationOwnerKind.Result) == 0
+                && Activation.count(LatentRuntimeActivationOwnerKind.Executor) == 1, "factory-withdrawal-refunded-uncertain");
+            require(Activation.failedLeaseAttempts() == 1 && future.cancel(false), "factory-withdrawal-retried");
         } finally { pool.shutdownNow(); }
     }
     private static void reentryModel(String fault) throws Exception {
@@ -144,6 +178,7 @@ public final class ScheduledQueuedSettlementControl {
             case "insert-before" -> insertion(args[1], false);
             case "insert-after" -> insertion(args[1], true);
             case "requeue" -> requeue(args[1]);
+            case "factory-withdrawal" -> factoryWithdrawal(args[1]);
             case "cancel" -> cancellation(args[1]);
             case "reentry-model" -> reentryModel(args[1]);
             default -> throw new IllegalArgumentException("unknown-path");

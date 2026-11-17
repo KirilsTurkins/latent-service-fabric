@@ -173,9 +173,39 @@ clock reading. Equal deadlines use each task's original queued-work admission
 identity, including across pools. As with concurrently submitted JDK tasks,
 overlapping or reentrant submissions need not have a predetermined order.
 Scheduled pools count a worker being constructed by a `ThreadFactory` toward
-their configured parallelism. A nested accepted task keeps its original owners
-if the factory fails. When no worker remains, that task needs a later successful
-worker admission to run.
+their configured parallelism. If the factory itself throws after a submission
+is queued, the original exception reaches the caller but that task and any
+nested accepted tasks keep their owners; a later worker can still run them.
+With no worker, `shutdownNow()` can return the retained tasks. A scheduled pool
+also retains work when a factory
+returns `null`: root drain remains pending until the work runs or is withdrawn.
+With no runnable worker or pending host call, the existing root wait uses the
+original deadline and a Timer admission; a refused wait fails closed without
+releasing the work.
+If a manually run periodic future reaches a throwing factory while requeueing,
+its new occurrence and advanced deadline remain owned. The SDK returns each
+owned occurrence from `shutdownNow()`. In the tested JDK 25 duplicate-reference
+case, that call returned fewer entries than the queue held.
+Fixed and cached managed pools also count an in-progress factory call toward
+their worker limit. A nested task already accepted by such a pool keeps its
+original owners if the outer factory fails, until it runs or is withdrawn.
+For fixed and single-thread pools, a null factory is retried once when no other
+worker exists or is starting. If it still returns `null`, accepted work remains
+charged and root drain waits until a worker runs it or it is withdrawn. Cached
+pools retain their single-attempt rejection behavior. During recovery, a later
+successful worker prefers the submission that created it if it is still queued;
+the tested no-worker case matches the JDK's new-first order. Each queued entry
+and worker carries a primitive preference in the existing Java heap; locating a
+preferred entry scans the queue and creates a transient iterator. The worker
+does not retain a withdrawn entry. Preferences are never reused: once the
+executor has issued `Long.MAX_VALUE` preferences, it falls back to FIFO for new
+workers. This does not add a host owner.
+If a null factory reentrantly submits another task, their relative order still
+differs in the tested JDK and SDK. A reentrant `shutdownNow()`
+can also withdraw an outer SDK submission that then returns, while the tested
+JDK rejects it. If the first null factory reenters graceful `shutdown()`, the
+SDK may run its already-queued outer task on the retry; the tested JDK rejects
+that submission.
 Compiler progress checks distinguish suspendable checkpoints from finite
 nonsuspendable loops; source that cannot establish bounded progress is rejected.
 GC roots across parked continuations have a separate

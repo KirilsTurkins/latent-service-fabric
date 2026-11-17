@@ -108,9 +108,10 @@ decimal IPv4 addresses and a decimal port from 0 through 65535. A missing
 service selects port 0; a missing node or nonnumeric hostname returns
 `EAI_NONAME` without contacting a resolver. Named services return `EAI_SERVICE`
 (or `EAI_NONAME` with `AI_NUMERICSERV`), and ports beyond the five-digit,
-65535 bound return `EAI_SERVICE`. The only supported flags are
-`AI_NUMERICHOST` and `AI_NUMERICSERV`; flags such as `AI_CANONNAME`,
-`AI_ADDRCONFIG` and `AI_PASSIVE` return `EAI_BADFLAGS`. IPv6 returns
+65535 bound return `EAI_SERVICE`. The supported flags are `AI_NUMERICHOST`,
+`AI_NUMERICSERV` and `AI_CANONNAME`. The last returns an owned canonical
+numeric literal derived from the parsed address, not a hostname or a grant.
+Flags such as `AI_ADDRCONFIG` and `AI_PASSIVE` return `EAI_BADFLAGS`. IPv6 returns
 `EAI_FAMILY`, and datagram or non-TCP requests return `EAI_SOCKTYPE`. Each
 successful call owns a separate result in the original bounded guest memory;
 `freeaddrinfo` releases it. The result is not an endpoint grant, and legacy
@@ -133,7 +134,8 @@ provider's timeout result does not distinguish observation expiry from expiry
 of the original connection or activation. Concurrent use or close of a busy
 descriptor is refused. Exceptional descriptor sets, descriptor `poll`, nonblocking mode,
 socket option changes, local bind, IPv6 and unsupported message flags are refused;
-`SO_TYPE` is observable and TLS is not supplied by this profile.
+`SO_TYPE` is observable, with output truncated to the supplied buffer length,
+and TLS is not supplied by this profile.
 Selected-source `send` accepts `MSG_NOSIGNAL` (using the pinned WASI preview2
 value `0x4000`) with the same write and error behavior as flag zero. The adapter
 does not raise `SIGPIPE`, with or without this flag. The flag does not enable
@@ -142,8 +144,9 @@ are refused.
 `SOCK_CLOEXEC` at creation and `F_GETFD`/`F_SETFD` retain the descriptor's
 `FD_CLOEXEC` flag. Other descriptor flags and duplication remain unsupported;
 this profile does not provide process execution or descriptor inheritance.
-`POLLPRI` is never silently ignored. Descriptor-free timer polls retain the
-existing timed runtime. Calls inside prebuilt libc objects are not remapped.
+`POLLPRI` for a live descriptor is never silently ignored. Descriptor-free
+timer polls retain the existing timed runtime and accept at most 64 ignored
+negative-descriptor entries. Calls inside prebuilt libc objects are not remapped.
 Selected-source `read`, `write` and `close` route only to this socket table;
 stdin, stdout and stderr are not socket descriptors and return `EBADF` through
 those calls. This profile does not combine the separate standard-stdio logging
@@ -173,6 +176,11 @@ Standard output and error use descriptors 1 and 2 and the existing bounded,
 UTF-8 log implementation; socket descriptors remain 3 through 10. Selected-source
 `write` routes those standard descriptors to that implementation and socket
 descriptors to the stream provider; libc `close` uses the same bounded table.
+Each stdio write submits at most 256 UTF-8 bytes in one log record. Longer
+writes return the accepted prefix length at a character boundary, so callers
+can continue with the remaining bytes; each accepted record uses its original
+log budget. A rejected record reports no bytes written. An incomplete UTF-8
+scalar at the end of the supplied input is not buffered across calls.
 The four selected libc stdio calls are linked within the component core, with
 no ambient WASI filesystem imports. Selected-source `read` of stdin returns
 `EBADF`; an unchanged libc `fread(stdin, ...)` requires the unsupported preview1

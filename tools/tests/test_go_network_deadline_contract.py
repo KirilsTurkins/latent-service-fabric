@@ -59,6 +59,12 @@ class PendingDeadlineGuardTests(unittest.TestCase):
         source = source.replace(b'if !observation {', b'if !observation {\n')
         pending_deadline_contract(source + callers())
 
+    def test_single_line_method_signature_keeps_the_same_guards(self):
+        old = b'fn pending(\n        self: &Arc<Self>, direction: usize, timeout: Option<u32>,\n    )'
+        new = b'fn pending(self: &Arc<Self>, direction: usize, timeout: Option<u32>)'
+        self.assertEqual(PENDING.count(old), 1)
+        pending_deadline_contract(PENDING.replace(old, new) + callers())
+
     def test_timeout_limits_and_original_lifetime_cannot_be_widened(self):
         mutations = (
             (b'value > 10_000', b'value > 20_000'),

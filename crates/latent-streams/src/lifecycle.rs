@@ -432,10 +432,13 @@ impl StreamLifecycle {
             (state.current.clone(), state.retired.clone())
         };
         // Abort can wake arbitrary waiters; no lifecycle lock is held here.
-        current.retire();
+        // A panic in one generation must not skip the other original owners.
+        let mut first_panic = None;
+        crate::provider::attempt_retirement(&mut first_panic, || current.retire());
         for retired in retired.iter().flatten() {
-            retired.retire();
+            crate::provider::attempt_retirement(&mut first_panic, || retired.retire());
         }
+        crate::provider::finish_retirement(first_panic);
     }
     /// No cleanup task is spawned. A bounded waiter observes actual retained
     /// owners; timeout returns outstanding/quarantined work without refund.

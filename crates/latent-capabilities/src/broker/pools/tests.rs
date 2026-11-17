@@ -13,6 +13,7 @@ mod close_observation;
 mod control_admission;
 mod deferred;
 pub(super) mod fixture;
+mod http_body;
 mod ingress;
 mod lifecycle;
 mod maintenance;

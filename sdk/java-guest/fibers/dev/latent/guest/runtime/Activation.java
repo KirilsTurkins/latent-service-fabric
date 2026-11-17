@@ -22,6 +22,12 @@ public final class Activation {
     private static boolean finishingInvocation;
     private static boolean retiringPools;
     private static boolean iteratingPoolRetirement;
+    private static boolean checkingPoolPending;
+    private static boolean poolPendingScanChanged;
+    private static boolean poolRetirementRetry;
+    private static boolean poolRetirementUnstable;
+    private static boolean poolRetirementRescan;
+    private static int poolRetirementUnstableRemaining;
     private static volatile boolean poisoned;
     private static Work failedStarts;
     private static final java.util.concurrent.atomic.AtomicReference<Lease> failedQueuedOwners =
@@ -198,6 +204,7 @@ public final class Activation {
         requireHealthyAdmission();
         if (!entered || retiringPools || closing && !acceptedContinuation())
             throw new IllegalStateException("activation-runtime-pool-entry");
+        if (checkingPoolPending) poolPendingScanChanged = true;
         pools.add(pool);
     }
 
@@ -215,6 +222,7 @@ public final class Activation {
         for (int index = pools.size() - 1; index >= 0; --index) {
             if (pools.get(index) == pool) {
                 // closeAtRoot can retire itself or another pool reentrantly.
+                if (checkingPoolPending) poolPendingScanChanged = true;
                 if (iteratingPoolRetirement) pools.set(index, null);
                 else pools.remove(index);
             }
@@ -715,7 +723,33 @@ public final class Activation {
         for (Work work : threads.values()) {
             if (work != root && !work.complete) return true;
         }
-        return false;
+        // A pool scan that could not retire must be retried before the root
+        // can finish, even if the registry has since become idle.
+        if (poolRetirementRetry) return true;
+        // A ThreadFactory may decline to create a worker after accepting
+        // queued work. Its pool still owns that work even with no live thread.
+        return scanPendingPools() != 0;
+    }
+
+    // Zero is idle, one is pending, and two means the scan was invalidated.
+    private static int scanPendingPools() {
+        // A public pool callback can change the registry reentrantly. Do not
+        // report quiescence from a scan whose identities may have shifted.
+        if (checkingPoolPending) { poolPendingScanChanged = true; return 2; }
+        checkingPoolPending = true;
+        poolPendingScanChanged = false;
+        try {
+            for (int index = 0; index < pools.size(); index++) {
+                ManagedPool pool = pools.get(index);
+                boolean pending = pool != null && pool.hasPendingWork();
+                if (poolPendingScanChanged) return 2;
+                if (pending) return 1;
+            }
+            return 0;
+        } finally {
+            checkingPoolPending = false;
+            poolPendingScanChanged = false;
+        }
     }
 
     private static void closeCompletedRoot() {
@@ -727,7 +761,9 @@ public final class Activation {
     }
 
     private static boolean retireIdlePools() {
+        poolRetirementRescan = false;
         if (!closing || retiringPools) return false;
+        if (checkingPoolPending) { poolPendingScanChanged = true; return false; }
         // Idle pool workers cannot keep an activation alive. Keep their executor
         // available while accepted application threads/callbacks can still submit
         // necessary continuations, then drain the actual worker finally blocks.
@@ -736,7 +772,29 @@ public final class Activation {
         }
         for (Work work = failedStarts; work != null; work = work.nextFailed)
             if (!work.managed && !work.complete) return false;
-        for (ManagedPool pool : pools) if (pool.hasPendingWork()) return false;
+        int poolCount = pools.size();
+        int pendingPools = scanPendingPools();
+        if (pendingPools != 0) {
+            if (pendingPools == 2) {
+                if (!poolRetirementUnstable) {
+                    poolRetirementUnstable = true;
+                    poolRetirementUnstableRemaining = poolCount;
+                }
+                if (poolRetirementUnstableRemaining == 0) {
+                    fenceUncertainCompletion();
+                    throw new IllegalStateException("activation-runtime-pool-scan-unstable");
+                }
+                poolRetirementUnstableRemaining--;
+                poolRetirementRescan = true;
+            } else {
+                poolRetirementUnstable = false;
+                poolRetirementUnstableRemaining = 0;
+            }
+            poolRetirementRetry = true;
+            return false;
+        }
+        poolRetirementRetry = poolRetirementUnstable = false;
+        poolRetirementUnstableRemaining = 0;
         retiringPools = true;
         iteratingPoolRetirement = true;
         try {
@@ -802,7 +860,9 @@ public final class Activation {
         // Keep the profile's actual wall-clock operation in its exact imported
         // surface. Relative event deadlines exclusively use monotonic time.
         if (System.currentTimeMillis() < 0) throw new IllegalStateException("activation-runtime-wall-range");
-        rootComplete = closing = retiringPools = false;
+        rootComplete = closing = retiringPools = poolRetirementRetry = poolRetirementUnstable = false;
+        poolRetirementRescan = false;
+        poolRetirementUnstableRemaining = 0;
         result = null;
         failure = null;
         root = new Work(register(Bindings.LatentRuntimeActivationOwnerKind.Task));
@@ -833,6 +893,9 @@ public final class Activation {
                 // continuations after processSingle calculated its delay. Run
                 // the guest queue again before using that now-stale delay.
                 if (retireIdlePools()) continue;
+                // Re-scan a changed registry promptly. The retry count is
+                // bounded by its size when the first invalidation occurred.
+                if (poolRetirementRescan) continue;
                 if (delay != 0 && pending()) waitFor(delay < 0 ? -1 : delay);
             }
             if (failure != null) throw new IllegalStateException("activation-runtime-root-failure", failure);

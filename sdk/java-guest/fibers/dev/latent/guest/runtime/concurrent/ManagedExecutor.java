@@ -4,6 +4,7 @@ import dev.latent.generated.Bindings;
 import dev.latent.guest.runtime.Activation;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -28,12 +29,18 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private volatile boolean retiring;
     private int running;
     private volatile int pendingWork;
+    // A reentrant factory must not create a second worker for this slot.
+    private volatile int startingWorkers;
+    // Never reuse a preference: an accepted but unstarted worker can outlive
+    // withdrawal of its entry. Zero means there is no preference.
+    private long nextPreference;
 
     private static final class Item {
         final Runnable command;
         final Activation.Lease queued;
         final boolean actionAccepted;
         final boolean futureAccepted;
+        long preference;
         Item(Runnable command, Activation.Lease queued, boolean actionAccepted, boolean futureAccepted) {
             this.command = command; this.queued = queued; this.actionAccepted = actionAccepted; this.futureAccepted = futureAccepted;
         }
@@ -81,6 +88,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         boolean acceptedAction = false;
         Item item = null;
         boolean installed = false;
+        boolean fallbackAccepted = false;
         try {
             if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
                 throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
@@ -91,9 +99,21 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
             queue.addLast(item);
             pendingWork++;
             installed = true;
-            if (workers.size() < parallelism && (!cached || queue.size() > workers.size() - running)) startWorker();
+            if (workers.size() < parallelism && (!cached || queue.size() > workers.size() - running)) {
+                if (cached) startWorker();
+                else if (tryStartWorker(false, item) && workers.isEmpty() && startingWorkers == 0
+                        && !interrupting && !retiring && !queue.isEmpty()) {
+                    // Fixed pools retry once after the first null factory when
+                    // no worker exists, keeping already-admitted queue owners.
+                    fallbackAccepted = true;
+                    tryStartWorker(true, null);
+                }
+            }
             notifyAll();
         } catch (Throwable error) {
+            // Any fallback startup failure follows queue acceptance. Keep the
+            // exact entry, or its existing physical disposition, owned.
+            if (fallbackAccepted) throw error;
             if (!installed || queue.remove(item)) {
                 if (installed) pendingWork--;
                 if (queued != null) closeQueued(queued);
@@ -110,47 +130,84 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private static final class Worker {
         private volatile ManagedExecutor pool;
         private volatile Thread thread;
-        Worker(ManagedExecutor pool) { this.pool = pool; }
+        private volatile long first;
+        Worker(ManagedExecutor pool, long first) { this.pool = pool; this.first = first; }
         void prepare(Thread thread) { this.thread = thread; }
         void run() {
             ManagedExecutor current = pool;
             Thread expected = thread;
             if (current == null || expected == null || expected != Thread.currentThread()
                     || !Activation.runningManaged(expected, current)) return;
-            try { current.work(); } finally { clear(); }
+            try { current.work(this); } finally { clear(); }
         }
-        void clear() { pool = null; thread = null; }
+        void clear() { pool = null; thread = null; first = 0; }
     }
 
     private void startWorker() {
-        Worker worker = new Worker(this);
-        Thread thread = null;
-        int addedAt = -1;
+        if (tryStartWorker(false, null)) throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
+    }
+
+    // True means this attempted factory returned null; false also covers a
+    // reentrant call whose worker slot was already reserved.
+    private boolean tryStartWorker(boolean fallback, Item first) {
+        // Callers hold the pool monitor, including reentrant admissions.
+        if (workers.size() >= parallelism - startingWorkers) return false;
+        startingWorkers++;
+        boolean transferred = false;
+        Throwable failure = null;
         try {
-            thread = factory.newThread(worker::run);
-            if (thread == null || thread.isAlive())
-                throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
-            if (Activation.alive(thread)) throw new IllegalThreadStateException();
-            addedAt = workers.size();
-            workers.add(thread);
-            worker.prepare(thread);
-        } catch (Throwable error) {
-            // Admission has not started, so the retained target cannot own a
-            // managed worker. Preserve any pre-existing worker identity.
-            worker.clear();
-            if (addedAt >= 0 && addedAt < workers.size() && workers.get(addedAt) == thread)
-                workers.remove(addedAt);
-            throw error;
-        }
-        try { Activation.startManaged(thread, this); }
-        catch (Throwable error) {
-            // Accepted or rollback-uncertain work keeps both its thread and its
-            // target for root interruption and eventual physical settlement.
-            if (!Activation.ownsManaged(thread, this)) {
-                removeWorker(thread);
-                worker.clear();
+            long preference = 0;
+            if (first != null && nextPreference != Long.MAX_VALUE) {
+                preference = ++nextPreference;
+                first.preference = preference;
             }
+            Worker worker = new Worker(this, preference);
+            Thread thread = null;
+            int addedAt = -1;
+            try {
+                thread = factory.newThread(worker::run);
+                if (thread == null) { worker.clear(); return true; }
+                if (thread.isAlive()) {
+                    if (fallback) throw new IllegalThreadStateException();
+                    throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
+                }
+                if (Activation.alive(thread)) throw new IllegalThreadStateException();
+                addedAt = workers.size();
+                workers.add(thread);
+                worker.prepare(thread);
+            } catch (Throwable error) {
+                // Admission has not started, so the retained target cannot own a
+                // managed worker. Preserve any pre-existing worker identity.
+                worker.clear();
+                if (addedAt >= 0 && addedAt < workers.size() && workers.get(addedAt) == thread)
+                    workers.remove(addedAt);
+                throw error;
+            }
+            // Transfer the reservation only once the worker registry carries it.
+            startingWorkers--;
+            transferred = true;
+            try { Activation.startManaged(thread, this); }
+            catch (Throwable error) {
+                // Accepted or rollback-uncertain work keeps both its thread and its
+                // target for root interruption and eventual physical settlement.
+                if (!Activation.ownsManaged(thread, this)) {
+                    removeWorker(thread);
+                    worker.clear();
+                }
+                throw error;
+            }
+            return false;
+        } catch (Throwable error) {
+            failure = error;
             throw error;
+        } finally {
+            if (!transferred) startingWorkers--;
+            try { settleIfTerminated(); }
+            catch (Throwable uncertain) {
+                // Keep the original startup failure when retirement also fails.
+                if (failure == null) throw uncertain;
+            }
+            notifyAll();
         }
     }
 
@@ -160,7 +217,21 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         }
     }
 
-    private void work() {
+    // Callers hold the pool monitor. A primitive hint has no custody of a
+    // withdrawn task; only the still-owned, matching queue entry can be taken.
+    private Item removePreferred(long preference) {
+        if (preference == 0) return null;
+        for (Iterator<Item> entries = queue.iterator(); entries.hasNext();) {
+            Item candidate = entries.next();
+            if (candidate.preference == preference) {
+                entries.remove();
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private void work(Worker worker) {
         Thread current = Thread.currentThread();
         try {
             while (true) {
@@ -177,7 +248,9 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                         } catch (InterruptedException wake) { if (interrupting) return; }
                     }
                     if (queue.isEmpty()) return;
-                    item = queue.removeFirst();
+                    long first = worker.first; worker.first = 0;
+                    item = removePreferred(first);
+                    if (item == null) item = queue.removeFirst();
                     running++;
                     closeQueued(item.queued);
                 }
@@ -196,7 +269,10 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         } finally {
             synchronized (this) {
                 removeWorker(current);
-                if (!queue.isEmpty() && !interrupting) startWorker();
+                if (!queue.isEmpty() && !interrupting) {
+                    if (cached) startWorker();
+                    else tryStartWorker(false, null);
+                }
                 settleIfTerminated();
                 notifyAll();
             }
@@ -205,7 +281,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
 
     private void settleIfTerminated() { settleIfTerminated(false); }
     private void settleIfTerminated(boolean root) {
-        if ((shutdown || retiring) && queue.isEmpty() && workers.isEmpty()) settleOwner(root);
+        if ((shutdown || retiring) && queue.isEmpty() && startingWorkers == 0 && workers.isEmpty()) settleOwner(root);
     }
     private void settleOwner(boolean rootOrRollback) {
         if (owner != null) {
@@ -232,7 +308,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     @Override public boolean isRetired() { return owner == null; }
     // The coordinator is outside any logical Java fiber. Observing this value
     // must not try to suspend on a monitor held by a runnable factory/callback.
-    @Override public boolean hasPendingWork() { return pendingWork != 0; }
+    @Override public boolean hasPendingWork() { return pendingWork != 0 || startingWorkers != 0; }
     @Override public void closeAtRoot() {
         // This coordinator hook runs outside a Java Fiber, only after every
         // pool reports no queued/running callback. It must never acquire a

@@ -6,7 +6,8 @@
 #include <wasi/api.h>
 
 #define LSF_STDIO_MAX_IOVECS 16u
-#define LSF_STDIO_MAX_BYTES 4096u
+/* The host accepts at most 256 UTF-8 bytes in one log message. */
+#define LSF_STDIO_MAX_BYTES 256u
 
 #if defined(LSF_C_STREAM_STDIO) && LSF_C_STREAM_STDIO
 /* The cooperative root installs its context before running ordinary C and
@@ -30,9 +31,10 @@ static int valid_range(const void *pointer, uint32_t size) {
     return (address != 0 || size == 0) && address <= memory && size <= memory - address;
 }
 
-static int valid_utf8(const uint8_t *bytes, uint32_t length) {
+static int valid_utf8_prefix(const uint8_t *bytes, uint32_t length, bool more, uint32_t *prefix) {
     uint32_t offset = 0;
     while (offset < length) {
+        uint32_t start = offset;
         uint8_t lead = bytes[offset++];
         if (lead < 0x80) continue;
         uint32_t scalar, count, minimum;
@@ -40,7 +42,10 @@ static int valid_utf8(const uint8_t *bytes, uint32_t length) {
         else if (lead >= 0xe0 && lead <= 0xef) { scalar = lead & 0x0f; count = 2; minimum = 0x800; }
         else if (lead >= 0xf0 && lead <= 0xf4) { scalar = lead & 7; count = 3; minimum = 0x10000; }
         else return 0;
-        if (count > length - offset) return 0;
+        if (count > length - offset) {
+            if (more && start) { *prefix = start; return 1; }
+            return 0;
+        }
         while (count--) {
             uint8_t next = bytes[offset++];
             if ((next & 0xc0) != 0x80) return 0;
@@ -48,6 +53,7 @@ static int valid_utf8(const uint8_t *bytes, uint32_t length) {
         }
         if (scalar < minimum || scalar > 0x10ffff || (scalar >= 0xd800 && scalar <= 0xdfff)) return 0;
     }
+    *prefix = length;
     return 1;
 }
 
@@ -62,15 +68,20 @@ int32_t lsf_c_stdio_fd_write(int32_t fd, int32_t address, int32_t count, int32_t
         return __WASI_ERRNO_FAULT;
     uint8_t message[LSF_STDIO_MAX_BYTES];
     uint32_t total = 0;
+    bool more = false;
     for (uint32_t i = 0; i < length; ++i) {
         __wasi_ciovec_t vector;
         memcpy(&vector, (const uint8_t *)vectors + i * sizeof(vector), sizeof(vector));
-        if (vector.buf_len > LSF_STDIO_MAX_BYTES - total) return __WASI_ERRNO_INVAL;
         if (!valid_range(vector.buf, vector.buf_len)) return __WASI_ERRNO_FAULT;
-        if (vector.buf_len) memcpy(message + total, vector.buf, vector.buf_len);
-        total += vector.buf_len;
+        uint32_t available = LSF_STDIO_MAX_BYTES - total;
+        uint32_t copied = vector.buf_len < available ? vector.buf_len : available;
+        if (copied) memcpy(message + total, vector.buf, copied);
+        total += copied;
+        if (copied != vector.buf_len) { more = true; break; }
     }
-    if (!valid_utf8(message, total)) return __WASI_ERRNO_ILSEQ;
+    uint32_t prefix;
+    if (!valid_utf8_prefix(message, total, more, &prefix)) return __WASI_ERRNO_ILSEQ;
+    total = prefix;
     if (total) {
         probe_string_t borrowed = {.ptr = message, .len = total};
         latent_log_log_list_field_t fields = {0};

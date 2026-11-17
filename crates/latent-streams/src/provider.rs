@@ -28,6 +28,27 @@ use std::{
     time::{Duration, Instant},
 };
 
+// Retirement may synchronously wake arbitrary waiters. Keep the first panic
+// for the caller, but visit each remaining original owner before rethrowing it.
+// A later panic payload is dropped here; if its own destructor panics, the
+// walk can itself unwind. No double-panic or arbitrary payload guarantee.
+pub(crate) fn attempt_retirement(
+    first: &mut Option<Box<dyn std::any::Any + Send>>,
+    action: impl FnOnce(),
+) {
+    if let Err(panic) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(action)) {
+        if first.is_none() {
+            *first = Some(panic);
+        }
+    }
+}
+
+pub(crate) fn finish_retirement(first: Option<Box<dyn std::any::Any + Send>>) {
+    if let Some(panic) = first {
+        std::panic::resume_unwind(panic);
+    }
+}
+
 pin_project_lite::pin_project! {
     /// The existing paid connect future plus its same original opening row.
     struct OpeningFuture<F> {
@@ -679,6 +700,7 @@ impl StreamProvider {
         // pre-admitted connect cannot publish after this snapshot, and a
         // contended registry cannot make retirement silently skip an owner.
         let connections = self.inner.connections.close_and_snapshot();
+        let mut first_panic = None;
         #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
         {
             let owner = self
@@ -687,14 +709,22 @@ impl StreamProvider {
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .take();
-            drop(owner);
+            attempt_retirement(&mut first_panic, || drop(owner));
         }
         for connection in connections.into_iter().flatten() {
-            connection.abort(StreamErrorCode::Revoked);
+            attempt_retirement(&mut first_panic, || {
+                connection.abort(StreamErrorCode::Revoked)
+            });
+            // A last temporary owner may itself notify during Drop. Keep that
+            // callback outside all locks and continue the remaining snapshot.
+            attempt_retirement(&mut first_panic, || drop(connection));
         }
         for resolver in self.inner.resolvers.iter().flatten() {
-            let _ = resolver.close();
+            attempt_retirement(&mut first_panic, || {
+                let _ = resolver.close();
+            });
         }
+        finish_retirement(first_panic);
     }
     pub fn usage(&self) -> Result<crate::StreamUsage, StreamError> {
         self.usage_with_quarantine().map(|(usage, _)| usage)
