@@ -69,6 +69,74 @@ shared default, body/owner/memory limit, deadline, grant or helper budget.
 5. An unsupported runtime module or member reports its technical profile gap.
    Adding a compatible package requires no new LSF release or catalogue entry.
 
+## Select the phase contract for a new project
+
+For a phase-only project, create the project with the import runtime before
+capturing its npm dependencies. From the matching LSF checkout, choose a fresh
+outside-checkout path for `APP`:
+
+```bash
+APP=/absolute/path/to/my-fetch
+python3 tools/typescript_capsule.py new "$APP" --template greeting \
+  --runtime-profile spidermonkey-activation-promises-clocks-imports-v1
+```
+
+Add `import latent:http/phase-timing@0.4.0;` inside the `service` world in
+`$APP/wit/world.wit`. The phase interface uses the original streaming HTTP
+resource identities. Install its WIT and the checked, type-only legacy
+dependency from the captured SDK:
+
+```bash
+python3 - "$APP" <<'PY'
+from pathlib import Path
+import sys
+from tools.http_phase_wit import nominal_type_owner
+
+app = Path(sys.argv[1]).resolve(strict=True)
+sdk = app / 'vendor/lsf/wit/platform'
+dependencies = (
+    ('http-phases', (sdk / 'http-phases/package.wit').read_bytes()),
+    ('http-v3', nominal_type_owner((sdk / 'http-v3/package.wit').read_bytes())),
+)
+for name, contents in dependencies:
+    target = app / 'wit/deps' / name / 'package.wit'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open('xb') as output:
+        output.write(contents)
+PY
+wasm-tools component wit "$APP/wit"
+```
+
+The helper refuses a legacy WIT source that differs from this checkout and
+removes only its eight callable operations; it retains the original types and
+resources. The exclusive writes refuse existing dependency files. If the
+application also needs callable legacy HTTP, review that separate import and
+grant instead of replacing its dependency with this phase-only projection.
+WIT parsing checks the declarations, not a provider or signed execution.
+
+The greeting template starts with `limits.outboundRequests` set to zero. Set a
+finite nonzero request budget in `$APP/capsule-project.json` for the intended
+calls, within the node and policy ceilings; this budget is not a network grant.
+Choose CPU and owner limits that the deployment admits. In particular, the
+historical Ky 404 programme required the separately declared fuel allowance
+described above, rather than the greeting template's default.
+
+Add Ky through the normal capture workflow, using `--condition browser` on
+`resolve` if selecting the browser condition used by the published-client
+programme. The application can call `ky.get(url)` normally; no application
+transport callback is required. Build with matching source-bound import-engine
+and splicer inputs as described in the [import runtime guide](typescript-import-runtime-candidate.md).
+The operator must separately enable `providers.httpStreaming.phaseTiming`,
+install and bind `latent:http/phase-timing@0.4.0` with profile
+`bounded-streaming-http-phase-timing-v1`, and grant the publication only its
+required methods, origins and paths. The [phase authority guide](../testing/http-phase-operational-authority.md)
+describes the nominal dependency and the distinct operational grant.
+
+The historical signed phase programme includes unchanged Ky's 404 handling;
+that receipt is tied to its recorded source and engine. This recipe does not
+establish a passing signed result for a newer engine, enable production or
+change the legacy profile's unsupported `statusText` behavior.
+
 ## Optional public extensions
 
 A library's public Fetch callback remains an ordinary captured guest function.
