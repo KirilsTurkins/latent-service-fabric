@@ -136,6 +136,200 @@ fn wait<T>(future: impl std::future::Future<Output = T>) -> T {
     block_on(with_watchdog(WATCHDOG, future))
 }
 
+// Dropping a safe executor waker can run application-owned destructors. A
+// destructor may inspect this same capacity owner, so it must run unlocked.
+struct InspectingWake {
+    owner: NativeCapacityOwner,
+    drops: Arc<std::sync::atomic::AtomicUsize>,
+    locked_drops: Arc<std::sync::atomic::AtomicUsize>,
+}
+
+impl std::task::Wake for InspectingWake {
+    fn wake(self: Arc<Self>) {}
+}
+
+impl Drop for InspectingWake {
+    fn drop(&mut self) {
+        use std::sync::atomic::Ordering;
+        if self.owner.0.state.try_lock().is_err() {
+            self.locked_drops.fetch_add(1, Ordering::SeqCst);
+        }
+        self.drops.fetch_add(1, Ordering::SeqCst);
+    }
+}
+
+#[test]
+fn drain_waker_destruction_runs_outside_the_capacity_lock() {
+    use std::future::Future;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::task::{Context, Waker};
+
+    let mut locked_modes = Vec::new();
+    for mode in ["replace", "detach", "finish"] {
+        let (owner, _, deadline) = fixture();
+        let reservation = owner
+            .reserve(NativeAdmissionClass::Ordinary, request(), deadline)
+            .unwrap();
+        let mut drain = Box::pin(owner.drain_async(deadline, std::future::pending()).unwrap());
+        let drops = Arc::new(AtomicUsize::new(0));
+        let locked_drops = Arc::new(AtomicUsize::new(0));
+        let waker = Waker::from(Arc::new(InspectingWake {
+            owner: owner.clone(),
+            drops: Arc::clone(&drops),
+            locked_drops: Arc::clone(&locked_drops),
+        }));
+        assert!(drain
+            .as_mut()
+            .poll(&mut Context::from_waker(&waker))
+            .is_pending());
+        drop(waker); // the registered waker is the only remaining owner
+
+        match mode {
+            "replace" => {
+                assert!(drain
+                    .as_mut()
+                    .poll(&mut Context::from_waker(Waker::noop()))
+                    .is_pending());
+                drop(drain);
+                drop(reservation);
+            }
+            "detach" => {
+                drop(drain);
+                drop(reservation);
+            }
+            "finish" => {
+                drop(reservation);
+                assert!(drain
+                    .as_mut()
+                    .poll(&mut Context::from_waker(Waker::noop()))
+                    .is_ready());
+                drop(drain);
+            }
+            _ => unreachable!(),
+        }
+        assert_eq!(drops.load(Ordering::SeqCst), 1, "{mode}");
+        if locked_drops.load(Ordering::SeqCst) != 0 {
+            locked_modes.push(mode);
+        }
+    }
+    assert!(
+        locked_modes.is_empty(),
+        "waker dropped under lock: {locked_modes:?}"
+    );
+}
+
+#[test]
+fn replacing_a_waker_can_release_the_last_reservation_and_wake_the_replacement() {
+    use std::future::Future;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::task::{Context, Wake, Waker};
+
+    struct ReleaseOnDrop {
+        _reservation: NativeReservation,
+    }
+    impl Wake for ReleaseOnDrop {
+        fn wake(self: Arc<Self>) {}
+    }
+    struct CountWakes(AtomicUsize);
+    impl Wake for CountWakes {
+        fn wake(self: Arc<Self>) {
+            self.0.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+
+    let (owner, _, deadline) = fixture();
+    let reservation = owner
+        .reserve(NativeAdmissionClass::Ordinary, request(), deadline)
+        .unwrap();
+    let mut drain = Box::pin(owner.drain_async(deadline, std::future::pending()).unwrap());
+    let first = Waker::from(Arc::new(ReleaseOnDrop {
+        _reservation: reservation,
+    }));
+    assert!(drain
+        .as_mut()
+        .poll(&mut Context::from_waker(&first))
+        .is_pending());
+    drop(first);
+
+    let wakes = Arc::new(CountWakes(AtomicUsize::new(0)));
+    let replacement = Waker::from(Arc::clone(&wakes));
+    assert!(drain
+        .as_mut()
+        .poll(&mut Context::from_waker(&replacement))
+        .is_pending());
+    assert_eq!(wakes.0.load(Ordering::SeqCst), 1);
+    assert!(matches!(
+        drain.as_mut().poll(&mut Context::from_waker(&replacement)),
+        std::task::Poll::Ready(report) if report.clean && report.snapshot.physically_retired()
+    ));
+}
+
+#[test]
+fn delayed_old_wake_cannot_remove_a_new_drain_waiter() {
+    use std::future::Future;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::task::{Context, Wake, Waker};
+
+    struct DelayedWake {
+        entered: mpsc::SyncSender<()>,
+        release: std::sync::Mutex<mpsc::Receiver<()>>,
+    }
+    impl Wake for DelayedWake {
+        fn wake(self: Arc<Self>) {
+            self.entered.send(()).unwrap();
+            self.release.lock().unwrap().recv_timeout(WATCHDOG).unwrap();
+        }
+    }
+    struct CountWakes(AtomicUsize);
+    impl Wake for CountWakes {
+        fn wake(self: Arc<Self>) {
+            self.0.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+
+    let (owner, _, deadline) = fixture();
+    let reservation = owner
+        .reserve(NativeAdmissionClass::Ordinary, request(), deadline)
+        .unwrap();
+    let mut first = Box::pin(owner.drain_async(deadline, std::future::pending()).unwrap());
+    let (entered_tx, entered_rx) = mpsc::sync_channel(1);
+    let (release_tx, release_rx) = mpsc::sync_channel(1);
+    let old_waker = Waker::from(Arc::new(DelayedWake {
+        entered: entered_tx,
+        release: std::sync::Mutex::new(release_rx),
+    }));
+    assert!(first
+        .as_mut()
+        .poll(&mut Context::from_waker(&old_waker))
+        .is_pending());
+    let other_owner = owner.clone();
+    let waking = std::thread::spawn(move || other_owner.close_ordinary());
+    entered_rx.recv_timeout(WATCHDOG).unwrap();
+
+    assert!(first
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
+    drop(first);
+    let mut second = Box::pin(owner.drain_async(deadline, std::future::pending()).unwrap());
+    let wakes = Arc::new(CountWakes(AtomicUsize::new(0)));
+    let new_waker = Waker::from(Arc::clone(&wakes));
+    assert!(second
+        .as_mut()
+        .poll(&mut Context::from_waker(&new_waker))
+        .is_pending());
+    release_tx.send(()).unwrap();
+    waking.join().unwrap();
+    assert_eq!(wakes.0.load(Ordering::SeqCst), 0);
+
+    drop(reservation);
+    assert_eq!(wakes.0.load(Ordering::SeqCst), 1);
+    assert!(matches!(
+        second.as_mut().poll(&mut Context::from_waker(&new_waker)),
+        std::task::Poll::Ready(report) if report.clean && report.snapshot.physically_retired()
+    ));
+}
+
 #[test]
 fn ordinary_slot_and_bytes_pressure_preserve_actual_reserved_recovery_capacity() {
     for pressure in [
