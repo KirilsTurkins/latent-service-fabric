@@ -46,6 +46,8 @@ bool latent_network_streams_connect(latent_network_streams_connect_request_t *re
         latent_network_streams_own_connection_t *out,latent_network_streams_stream_error_t *error) {
     ++host_calls;
     reentry_ok=(__lsf_c_net_close(current_fd)==-1 && lsf_test_errno==EBUSY);
+    reentry_ok=reentry_ok && fcntl(current_fd,F_SETFL,fcntl(current_fd,F_GETFL) & ~O_NONBLOCK)==0 &&
+        fcntl(current_fd,F_GETFL)==O_RDWR && lsf_test_errno==EBUSY;
     if(!host_equals(request->host,"127.0.0.1",9) || request->port!=8080 ||
        request->transport!=LATENT_NETWORK_STREAMS_TRANSPORT_TCP || request->timeout_millis.is_some)
         __builtin_trap();
@@ -173,6 +175,8 @@ __attribute__((export_name("descriptor_controls"))) int descriptor_controls(void
     current_fd=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);allow_host=1;
     CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==0 && reentry_ok);
     calls_before=host_calls;
+    CHECK(fcntl(current_fd,F_SETFL,fcntl(current_fd,F_GETFL) & ~O_NONBLOCK)==0);
+    CHECK(fcntl(current_fd,F_GETFL)==O_RDWR);
     CHECK(setsockopt(current_fd,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout))==-1 && lsf_test_errno==ENOTSUP);
     CHECK(host_calls==calls_before);
     CHECK(__lsf_c_net_send(current_fd,"xyz",3,0)==2 && reentry_ok);
@@ -232,6 +236,15 @@ __attribute__((export_name("descriptor_flags_controls"))) int descriptor_flags_c
     int marked=__lsf_c_net_socket(AF_INET,SOCK_STREAM|SOCK_CLOEXEC,0);CHECK(marked==3);
     CHECK(__lsf_c_net_fcntl(marked,F_GETFL)==O_RDWR);
     CHECK(__lsf_c_net_fcntl(marked,F_GETFD)==FD_CLOEXEC);
+    /* This is the ordinary blocking selection used by unchanged clients. */
+    int flags=fcntl(marked,F_GETFL);
+    lsf_test_errno=ERANGE;
+    CHECK(fcntl(marked,F_SETFL,flags & ~O_NONBLOCK)==0 && lsf_test_errno==ERANGE);
+    CHECK(fcntl(marked,F_SETFL,0)==0 && lsf_test_errno==ERANGE);
+    CHECK(fcntl(marked,F_GETFL)==O_RDWR && fcntl(marked,F_GETFD)==FD_CLOEXEC);
+    CHECK(fcntl(marked,F_SETFL,O_RDWR|O_NONBLOCK)==-1 && lsf_test_errno==ENOTSUP);
+    CHECK(fcntl(marked,F_SETFL,O_APPEND)==-1 && lsf_test_errno==ENOTSUP);
+    CHECK(fcntl(marked,F_GETFL)==O_RDWR && fcntl(marked,F_GETFD)==FD_CLOEXEC);
     int second=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);CHECK(second==4);
     CHECK(__lsf_c_net_fcntl(second,F_GETFD)==0);
     CHECK(__lsf_c_net_fcntl(marked,F_SETFD,0)==0);
@@ -250,6 +263,8 @@ __attribute__((export_name("descriptor_flags_controls"))) int descriptor_flags_c
     CHECK(__lsf_c_net_fcntl(reused,F_SETFL,O_NONBLOCK)==-1 && lsf_test_errno==ENOTSUP);
     CHECK(__lsf_c_net_close(reused)==0);
     CHECK(__lsf_c_net_fcntl(reused,F_GETFD)==-1 && lsf_test_errno==EBADF);
+    CHECK(fcntl(reused,F_SETFL,0)==-1 && lsf_test_errno==EBADF);
+    CHECK(fcntl(-1,F_SETFL,0)==-1 && lsf_test_errno==EBADF);
     CHECK(host_calls==before);
     return 0;
 }

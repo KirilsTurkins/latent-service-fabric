@@ -114,6 +114,16 @@ int __lsf_c_net_fcntl(int fd, int command, ...) {
     if (!slot) return fail(EBADF);
     if (command == F_GETFL) return O_RDWR;
     if (command == F_GETFD) return slot->close_on_exec ? FD_CLOEXEC : 0;
+    if (command == F_SETFL) {
+        va_list arguments;
+        va_start(arguments, command);
+        int flags = va_arg(arguments, int);
+        va_end(arguments);
+        /* Every admitted descriptor is blocking and read/write. These two
+         * requests leave that state unchanged; all other flags are refused. */
+        if (flags != 0 && flags != O_RDWR) return fail(ENOTSUP);
+        return 0;
+    }
     if (command == F_SETFD) {
         va_list arguments;
         va_start(arguments, command);
@@ -123,7 +133,7 @@ int __lsf_c_net_fcntl(int fd, int command, ...) {
         slot->close_on_exec = (flags & FD_CLOEXEC) != 0;
         return 0;
     }
-    /* Nonblocking mode, descriptor duplication and unknown flags are unavailable. */
+    /* Descriptor duplication and other commands are unavailable. */
     return fail(ENOTSUP);
 }
 

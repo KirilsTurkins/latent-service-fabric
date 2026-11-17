@@ -153,7 +153,10 @@ does not raise `SIGPIPE`, with or without this flag. The flag does not enable
 signals or other message flags. Other `send` flags and every nonzero `recv` flag
 are refused.
 `SOCK_CLOEXEC` at creation and `F_GETFD`/`F_SETFD` retain the descriptor's
-`FD_CLOEXEC` flag. Other descriptor flags and duplication remain unsupported;
+`FD_CLOEXEC` flag. `F_SETFL` accepts only `0` or `O_RDWR`, which preserve the
+already-blocking descriptor state; nonblocking and other status flags are
+refused. This operation does not qualify a TLS client. Other descriptor flags
+and duplication remain unsupported;
 this profile does not provide process execution or descriptor inheritance.
 `POLLPRI` for a live descriptor is never silently ignored. Descriptor-free
 timer polls retain the existing timed runtime and accept at most 64 ignored
