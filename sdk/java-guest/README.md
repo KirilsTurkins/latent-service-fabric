@@ -168,6 +168,11 @@ The opt-in [Java fiber profile](../../docs/runtime/java-activation-fibers.md)
 includes ordinary scheduled executors as well as thread/future ownership.
 Nested executor withdrawal, stopped wrappers, repeated occurrences and ambiguous
 queue/result settlement keep their original owners until confirmed retirement.
+`CompletableFuture.obtrudeValue` and `obtrudeException` replace the observed
+outcome without cancelling a queued or running producer; its original owners
+remain charged until physical retirement. Cancellation observations create a
+new exception with the original cancellation as its cause, as in the tested
+JDK 25; that exception uses the existing guest heap.
 Scheduled futures from different pools compare their deadlines at one monotonic
 clock reading. Equal deadlines use each task's original queued-work admission
 identity, including across pools. As with concurrently submitted JDK tasks,

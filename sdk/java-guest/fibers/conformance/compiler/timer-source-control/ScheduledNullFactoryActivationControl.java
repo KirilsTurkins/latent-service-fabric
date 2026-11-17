@@ -2,6 +2,7 @@ import dev.latent.generated.Bindings;
 import dev.latent.generated.Bindings.LatentRuntimeActivationOwnerKind;
 import dev.latent.guest.Option;
 import dev.latent.guest.runtime.Activation;
+import dev.latent.guest.runtime.concurrent.CompletableFuture;
 import dev.latent.guest.runtime.concurrent.Executors;
 import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;
 import java.lang.reflect.Field;
@@ -585,6 +586,37 @@ public final class ScheduledNullFactoryActivationControl {
             invoke("retireIdlePools"); finishRoot(root);
         }
     }
+    private static void managedObtrudeRoot() throws Exception {
+        Object root = enter();
+        AtomicReference<Thread> selected = new AtomicReference<>();
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        AtomicInteger calls = new AtomicInteger();
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            Thread thread = new Thread(() -> {
+                try { Activation.starting(Thread.currentThread()); target.run(); }
+                finally { Activation.finished(Thread.currentThread()); }
+            });
+            selected.set(thread); return thread;
+        });
+        var result = new CompletableFuture<Integer>();
+        try {
+            result.completeAsync(() -> {
+                calls.incrementAndGet(); entered.countDown();
+                while (true) try { release.await(); return 42; } catch (InterruptedException ignored) { }
+            }, pool);
+            require(entered.await(5, TimeUnit.SECONDS), "obtrude-producer-not-started");
+            held(1, 1, 1);
+            require(owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 1, "obtrude-worker-not-owned");
+            result.obtrudeValue(7);
+            require(result.join() == 7, "obtrude-result-not-visible"); held(1, 1, 1);
+            pool.shutdown(); closeRoot();
+            require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools"), "obtrude-root-not-fenced");
+            release.countDown(); selected.get().join(5000);
+            require(!selected.get().isAlive() && calls.get() == 1 && result.join() == 7
+                && owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 0, "obtrude-producer-not-retired");
+            held(0, 0, 0); invoke("retireIdlePools"); finishRoot(root);
+        } finally { release.countDown(); }
+    }
     public static void main(String[] args) throws Exception {
         String mode = args[0];
         if (mode.equals("scan-mutation") || mode.equals("retirement-scan-mutation"))
@@ -608,6 +640,7 @@ public final class ScheduledNullFactoryActivationControl {
         else if (mode.equals("managed-graceful-null-root") || mode.equals("managed-graceful-thread-root")
                 || mode.equals("managed-graceful-executor-denied-root"))
             managedGracefulSoleRoot(mode.substring("managed-graceful-".length(), mode.length() - "-root".length()));
+        else if (mode.equals("managed-obtrude-root")) managedObtrudeRoot();
         else if (mode.equals("recovery") || mode.equals("reentrant")) recovery(mode.equals("reentrant"));
         else if (mode.equals("cancel") || mode.equals("remove") || mode.equals("factory-throw") || mode.equals("wait-denied")
                 || mode.equals("settle-result-denied") || mode.equals("settle-queue-denied")) noWorker(mode);
