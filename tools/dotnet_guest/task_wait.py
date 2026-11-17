@@ -172,7 +172,7 @@ def validate_current_receipt(value: dict, *, finite: bool = False,
         raise ValueError('task-wait-current-finite-observation-required')
     if managed and value['managedAcceptedWork']['patch'] != 'latent.dotnet.managed-accepted-work.v15':
         raise ValueError('task-wait-current-managed-readiness-required')
-    if aggregate and value['aggregateTaskWait']['patch'] != 'latent.dotnet.wait-all.v3':
+    if aggregate and value['aggregateTaskWait']['patch'] != 'latent.dotnet.wait-all.v4':
         raise ValueError('task-wait-current-prefetched-poll-required')
 
 
