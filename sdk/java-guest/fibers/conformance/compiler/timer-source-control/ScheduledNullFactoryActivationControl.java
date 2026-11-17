@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -541,6 +542,49 @@ public final class ScheduledNullFactoryActivationControl {
         require(first.get().cancel(false) && second.get().cancel(false) && outer.cancel(false), "nested-null-cancel");
         invoke("retireIdlePools"); finishRoot(root);
     }
+    private static void managedGracefulSoleRoot(String mode) throws Exception {
+        Object root = enter();
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<Thread> offered = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            attempts.incrementAndGet(); selected.get().shutdown(); held(1, 1, 1);
+            if (mode.equals("executor-denied")) {
+                Bindings.LatentRuntimeActivation.settleObservation = () -> {
+                    Bindings.LatentRuntimeActivation.settleObservation = () -> {
+                        Bindings.LatentRuntimeActivation.settleObservation = () -> Bindings.LatentRuntimeActivation.denySettle = true;
+                    };
+                };
+            }
+            if (!mode.equals("thread")) return null;
+            var thread = new Thread(target); offered.set(thread); return thread;
+        });
+        selected.set(pool);
+        try { pool.submit(calls::incrementAndGet); throw new AssertionError("graceful-sole-accepted"); }
+        catch (RejectedExecutionException expected) {
+            require(expected.getMessage().equals("activation-executor-closed"), "wrong-graceful-rejection");
+        }
+        require(attempts.get() == 1 && calls.get() == 0
+            && (offered.get() == null || offered.get().getState() == Thread.State.NEW), "graceful-worker-started");
+        closeRoot();
+        if (mode.equals("executor-denied")) {
+            Bindings.LatentRuntimeActivation.denySettle = false;
+            held(0, 0, 1);
+            require(field("poisoned").getBoolean(null) && !pool.isTerminated(), "graceful-owner-not-fenced");
+            int attemptsBefore = Bindings.LatentRuntimeActivation.settlementAttempts;
+            pool.shutdownNow();
+            require(Bindings.LatentRuntimeActivation.settlementAttempts == attemptsBefore, "graceful-owner-retried");
+            try { invoke("requireHealthyCompletion"); throw new AssertionError("graceful-root-succeeded"); }
+            catch (InvocationTargetException error) {
+                require(error.getCause() instanceof IllegalStateException, "wrong-graceful-root-failure");
+            }
+            // The original Executor owner remains fenced until Store teardown.
+        } else {
+            held(0, 0, 0);
+            require(pool.isTerminated() && !(boolean)invoke("pending"), "graceful-pool-not-retired");
+            invoke("retireIdlePools"); finishRoot(root);
+        }
+    }
     public static void main(String[] args) throws Exception {
         String mode = args[0];
         if (mode.equals("scan-mutation") || mode.equals("retirement-scan-mutation"))
@@ -561,6 +605,9 @@ public final class ScheduledNullFactoryActivationControl {
         else if (mode.equals("managed-null-worker-uncertain")) managedNullUncertainWorker();
         else if (mode.equals("managed-preferred-root")) managedPreferredRoot();
         else if (mode.equals("managed-nested-null-root")) managedNestedNullRoot();
+        else if (mode.equals("managed-graceful-null-root") || mode.equals("managed-graceful-thread-root")
+                || mode.equals("managed-graceful-executor-denied-root"))
+            managedGracefulSoleRoot(mode.substring("managed-graceful-".length(), mode.length() - "-root".length()));
         else if (mode.equals("recovery") || mode.equals("reentrant")) recovery(mode.equals("reentrant"));
         else if (mode.equals("cancel") || mode.equals("remove") || mode.equals("factory-throw") || mode.equals("wait-denied")
                 || mode.equals("settle-result-denied") || mode.equals("settle-queue-denied")) noWorker(mode);

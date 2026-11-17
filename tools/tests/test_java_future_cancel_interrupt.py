@@ -78,7 +78,11 @@ class FutureCancellationControl(unittest.TestCase):
         sdk = subject.ROOT / 'sdk/java-guest'
         control = sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskInterruptFailureControl.java'
         managed_factory_modes = ('capacity', 'nested-throw', 'nested-null', 'shutdown-thread', 'shutdown-null',
-                                 'shutdown-throw', 'uncertain-denied', 'uncertain-lost')
+                                 'shutdown-throw', 'graceful-null', 'graceful-thread', 'graceful-queue-denied',
+                                 'graceful-queue-lost', 'graceful-result-denied', 'graceful-result-lost',
+                                 'graceful-executor-denied', 'graceful-executor-lost', 'graceful-nested',
+                                 'graceful-nested-thread', 'graceful-shared-result', 'graceful-completable', 'graceful-running-null',
+                                 'graceful-running-thread', 'uncertain-denied', 'uncertain-lost')
         managed_null_modes = ('unavailable', 'immediate-recovery', 'later-recovery', 'fallback-throw',
                               'nested-fallback-throw', 'fallback-completable', 'fallback-start-failure',
                               'fallback-start-uncertain', 'fallback-live-thread', 'cached-null', 'existing-worker',
@@ -112,7 +116,7 @@ class FutureCancellationControl(unittest.TestCase):
             if stage in ('manual-periodic-throw-reference-jdk', 'manual-periodic-throw-source'):
                 return 'MANUAL_PERIODIC_THROW PASS fixed-rate;fixed-delay;error;copies;reentrant'
             if stage in ('managed-reentrant-factory-reference-jdk', 'managed-reentrant-factory-source'):
-                return 'MANAGED_REENTRANT_FACTORY PASS fixed-one;single;fixed-two;cached'
+                return 'MANAGED_REENTRANT_FACTORY PASS fixed-one;single;fixed-two;cached;graceful-sole'
             if stage.startswith('managed-reentrant-factory-owner-'):
                 return 'MANAGED_REENTRANT_FACTORY_OWNER PASS ' + argv[-1]
             if stage in ('managed-null-factory-reference-jdk', 'managed-null-factory-source'):
