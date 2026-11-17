@@ -223,6 +223,32 @@ class TimerSetupRetirementTests(unittest.TestCase):
     def test_failed_native_settlement_retains_owner_and_closes_admission(self):
         self.control('refused-native-settlement')
 
+    @unittest.skipUnless(shutil.which('node'), 'Node required for the separately labelled timer reference')
+    def test_ready_timer_order_against_node_reference(self):
+        node = shutil.which('node')
+        source = r'''
+const assert = require('node:assert/strict');
+const order = [];
+const watchdog = setTimeout(() => { throw new Error('reference timer did not finish'); }, 4000);
+setTimeout(() => {
+  const started = performance.now();
+  setTimeout(() => {
+    clearTimeout(fast);
+    order.push('slow');
+    assert.deepEqual(order, ['block', 'fast', 'slow']);
+    clearTimeout(watchdog);
+    process.stdout.write(order.join(','));
+  }, 200);
+  const fast = setTimeout(() => { order.push('fast'); }, 0);
+  if (performance.now() - started >= 200) throw new Error('reference setup exceeded slow deadline');
+  while (performance.now() - started < 220) {}
+  order.push('block');
+}, 0);
+'''
+        result = subprocess.run([node, '-e', source], capture_output=True, timeout=8)
+        self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:4096])
+        self.assertEqual(result.stdout, b'block,fast,slow')
+
     def test_ready_fairness_shared_events_checkpoint_and_retirement(self):
         compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++')
         if compiler is None:
@@ -254,7 +280,8 @@ class TimerSetupRetirementTests(unittest.TestCase):
             raise AssertionError('finite timer fairness reference output required')
         for case in ('immediate', 'delivered', 'queued', 'noevent', 'selfclear',
                      'otherclear', 'import-ready', 'import-queued', 'cancelled',
-                     'two-import-ready', 'two-import-nojob'):
+                     'two-import-ready', 'two-import-nojob', 'observed-order-clear',
+                     'ready-clear-middle', 'ready-invariant-retains'):
             with self.subTest(case=case):
                 result = subprocess.run([str(binary), case], capture_output=True, timeout=10)
                 self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[:65536])

@@ -1,15 +1,31 @@
 // Actual current Timers and extracted run_timer_turn, with finite JS/P3 doubles.
 // This is not SpiderMonkey, real P3 execution, or signed guest qualification.
+#define LSF_TYPESCRIPT_TIMER_QUEUE_TEST
 #include "sdk/typescript-guest/activation/native_timers.h"
+#undef LSF_TYPESCRIPT_TIMER_QUEUE_TEST
 #include "sdk/typescript-guest/activation/native_import_lifecycle.h"
 #include <array>
 #include <cstdio>
 #include <cstring>
 #include <memory>
 using namespace lsf::typescript::activation;
+namespace lsf::typescript::activation {
+struct TimerQueueTestAccess {
+  static bool setReadyFlag(Timers& timers, int32_t id, bool value) {
+    for (auto* record=timers.records_.get(); record; record=record->following.get()) {
+      if (record->id==id) {
+        if (record->ready_enqueued==value) return false;
+        record->ready_enqueued=value;
+        return true;
+      }
+    }
+    return false;
+  }
+};
+}
 unsigned rooted_callables=0;
 bool call_succeeds=true, fail_next_capture=false;
-static JSObject a,b,c;
+static JSObject a,b,c,d;
 static std::array<int,16> callbacks{};
 static unsigned callback_count=0,polls=0,waits=0,drops=0,native_live=0;
 static unsigned jobs_live=0,timer_live=0,next_timer=1,next_owner=20;
@@ -19,16 +35,24 @@ static std::array<latent_runtime_activation_result_u64_error_t*,4> held_results{
 static Timers* callback_timers=nullptr;
 static JSContext* callback_context=nullptr;
 static int32_t first_id=0,second_id=0;
+static int32_t third_id=0;
 static unsigned clear_action=0;
 static bool callback_clear_ok=true;
+static bool observed_order=false;
 static void on_call(JSObject* value) {
-  if(callback_count<callbacks.size()) callbacks[callback_count]=value==&a?1:value==&b?2:value==&c?3:0;
+  if(callback_count<callbacks.size()) callbacks[callback_count]=value==&a?1:value==&b?2:value==&c?3:value==&d?4:0;
   ++callback_count;
   if(value==&a&&clear_action) {
-    const auto id=clear_action==1?first_id:second_id;
+    const auto id=clear_action==1?first_id:clear_action==2?second_id:third_id;
     clear_action=0;
     callback_clear_ok=callback_timers->clear(callback_context,id);
   }
+  if(observed_order&&value==&a) {
+    callback_clear_ok=callback_timers->start(callback_context,&b,JS::HandleValueArray::empty(),10,false,&second_id)&&
+        callback_timers->start(callback_context,&c,JS::HandleValueArray::empty(),0,false,&third_id);
+    events[1]=true; // the slow timer matures before this callback returns
+  }
+  if(observed_order&&value==&b) callback_clear_ok=callback_timers->clear(callback_context,third_id);
 }
 static bool allowed(JSContext*) {return true;}
 extern "C" {
@@ -125,14 +149,20 @@ int main(int argc,char** argv) {
   const bool cancellation=std::strcmp(argv[1],"cancelled")==0;
   const bool two_ready=std::strcmp(argv[1],"two-import-ready")==0;
   const bool two_nojob=std::strcmp(argv[1],"two-import-nojob")==0;
+  const bool clear_middle=std::strcmp(argv[1],"ready-clear-middle")==0;
+  const bool ready_invariant=std::strcmp(argv[1],"ready-invariant-retains")==0;
+  observed_order=std::strcmp(argv[1],"observed-order-clear")==0;
   const bool multi=two_ready||two_nojob;
   const bool import_case=import_ready||import_queued||multi;
-  if(!immediate&&!delivered&&!queued&&!noevent&&!selfclear&&!otherclear&&!import_case&&!cancellation)return 2;
-  pending_second=delivered||queued||noevent||cancellation;
+  if(!immediate&&!delivered&&!queued&&!noevent&&!selfclear&&!otherclear&&!import_case&&!cancellation&&!observed_order&&!clear_middle&&!ready_invariant)return 2;
+  pending_second=delivered||queued||noevent||cancellation||observed_order;
   cancel_event=cancellation;
   JSContext cx;JS::call_observer=on_call;callback_timers=&timers;callback_context=&cx;
-  if(!timers.start(&cx,&a,JS::HandleValueArray::empty(),1,true,&first_id))return 3;
-  if(!import_case&&!timers.start(&cx,&b,JS::HandleValueArray::empty(),0,false,&second_id))return 3;
+  if(!timers.start(&cx,&a,JS::HandleValueArray::empty(),observed_order||clear_middle||ready_invariant?0:1,!observed_order&&!clear_middle&&!ready_invariant,&first_id))return 3;
+  if(!import_case&&!observed_order&&!timers.start(&cx,&b,JS::HandleValueArray::empty(),0,false,&second_id))return 3;
+  if(clear_middle&&!timers.start(&cx,&c,JS::HandleValueArray::empty(),0,false,&third_id))return 3;
+  int32_t fourth_id=0;
+  if(clear_middle&&!timers.start(&cx,&d,JS::HandleValueArray::empty(),0,false,&fourth_id))return 3;
   FakeImportAccounting import_accounting;
   std::unique_ptr<ImportLifecycle> life,life2;
   if(import_case){
@@ -153,10 +183,11 @@ int main(int argc,char** argv) {
       }
     }
   }
-  if((pending_second&&!noevent))events[1]=true;
+  if((pending_second&&!noevent&&!observed_order))events[1]=true;
   if((delivered||import_ready)&&!readiness.dispatch(&cx,false))return 5;
   if(selfclear)clear_action=1;
   if(otherclear)clear_action=2;
+  if(clear_middle)clear_action=3;
   const unsigned before=polls;
   bool passed=true,checkpoint=false,retained=false;unsigned pump_polls=0;
   if(multi){
@@ -213,6 +244,23 @@ int main(int argc,char** argv) {
   }else if(cancellation){
     passed=run_timer_turn(&cx)&&!run_timer_turn(&cx)&&cx.exception&&callback_count==1;
     JS_ClearPendingException(&cx);
+  }else if(ready_invariant){
+    if(!TimerQueueTestAccess::setReadyFlag(timers,second_id,false))return 6;
+    const bool refused=!timers.clear(&cx,second_id)&&cx.exception&&timer_live==2&&native_live==2&&rooted_callables==2;
+    JS_ClearPendingException(&cx);
+    const bool retained=!timers.clear(&cx,first_id)&&cx.exception&&timer_live==1&&native_live==1&&rooted_callables==1;
+    JS_ClearPendingException(&cx);
+    if(!TimerQueueTestAccess::setReadyFlag(timers,second_id,true))return 6;
+    passed=refused&&retained&&callback_count==0;
+  }else if(clear_middle){
+    for(unsigned i=0;i<4;++i) if(!run_timer_turn(&cx)){passed=false;break;}
+    passed=passed&&callback_clear_ok&&callback_count==3&&callbacks[0]==1&&callbacks[1]==2&&callbacks[2]==4;
+  }else if(observed_order){
+    // The first callback starts a slow timer and an immediately ready timer,
+    // then blocks until the slow timer matures. Its later callback clears the
+    // already-ready fast timer, which is too late under observation order.
+    for(unsigned i=0;i<3;++i) if(!run_timer_turn(&cx)){passed=false;break;}
+    passed=passed&&callback_clear_ok&&callback_count==3&&callbacks[0]==1&&callbacks[1]==3&&callbacks[2]==2;
   }else{
     for(unsigned i=0;i<5;++i){
       if(!run_timer_turn(&cx)){passed=false;break;}
@@ -223,10 +271,11 @@ int main(int argc,char** argv) {
     if(noevent)passed=passed&&ca==5&&cb==0&&polls-before==5&&joined[1]&&drops==0;
     else if(selfclear)passed=passed&&ca==1&&cb==1&&callback_clear_ok;
     else if(otherclear)passed=passed&&cb==0&&cc==1&&callback_clear_ok;
-    else passed=passed&&ca==4&&cb==1;
+    else passed=passed&&ca==4&&cb==1&&callbacks[0]==1&&
+        (immediate||delivered ? callbacks[1]==2 : callbacks[2]==2);
   }
   if(!import_case)pump_polls=polls-before;
   const bool cleanup=timers.cancel(&cx)&&readiness.retire(&cx)&&!native_live&&!timer_live&&!jobs_live&&!rooted_callables;
-  std::printf("{\"case\":\"%s\",\"callbacks\":%u,\"polls\":%u,\"waits\":%u,\"checkpoint\":%s,\"importRetained\":%s,\"clean\":%s,\"passed\":%s}\n",argv[1],callback_count,pump_polls,waits,checkpoint?"true":"false",retained?"true":"false",cleanup?"true":"false",passed&&cleanup?"true":"false");
+  std::printf("{\"case\":\"%s\",\"callbacks\":%u,\"order\":[%d,%d,%d],\"polls\":%u,\"waits\":%u,\"checkpoint\":%s,\"importRetained\":%s,\"clean\":%s,\"passed\":%s}\n",argv[1],callback_count,callbacks[0],callbacks[1],callbacks[2],pump_polls,waits,checkpoint?"true":"false",retained?"true":"false",cleanup?"true":"false",passed&&cleanup?"true":"false");
   return passed&&cleanup?0:1;
 }
