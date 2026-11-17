@@ -117,6 +117,12 @@ successful call owns a separate result in the original bounded guest memory;
 `freeaddrinfo` releases it. The result is not an endpoint grant, and legacy
 hostname lookup functions remain unavailable. `gai_strerror` provides static
 C-locale messages for resolver error codes without consulting a host resolver.
+`getnameinfo` renders a supplied IPv4 address or port only when the requested
+output has `NI_NUMERICHOST` or `NI_NUMERICSERV`, respectively; it performs no
+reverse lookup or service-name lookup and creates no endpoint grant. A requested
+non-numeric result returns `EAI_NONAME`, and a short output returns
+`EAI_OVERFLOW`. Other flags return `EAI_BADFLAGS`; for example, unlike native
+implementations, `NI_NUMERICHOST | NI_NAMEREQD` is rejected as unsupported.
 
 The captured component build selects this implementation when it is present
 in the project's verified SDK snapshot. Previously captured projects without
