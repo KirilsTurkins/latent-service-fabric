@@ -454,6 +454,24 @@ internal static partial class TransactionRules
             var invoke = original as Tx.InvokeCommandRequest; var state = original as Tx.MutateStateRequest; var lifecycle = original as Tx.MutateNamespaceRequest;
             var effectMutation = original as Tx.PlanEffectMutationRequest;
             var effectPlan = state?.EffectPlan ?? (original as Tx.GetStateOperationReceiptRequest)?.OriginalEffectPlan;
+            // Check byte limits before allocating recovery copies. ReadOnlyMemory
+            // can still reference caller-owned mutable arrays after cancellation.
+            if (effectMutation is not null)
+            {
+                Bytes(effectMutation.ExpectedVersion);
+                effectMutation = effectMutation with { ExpectedVersion = effectMutation.ExpectedVersion.ToArray() };
+            }
+            if (effectPlan is not null)
+            {
+                Bytes(effectPlan.PlanDigest);
+                var originalEffect = effectPlan.Original;
+                if (originalEffect is not null)
+                {
+                    Bytes(originalEffect.ExpectedVersion);
+                    originalEffect = originalEffect with { ExpectedVersion = originalEffect.ExpectedVersion.ToArray() };
+                }
+                effectPlan = effectPlan with { Original = originalEffect, PlanDigest = effectPlan.PlanDigest.ToArray() };
+            }
             var dispatcher = original as Tx.ControlDispatcherRequest ?? (original as Tx.GetDispatcherOperationRequest)?.Original;
             if (dispatcher is not null) { Text(dispatcher.OperationId); Enum(dispatcher.Action.Value, 2); DispatcherGeneration(dispatcher.ExpectedGeneration); }
             if (state is not null) Bytes(state.ExpectedVersion);
