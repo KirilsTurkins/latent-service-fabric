@@ -280,6 +280,24 @@ test("durable business rejection remains recoverable through later audit failure
   } finally { await fixture.stop(); }
 });
 
+test("pre-cancelled commands retain selected bytes without copying their large backing store", async () => {
+  const fixture = await peer(), abort = new AbortController();
+  const large = new ArrayBuffer(9 * 1024 * 1024);
+  const key = new Uint8Array(large, 20, 1); key[0] = 42;
+  abort.abort();
+  try {
+    await assert.rejects(fixture.client.invokeCommand({ ...command, expectedVersions: [{ key }] }, { signal: abort.signal }), error => {
+      assert.equal(error.failure.category, FailureCategory.LocalCancelled);
+      assert.equal(error.failure.dispatched, false);
+      assert.equal(error.failure.transactionIdentity.command.clientKey, "business-key");
+      assert.equal(error.failure.transactionIdentity.expectedVersions[0].key[0], 42);
+      assert.equal(error.failure.transactionIdentity.expectedVersions[0].key.buffer.byteLength, 1);
+      return true;
+    });
+    assert.equal(fixture.state.calls.length, 0);
+  } finally { await fixture.stop(); }
+});
+
 test("grpc ABORTED never proves a new attempt or resubmits a command", async () => {
   const fixture = await peer("aborted");
   try {

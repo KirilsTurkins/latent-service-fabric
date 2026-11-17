@@ -12,6 +12,28 @@ internal static partial class Program
     {
         var failure = await TxFailure(operation, category); Check(failure.Transport.Dispatched == dispatched, "effect dispatch evidence changed"); return failure;
     }
+    private static Task TransactionRecoverySnapshotCopiesEffectInputs()
+    {
+        byte[] expected = Enumerable.Repeat((byte)7, 32).ToArray();
+        byte[] digest = Enumerable.Repeat((byte)9, 32).ToArray();
+        var mutation = TxEffectMutation() with { ExpectedVersion = expected };
+        var plan = TxEffectPlan(mutation) with { PlanDigest = digest };
+        var request = new Tx.GetStateOperationReceiptRequest(TxInspect, mutation.OperationId, plan);
+        var identity = TransactionRules.IdentitySnapshot(request);
+        var direct = TransactionRules.IdentitySnapshot(mutation);
+        expected[0] = 1; digest[0] = 2;
+        Check(identity.EffectPlan?.Original?.ExpectedVersion.Span[0] == 7, "plan precondition retained caller memory");
+        Check(identity.EffectPlan?.PlanDigest.Span[0] == 9, "plan digest retained caller memory");
+        Check(identity.ExpectedVersion?.Span[0] == 7, "original precondition retained caller memory");
+        Check(direct.EffectMutation?.ExpectedVersion.Span[0] == 7, "effect request retained caller memory");
+        byte[] oversized = new byte[4 * 1024 * 1024];
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        var rejected = TransactionRules.IdentitySnapshot(mutation with { ExpectedVersion = oversized });
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        Check(rejected.EffectMutation is null && allocated < 1024 * 1024, "oversized precondition was copied before refusal");
+        return Task.CompletedTask;
+    }
+
     private static Tx.PlanEffectMutationRequest TxEffectMutation() => new(new(Tx.CurrentTransactionProfile.Create(), TxSelector, new string('a', 64), TxPublication),
         "effect-operation-a", Tx.StateMutationKind.RetryKnownFailedEffect, Enumerable.Repeat((byte)1, 32).ToArray(), TxDigest, "explicit redrive", 100);
     private static Tx.EffectManagementPlan TxEffectPlan(Tx.PlanEffectMutationRequest original) => new(original, Enumerable.Repeat((byte)2, 32).ToArray(),

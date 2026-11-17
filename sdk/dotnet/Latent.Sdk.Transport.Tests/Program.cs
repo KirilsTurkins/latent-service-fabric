@@ -20,7 +20,7 @@ internal static partial class Program
                 MalformedAndBounds, AuditAndRawStatus, ConnectionOwnership, ZeroLengthReads, FrameFragments, StalledRawPeers,
                 TransactionInlineOutcomeAssociation, TransactionSixteenOperations, TransactionDurableRejectionThroughAuditFailure, TransactionTransportAbortAndExplicitAttempt,
                 TransactionWireBoundsAndOldPayloads, TransactionOriginalInputsAndCancellation, TransactionProfileAndDeadlineFailBeforeDispatch,
-                TransactionDispatcherReceiptAndAuditAreIndependent, TransactionEffectPlanOriginalCasAndFacts,
+                TransactionDispatcherReceiptAndAuditAreIndependent, TransactionEffectPlanOriginalCasAndFacts, TransactionRecoverySnapshotCopiesEffectInputs,
                 DisposalOwnsSocketTeardown
             })
             {
