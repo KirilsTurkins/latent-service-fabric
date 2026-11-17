@@ -940,7 +940,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
                           'manual-factory-throw', 'manual-worker-admission-denied',
                           'managed-factory-thread', 'managed-factory-null', 'managed-factory-throw',
                           'managed-null-pending', 'managed-null-fallback-throw', 'managed-null-worker-denied',
-                          'managed-null-worker-uncertain', 'managed-preferred-root')
+                          'managed-null-worker-uncertain', 'managed-preferred-root', 'managed-nested-null-root')
     for mode in null_factory_modes:
         actual = compiler.run('scheduled-null-factory-activation-' + mode, 'java', '-Xmx256m', '-cp',
             str(output) + os.pathsep + classpath, 'ScheduledNullFactoryActivationControl', mode).strip()
@@ -1245,7 +1245,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ManagedReentrantFactoryReferenceControl').strip()
     if result != expected_managed_factory: raise ValueError('Java managed reentrant factory reference did not complete')
     expected_managed_null = ('MANAGED_NULL_FACTORY PASS fixed;single;two-attempts;recovery;fallback-throw;'
-        'existing-worker;nested;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order')
+        'existing-worker;nested;nested-initial-order;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order')
     result = compiler.run('managed-null-factory-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ManagedNullFactoryReferenceControl', 'jdk').strip()
     if result != expected_managed_null: raise ValueError('Java managed null factory reference did not complete')
@@ -1405,7 +1405,9 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     managed_null_modes = ('unavailable', 'immediate-recovery', 'later-recovery', 'fallback-throw',
                           'nested-fallback-throw', 'fallback-completable', 'fallback-start-failure', 'fallback-start-uncertain', 'fallback-live-thread',
                           'cached-null', 'existing-worker', 'preferred-running-shutdown', 'preferred-withdrawn',
-                          'preference-exhaustion', 'fallback-shutdown',
+                          'preference-exhaustion', 'nested-initial-withdrawal', 'nested-initial-fallback-throw',
+                          'nested-initial-shutdown', 'nested-initial-rotation-failure',
+                          'nested-outer-already-running', 'fallback-shutdown',
                           'fallback-denied', 'fallback-lost')
     for mode in managed_null_modes:
         result = compiler.run('managed-null-factory-owner-' + mode, 'java', '-Xmx256m', '-cp', output,

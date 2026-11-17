@@ -199,9 +199,14 @@ and worker carries a primitive preference in the existing Java heap; locating a
 preferred entry scans the queue and creates a transient iterator. The worker
 does not retain a withdrawn entry. Preferences are never reused: once the
 executor has issued `Long.MAX_VALUE` preferences, it falls back to FIFO for new
-workers. This does not add a host owner.
-If a null factory reentrantly submits another task, their relative order still
-differs in the tested JDK and SDK. A reentrant `shutdownNow()`
+workers. This does not add a host owner. When an initial null factory submits
+other work reentrantly, its outer entry, if still queued, is moved behind those
+submissions, matching the tested JDK order. An entry already taken or withdrawn
+is not reinserted. This scans and rotates the existing bounded queue under its
+monitor without adding entries or changing owners. A synthetic one-shot queue
+failure exercises restoration; repeated failures during restoration have not
+been qualified.
+A reentrant `shutdownNow()`
 can also withdraw an outer SDK submission that then returns, while the tested
 JDK rejects it. If the first null factory reenters graceful `shutdown()`, the
 SDK may run its already-queued outer task on the retry; the tested JDK rejects

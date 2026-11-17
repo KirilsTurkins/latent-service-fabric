@@ -101,12 +101,15 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
             installed = true;
             if (workers.size() < parallelism && (!cached || queue.size() > workers.size() - running)) {
                 if (cached) startWorker();
-                else if (tryStartWorker(false, item) && workers.isEmpty() && startingWorkers == 0
-                        && !interrupting && !retiring && !queue.isEmpty()) {
-                    // Fixed pools retry once after the first null factory when
-                    // no worker exists, keeping already-admitted queue owners.
-                    fallbackAccepted = true;
-                    tryStartWorker(true, null);
+                else if (tryStartWorker(false, item)) {
+                    deferAfterReentrantSubmissions(item);
+                    if (workers.isEmpty() && startingWorkers == 0
+                            && !interrupting && !retiring && !queue.isEmpty()) {
+                        // Fixed pools retry once after the first null factory when
+                        // no worker exists, keeping already-admitted queue owners.
+                        fallbackAccepted = true;
+                        tryStartWorker(true, null);
+                    }
                 }
             }
             notifyAll();
@@ -214,6 +217,28 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private void removeWorker(Thread thread) {
         for (int index = 0; index < workers.size(); index++) {
             if (workers.get(index) == thread) { workers.remove(index); return; }
+        }
+    }
+
+    // The JDK enqueues the outer submission after a null factory returns, so
+    // reentrant submissions precede it. All entries here are already owned;
+    // rotate only under the pool monitor, without readmission or a larger deque.
+    private void deferAfterReentrantSubmissions(Item outer) {
+        int count = queue.size();
+        if (count < 2 || queue.peekLast() == outer) return;
+        Item current = null, delayed = null;
+        try {
+            for (int index = 0; index < count; index++) {
+                current = queue.removeFirst();
+                if (current == outer) delayed = current;
+                else queue.addLast(current);
+                current = null;
+            }
+        } finally {
+            // Restore any detached entries before propagating a failure. Each
+            // add replaces an entry removed above, so capacity does not grow.
+            if (current != null && current != delayed) queue.addLast(current);
+            if (delayed != null) queue.addLast(delayed);
         }
     }
 
