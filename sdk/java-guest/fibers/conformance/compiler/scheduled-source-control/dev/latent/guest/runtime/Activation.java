@@ -28,6 +28,7 @@ public final class Activation {
     private static Lease lastFailedLease;
     private static Lease retainedFailedQueued;
     public static boolean retainFailedStart;
+    public static volatile Runnable checkpointObservation;
     public static Throwable manageFailure;
     public static RuntimeException orderFailure;
     public static java.util.function.Consumer<ManagedPool> manageObservation;
@@ -142,7 +143,11 @@ public final class Activation {
     public static void unmanageRetired(ManagedPool pool) { }
     public static boolean closing() { return false; }
     public static boolean acceptedContinuation() { return false; }
-    public static void checkpoint() { Thread.yield(); }
+    public static void checkpoint() {
+        Runnable observation = checkpointObservation; checkpointObservation = null;
+        if (observation != null) observation.run();
+        Thread.yield();
+    }
     public static Executor defaultAsyncExecutor(Supplier<Executor> factory) { return factory.get(); }
     public static void idle() {
         for (ManagedPool pool : pools) if (pool.hasPendingWork()) throw new AssertionError("source-pending-work");

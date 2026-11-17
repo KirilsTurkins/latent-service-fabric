@@ -108,13 +108,15 @@ class FutureCancellationControl(unittest.TestCase):
             'admission-capacity', 'queue-refused', 'result-refused', 'queue-unknown', 'result-unknown', 'queue-now', 'result-now', 'prepoisoned'))
         managed_first_modes += tuple('cached-transfer-' + mode for mode in
             ('before', 'after', 'withdraw', 'withdraw-denied', 'withdraw-lost', 'withdraw-swallow'))
+        cached_factory_modes = ('graceful', 'immediate', 'denied', 'lost', 'null', 'throw', 'definite-start',
+                                'uncertain-start', 'duplicate', 'live-thread', 'replacement', 'replacement-null', 'replacement-throw')
         new_reference_stages = ('scheduled-periodic-validation-reference-jdk', 'scheduled-null-factory-reference-jdk',
             'scheduled-throw-factory-reference-jdk', 'manual-periodic-throw-reference-jdk',
             'managed-reentrant-factory-reference-jdk', 'completable-obtrude-reference-jdk',
             'completable-default-async-reference-jdk', 'completable-minimal-reference-jdk',
             'future-task-interrupt-monitor-reference-jdk', 'managed-null-factory-reference-jdk',
             'managed-executor-status-reference-jdk', 'scheduled-executor-status-reference-jdk',
-            'scheduled-factory-concurrency-reference-jdk', 'managed-first-admission-reference-jdk')
+            'scheduled-factory-concurrency-reference-jdk', 'managed-first-admission-reference-jdk', 'managed-cached-factory-reference-jdk')
         new_source_stages = ('completable-obtrude-source', *('completable-obtrude-owner-' + mode for mode in obtrude_modes),
             'completable-default-async-source', *('completable-default-async-owner-' + mode for mode in default_async_modes),
             'completable-minimal-source', *('completable-minimal-owner-' + mode for mode in minimal_modes),
@@ -123,6 +125,7 @@ class FutureCancellationControl(unittest.TestCase):
             'scheduled-throw-factory-source', 'manual-periodic-throw-source', 'managed-reentrant-factory-source',
             *('managed-reentrant-factory-owner-' + mode for mode in managed_factory_modes),
             'managed-first-admission-source', *('managed-first-admission-owner-' + mode for mode in managed_first_modes),
+            'managed-cached-factory-source', *('managed-cached-factory-owner-' + mode for mode in cached_factory_modes),
             'managed-null-factory-source', *('managed-null-factory-owner-' + mode for mode in managed_null_modes),
             'managed-executor-status-source', *('managed-executor-status-owner-' + mode for mode in managed_status_modes),
             'scheduled-executor-status-source', *('scheduled-executor-status-owner-' + mode for mode in scheduled_status_modes),
@@ -152,6 +155,11 @@ class FutureCancellationControl(unittest.TestCase):
                         'fallback-shutdown;older;two-firsts;active-worker')
             if stage.startswith('managed-first-admission-owner-'):
                 return 'MANAGED_FIRST_ADMISSION_OWNER PASS ' + argv[-1]
+            if stage in ('managed-cached-factory-reference-jdk', 'managed-cached-factory-source'):
+                return ('MANAGED_CACHED_FACTORY PASS nested;shutdown-thread-null-throw;refusal;committed;'
+                        'idle-reuse;growth;concurrent-reservations;idle-shutdown-difference;live-thread')
+            if stage.startswith('managed-cached-factory-owner-'):
+                return 'MANAGED_CACHED_FACTORY_OWNER PASS ' + argv[-1]
             if stage in ('completable-obtrude-reference-jdk', 'completable-obtrude-source'):
                 return ('COMPLETABLE_OBTRUDE_REFERENCE PASS observers;overwrite;exception-identity;'
                         'cancellation;overrides;deferred;waiting-destination;running')
@@ -256,6 +264,7 @@ class FutureCancellationControl(unittest.TestCase):
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ScheduledExecutorStatusOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ScheduledFactoryConcurrencyOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedFirstAdmissionOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedCachedFactoryOwnerControl.java', argv)
         for stage in new_reference_stages:
             self.assertIn(stage, [name for name, _ in calls])
         reference_argv = next(args for stage, args in calls if stage == 'scheduled-stopped-reference-compile')
@@ -276,6 +285,8 @@ class FutureCancellationControl(unittest.TestCase):
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ScheduledFactoryConcurrencyReferenceControl.java',
                       reference_argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedFirstAdmissionReferenceControl.java',
+                      reference_argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedCachedFactoryReferenceControl.java',
                       reference_argv)
         for missing in ('executor-invoke-interrupt-reference-jdk', 'executor-invoke-interrupt-source',
                         'executor-invoke-interrupt-owner', 'executor-await-termination-reference-jdk',
