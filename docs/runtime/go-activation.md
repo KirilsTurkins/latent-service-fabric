@@ -105,18 +105,19 @@ current real goroutine through the canonical async callback, allowing runnable
 siblings and the host executor to progress. This path creates no timer, wall
 deadline, sleeping worker or application-visible scheduling facade.
 
-When the selected program imports the standard `slices` or `maps` package, the
-compiler also instruments the corresponding authenticated Go 1.27.4
-`slices/iter.go` or `maps/iter.go` source. This allows iteration entirely inside
-`slices.Values`/`slices.AppendSeq` or `maps.All`/`maps.Insert` to reach the same
-checkpoints. The existing checkpoint quantum still suspends without checking for
-runnable siblings: these added sites can allocate and yield even for a program
-with no application sibling, under the same guest and host limits. In core-Wasm
-controls with a test dispatcher pump, a one-million-element pass of either
-pair made 1,953 such yields without an application sibling. These are not
-production-node measurements. This finite source selection does not establish
-fairness for other standard-library loops or constitute signed execution
-evidence.
+When the selected program imports the standard `slices`, `maps`, `strings` or
+`bytes` package, the compiler also instruments its authenticated Go 1.27.4
+`iter.go` source. This lets work entirely inside `slices.Values`/`slices.AppendSeq`,
+`maps.All`/`maps.Insert`, and the text packages' iterator functions reach the
+same checkpoints. The existing checkpoint quantum still suspends without
+checking for runnable siblings: these sites can allocate and yield even for a
+program with no application sibling, under the same guest and host limits. In
+core-Wasm controls with a test dispatcher pump, a one-million-element slices or
+maps pass, and a two-million-byte unbroken `FieldsSeq` scan in either text
+package, each made 1,953 such yields without an application sibling. These are
+not production-node measurements. This finite source selection does not
+establish fairness for other standard-library loops or constitute signed
+execution evidence.
 
 Original source bytes remain unchanged. Derived copies retain original
 diagnostic line/column positions, source and output digests, and suspension
