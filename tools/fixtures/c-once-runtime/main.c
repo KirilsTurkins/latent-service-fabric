@@ -2,6 +2,7 @@
  * qualification fixture; they do not claim automatic CPU-loop fairness. */
 #include "probe.h"
 #include <pthread.h>
+#include <semaphore.h>
 #include <stdint.h>
 #include <string.h>
 #include <threads.h>
@@ -87,6 +88,60 @@ static void number(char **output, uint64_t value) {
     while (count) *(*output)++ = digits[--count];
 }
 
+/* One ordinary sem_wait and one ordinary sem_post. The controller observes
+ * the original parked root join and semaphore Wait before handing off the
+ * permit; bounded explicit yields do not claim automatic CPU fairness. */
+static sem_t sem_gate;
+static unsigned sem_completed,sem_posts,sem_witnessed;
+static latent_runtime_activation_observation_t sem_witness;
+
+static void *sem_worker(void *unused) {
+    (void)unused;
+    require(sem_wait(&sem_gate)==0);
+    sem_completed=1;
+    return (void *)(uintptr_t)0x5a;
+}
+static void *sem_controller(void *unused) {
+    (void)unused;
+    for (unsigned attempt=0;attempt<128;++attempt) {
+        latent_runtime_activation_observation_t row;
+        latent_runtime_activation_error_t error=255;
+        require(latent_runtime_activation_observe(&row,&error));
+        if (row.waits==2 && row.parked_tasks==2 && row.tasks==3 &&
+                row.results==2 && row.native_owners==6) {
+            int value=-1;
+            require(row.native_memory_bytes>0 && row.stale_wakes==0);
+            require(sem_getvalue(&sem_gate,&value)==0 && value==0);
+            sem_witness=row;sem_witnessed=1;
+            require(sem_post(&sem_gate)==0);sem_posts=1;
+            return NULL;
+        }
+        thrd_yield();
+    }
+    __builtin_trap();
+}
+static bool semaphore_greet(probe_string_t *input,probe_string_t *result) {
+    pthread_t worker,controller;
+    require(sem_init(&sem_gate,0,0)==0);
+    require(pthread_create(&worker,NULL,sem_worker,NULL)==0);
+    require(pthread_create(&controller,NULL,sem_controller,NULL)==0);
+    void *value=NULL;
+    require(pthread_join(worker,&value)==0 && value==(void *)(uintptr_t)0x5a);
+    require(pthread_join(controller,NULL)==0);
+    require(sem_completed==1 && sem_posts==1 && sem_witnessed==1);
+    int remaining=-1;require(sem_getvalue(&sem_gate,&remaining)==0 && remaining==0);
+    require(sem_destroy(&sem_gate)==0);
+    char output[160],*cursor=output;
+    memcpy(cursor,"sem:1:1:",8);cursor+=8;
+    number(&cursor,sem_witness.waits);*cursor++=':';
+    number(&cursor,sem_witness.parked_tasks);*cursor++=':';
+    number(&cursor,sem_witness.tasks);*cursor++=':';
+    number(&cursor,sem_witness.results);*cursor++=':';
+    number(&cursor,sem_witness.native_owners);*cursor++=':';
+    number(&cursor,sem_witness.native_memory_bytes);*cursor=0;
+    probe_string_dup(result,output);probe_string_free(input);return true;
+}
+
 #include "root-drain.h"
 
 bool exports_examples_c_thread_runtime_api_greet(probe_string_t *input,
@@ -94,6 +149,8 @@ bool exports_examples_c_thread_runtime_api_greet(probe_string_t *input,
     if ((input->len == 3 && memcmp(input->ptr, "pre", 3) == 0) ||
         (input->len == 4 && memcmp(input->ptr, "late", 4) == 0))
         return root_drain_greet(input, result, error);
+    if (input->len==3 && memcmp(input->ptr,"sem",3)==0)
+        return semaphore_greet(input,result);
     if (input->len != 4 || memcmp(input->ptr, "once", 4) != 0) {
         probe_string_dup(error, "unknown-mode"); probe_string_free(input); return false;
     }
