@@ -1,7 +1,10 @@
 /* SPDX-License-Identifier: Apache-2.0
- * A bounded numeric-only getaddrinfo for the selected IPv4 stream profile.
+ * A bounded numeric-only resolver for the selected IPv4 stream profile.
  * It parses locally, creates no network request and grants no authority.
  */
+#ifdef gai_strerror
+#error "gai_strerror is owned by the selected numeric resolver"
+#endif
 #include <netdb.h>
 #include <netinet/in.h>
 #include <stdint.h>
@@ -103,3 +106,22 @@ int getaddrinfo(const char *restrict name, const char *restrict service,
 }
 
 void freeaddrinfo(struct addrinfo *result) { free(result); }
+
+/* Match the pinned libc's C-locale diagnostics without allocating or
+ * consulting an ambient resolver. Unknown values remain explicit. */
+const char *gai_strerror(int error) {
+    if (error == EAI_BADFLAGS) return "Invalid flags";
+    if (error == EAI_NONAME) return "Name does not resolve";
+    if (error == EAI_AGAIN) return "Try again";
+    if (error == EAI_FAIL) return "Non-recoverable error";
+#ifdef EAI_NODATA
+    if (error == EAI_NODATA) return "Name has no usable address";
+#endif
+    if (error == EAI_FAMILY) return "Unrecognized address family or invalid length";
+    if (error == EAI_SOCKTYPE) return "Unrecognized socket type";
+    if (error == EAI_SERVICE) return "Unrecognized service";
+    if (error == EAI_MEMORY) return "Out of memory";
+    if (error == EAI_SYSTEM) return "System error";
+    if (error == EAI_OVERFLOW) return "Overflow";
+    return "Unknown error";
+}

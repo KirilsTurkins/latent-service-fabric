@@ -1,6 +1,7 @@
 /* Actual selected-source getaddrinfo control, compiled for pinned wasm32. */
 #include <netdb.h>
 #include <netinet/in.h>
+#include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -59,7 +60,28 @@ int numeric_resolver_controls(void) {
     freeaddrinfo(first);
 
     first = NULL;
-    CHECK(getaddrinfo("example.com", "443", &hints, &first) == EAI_NONAME && first == NULL);
+    int lookup_status = getaddrinfo("example.com", "443", &hints, &first);
+    CHECK(lookup_status == EAI_NONAME && first == NULL);
+    const char *saved_diagnostic = gai_strerror(lookup_status);
+    CHECK(same_text(saved_diagnostic, "Name does not resolve"));
+    CHECK(same_text(gai_strerror(EAI_BADFLAGS), "Invalid flags"));
+    CHECK(same_text(gai_strerror(EAI_AGAIN), "Try again"));
+    CHECK(same_text(gai_strerror(EAI_FAIL), "Non-recoverable error"));
+#ifdef EAI_NODATA
+    CHECK(same_text(gai_strerror(EAI_NODATA), "Name has no usable address"));
+#endif
+    CHECK(same_text(gai_strerror(EAI_FAMILY), "Unrecognized address family or invalid length"));
+    CHECK(same_text(gai_strerror(EAI_SOCKTYPE), "Unrecognized socket type"));
+    CHECK(same_text(gai_strerror(EAI_SERVICE), "Unrecognized service"));
+    CHECK(same_text(gai_strerror(EAI_MEMORY), "Out of memory"));
+    CHECK(same_text(gai_strerror(EAI_SYSTEM), "System error"));
+    CHECK(same_text(gai_strerror(EAI_OVERFLOW), "Overflow"));
+    CHECK(same_text(gai_strerror(0), "Unknown error"));
+    CHECK(same_text(gai_strerror(123456), "Unknown error"));
+    CHECK(same_text(gai_strerror(-123456), "Unknown error"));
+    CHECK(same_text(gai_strerror(INT_MIN), "Unknown error"));
+    CHECK(same_text(gai_strerror(INT_MAX), "Unknown error"));
+    CHECK(same_text(saved_diagnostic, "Name does not resolve"));
     CHECK(getaddrinfo("localhost", "443", &hints, &first) == EAI_NONAME && first == NULL);
     CHECK(getaddrinfo("127.0.0.01", "443", &hints, &first) == EAI_NONAME && first == NULL);
     CHECK(getaddrinfo("256.0.0.1", "443", &hints, &first) == EAI_NONAME && first == NULL);

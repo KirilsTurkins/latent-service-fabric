@@ -115,7 +115,8 @@ Flags such as `AI_ADDRCONFIG` and `AI_PASSIVE` return `EAI_BADFLAGS`. IPv6 retur
 `EAI_FAMILY`, and datagram or non-TCP requests return `EAI_SOCKTYPE`. Each
 successful call owns a separate result in the original bounded guest memory;
 `freeaddrinfo` releases it. The result is not an endpoint grant, and legacy
-hostname lookup functions remain unavailable.
+hostname lookup functions remain unavailable. `gai_strerror` provides static
+C-locale messages for resolver error codes without consulting a host resolver.
 
 The captured component build selects this implementation when it is present
 in the project's verified SDK snapshot. Previously captured projects without
