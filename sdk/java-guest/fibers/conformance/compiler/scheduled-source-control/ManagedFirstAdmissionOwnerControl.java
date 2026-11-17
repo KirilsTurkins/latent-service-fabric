@@ -173,6 +173,7 @@ public final class ManagedFirstAdmissionOwnerControl {
     private static void transfer(String mode, boolean cached) throws Exception {
         var selected = new AtomicReference<ExecutorService>();
         var target = new AtomicReference<Runnable>();
+        var live = new AtomicReference<Thread>();
         var removed = new AtomicReference<List<Runnable>>();
         var marker = new IllegalStateException("insertion-failure");
         var calls = new AtomicInteger();
@@ -192,9 +193,23 @@ public final class ManagedFirstAdmissionOwnerControl {
                 throw marker;
             }
         }
-        java.util.concurrent.ThreadFactory factory = runnable -> { target.set(runnable); return null; };
+        java.util.concurrent.ThreadFactory factory = runnable -> {
+            target.set(runnable);
+            if (!cached) return null;
+            var thread = new Thread(runnable); live.set(thread); return thread;
+        };
         var pool = cached ? Executors.newCachedThreadPool(factory) : Executors.newFixedThreadPool(1, factory);
         selected.set(pool);
+        if (cached) {
+            // A cached first task is now reserved. Exercise insertion through
+            // the supported idle-worker handoff instead.
+            pool.submit(() -> {}).get(5, TimeUnit.SECONDS);
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            while (live.get().getState() != Thread.State.TIMED_WAITING) {
+                require(live.get().isAlive() && System.nanoTime() - deadline < 0, "cached-worker-not-idle");
+                Thread.yield();
+            }
+        }
         var queue = pool.getClass().getDeclaredField("queue"); queue.setAccessible(true); queue.set(pool, new FaultDeque());
         var reserved = pool.getClass().getDeclaredField("reservedFirsts"); reserved.setAccessible(true);
         var future = new dev.latent.guest.runtime.concurrent.FutureTask<>(calls::incrementAndGet, null);
@@ -204,8 +219,7 @@ public final class ManagedFirstAdmissionOwnerControl {
                 if (mode.endsWith("swallow")) require(error.getMessage().equals("activation-executor-transfer-uncertain"), "uncertainty-not-reported");
                 else require(error == marker, "insertion-failure-lost");
             }
-            if (target.get() != null) inert(target.get());
-            else require(cached, "missing-fixed-factory-target");
+            if (!cached) inert(target.get());
             boolean uncertain = mode.equals("transfer-before") || mode.endsWith("denied")
                 || mode.endsWith("lost") || mode.endsWith("swallow");
             if (uncertain) {
@@ -214,6 +228,7 @@ public final class ManagedFirstAdmissionOwnerControl {
                     && ((Activation.ManagedPool)pool).hasPendingWork(), "uncertain-item-not-rooted");
                 int attempts = Activation.closeAttempts(LatentRuntimeActivationOwnerKind.QueuedWork);
                 pool.shutdownNow();
+                if (cached) { live.get().join(5000); require(!live.get().isAlive(), "cached-worker-not-retired"); inert(target.get()); }
                 require(reserved.get(pool) != null && !pool.isTerminated()
                     && Activation.closeAttempts(LatentRuntimeActivationOwnerKind.QueuedWork) == attempts,
                     "uncertain-settlement-retried");
@@ -221,8 +236,10 @@ public final class ManagedFirstAdmissionOwnerControl {
                 require(reserved.get(pool) == null, "settled-reservation-retained");
                 if (mode.equals("transfer-withdraw"))
                     require(removed.get().size() == 1 && removed.get().get(0) == future, "withdrawn-item-changed");
-                held(0, 0, mode.equals("transfer-after") ? 1 : 0);
+                require(Activation.count(LatentRuntimeActivationOwnerKind.QueuedWork) == 0
+                    && Activation.count(LatentRuntimeActivationOwnerKind.Result) == 0, "settled-transfer-owners");
                 pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS), "transfer-not-retired");
+                if (cached) { live.get().join(5000); require(!live.get().isAlive(), "cached-worker-not-retired"); inert(target.get()); }
                 held(0, 0, 0); require(future.cancel(false), "future-not-cancellable"); Activation.idle();
             }
             require(calls.get() == 0, "unadmitted-item-ran");

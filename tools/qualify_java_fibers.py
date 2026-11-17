@@ -923,6 +923,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
                 fixture / 'ScheduledExecutorStatusActivationControl.java',
                 fixture / 'ScheduledFactoryConcurrencyActivationControl.java',
                 fixture / 'ManagedFirstAdmissionActivationControl.java',
+                fixture / 'ManagedCachedFactoryActivationControl.java',
                 fixture / 'CompletableMinimalStageActivationControl.java',
                 fixture / 'FutureTaskInterruptMonitorActivationControl.java']
     sources += sorted((sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
@@ -982,6 +983,13 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
             str(output) + os.pathsep + classpath, 'ManagedFirstAdmissionActivationControl', mode).strip()
         if actual != 'MANAGED_FIRST_ADMISSION_ACTIVATION PASS ' + mode:
             raise ValueError('Java managed first admission activation control did not complete: ' + mode)
+    cached_factory_activation_modes = ('graceful', 'immediate', 'denied', 'null', 'throw',
+        'registration-denied', 'registration-unknown', 'registration-handoff', 'uncertain-start')
+    for mode in cached_factory_activation_modes:
+        actual = compiler.run('managed-cached-factory-activation-' + mode, 'java', '-Xmx256m', '-cp',
+            str(output) + os.pathsep + classpath, 'ManagedCachedFactoryActivationControl', mode).strip()
+        if actual != 'MANAGED_CACHED_FACTORY_ACTIVATION PASS ' + mode:
+            raise ValueError('Java cached factory activation control did not complete: ' + mode)
     actual = compiler.run('completable-minimal-activation-source', 'java', '-Xmx256m', '-cp',
         str(output) + os.pathsep + classpath, 'CompletableMinimalStageActivationControl').strip()
     if actual != 'COMPLETABLE_MINIMAL_STAGE_ACTIVATION PASS copy-cancel;running;root-fenced;retired':
@@ -1016,6 +1024,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         'scheduledExecutorStatusActivation': 'private-host-running-root-fence-passed',
         'scheduledFactoryConcurrencyActivation': list(factory_activation_modes),
         'managedFirstAdmissionActivation': list(managed_first_activation_modes),
+        'managedCachedFactoryActivation': list(cached_factory_activation_modes),
         'completableMinimalActivation': 'private-host-running-root-fence-passed',
         'futureTaskInterruptMonitorActivation': 'private-host-running-root-fence-passed',
         'ownerAdmissionCases': list(owner_cases), 'ownerSettlementCases': list(OWNER_SETTLEMENT_CASES),
@@ -1230,7 +1239,8 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ScheduledPeriodicOwnerControl.java', 'ScheduledPeriodicRollbackSettlementControl.java',
         'ScheduledFutureResultSettlementControl.java', 'CompletableFutureResultSettlementControl.java',
         'ManagedReentrantFactoryOwnerControl.java', 'ManagedNullFactoryOwnerControl.java',
-        'ManagedFirstAdmissionOwnerControl.java', 'ManagedExecutorStatusOwnerControl.java',
+        'ManagedFirstAdmissionOwnerControl.java', 'ManagedCachedFactoryOwnerControl.java',
+        'ManagedExecutorStatusOwnerControl.java',
         'ScheduledExecutorStatusOwnerControl.java', 'ScheduledFactoryConcurrencyOwnerControl.java',
         'CompletableObtrudeOwnerControl.java',
         'CompletableDefaultAsyncOwnerControl.java', 'CompletableMinimalStageOwnerControl.java',
@@ -1256,6 +1266,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     manual_throw_reference = private / 'ManualPeriodicThrowReferenceControl.java'
     managed_factory_reference = private / 'ManagedReentrantFactoryReferenceControl.java'
     managed_first_reference = private / 'ManagedFirstAdmissionReferenceControl.java'
+    managed_cached_reference = private / 'ManagedCachedFactoryReferenceControl.java'
     managed_null_reference = private / 'ManagedNullFactoryReferenceControl.java'
     managed_status_reference = private / 'ManagedExecutorStatusReferenceControl.java'
     scheduled_status_reference = private / 'ScheduledExecutorStatusReferenceControl.java'
@@ -1274,13 +1285,13 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     comparison_inputs = [private / name for name in ('ScheduledCompareReferenceControl.java',
         'ScheduledCompareFakeClock.java', 'ScheduledCompareClockControl.java')]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, managed_factory_reference, managed_first_reference, managed_null_reference, managed_status_reference, scheduled_status_reference, scheduled_factory_concurrency_reference, obtrude_reference, default_async_reference, minimal_stage_reference, interrupt_monitor_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
+        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, managed_factory_reference, managed_first_reference, managed_cached_reference, managed_null_reference, managed_status_reference, scheduled_status_reference, scheduled_factory_concurrency_reference, obtrude_reference, default_async_reference, minimal_stage_reference, interrupt_monitor_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
                      null_failure_reference, monitor_reference, default_monitor_reference)}
     output.mkdir()
     jdk_output = output / 'reference-jdk'
     jdk_output.mkdir()
     compiler.run('scheduled-stopped-reference-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', jdk_output, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, managed_factory_reference, managed_first_reference, managed_null_reference, managed_status_reference, scheduled_status_reference, scheduled_factory_concurrency_reference, obtrude_reference, default_async_reference, minimal_stage_reference, interrupt_monitor_reference, invoke_reference, termination_reference,
+        '-d', jdk_output, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, managed_factory_reference, managed_first_reference, managed_cached_reference, managed_null_reference, managed_status_reference, scheduled_status_reference, scheduled_factory_concurrency_reference, obtrude_reference, default_async_reference, minimal_stage_reference, interrupt_monitor_reference, invoke_reference, termination_reference,
         null_failure_reference, monitor_reference, default_monitor_reference, ready_reference, noop_reference, invoke_any_reference, invoke_all_reference)
     expected_stopped = ('SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;'
         'running;shutdown;shutdown-policy;physical-runner;worker-capacity;factory-failure-retry')
@@ -1318,6 +1329,11 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('managed-first-admission-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ManagedFirstAdmissionReferenceControl').strip()
     if result != expected_managed_first: raise ValueError('Java managed first admission reference did not complete')
+    expected_managed_cached = ('MANAGED_CACHED_FACTORY PASS nested;shutdown-thread-null-throw;refusal;committed;'
+        'idle-reuse;growth;concurrent-reservations;idle-shutdown-difference;live-thread')
+    result = compiler.run('managed-cached-factory-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
+        'ManagedCachedFactoryReferenceControl', 'jdk').strip()
+    if result != expected_managed_cached: raise ValueError('Java managed cached factory reference did not complete')
     expected_obtrude = ('COMPLETABLE_OBTRUDE_REFERENCE PASS observers;overwrite;exception-identity;'
         'cancellation;overrides;deferred;waiting-destination;running')
     result = compiler.run('completable-obtrude-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
@@ -1413,6 +1429,11 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     if text.count(managed_import) != 1: raise ValueError('Java managed first admission source import is ambiguous')
     selected_managed_first = output / 'ManagedFirstAdmissionReferenceControl.java'
     selected_managed_first.write_bytes(text.replace(managed_import,
+        'import dev.latent.guest.runtime.concurrent.Executors;').encode('utf-8'))
+    text = read_file(managed_cached_reference).decode('utf-8')
+    if text.count(managed_import) != 1: raise ValueError('Java managed cached factory source import is ambiguous')
+    selected_managed_cached = output / 'ManagedCachedFactoryReferenceControl.java'
+    selected_managed_cached.write_bytes(text.replace(managed_import,
         'import dev.latent.guest.runtime.concurrent.Executors;').encode('utf-8'))
     text = read_file(managed_null_reference).decode('utf-8')
     for simple in ('Executors', 'CompletableFuture'):
@@ -1530,7 +1551,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     selected_noop.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', output, *ports, *controls, selected, selected_periodic, selected_validation, selected_null_factory, selected_throw_factory, selected_manual_throw, selected_managed_factory, selected_managed_first, selected_managed_null, selected_managed_status, selected_scheduled_status, selected_factory_concurrency, selected_obtrude, selected_default_async, selected_minimal, selected_interrupt_monitor, selected_invoke, selected_termination,
+        '-d', output, *ports, *controls, selected, selected_periodic, selected_validation, selected_null_factory, selected_throw_factory, selected_manual_throw, selected_managed_factory, selected_managed_first, selected_managed_cached, selected_managed_null, selected_managed_status, selected_scheduled_status, selected_factory_concurrency, selected_obtrude, selected_default_async, selected_minimal, selected_interrupt_monitor, selected_invoke, selected_termination,
         selected_null_failure, selected_monitor, selected_default_monitor, selected_ready, selected_noop, selected_invoke_any, selected_invoke_all)
     result = compiler.run('completable-obtrude-source', 'java', '-Xmx256m', '-cp', output,
         'CompletableObtrudeReferenceControl').strip()
@@ -1613,6 +1634,16 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
             'ManagedFirstAdmissionOwnerControl', mode).strip()
         if result != 'MANAGED_FIRST_ADMISSION_OWNER PASS ' + mode:
             raise ValueError('Java managed first admission owner control did not complete: ' + mode)
+    managed_cached_result = compiler.run('managed-cached-factory-source', 'java', '-Xmx256m', '-cp', output,
+        'ManagedCachedFactoryReferenceControl', 'source').strip()
+    if managed_cached_result != expected_managed_cached: raise ValueError('Java managed cached factory source differs from reference')
+    cached_factory_modes = ('graceful', 'immediate', 'denied', 'lost', 'null', 'throw', 'definite-start',
+                            'uncertain-start', 'duplicate', 'live-thread', 'replacement', 'replacement-null', 'replacement-throw')
+    for mode in cached_factory_modes:
+        result = compiler.run('managed-cached-factory-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
+            'ManagedCachedFactoryOwnerControl', mode).strip()
+        if result != 'MANAGED_CACHED_FACTORY_OWNER PASS ' + mode:
+            raise ValueError('Java managed cached factory owner control did not complete: ' + mode)
     managed_null_result = compiler.run('managed-null-factory-source', 'java', '-Xmx256m', '-cp', output,
         'ManagedNullFactoryReferenceControl', 'source').strip()
     if managed_null_result != expected_managed_null: raise ValueError('Java managed null factory source differs from reference')
@@ -1777,6 +1808,8 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'manualThrowFactory': 'matched-jdk-deadline-and-queued-copy-count',
         'managedReentrantFactory': list(managed_factory_modes),
         'managedFirstAdmission': {'cases': list(managed_first_modes), 'status': 'JDK-and-SDK-source-controls-passed'},
+        'managedCachedFactory': {'cases': list(cached_factory_modes), 'status': 'JDK-and-SDK-source-controls-passed',
+                                 'idleShutdownDifference': 'documented-sdk-queue-versus-jdk-handoff'},
         'completableObtrude': {'cases': list(obtrude_modes), 'status': 'JDK-and-SDK-source-controls-passed'},
         'completableDefaultAsync': {'cases': list(default_async_modes), 'status': 'JDK-and-SDK-source-controls-passed'},
         'completableMinimalStage': {'cases': list(minimal_modes), 'status': 'JDK-and-SDK-source-controls-passed'},

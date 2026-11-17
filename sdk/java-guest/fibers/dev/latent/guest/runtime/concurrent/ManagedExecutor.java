@@ -35,7 +35,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private volatile int startingWorkers;
     // A pool worker can be published before its Activation Work is registered.
     private volatile int enteringWorkers;
-    // Fixed-pool first tasks stay out of the public FIFO until startup resolves.
+    // Worker-creating first tasks stay out of the public FIFO until startup resolves.
     private Item reservedFirsts;
     private static final int RESERVED = 0, TRANSFERRING = 1, CLAIMING = 2,
         CLAIMED = 3, WITHDRAWING = 4, WITHDRAWN = 5, QUARANTINED = 6,
@@ -93,11 +93,11 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     }
 
     @Override public void execute(Runnable command) {
-        if (cached) executeLegacy(command);
-        else executeFixed(command);
+        executeManaged(command);
     }
 
-    // Cached pools keep their existing startup and rejection contract.
+    // Historical path retained for compatibility with existing source controls;
+    // application dispatch and replacement startup do not call it.
     private synchronized void executeLegacy(Runnable command) {
         Objects.requireNonNull(command);
         Activation.Lease queued = null;
@@ -262,7 +262,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         }
     }
 
-    private void executeFixed(Runnable command) {
+    private void executeManaged(Runnable command) {
         Objects.requireNonNull(command);
         Activation.Lease queued = null;
         FutureTask<?> future = command instanceof FutureTask<?> ? (FutureTask<?>)command : null;
@@ -288,7 +288,11 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                 // original pre-admission check.
                 if (shutdown || retiring)
                     throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
-                if (workers.size() >= parallelism - startingWorkers) {
+                // Cached pools reuse an idle worker, but reserve a new one
+                // when accepted work exceeds existing and starting workers.
+                // The sum is bounded by parallelism under this monitor.
+                if (workers.size() >= parallelism - startingWorkers
+                        || cached && pendingWork <= workers.size() + startingWorkers) {
                     transferReserved(item);
                     notifyAll();
                     return;
@@ -296,7 +300,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                 startingWorkers++;
                 notifyAll();
             }
-            startFixed(item);
+            startReservedWorker(item);
         } catch (Throwable error) {
             synchronized (this) {
                 try {
@@ -320,7 +324,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
 
     // Each call owns one previously counted startingWorkers slot. Initial
     // first tasks remain reserved; fallback and replacement workers take FIFO.
-    private void startFixed(Item first) {
+    private void startReservedWorker(Item first) {
         Worker worker = null;
         boolean reservation = true, entering = false;
         Throwable failure = null;
@@ -329,6 +333,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
             Thread thread = factory.newThread(worker::run);
             if (thread == null) {
                 worker.clear();
+                if (cached) throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
                 boolean fallback = false;
                 synchronized (this) {
                     if (first != null) {
@@ -343,7 +348,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                     }
                     notifyAll();
                 }
-                if (fallback) startFixed(null);
+                if (fallback) startReservedWorker(null);
                 return;
             }
             synchronized (this) {
@@ -354,7 +359,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                 if (first == null && (interrupting || retiring)) { worker.clear(); return; }
                 int addedAt = -1;
                 try {
-                    if (thread.isAlive() && first == null) throw new IllegalThreadStateException();
+                    if (thread.isAlive() && (first == null || cached)) throw new IllegalThreadStateException();
                     if (thread.isAlive())
                         throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
                     // A second factory can return the same NEW Thread while
@@ -604,15 +609,15 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
             synchronized (this) {
                 removeWorker(current);
                 if (!queue.isEmpty() && !interrupting) {
-                    if (cached) startWorker();
-                    else if (!retiring && workers.size() < parallelism - startingWorkers) {
+                    if (!retiring && workers.size() < parallelism - startingWorkers
+                            && (!cached || pendingWork > workers.size() + startingWorkers)) {
                         startingWorkers++; replacement = true;
                     }
                 }
                 settleIfTerminated();
                 notifyAll();
             }
-            if (replacement) startFixed(null);
+            if (replacement) startReservedWorker(null);
         }
     }
 

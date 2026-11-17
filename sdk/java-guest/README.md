@@ -224,12 +224,16 @@ its new occurrence and advanced deadline remain owned. The SDK returns each
 owned occurrence from `shutdownNow()`. In the tested JDK 25 duplicate-reference
 case, that call returned fewer entries than the queue held.
 Fixed, single-thread and cached managed pools count a factory call in progress
-toward their worker limit. Fixed and single-thread pools release their own pool
-monitor before calling the factory or starting its returned thread, so another
-thread can submit or shut down while the factory runs. A caller that already
-holds that monitor can still block progress; cached pools retain their existing
-locking and single-attempt null-factory rejection. An in-progress factory or
-managed-worker registration fences root retirement.
+toward their worker limit. They release their own pool monitor before calling
+the factory or starting its returned thread, so another thread can submit or
+shut down while the factory runs. A caller that already holds that monitor can
+still block progress. An in-progress factory or managed-worker registration
+fences root retirement. Cached pools reuse idle workers, create workers for
+additional accepted work, and retain their single-attempt null-factory
+rejection. A cached factory returning an already-live thread fails with
+`IllegalThreadStateException` without adopting or interrupting that thread.
+This growth remains bounded by the original host owner limits and Java heap;
+it adds no host grant.
 
 Both fixed and cached pools count a submission before requesting its Queue
 owner. If shutdown reenters that admission, the unpublished submission is
@@ -237,16 +241,22 @@ rejected and its original owners are settled before the Executor can retire.
 An unconfirmed admission or rollback keeps the pool and any admitted entry
 rooted until Store destruction. The count is bounded and uses no new host grant.
 
-A fixed-pool submission that creates a worker retains its original QueuedWork
+A managed-pool submission that creates a worker retains its original QueuedWork
 and, where applicable, Result owners while the factory runs. That first task is
 not exposed in the FIFO: shutdown before worker commitment rejects it, while
 previously accepted nested tasks remain owned. After commitment, an immediate
 shutdown does not return that first task; the worker may run it, as in the
-observed JDK behavior. If the factory returns null, the original task transfers
-to the FIFO behind any already accepted submissions and the factory is retried
-once when no worker exists or is starting. With no worker, root drain remains
-pending until the accepted work runs or is withdrawn. A fallback factory error
-preserves the queued entries and original error.
+observed JDK behavior. For fixed pools, if the factory returns null, the
+original task transfers to the FIFO behind any already accepted submissions
+and the factory is retried once when no worker exists or is starting. With no
+worker, root drain remains pending until the accepted work runs or is
+withdrawn. A fallback factory error preserves the queued entries and original
+error. Cached pools reject a first task when their factory returns null.
+
+Cached pools retain their SDK queue for idle-worker handoff. If a caller holds
+the public pool monitor while submitting to an idle worker and immediately
+calls `shutdownNow()`, the SDK can return that queued task without running it;
+the tested JDK synchronous handoff instead runs the task and returns no entry.
 
 The first-task reservation is an intrusive link on the already charged entry;
 its worker retains only the original Queue lease identity, not the command or
