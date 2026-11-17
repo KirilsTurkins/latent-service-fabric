@@ -77,6 +77,20 @@ class FutureCancellationControl(unittest.TestCase):
         calls = []
         sdk = subject.ROOT / 'sdk/java-guest'
         control = sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskInterruptFailureControl.java'
+        managed_factory_modes = ('capacity', 'nested-throw', 'nested-null', 'shutdown-thread', 'shutdown-null',
+                                 'shutdown-throw', 'uncertain-denied', 'uncertain-lost')
+        managed_null_modes = ('unavailable', 'immediate-recovery', 'later-recovery', 'fallback-throw',
+                              'nested-fallback-throw', 'fallback-completable', 'fallback-start-failure',
+                              'fallback-start-uncertain', 'fallback-live-thread', 'cached-null', 'existing-worker',
+                              'preferred-running-shutdown', 'preferred-withdrawn', 'preference-exhaustion',
+                              'fallback-shutdown', 'fallback-denied', 'fallback-lost')
+        new_reference_stages = ('scheduled-periodic-validation-reference-jdk', 'scheduled-null-factory-reference-jdk',
+            'scheduled-throw-factory-reference-jdk', 'manual-periodic-throw-reference-jdk',
+            'managed-reentrant-factory-reference-jdk', 'managed-null-factory-reference-jdk')
+        new_source_stages = ('scheduled-periodic-validation-source', 'scheduled-null-factory-source',
+            'scheduled-throw-factory-source', 'manual-periodic-throw-source', 'managed-reentrant-factory-source',
+            *('managed-reentrant-factory-owner-' + mode for mode in managed_factory_modes),
+            'managed-null-factory-source', *('managed-null-factory-owner-' + mode for mode in managed_null_modes))
 
         def run(stage, *argv):
             calls.append((stage, argv))
@@ -86,6 +100,24 @@ class FutureCancellationControl(unittest.TestCase):
             if stage == 'scheduled-periodic-reference-jdk':
                 return ('SCHEDULED_PERIODIC_REFERENCE PASS fixed-rate;fixed-delay;reentrant;failure;self-cancel;'
                     'concurrent-manual;concurrent-worker;shutdown;continue-policy')
+            if stage in ('scheduled-periodic-validation-reference-jdk', 'scheduled-periodic-validation-source'):
+                return 'SCHEDULED_PERIODIC_VALIDATION PASS null-task;null-unit;nonpositive;open;shutdown'
+            if stage in ('scheduled-null-factory-reference-jdk', 'scheduled-null-factory-source'):
+                return 'SCHEDULED_NULL_FACTORY PASS accepted;recovery;cancel;shutdown-now;reentrant'
+            if stage in ('scheduled-throw-factory-reference-jdk', 'scheduled-throw-factory-source'):
+                return ('SCHEDULED_THROW_FACTORY PASS accepted;recovery;withdraw;reentrant-shutdown;'
+                        'completable;submission-apis;wake-existing')
+            if stage in ('manual-periodic-throw-reference-jdk', 'manual-periodic-throw-source'):
+                return 'MANUAL_PERIODIC_THROW PASS fixed-rate;fixed-delay;error;copies;reentrant'
+            if stage in ('managed-reentrant-factory-reference-jdk', 'managed-reentrant-factory-source'):
+                return 'MANAGED_REENTRANT_FACTORY PASS fixed-one;single;fixed-two;cached'
+            if stage.startswith('managed-reentrant-factory-owner-'):
+                return 'MANAGED_REENTRANT_FACTORY_OWNER PASS ' + argv[-1]
+            if stage in ('managed-null-factory-reference-jdk', 'managed-null-factory-source'):
+                return ('MANAGED_NULL_FACTORY PASS fixed;single;two-attempts;recovery;fallback-throw;'
+                        'existing-worker;nested;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order')
+            if stage.startswith('managed-null-factory-owner-'):
+                return 'MANAGED_NULL_FACTORY_OWNER PASS ' + argv[-1]
             if stage in ('executor-invoke-interrupt-reference-jdk', 'executor-invoke-interrupt-source'):
                 return ('EXECUTOR_INVOKE_INTERRUPT PASS preinterrupted-ready;empty;zero;pending-cancel;'
                     'blocked-interrupt')
@@ -120,7 +152,8 @@ class FutureCancellationControl(unittest.TestCase):
                 subject.scheduled_source_control(compiler, output)
             self.assertIs(caught.exception, failure)
             matrix.assert_called_once_with(compiler, output)
-        self.assertEqual([stage for stage, _ in calls[-15:]], ['scheduled-source-compile',
+        source_compile = next(index for index, (stage, _) in enumerate(calls) if stage == 'scheduled-source-compile')
+        self.assertEqual([stage for stage, _ in calls[source_compile:]], ['scheduled-source-compile', *new_source_stages,
             'executor-invoke-interrupt-source', 'executor-invoke-interrupt-owner',
             'executor-await-termination-source', 'executor-await-termination-owner',
             'future-task-null-failure-source', 'future-task-null-failure-owner',
@@ -133,7 +166,7 @@ class FutureCancellationControl(unittest.TestCase):
         self.assertIn('future-task-null-failure-reference-jdk', [stage for stage, _ in calls])
         self.assertIn('future-task-monitor-reference-jdk', [stage for stage, _ in calls])
         self.assertIn('default-executor-monitor-reference-jdk', [stage for stage, _ in calls])
-        argv = calls[-15][1]
+        argv = calls[source_compile][1]
         self.assertEqual(argv[:4], ('javac', '-proc:none', '--release', '25'))
         self.assertEqual(argv.count(control), 1)
         self.assertIn(sdk / 'fibers/dev/latent/guest/runtime/concurrent/FutureTask.java', argv)
@@ -143,6 +176,8 @@ class FutureCancellationControl(unittest.TestCase):
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskMonitorOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/DefaultExecutorOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ExecutorInvokeAllOwnerControl.java', argv)
+        for stage in new_reference_stages:
+            self.assertIn(stage, [name for name, _ in calls])
         reference_argv = next(args for stage, args in calls if stage == 'scheduled-stopped-reference-compile')
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ExecutorInvokeAllWaitReferenceControl.java',
                       reference_argv)
@@ -162,6 +197,15 @@ class FutureCancellationControl(unittest.TestCase):
                     return 'SKIPPED' if stage == missing else run(stage, *arguments)
                 incomplete_compiler = SimpleNamespace(sdk=sdk, run=incomplete)
                 with self.assertRaisesRegex(ValueError, 'Java (executor (invoke|termination)|future task null failure|FutureTask monitor|default executor monitor) .*'):
+                    subject.scheduled_source_control(incomplete_compiler, Path(temporary) / 'source')
+                matrix.assert_not_called()
+        for missing in (*new_reference_stages, *new_source_stages):
+            with self.subTest(missing=missing), tempfile.TemporaryDirectory() as temporary, \
+                    patch.object(subject, 'future_cancel_interrupt_control') as matrix:
+                def incomplete(stage, *arguments):
+                    return 'SKIPPED' if stage == missing else run(stage, *arguments)
+                incomplete_compiler = SimpleNamespace(sdk=sdk, run=incomplete)
+                with self.assertRaisesRegex(ValueError, 'Java (periodic validation|null-factory|throwing-factory|manual periodic|managed).* (did not complete|differs from reference)'):
                     subject.scheduled_source_control(incomplete_compiler, Path(temporary) / 'source')
                 matrix.assert_not_called()
 
