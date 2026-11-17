@@ -180,6 +180,14 @@ Scheduled futures from different pools compare their deadlines at one monotonic
 clock reading. Equal deadlines use each task's original queued-work admission
 identity, including across pools. As with concurrently submitted JDK tasks,
 overlapping or reentrant submissions need not have a predetermined order.
+`invokeAny` uses an executor subclass's `newTaskFor` result and submits a distinct
+delivery future. Each accepted delivery uses its own Result owner under the
+existing limit; an SDK `FutureTask` also admits its Result when it starts, and a
+scheduled pool retains its existing scheduled-task owners. A
+refused admission does not run the task. Cancelled or running deliveries retain
+their owners until withdrawal or physical return. If task delivery throws before
+completing its result, `invokeAny` reports the failure rather than waiting
+indefinitely on that incomplete result.
 Scheduled pools count a worker being constructed by a `ThreadFactory` toward
 their configured parallelism. If the factory itself throws after a submission
 is queued, the original exception reaches the caller but that task and any

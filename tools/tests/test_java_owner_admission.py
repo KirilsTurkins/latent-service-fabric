@@ -19,7 +19,8 @@ NULL_FACTORY_CASES = (
     'managed-null-pending', 'managed-null-fallback-throw', 'managed-null-worker-denied',
     'managed-null-worker-uncertain', 'managed-preferred-root', 'managed-nested-null-root',
     'managed-graceful-null-root', 'managed-graceful-thread-root', 'managed-graceful-executor-denied-root',
-    'managed-obtrude-root', 'managed-default-async-root',
+    'managed-obtrude-root', 'managed-default-async-root', 'managed-invoke-any-factory-root',
+    'managed-invoke-any-default-root', 'managed-invoke-any-pending-root', 'scheduled-invoke-any-pending-root',
 )
 SETTLEMENT_CASES = preparation.OWNER_SETTLEMENT_CASES
 WORK_CASES = preparation.WORK_FINISH_CASES

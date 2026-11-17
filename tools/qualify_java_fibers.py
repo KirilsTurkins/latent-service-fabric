@@ -943,7 +943,9 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
                           'managed-null-worker-uncertain', 'managed-preferred-root', 'managed-nested-null-root',
                           'managed-graceful-null-root', 'managed-graceful-thread-root',
                           'managed-graceful-executor-denied-root', 'managed-obtrude-root',
-                          'managed-default-async-root')
+                          'managed-default-async-root', 'managed-invoke-any-factory-root',
+                          'managed-invoke-any-default-root', 'managed-invoke-any-pending-root',
+                          'scheduled-invoke-any-pending-root')
     for mode in null_factory_modes:
         actual = compiler.run('scheduled-null-factory-activation-' + mode, 'java', '-Xmx256m', '-cp',
             str(output) + os.pathsep + classpath, 'ScheduledNullFactoryActivationControl', mode).strip()
@@ -1067,20 +1069,26 @@ def scheduled_noop_cancel_control(compiler: Compiler, output: Path, reference: P
 def executor_invoke_any_ready_control(compiler: Compiler, output: Path, reference: Path) -> dict:
     """Check ready-first execution and original owners using only private host ports."""
     expected = ('EXECUTOR_INVOKE_ANY_READY PASS one;zero;failure;rejection;all-failed;'
-                'null-rule;iterator-observed')
+                'null-rule;iterator-observed;task-factories')
     for scope, directory in (('jdk', reference), ('source', output)):
         result = compiler.run('executor-invoke-any-ready-' + scope, 'java', '-Xmx256m', '-cp', directory,
                               'ExecutorInvokeAnyReadyReferenceControl', scope).strip()
         if result != expected: raise ValueError('Java executor invokeAny ready reference control did not complete')
     owners = (
         ('parallel', 'InvokeAnyParallelOwnerProbe', (),
-         'parallel:result=42:held=1:0:1:pending=true:cancelInterrupt=true:after=0:0:0'),
+         'parallel:result=42:held=1:0:2:pending=true:cancelInterrupt=true:after=0:0:0'),
         ('timeout', 'InvokeAnyPendingOwnerProbe', ('timeout',),
-         'timeout:outcome=timeout:held=1:2:0:pending=true:after=0:0:0'),
+         'timeout:outcome=timeout:held=1:2:2:pending=true:after=0:0:0'),
         ('interrupt', 'InvokeAnyPendingOwnerProbe', ('interrupt',),
-         'interrupt:outcome=interrupted:held=1:2:0:pending=true:after=0:0:0'),
+         'interrupt:outcome=interrupted:held=1:2:2:pending=true:after=0:0:0'),
         ('accepted-throw', 'InvokeAnyAcceptedThrowOwnerProbe', (),
-         'accepted-throw:held=1:1:0:pending=true:callbacks=0:after=0:0:0'))
+         'accepted-throw:held=1:1:1:pending=true:callbacks=0:after=0:0:0'),
+        *(('factory-' + mode, 'InvokeAnyFactoryOwnerControl', (mode,), 'INVOKE_ANY_FACTORY_OWNER PASS ' + mode)
+          for mode in ('timeout', 'accepted-throw', 'delivery-denied', 'inner-denied',
+                       'default-delivery-denied', 'default-inner-denied', 'running', 'withdraw', 'default-withdraw',
+                       'scheduled-timeout', 'scheduled-accepted-throw', 'scheduled-delivery-denied',
+                       'scheduled-inner-denied', 'scheduled-default-inner-denied', 'scheduled-running',
+                       'settlement-denied', 'settlement-lost')))
     for mode, main, arguments, expected in owners:
         result = compiler.run('executor-invoke-any-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
                               main, *arguments).strip()
@@ -1187,6 +1195,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'DefaultExecutorOwnerControl.java', 'ScheduledReadyClockControl.java', 'ScheduledReadyFakeClock.java',
         'ScheduledNoopCancelOwnerControl.java', 'ScheduledNoopInflightControl.java',
         'InvokeAnyParallelOwnerProbe.java', 'InvokeAnyPendingOwnerProbe.java', 'InvokeAnyAcceptedThrowOwnerProbe.java',
+        'InvokeAnyFactoryOwnerControl.java',
         'ExecutorInvokeAllOwnerControl.java',
         'dev/latent/generated/Bindings.java', 'dev/latent/guest/runtime/Activation.java')]
     noop_reference = private / 'ScheduledNoopCancelReferenceControl.java'
@@ -1473,7 +1482,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     if result != expected_invoke: raise ValueError('Java executor invoke source differs from reference')
     result = compiler.run('executor-invoke-interrupt-owner', 'java', '-Xmx256m', '-cp', output,
         'ExecutorInvokeInterruptOwnerControl').strip()
-    if result != 'EXECUTOR_INVOKE_INTERRUPT_OWNER PASS all;any;queued-until-drain;result-settled':
+    if result != 'EXECUTOR_INVOKE_INTERRUPT_OWNER PASS all;any;queued-until-drain;delivery-held':
         raise ValueError('Java executor invoke interruption owner control did not complete')
     result = compiler.run('executor-await-termination-source', 'java', '-Xmx256m', '-cp', output,
         'ExecutorAwaitTerminationReferenceControl', 'source').strip()

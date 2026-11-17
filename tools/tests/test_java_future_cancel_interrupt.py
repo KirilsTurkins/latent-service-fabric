@@ -145,7 +145,7 @@ class FutureCancellationControl(unittest.TestCase):
                 return ('EXECUTOR_INVOKE_INTERRUPT PASS preinterrupted-ready;empty;zero;pending-cancel;'
                     'blocked-interrupt')
             if stage == 'executor-invoke-interrupt-owner':
-                return 'EXECUTOR_INVOKE_INTERRUPT_OWNER PASS all;any;queued-until-drain;result-settled'
+                return 'EXECUTOR_INVOKE_INTERRUPT_OWNER PASS all;any;queued-until-drain;delivery-held'
             if stage in ('executor-await-termination-reference-jdk', 'executor-await-termination-source'):
                 return 'EXECUTOR_AWAIT_TERMINATION PASS zero;negative;positive;terminated;blocked-interrupt;override'
             if stage == 'executor-await-termination-owner':
@@ -481,13 +481,21 @@ class ExecutorInvokeAnyReadyControl(unittest.TestCase):
     def receipt(stage):
         if stage in ('executor-invoke-any-ready-jdk', 'executor-invoke-any-ready-source'):
             return ('EXECUTOR_INVOKE_ANY_READY PASS one;zero;failure;rejection;all-failed;'
-                    'null-rule;iterator-observed')
+                    'null-rule;iterator-observed;task-factories')
         owners = {
-            'parallel': 'parallel:result=42:held=1:0:1:pending=true:cancelInterrupt=true:after=0:0:0',
-            'timeout': 'timeout:outcome=timeout:held=1:2:0:pending=true:after=0:0:0',
-            'interrupt': 'interrupt:outcome=interrupted:held=1:2:0:pending=true:after=0:0:0',
-            'accepted-throw': 'accepted-throw:held=1:1:0:pending=true:callbacks=0:after=0:0:0',
+            'parallel': 'parallel:result=42:held=1:0:2:pending=true:cancelInterrupt=true:after=0:0:0',
+            'timeout': 'timeout:outcome=timeout:held=1:2:2:pending=true:after=0:0:0',
+            'interrupt': 'interrupt:outcome=interrupted:held=1:2:2:pending=true:after=0:0:0',
+            'accepted-throw': 'accepted-throw:held=1:1:1:pending=true:callbacks=0:after=0:0:0',
         }
+        owners.update({
+            'factory-' + mode: 'INVOKE_ANY_FACTORY_OWNER PASS ' + mode
+            for mode in ('timeout', 'accepted-throw', 'delivery-denied', 'inner-denied',
+                         'default-delivery-denied', 'default-inner-denied', 'running', 'withdraw', 'default-withdraw',
+                         'scheduled-timeout', 'scheduled-accepted-throw', 'scheduled-delivery-denied',
+                         'scheduled-inner-denied', 'scheduled-default-inner-denied', 'scheduled-running',
+                         'settlement-denied', 'settlement-lost')
+        })
         if stage.startswith('executor-invoke-any-owner-'):
             return owners[stage.removeprefix('executor-invoke-any-owner-')]
         raise AssertionError(stage)
@@ -502,13 +510,26 @@ class ExecutorInvokeAnyReadyControl(unittest.TestCase):
         self.assertEqual([stage for stage, _ in calls], ['executor-invoke-any-ready-jdk',
             'executor-invoke-any-ready-source', 'executor-invoke-any-owner-parallel',
             'executor-invoke-any-owner-timeout', 'executor-invoke-any-owner-interrupt',
-            'executor-invoke-any-owner-accepted-throw'])
+            'executor-invoke-any-owner-accepted-throw',
+            *('executor-invoke-any-owner-factory-' + mode for mode in
+              ('timeout', 'accepted-throw', 'delivery-denied', 'inner-denied',
+               'default-delivery-denied', 'default-inner-denied', 'running', 'withdraw', 'default-withdraw',
+               'scheduled-timeout', 'scheduled-accepted-throw', 'scheduled-delivery-denied',
+               'scheduled-inner-denied', 'scheduled-default-inner-denied', 'scheduled-running',
+               'settlement-denied', 'settlement-lost'))])
         self.assertEqual(calls[0][1], ('java', '-Xmx256m', '-cp', reference,
                                        'ExecutorInvokeAnyReadyReferenceControl', 'jdk'))
         self.assertEqual(calls[1][1], ('java', '-Xmx256m', '-cp', source,
                                        'ExecutorInvokeAnyReadyReferenceControl', 'source'))
         self.assertEqual(calls[3][1][-2:], ('InvokeAnyPendingOwnerProbe', 'timeout'))
         self.assertEqual(calls[4][1][-2:], ('InvokeAnyPendingOwnerProbe', 'interrupt'))
+        for (_, args), mode in zip(calls[6:],
+                ('timeout', 'accepted-throw', 'delivery-denied', 'inner-denied',
+                 'default-delivery-denied', 'default-inner-denied', 'running', 'withdraw', 'default-withdraw',
+                 'scheduled-timeout', 'scheduled-accepted-throw', 'scheduled-delivery-denied',
+                 'scheduled-inner-denied', 'scheduled-default-inner-denied', 'scheduled-running',
+                 'settlement-denied', 'settlement-lost'), strict=True):
+            self.assertEqual(args, ('java', '-Xmx256m', '-cp', source, 'InvokeAnyFactoryOwnerControl', mode))
         self.assertEqual(report, {'status': 'JDK-and-SDK-source-controls-passed',
             'iterator': 'SDK-validates-after-ready-JDK-returns-early', 'ownership': 'synthetic-host-ledger-only',
             'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False})
@@ -516,7 +537,13 @@ class ExecutorInvokeAnyReadyControl(unittest.TestCase):
     def test_every_missing_wrong_or_duplicate_receipt_fails_closed(self):
         stages = ('executor-invoke-any-ready-jdk', 'executor-invoke-any-ready-source',
                   'executor-invoke-any-owner-parallel', 'executor-invoke-any-owner-timeout',
-                  'executor-invoke-any-owner-interrupt', 'executor-invoke-any-owner-accepted-throw')
+                  'executor-invoke-any-owner-interrupt', 'executor-invoke-any-owner-accepted-throw',
+                  *('executor-invoke-any-owner-factory-' + mode for mode in
+                    ('timeout', 'accepted-throw', 'delivery-denied', 'inner-denied',
+                     'default-delivery-denied', 'default-inner-denied', 'running', 'withdraw', 'default-withdraw',
+                     'scheduled-timeout', 'scheduled-accepted-throw', 'scheduled-delivery-denied',
+                     'scheduled-inner-denied', 'scheduled-default-inner-denied', 'scheduled-running',
+                     'settlement-denied', 'settlement-lost')))
         for missing in stages:
             for bad in ('', 'SKIPPED', self.receipt(missing) + '\n' + self.receipt(missing)):
                 with self.subTest(stage=missing, bad=bad):

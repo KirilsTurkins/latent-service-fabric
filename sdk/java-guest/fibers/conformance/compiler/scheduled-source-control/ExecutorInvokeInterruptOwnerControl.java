@@ -19,6 +19,7 @@ public final class ExecutorInvokeInterruptOwnerControl {
         AtomicBoolean admitted = new AtomicBoolean();
         AtomicInteger calls = new AtomicInteger();
         AtomicReference<String> outcome = new AtomicReference<>("not-finished");
+        int resultAdmissions = Activation.admissions(LatentRuntimeActivationOwnerKind.Result);
         ExecutorService pool = dev.latent.guest.runtime.concurrent.Executors.newFixedThreadPool(1, task ->
             new Thread(() -> {
                 workerReady.countDown();
@@ -50,7 +51,12 @@ public final class ExecutorInvokeInterruptOwnerControl {
             require(admitted.get(), "result and queued work were not admitted");
             require(workerReady.await(5, TimeUnit.SECONDS), "worker did not start");
             require(Activation.count(LatentRuntimeActivationOwnerKind.QueuedWork) == 1, "queued owner retired before drain");
-            require(Activation.count(LatentRuntimeActivationOwnerKind.Result) == 0, "cancelled result was not settled");
+            // invokeAny leaves its distinct delivery queued, while invokeAll's
+            // cancelled task has no separate delivery owner.
+            require(Activation.count(LatentRuntimeActivationOwnerKind.Result) == (any ? 1 : 0),
+                    "cancelled result or delivery ownership");
+            require(Activation.admissions(LatentRuntimeActivationOwnerKind.Result) == resultAdmissions + 1,
+                    "unstarted result unexpectedly admitted");
             require(calls.get() == 0, "cancelled task ran before drain");
         } finally {
             Activation.admissionObservation = null;
@@ -65,6 +71,6 @@ public final class ExecutorInvokeInterruptOwnerControl {
     public static void main(String[] args) throws Exception {
         pending(false);
         pending(true);
-        System.out.println("EXECUTOR_INVOKE_INTERRUPT_OWNER PASS all;any;queued-until-drain;result-settled");
+        System.out.println("EXECUTOR_INVOKE_INTERRUPT_OWNER PASS all;any;queued-until-drain;delivery-held");
     }
 }
