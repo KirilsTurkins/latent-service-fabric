@@ -30,10 +30,10 @@ internal static class Program
     private static Type? projectionType;
     private static void Require(bool value, string reason) { if (!value) throw new InvalidOperationException(reason); }
 
-    private static MethodDefinition Method(TypeDefinition type, string name)
+    internal static MethodDefinition Method(TypeDefinition type, string name)
         => type.Methods.Single(method => method.Name == name);
 
-    private static void CopyBody(MethodDefinition source, MethodDefinition target, ModuleDefinition module,
+    internal static void CopyBody(MethodDefinition source, MethodDefinition target, ModuleDefinition module,
                                  Dictionary<string, MethodDefinition> methods, Dictionary<string, FieldDefinition> fields)
     {
         var body = new Mono.Cecil.Cil.MethodBody(target) { InitLocals = source.Body.InitLocals, MaxStackSize = source.Body.MaxStackSize };
@@ -144,7 +144,7 @@ internal static class Program
 
     private static void Main(string[] args)
     {
-        Require(args.Length == 4, "arguments");
+        Require(args.Length is 4 or 5, "arguments");
         var wait = BuildProjection(args[0], args[1], args[2], args[3]);
         Require(RestoreCase(wait, false) == ("false", true, false, 1), "emitted-task-snapshot");
         Require(RestoreCase(wait, true) == ("false", false, true, 1), "emitted-token-snapshot");
@@ -209,5 +209,7 @@ internal static class Program
         catch (InvalidOperationException error) { Require(ReferenceEquals(error, thrown), "dispatch-primary-changed"); }
         Require(ReferenceEquals(current.GetValue(null), prior) && (int)depth.GetValue(null)! == 4, "exception-scope-restore");
         Console.WriteLine("FINITE_WAIT_EMITTED_IL_HOST PASS unchanged-infinite;restore-task;restore-token;precedence;outcomes;nested;finally");
+        if (args.Length == 5)
+            AggregateFiniteControl.Run(args[1], args[4], args[2], args[3]);
     }
 }
