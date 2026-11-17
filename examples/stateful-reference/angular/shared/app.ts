@@ -39,11 +39,13 @@ export const PAGE = new InjectionToken<Page>('order-draft-page', {
     }
     <p id="command-status" role="status" aria-live="polite">{{status()}}</p>
     <p id="application-message" role="alert">{{message()}}</p>
-    <p id="effect-status">{{effectCount()}} original effects</p>
+    <p id="effect-status">{{effectCount()}} original effects @if (effectStates().length) { ? {{effectStates().join(', ')}} }</p>
+    <p>Provider acknowledgement does not mean consumer processing.</p>
     <div>
       <button id="recover-draft" type="button" (click)="recover()" [disabled]="busy() || !originalRetained()">Recover original command</button>
       <button id="query-draft" type="button" (click)="refresh()" [disabled]="busy()">Read current draft</button>
-      <button id="retry-aborted-draft" type="button" (click)="retryAborted()" [disabled]="busy() || status() !== 'aborted'">Retry proven abort</button>
+      <button id="check-effects" type="button" (click)="refreshEffects()" [disabled]="busy() || !originalRetained() || effectIds().length === 0">Check effect status</button>
+      <button id="retry-aborted-draft" type="button" (click)="retryAborted()" [disabled]="busy() || !canRetryAborted()">Retry proven abort</button>
       <button id="finish-original-draft" type="button" (click)="finishOriginal()" [disabled]="busy() || !terminal()">Start another edit</button>
     </div>
   </main>`,
@@ -58,6 +60,8 @@ export class App {
   readonly status = signal('idle');
   readonly message = signal(this.page.error ?? '');
   readonly effectCount = signal(0);
+  readonly effectIds = signal<string[]>([]);
+  readonly effectStates = signal<string[]>([]);
   private readonly client: DraftClient | undefined;
 
   constructor() {
@@ -67,7 +71,8 @@ export class App {
       this.client.view = this.page.draft;
     }
   }
-  terminal() { return this.status() === 'committed' || this.status() === 'rejected'; }
+  terminal() { return this.client?.canFinishOriginal() ?? false; }
+  canRetryAborted() { return this.client?.canRetryAborted() ?? false; }
   chooseUnits(event: Event) {
     const value = Number((event.target as HTMLInputElement).value);
     if (Number.isInteger(value) && value >= 0 && value <= 10000) this.chosenUnits.set(value);
@@ -77,18 +82,23 @@ export class App {
     if (result.value && 'error' in result.value) this.message.set(result.value.error);
     else if (result.value) { this.draft.set(result.value); this.message.set(''); }
     if (result.disposition !== 'query') {
-      this.status.set(result.disposition); this.effectCount.set(result.effectIds?.length ?? 0);
+      this.status.set(result.disposition);
+      this.effectIds.set(result.effectIds ?? []); this.effectCount.set(this.effectIds().length);
+      this.effectStates.set(this.effectIds().map(() => 'not checked'));
     }
   }
-  private async run(action: (client: DraftClient) => Promise<void>) {
+  private async run(action: (client: DraftClient) => Promise<void>, unavailable?: string) {
     if (!this.client || this.busy()) return;
     this.busy.set(true); this.message.set('');
     try { await action(this.client); }
     catch {
       this.status.set(this.client.status);
       if (this.client.status === 'permission-denied') {
-        this.draft.set(undefined); this.message.set('Current access was refused.');
-      } else this.message.set('The response is unavailable. Recover the original command before another edit.');
+        this.draft.set(undefined); this.effectIds.set([]); this.effectStates.set([]); this.effectCount.set(0);
+        this.message.set('Current access was refused.');
+      } else this.message.set(unavailable ?? (this.client.pending && !['committed', 'rejected'].includes(this.client.status)
+        ? 'The response is unavailable. Recover the original command before another edit.'
+        : 'The current draft could not be read.'));
     } finally {
       this.originalRetained.set(this.client.pending !== undefined); this.busy.set(false);
     }
@@ -112,9 +122,17 @@ export class App {
     if (!id) return;
     await this.run(async client => this.update(await client.query(id)));
   }
+  async refreshEffects() {
+    await this.run(async client => {
+      const states: string[] = [];
+      for (const id of this.effectIds()) states.push((await client.effectStatus(id)).disposition);
+      this.effectStates.set(states);
+    }, 'Effect status is unavailable.');
+  }
   async retryAborted() { await this.run(async client => this.update(await client.retryAborted())); }
   finishOriginal() {
     if (!this.client || this.busy() || !this.terminal()) return;
     this.client.finishOriginal(); this.originalRetained.set(false); this.status.set('idle');
+    this.effectIds.set([]); this.effectStates.set([]); this.effectCount.set(0);
   }
 }
