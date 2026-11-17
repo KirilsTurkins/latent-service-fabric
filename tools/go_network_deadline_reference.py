@@ -94,7 +94,7 @@ def pending_deadline_contract(connection: bytes) -> None:
     physical timing. Read/write deadlines still narrow the original lifetime.
     Only plain-TCP readiness has a separate, non-renewing observation deadline.
     """
-    rows = re.findall(rb'(?ms)^    fn pending\(\n.*?^    \}', connection)
+    rows = re.findall(rb'(?ms)^    fn pending\([^\n]*\n.*?^    \}', connection)
     if len(rows) != 1:
         raise ValueError('go-network-deadline-pending-shape')
     pending = b' '.join(rows[0].split())

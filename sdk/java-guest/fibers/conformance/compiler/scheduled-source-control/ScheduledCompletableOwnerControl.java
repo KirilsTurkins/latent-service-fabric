@@ -60,10 +60,43 @@ public final class ScheduledCompletableOwnerControl {
         catch (RejectedExecutionException expected) { }
         held(0, 0); require(!pending.isDone() && calls.get() == 0);
 
-        var failedFactory = new ScheduledThreadPoolExecutor(1, command -> null);
-        try { CompletableFuture.supplyAsync(() -> 42, failedFactory); throw new AssertionError(); }
-        catch (RejectedExecutionException expected) { }
-        held(0, 0); failedFactory.shutdownNow(); terminated(failedFactory);
+        var failure = new RejectedExecutionException("factory-failed");
+        var failedFactory = new ScheduledThreadPoolExecutor(1, command -> { throw failure; });
+        AtomicInteger failedCalls = new AtomicInteger();
+        try { CompletableFuture.supplyAsync(() -> { failedCalls.incrementAndGet(); return 42; }, failedFactory); throw new AssertionError(); }
+        catch (RejectedExecutionException expected) { require(expected == failure); }
+        held(2, 2);
+        List<Runnable> failedPending = failedFactory.shutdownNow();
+        require(failedPending.size() == 1 && failedCalls.get() == 0);
+        terminated(failedFactory); held(0, 0);
+        failedPending.get(0).run();
+        require(((java.util.concurrent.Future<?>)failedPending.get(0)).isCancelled() && failedCalls.get() == 0);
+        held(0, 0);
+
+        AtomicInteger factoryAttempts = new AtomicInteger(), recoveredCalls = new AtomicInteger();
+        var recoveringFactory = new ScheduledThreadPoolExecutor(1, command -> {
+            if (factoryAttempts.getAndIncrement() == 0) throw failure;
+            return new Thread(command);
+        });
+        var recovered = new CompletableFuture<Integer>();
+        try { recovered.completeAsync(() -> { recoveredCalls.incrementAndGet(); return 42; }, recoveringFactory); throw new AssertionError(); }
+        catch (RejectedExecutionException expected) { require(expected == failure); }
+        held(2, 2); require(!recovered.isDone());
+        recoveringFactory.schedule(() -> {}, 0, TimeUnit.NANOSECONDS).get(5, TimeUnit.SECONDS);
+        require(recovered.get(5, TimeUnit.SECONDS) == 42 && recoveredCalls.get() == 1);
+        recoveringFactory.shutdown(); terminated(recoveringFactory); held(0, 0);
+
+        var noWorker = new ScheduledThreadPoolExecutor(1, command -> null);
+        var waiting = CompletableFuture.supplyAsync(() -> { calls.incrementAndGet(); return 42; }, noWorker);
+        require(!waiting.isDone() && noWorker.hasPendingWork() && calls.get() == 0);
+        held(2, 2);
+        List<Runnable> withdrawn = noWorker.shutdownNow();
+        require(withdrawn.size() == 1 && !waiting.isDone() && calls.get() == 0);
+        terminated(noWorker); held(0, 0);
+        withdrawn.get(0).run();
+        require(((java.util.concurrent.Future<?>)withdrawn.get(0)).isCancelled()
+            && !waiting.isDone() && calls.get() == 0);
+        held(0, 0);
 
         var deniedInner = new ScheduledThreadPoolExecutor(1);
         var nested = new dev.latent.guest.runtime.concurrent.FutureTask<>(() -> 42);

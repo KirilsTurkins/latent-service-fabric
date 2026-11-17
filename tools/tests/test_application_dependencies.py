@@ -53,6 +53,59 @@ class Dependencies(unittest.TestCase):
         work.mkdir(); output.mkdir()
         return prepare(self.project, work, output, "c")
 
+    def test_reviewed_archive_selection_retains_full_original_and_offline_identity(self):
+        stream = io.BytesIO()
+        with tarfile.open(fileobj=stream, mode="w") as archive:
+            for name, payload in (("pkg/lib/value.c", b"int value(void) { return 42; }\n"),
+                                  ("pkg/include/value.h", b"int value(void);\n"),
+                                  ("pkg/m4/lt~obsolete.m4", b"unused")):
+                info = tarfile.TarInfo(name); info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+        original = stream.getvalue()
+        source = self.root / 'upstream.tar'; source.write_bytes(original)
+        item = self.manifest['artifacts'][0]
+        item.update(format='tar', source={'path': '../upstream.tar'}, metadata={
+            'cArchiveSelection': {'formatVersion': 1, 'include': ['pkg/lib', 'pkg/include']},
+            'cSources': ['pkg/lib/value.c'], 'includeDirectories': ['pkg/include']})
+        lock = self.lock(); record = lock['artifacts'][0]
+        self.assertEqual(record['original']['digest'], digest(original))
+        self.assertEqual(record['metadata']['cArchiveSelection'], item['metadata']['cArchiveSelection'])
+        self.assertEqual({row['path'] for row in record['files']}, {'pkg/lib/value.c', 'pkg/include/value.h'})
+        source.unlink()
+        with patch('tools.application_dependencies.fetch', side_effect=AssertionError('network called')):
+            closure = self.build()
+            self.assertEqual((closure.work / 'dependencies/unknown/pkg/lib/value.c').read_bytes(),
+                             b'int value(void) { return 42; }\n')
+            self.assertFalse((closure.work / 'dependencies/unknown/pkg/m4').exists())
+            closure.check_unchanged()
+        # Even though the excluded entry never materializes, corruption of its
+        # full original archive must invalidate the same offline closure.
+        archived = closure.store.path(record['original']['digest'])
+        archived.write_bytes(original.replace(b'unused', b'change'))
+        with self.assertRaisesRegex(DependencyError, 'artifact-integrity'):
+            closure.check_unchanged()
+        archived.write_bytes(original)
+        self.manifest['artifacts'][0]['metadata']['cArchiveSelection']['include'] = ['pkg/include']
+        self.write()
+        with self.assertRaisesRegex(DependencyError, 'input-mutated'):
+            closure.check_unchanged()
+
+    def test_archive_selection_requires_explicit_bounded_c_source_profile(self):
+        item = self.manifest['artifacts'][0]
+        for value in (None, {}, {'formatVersion': True, 'include': ['pkg/lib']},
+                      {'formatVersion': 1, 'include': []}, {'formatVersion': 1, 'include': ['../x']},
+                      {'formatVersion': 1, 'include': ['pkg', 'pkg/lib']},
+                      {'formatVersion': 1, 'include': ['pkg/lib', 'PKG/LIB']}):
+            item.update(format='tar', metadata={'cArchiveSelection': value})
+            with self.subTest(value=value), self.assertRaises(DependencyError):
+                validate_manifest(self.manifest)
+        item['metadata']['cArchiveSelection'] = {'formatVersion': 1, 'include': ['pkg/lib']}
+        for language, kind, role in [('java', 'tar', 'application'), ('c', 'directory', 'application'),
+                                     ('c', 'tar', 'build-tool')]:
+            self.manifest['language'] = language; item['format'] = kind; item['role'] = role
+            with self.subTest(language=language, kind=kind, role=role), self.assertRaises(DependencyError):
+                validate_manifest(self.manifest)
+
     def test_unknown_private_local_library_offline_without_original(self):
         self.lock()
         (self.library / "pure.c").unlink()
@@ -302,6 +355,51 @@ class Archives(unittest.TestCase):
                      [("yo!.go", b"x"), ("yo!.go", b"y")]]:
             with self.subTest(rows=rows), self.assertRaises(DependencyError):
                 archive_files(self.zip(rows), "zip")
+
+    def test_selected_archive_validates_every_entry_and_never_materializes_tilde(self):
+        rows = [('pkg/lib/a.c', b'a'), ('pkg/include/a.h', b'h'), ('pkg/m4/lt~obsolete.m4', b'x')]
+        raw = self.zip(rows)
+        with self.assertRaisesRegex(DependencyError, 'path-invalid'):
+            archive_files(raw, 'zip')
+        self.assertEqual(archive_files(raw, 'zip', selected_prefixes=('pkg/lib', 'pkg/include')),
+                         {'pkg/lib/a.c': b'a', 'pkg/include/a.h': b'h'})
+        with self.assertRaisesRegex(DependencyError, 'path-invalid'):
+            archive_files(raw, 'zip', selected_prefixes=('pkg',))
+        # A possible Windows 8.3 alias must never become an output name.
+        aliased = self.zip([('pkg/lib/PROGRA~1.c', b'a'), ('pkg/m4/PROGRA~1', b'b')])
+        with self.assertRaisesRegex(DependencyError, 'path-invalid'):
+            archive_files(aliased, 'zip', selected_prefixes=('pkg/lib',))
+        with self.assertRaisesRegex(DependencyError, 'selection-empty'):
+            archive_files(raw, 'zip', selected_prefixes=('pkg/missing',))
+        bad = [[('../outside', b'x')], [('/absolute', b'x')], [('pkg/m4/X', b'x'), ('pkg/m4/x', b'y')],
+               [('pkg/m4/node', b'x'), ('pkg/m4/node/child', b'y')],
+               [('pkg/m4/lt~obsolete', b'x'), ('pkg/m4/LT~OBSOLETE', b'y')],
+               [('pkg/m4/bad\\name', b'x')], [('pkg/m4/con', b'x')]]
+        for extra in bad:
+            with self.subTest(extra=extra), self.assertRaises(DependencyError):
+                archive_files(self.zip([('pkg/lib/a.c', b'a'), *extra]), 'zip', selected_prefixes=('pkg/lib',))
+        with patch('tools.application_dependency_store.MAX_FILES', 1):
+            with self.assertRaisesRegex(DependencyError, 'entry-limit'):
+                archive_files(raw, 'zip', selected_prefixes=('pkg/lib',))
+        with patch('tools.application_dependency_store.MAX_EXPANDED', 2):
+            with self.assertRaisesRegex(DependencyError, 'byte-limit'):
+                archive_files(raw, 'zip', selected_prefixes=('pkg/lib',))
+        for kind in (tarfile.LNKTYPE, tarfile.SYMTYPE):
+            stream = io.BytesIO()
+            with tarfile.open(fileobj=stream, mode='w') as archive:
+                good = tarfile.TarInfo('pkg/lib/a.c'); good.size = 1; archive.addfile(good, io.BytesIO(b'a'))
+                link = tarfile.TarInfo('pkg/m4/hidden'); link.type = kind; link.linkname = '../outside'; archive.addfile(link)
+            with self.subTest(kind=kind), self.assertRaisesRegex(DependencyError, 'entry-denied'):
+                archive_files(stream.getvalue(), 'tar', selected_prefixes=('pkg/lib',))
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, 'w') as archive:
+            archive.writestr('pkg/lib/a.c', b'a')
+            link = zipfile.ZipInfo('pkg/m4/hidden'); link.create_system = 3
+            link.external_attr = (stat.S_IFLNK | 0o777) << 16; archive.writestr(link, 'outside')
+        with self.assertRaisesRegex(DependencyError, 'entry-denied'):
+            archive_files(stream.getvalue(), 'zip', selected_prefixes=('pkg/lib',))
+
+
 
     def test_zip_link_denied(self):
         stream = io.BytesIO()

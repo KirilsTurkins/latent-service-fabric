@@ -75,6 +75,25 @@ fixed for the registry generation. Quotas are ownership bounds, not total RSS
 limits: concrete protocol adapters must also account for their buffers and driver
 resources through the I/O and worker owners.
 
+Trusted HTTP protocol bodies prepay their page-frame owners from the same pool
+before polling. On pinned Linux x86-64, each emitted page frame reserves 120
+bytes (56-byte owner plus 64-byte bookkeeping), including an empty page frame.
+Other targets use their actual layout. An empty range needs no frame reservation;
+unused reservations return when the body drops, and emitted frames retain theirs
+through their final transport clone. These additional reservations can cause
+earlier refusal under the existing metadata limit. They cover these frame owners,
+not all protocol or kernel allocations.
+
+The S3 staging and deferred HTTP paths use managed page handles whose private
+page Arc retires before the original page reservation is returned. On pinned
+Linux x86-64 its 72-byte Arc backing and the data vector fit inside the existing
+page-capacity-plus-512-byte pool reservation, including their bookkeeping; the
+implementation checks the target's actual layout before allocating. Clones do
+not expose a raw Arc or Weak, and mutation still requires a unique handle. The
+older public raw-Arc page API remains supported, but an external Weak can retain
+its Arc header after the page's original charge returns; that legacy tail is not
+qualified by the managed path.
+
 `admit` reserves queue and metadata space before staging input. Its tenant comes
 from the sealed execution plan. The queue rotates between tenants, then providers
 within a tenant, with FIFO ordering within each group. A tenant cannot acquire
@@ -121,7 +140,12 @@ join handles until actual completion. Dropping a result waiter does not abort a
 blocking job or release its leases. Cleanup has separate reserved capacity, so
 ordinary workers cannot consume every cleanup slot. Successful cleanup destroys
 the resource; failed cleanup returns the still-owned, charged connection for
-explicit recovery or destruction. A failed close never invents a refund.
+explicit recovery or destruction. A failed close never invents a refund. A
+quarantined failed stream dial retains its original connection quota and leases
+until its socket owner finishes destruction. If that destruction or a lease
+wake panics, the surviving original owners remain in the same prepaid slot;
+consumed owners cannot be reconstructed. This is bounded by the original pool,
+not a process-wide bound across separately recreated pools.
 
 ## Shutdown and observations
 

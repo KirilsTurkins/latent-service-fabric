@@ -12,7 +12,7 @@ if __package__ in {None, ''}:
 from tools.build_observation import build_environment
 from tools.dotnet_guest.build import build
 from tools.dotnet_guest.compiler import runtime_inputs
-from tools.dotnet_guest.task_wait import PROFILE
+from tools.dotnet_guest.task_wait import PROFILE, validate_current_receipt
 from tools.dotnet_task_runtime_fixture import QUALIFICATION_CASES, RESET_NOTIFICATION_MODE, expected, prepare, selected_fixture
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
@@ -25,6 +25,16 @@ HELPERS = ('tools/dotnet_task_runtime_fixture.py', 'tools/dotnet_task_runtime_pr
     'tools/qualify_dotnet_task_runtime.py', 'tools/run_rust_capsule_workflow.py',
     'tools/dotnet_guest/task_wait.py', 'tools/dotnet_guest/async_exports.py',
     'tools/dotnet_guest/compiler.py', 'tools/dotnet_guest/entropy_grants.py')
+
+
+def require_current_task_wait_receipt(port):
+    if type(port) is not dict:
+        raise ValueError('dotnet-tasks-task-wait-receipt')
+    extras = {'profile', 'frameworkInput', 'tool', 'derived', 'sourceCaptureDigest', 'targetsDigest',
+              'nativeAotReferenceBinding', 'selection'}
+    validate_current_receipt({key: value for key, value in port.items() if key not in extras},
+        finite=True, managed='managedAcceptedWork' in port, aggregate='aggregateTaskWait' in port,
+        require_finite_observation=True)
 
 
 def require_reset_notification_receipt(captured, observed):
@@ -84,6 +94,7 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
         require((greeting / 'source-inputs.json').read_bytes() == before, 'dotnet-tasks-source-capture-changed')
         record['build'] = read_json(greeting / 'BUILD-COMPLETE.json')
         port = read_json(greeting / 'task-wait-port.json')
+        require_current_task_wait_receipt(port)
         require(port['profile'] == PROFILE and port['completion'] == 'actual-task-only'
                 and port['selection']['requiredDeclarations'] == sorted((
                     'latent:clock/monotonic@0.1.0', 'latent:runtime/activation@0.1.0',

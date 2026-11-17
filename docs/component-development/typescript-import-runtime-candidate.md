@@ -13,6 +13,14 @@ Typed result lifting finishes before canonical subtask drop and physical
 result/capture retirement. Asynchronous cancellation retains the original
 handle, stable buffers and owners while the host reports `BLOCKED`.
 
+Before dispatching a selected async import, the runtime reserves one shared
+readiness set against the original Native-owner limit if none exists. This
+also applies when the host returns immediately, so a tight Native budget can
+refuse the call before dispatch. The set may be reused and stays charged until
+the pump can retire it with no timer records or joined subtasks. Ordinary
+synchronous calls that do not use this bridge do not create the set. This
+source behavior does not establish signed-runtime qualification.
+
 The source candidate now distinguishes canonical result ownership from subtask
 retirement. Cancelling before typed lifting retains an actual returned outcome
 until a compiler-generated walk drops its imported `own<resource>` handles

@@ -1,13 +1,96 @@
 //! Provider-owned boxed futures. This is deliberately not the core BoxFuture alias.
-use super::{capacity, PlatformError, RefundAfterRetirement, ALLOCATION_BOOKKEEPING};
+use super::{capacity, PlatformError, ALLOCATION_BOOKKEEPING};
 use latent_core::{ActivationBudget, HostMemoryReservation};
 use std::{
     alloc::Layout,
     future::Future,
     marker::PhantomData,
     pin::Pin,
+    sync::Arc,
     task::{Context, Poll},
 };
+
+/// Trusted host adapter only: one pre-existing stream row, never a guest callback.
+#[doc(hidden)]
+pub trait StreamRetirementObserver: Send + Sync {
+    fn release_stream_retirement(&self, sequence: u64);
+}
+
+/// Trusted host adapter custody of the same original paid stream row.
+#[doc(hidden)]
+pub struct StreamRetirementGuard {
+    owner: Option<Arc<dyn StreamRetirementObserver>>,
+    sequence: u64,
+    entered_unwinding: bool,
+}
+impl StreamRetirementGuard {
+    pub fn new(owner: Arc<dyn StreamRetirementObserver>, sequence: u64) -> Self {
+        Self {
+            owner: Some(owner),
+            sequence,
+            entered_unwinding: std::thread::panicking(),
+        }
+    }
+    pub fn begin_drop(&mut self) {
+        self.entered_unwinding = std::thread::panicking();
+    }
+    /// Keep the original row outstanding after a caught owner failure without
+    /// retaining an additional marker allocation or invoking a callback.
+    pub(in crate::broker) fn retain_failed(mut self) {
+        drop(self.owner.take());
+    }
+}
+impl Drop for StreamRetirementGuard {
+    fn drop(&mut self) {
+        if let Some(owner) = self.owner.take() {
+            if !std::thread::panicking() || self.entered_unwinding {
+                owner.release_stream_retirement(self.sequence);
+            }
+        }
+    }
+}
+
+trait ErasedIoFuture<T>: Future<Output = T> {
+    fn take_stream_retirement(self: Pin<&mut Self>) -> Option<StreamRetirementGuard>;
+}
+
+pin_project_lite::pin_project! {
+    #[repr(transparent)]
+    struct PlainFuture<F> {
+        #[pin]
+        future: F,
+    }
+}
+impl<F: Future> Future for PlainFuture<F> {
+    type Output = F::Output;
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.project().future.poll(cx)
+    }
+}
+impl<T, F: Future<Output = T>> ErasedIoFuture<T> for PlainFuture<F> {
+    fn take_stream_retirement(self: Pin<&mut Self>) -> Option<StreamRetirementGuard> {
+        None
+    }
+}
+
+pin_project_lite::pin_project! {
+    struct StreamFuture<F> {
+        #[pin]
+        future: F,
+        retirement: Option<StreamRetirementGuard>,
+    }
+}
+impl<F: Future> Future for StreamFuture<F> {
+    type Output = F::Output;
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.project().future.poll(cx)
+    }
+}
+impl<T, F: Future<Output = T>> ErasedIoFuture<T> for StreamFuture<F> {
+    fn take_stream_retirement(self: Pin<&mut Self>) -> Option<StreamRetirementGuard> {
+        self.project().retirement.take()
+    }
+}
 
 /// A pinned provider future with its original charge, or an unallocated refusal.
 ///
@@ -21,7 +104,7 @@ pub struct IoFuture<'a, T> {
 // No public budgetless future-Box construction. Ready is available only through
 // the error-only constructor below; it does not represent provider execution.
 enum IoFutureState<'a, T> {
-    Boxed(Pin<Box<dyn Future<Output = T> + Send + 'a>>),
+    Boxed(Pin<Box<dyn ErasedIoFuture<T> + Send + 'a>>),
     Ready(T),
 }
 
@@ -55,11 +138,23 @@ impl<T> Future for IoFuture<'_, T> {
 
 impl<T> Drop for IoFuture<'_, T> {
     fn drop(&mut self) {
-        let allocation = RefundAfterRetirement(self.allocation.take());
-        // In the boxed branch, the actual F and its Box backing retire first.
-        // If F::drop unwinds, retain this same original charge conservatively.
+        let allocation = self.allocation.take();
+        let mut retirement = match self.state.as_mut() {
+            Some(IoFutureState::Boxed(future)) => future.as_mut().take_stream_retirement(),
+            _ => None,
+        };
+        if let Some(retirement) = &mut retirement {
+            retirement.begin_drop();
+        }
+        // The pinned Box's drop glue deallocates its own backing even if F's
+        // destructor unwinds. This local guard drops after that glue finishes;
+        // independently retained captures keep their own original guards.
+        // Rust 1.97.1 Box drop elaboration and deallocator:
+        // https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/compiler/rustc_mir_transform/src/elaborate_drop.rs#L745-L753
+        // https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/alloc/src/boxed.rs#L1885-L1898
         drop(self.state.take());
-        allocation.refund();
+        drop(allocation);
+        drop(retirement);
     }
 }
 
@@ -91,7 +186,9 @@ where
         // Unused preparation or a builder panic refunds the unallocated credit.
         let value = (self.make)();
         let mut owner = IoFuture {
-            state: Some(IoFutureState::Boxed(Box::pin(value))),
+            state: Some(IoFutureState::Boxed(Box::pin(PlainFuture {
+                future: value,
+            }))),
             allocation: self.allocation,
         };
         // Install physical-first Drop BEFORE confirmation can panic.
@@ -127,7 +224,49 @@ where
     {
         let value = (self.make)(args);
         let mut owner = IoFuture {
-            state: Some(IoFutureState::Boxed(Box::pin(value))),
+            state: Some(IoFutureState::Boxed(Box::pin(PlainFuture {
+                future: value,
+            }))),
+            allocation: self.allocation,
+        };
+        if let Some(allocation) = &mut owner.allocation {
+            allocation.confirm();
+        }
+        owner
+    }
+}
+
+/// Admit the exact stream future and its paid retirement token before creation.
+pub struct PreparedStreamIoFutureWith<Make, F, Args> {
+    make: Make,
+    allocation: Option<HostMemoryReservation>,
+    output: PhantomData<fn(Args) -> F>,
+}
+impl<Make, F, Args> PreparedStreamIoFutureWith<Make, F, Args>
+where
+    Make: FnOnce(Args) -> (F, StreamRetirementGuard),
+{
+    pub(in crate::broker) fn new(
+        budget: &ActivationBudget,
+        make: Make,
+    ) -> Result<Self, PlatformError> {
+        Ok(Self {
+            make,
+            allocation: reserve::<StreamFuture<F>>(budget)?,
+            output: PhantomData,
+        })
+    }
+
+    pub fn finish<'a, T>(self, args: Args) -> IoFuture<'a, T>
+    where
+        F: Future<Output = T> + Send + 'a,
+    {
+        let (future, retirement) = (self.make)(args);
+        let mut owner = IoFuture {
+            state: Some(IoFutureState::Boxed(Box::pin(StreamFuture {
+                future,
+                retirement: Some(retirement),
+            }))),
             allocation: self.allocation,
         };
         if let Some(allocation) = &mut owner.allocation {
@@ -241,6 +380,117 @@ mod tests {
     }
 
     #[test]
+    fn plain_future_and_public_owner_layouts_are_unchanged() {
+        #[allow(dead_code)]
+        enum PreviousState<'a, T> {
+            Boxed(Pin<Box<dyn Future<Output = T> + Send + 'a>>),
+            Ready(T),
+        }
+        #[allow(dead_code)]
+        struct PreviousFuture<'a, T> {
+            state: Option<PreviousState<'a, T>>,
+            allocation: Option<HostMemoryReservation>,
+        }
+        fn same<T>() {
+            assert_eq!(
+                Layout::new::<IoFuture<'_, T>>(),
+                Layout::new::<PreviousFuture<'_, T>>()
+            );
+        }
+        assert_eq!(
+            Layout::new::<PlainFuture<PinnedBody>>(),
+            Layout::new::<PinnedBody>()
+        );
+        assert_eq!(
+            Layout::new::<PlainFuture<std::future::Pending<()>>>(),
+            Layout::new::<std::future::Pending<()>>()
+        );
+        same::<()>();
+        same::<Result<usize, ()>>();
+        same::<[u8; 1024]>();
+    }
+
+    #[test]
+    fn stream_future_custody_retires_after_the_original_allocation_refund() {
+        struct Owner {
+            budget: ActivationBudget,
+            released: Arc<AtomicUsize>,
+        }
+        impl StreamRetirementObserver for Owner {
+            fn release_stream_retirement(&self, sequence: u64) {
+                assert_eq!(sequence, 17);
+                assert_eq!(self.budget.host_memory_bytes(), 0);
+                self.released.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+        struct Body {
+            budget: ActivationBudget,
+            should_panic: bool,
+        }
+        impl Future for Body {
+            type Output = ();
+            fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<()> {
+                Poll::Pending
+            }
+        }
+        impl Drop for Body {
+            fn drop(&mut self) {
+                assert_eq!(self.budget.host_memory_bytes(), stream_charge());
+                assert!(!self.should_panic, "inner destructor");
+            }
+        }
+        fn stream_charge() -> u64 {
+            (Layout::new::<StreamFuture<Body>>().size() + ALLOCATION_BOOKKEEPING) as u64
+        }
+        let denied = budget(stream_charge() - 1, BudgetProfile::Phase3);
+        let called = AtomicBool::new(false);
+        assert!(PreparedStreamIoFutureWith::new(
+            &denied,
+            |_: ()| -> (Body, StreamRetirementGuard) {
+                called.store(true, Ordering::SeqCst);
+                panic!("refused builder must not run")
+            }
+        )
+        .is_err());
+        assert!(!called.load(Ordering::SeqCst));
+
+        let admitted = budget(stream_charge(), BudgetProfile::Phase3);
+        let released = Arc::new(AtomicUsize::new(0));
+        let make = |panic| {
+            let guard = StreamRetirementGuard::new(
+                Arc::new(Owner {
+                    budget: admitted.clone(),
+                    released: released.clone(),
+                }),
+                17,
+            );
+            PreparedStreamIoFutureWith::new(&admitted, |guard| {
+                (
+                    Body {
+                        budget: admitted.clone(),
+                        should_panic: panic,
+                    },
+                    guard,
+                )
+            })
+            .unwrap()
+            .finish(guard)
+        };
+        drop(make(false));
+        assert_eq!(released.load(Ordering::SeqCst), 1);
+        assert!(catch_unwind(AssertUnwindSafe(|| {
+            let _future = make(false);
+            panic!("caller");
+        }))
+        .is_err());
+        assert_eq!(released.load(Ordering::SeqCst), 2);
+        assert!(catch_unwind(AssertUnwindSafe(|| drop(make(true)))).is_err());
+        assert_eq!(released.load(Ordering::SeqCst), 2);
+        assert_eq!(admitted.host_memory_bytes(), 0);
+        assert_eq!(admitted.outstanding_reservations(), 0);
+    }
+
+    #[test]
     fn provider_future_refuses_before_builder_and_refunds_unused_preparation() {
         let denied = budget(charge() - 1, BudgetProfile::Phase3);
         let called = AtomicBool::new(false);
@@ -313,13 +563,103 @@ mod tests {
         .is_err());
         assert_eq!(admitted.host_memory_bytes(), 0);
 
-        // A failing destructor retains the SAME original charge, not a refund.
+        // The box backing is deallocated even when its payload unwinds.
         let future = PreparedIoFuture::new(&admitted, || body(&admitted, true))
             .unwrap()
             .finish();
         assert!(catch_unwind(AssertUnwindSafe(|| drop(future))).is_err());
-        assert_eq!(admitted.host_memory_bytes(), charge());
-        assert_eq!(admitted.outstanding_reservations(), 1);
+        assert_eq!(admitted.host_memory_bytes(), 0);
+        assert_eq!(admitted.outstanding_reservations(), 0);
+    }
+
+    #[test]
+    fn future_refund_preserves_the_original_separately_owned_capture() {
+        const CAPTURE_BYTES: u64 = 512;
+        struct Retained {
+            _allocation: HostMemoryReservation,
+        }
+        struct CapturedBody {
+            budget: ActivationBudget,
+            expected: u64,
+            _retained: Arc<Retained>,
+            should_panic: bool,
+        }
+        impl Future for CapturedBody {
+            type Output = ();
+            fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<()> {
+                Poll::Pending
+            }
+        }
+        impl Drop for CapturedBody {
+            fn drop(&mut self) {
+                assert_eq!(self.budget.host_memory_bytes(), self.expected);
+                assert!(!self.should_panic, "captured future destructor");
+            }
+        }
+        struct Observer {
+            budget: ActivationBudget,
+            releases: Arc<AtomicUsize>,
+        }
+        impl StreamRetirementObserver for Observer {
+            fn release_stream_retirement(&self, sequence: u64) {
+                assert_eq!(sequence, 17);
+                assert_eq!(self.budget.host_memory_bytes(), CAPTURE_BYTES);
+                self.releases.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+
+        let admitted = budget(16 * 1024, BudgetProfile::Phase3);
+        let mut capture = admitted.reserve_host_memory(CAPTURE_BYTES).unwrap();
+        capture.confirm();
+        let retained = Arc::new(Retained {
+            _allocation: capture,
+        });
+        for stream in [false, true] {
+            for should_panic in [false, true] {
+                let layout = if stream {
+                    Layout::new::<StreamFuture<CapturedBody>>()
+                } else {
+                    Layout::new::<PlainFuture<CapturedBody>>()
+                };
+                let charge = (layout.size() + ALLOCATION_BOOKKEEPING) as u64;
+                let releases = Arc::new(AtomicUsize::new(0));
+                let body = CapturedBody {
+                    budget: admitted.clone(),
+                    expected: CAPTURE_BYTES + charge,
+                    _retained: retained.clone(),
+                    should_panic,
+                };
+                let future = if stream {
+                    let custody = StreamRetirementGuard::new(
+                        Arc::new(Observer {
+                            budget: admitted.clone(),
+                            releases: releases.clone(),
+                        }),
+                        17,
+                    );
+                    PreparedStreamIoFutureWith::new(&admitted, |(body, custody)| (body, custody))
+                        .unwrap()
+                        .finish((body, custody))
+                } else {
+                    PreparedIoFuture::new(&admitted, || body).unwrap().finish()
+                };
+                assert_eq!(admitted.host_memory_bytes(), CAPTURE_BYTES + charge);
+                assert_eq!(admitted.outstanding_reservations(), 2);
+                assert_eq!(
+                    catch_unwind(AssertUnwindSafe(|| drop(future))).is_err(),
+                    should_panic
+                );
+                assert_eq!(admitted.host_memory_bytes(), CAPTURE_BYTES);
+                assert_eq!(admitted.outstanding_reservations(), 1);
+                assert_eq!(
+                    releases.load(Ordering::SeqCst),
+                    usize::from(stream && !should_panic)
+                );
+            }
+        }
+        drop(retained);
+        assert_eq!(admitted.host_memory_bytes(), 0);
+        assert_eq!(admitted.outstanding_reservations(), 0);
     }
 
     #[test]

@@ -283,7 +283,8 @@ class CThreadMinimal(unittest.TestCase):
    # projects before comparing the unchanged historical fixture inventory.
    capture_addendum = {
     'vendor/lsf/sdk/c-guest/include/lsf/standard-streams.h': '9f666b7a2d5df835cd16b048793a4470157ecf781d38a530174256d2adc33408',
-    'vendor/lsf/sdk/c-guest/src/standard-streams.c': 'd50f8cc5ada550ff086785a29f42f2d2f9afb178f72ce39b89d8d3d7fa0aea54',
+    'vendor/lsf/sdk/c-guest/src/standard-streams.c': 'bc99b9188700c10142173e25f5c2863f6517cf3d9ae5e6fa3d0f37384cb574c9',
+    'vendor/lsf/sdk/c-guest/src/standard-resolver.c': '74d3fdf9544211bf022ec137075cbded172845afcb233eb4b8f02e15326513b2',
     'vendor/lsf/sdk/c-guest/runtime/timed-symbols.rsp': '69c7c419534b95f697f185acf531bdd3dde31b506af5e5cc6ba1f2f789a63214',
    }
    for path, expected in capture_addendum.items():

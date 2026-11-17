@@ -10,6 +10,11 @@ from tools.rust_capsule_project import digest, read_file, write_json
 LEGACY_YIELD_SHA256 = 'ea15d7acb007f314d876a434ceeb7c9e6b30180159959bb255e3be737e99f8b2'
 FIFO_YIELD_SHA256 = '99fab873d692344f0bffd7e2d3543ca5e5c841f4d4f6ca556268694113b5d029'
 FIFO_YIELD_TEST_SHA256 = '67f7147d0e5ee5112321c8396aabd05178ad6a4cd6709f3d2f3d2b43bd896e79'
+STANDARD_ITERATOR = 'slices/iter.go'
+STANDARD_ITERATOR_SHA256 = '986cce7d58c65e6f87987544908ec138ae664c4bf5c8868d2177a425f6fa2bbc'
+STANDARD_ITERATOR_SITES = [(14, 57), (15, 40), (16, 24), (26, 62), (27, 40), (28, 37),
+                           (37, 54), (38, 35), (39, 24), (50, 68), (51, 22), (59, 43),
+                           (66, 50), (75, 66), (86, 72), (97, 64), (102, 39), (103, 35)]
 
 
 def checkpoint_yield_template(sdk):
@@ -78,8 +83,18 @@ def prepare(compiler):
 
 def transform(compiler, generated, packages, application_sources, output):
     selected = set()
+    standard = {}
     dispatcher = generated / 'vendor/go.bytecodealliance.org/pkg'
     for package in packages:
+        if package.get('ImportPath') == 'slices':
+            path = compiler.goroot / 'src' / STANDARD_ITERATOR
+            if (standard or not package.get('Standard') or Path(package['Dir']) != path.parent
+                    or package.get('GoFiles', []).count(path.name) != 1
+                    or hashlib.sha256(read_file(path)).hexdigest() != STANDARD_ITERATOR_SHA256):
+                raise ValueError('go-checkpoint-standard-iterator-source-drift')
+            selected.add(path)
+            standard[path] = STANDARD_ITERATOR
+            continue
         if package.get('Standard'):
             continue
         for name in package.get('GoFiles', []):
@@ -97,14 +112,25 @@ def transform(compiler, generated, packages, application_sources, output):
         raise ValueError('go-checkpoint-parser-returned-unselected-source')
     replacements, transformations = {}, []
     for row in rows:
+        path = Path(row['path'])
+        if path in standard:
+            sites = [{'line': line, 'column': column, 'suspendable': True}
+                     for line, column in STANDARD_ITERATOR_SITES]
+            if (row.get('sites') != sites
+                    or any(type(site['line']) is not int or type(site['column']) is not int
+                           or site['suspendable'] is not True for site in row['sites'])
+                    or row.get('upstreamDigest') != 'sha256:' + STANDARD_ITERATOR_SHA256
+                    or hashlib.sha256(read_file(path)).hexdigest() != STANDARD_ITERATOR_SHA256):
+                raise ValueError('go-checkpoint-standard-iterator-output-drift')
         if not row['sites']:
             continue
-        path, adapted = Path(row['path']), Path(row['adapted'])
+        adapted = Path(row['adapted'])
         if adapted.parent != output / 'checkpoints' or adapted.is_symlink():
             raise ValueError('go-checkpoint-parser-output-outside-owned-directory')
         if digest(read_file(path)) != row['upstreamDigest'] or digest(read_file(adapted)) != row['adaptedDigest']:
             raise ValueError('go-checkpoint-parser-source-or-output-changed')
         replacements[str(path)] = str(adapted)
-        transformations.append({'name': 'go-compiler-checkpoints/' + path.relative_to(generated).as_posix(),
+        source_name = ('standard/' + standard[path] if path in standard else path.relative_to(generated).as_posix())
+        transformations.append({'name': 'go-compiler-checkpoints/' + source_name,
             'upstreamDigest': row['upstreamDigest'], 'adaptedDigest': row['adaptedDigest'], 'sites': row['sites']})
     return replacements, transformations

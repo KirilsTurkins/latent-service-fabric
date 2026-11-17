@@ -81,12 +81,13 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
             from tools.dotnet_guest.managed_work import INLINE_PRIMARY_REWRITE_RECEIPT
             current = {**self.receipt(), 'managedAcceptedWork': copy.deepcopy(INLINE_PRIMARY_REWRITE_RECEIPT),
                        'aggregateTaskWait': copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED),
-                       'generatedHelperCount': 108, 'unchangedOriginalMethods': 44708,
+                       'generatedHelperCount': 109, 'finiteWaitObservation': task_wait.FINITE_OBSERVATION,
+                       'unchangedOriginalMethods': 44708,
                        'outputDigest': digest(b'aggregate-control')}
             write_json(arguments[-1], current)
         control.run_tool = rewrite
         intermediate = control.prepare(managed=True)
-        self.assertEqual(intermediate.validated_helper_count(), 108)
+        self.assertEqual(intermediate.validated_helper_count(), 109)
         def filesystem(stage, *arguments):
             self.assertEqual(stage, 'closed-filesystem-rewrite')
             original, base, assembly, receipt = arguments[-4:]
@@ -95,7 +96,7 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
             assembly.write_bytes(b'final-filesystem-control')
             value = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/closed-filesystem-rewrite.json').read_bytes())
             value.update(baseDigest=intermediate.identity['digest'], outputDigest=digest(assembly.read_bytes()),
-                         unchangedBaseMethods=44852)
+                         unchangedBaseMethods=44853)
             write_json(receipt, value)
         final = closed_filesystem.prepare(control.sdk, control.tools, control.packages, control.root/'dotnet',
             control.project, control.output, control.evidence, filesystem, task_wait_port=intermediate)
@@ -136,12 +137,18 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
             before = docs['task-wait-port.json']
             extra = {'profile', 'frameworkInput', 'tool', 'derived', 'sourceCaptureDigest', 'targetsDigest',
                 'nativeAotReferenceBinding', 'selection'}
-            docs['task-wait-port.json'] = {**self.receipt(), **{key: before[key] for key in extra},
+            from tools.dotnet_guest.managed_work import INLINE_PRIMARY_REWRITE_RECEIPT
+            current = {**self.receipt(), 'generatedHelperCount': 109, 'unchangedOriginalMethods': 44708,
+                'finiteWaitObservation': task_wait.FINITE_OBSERVATION,
+                'managedAcceptedWork': copy.deepcopy(INLINE_PRIMARY_REWRITE_RECEIPT),
+                'aggregateTaskWait': copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED)}
+            docs['task-wait-port.json'] = {**current, **{key: before[key] for key in extra},
                 'outputDigest': before['outputDigest']}
-            docs['closed-filesystem-port.json']['unchangedBaseMethods'] = 44839
+            docs['closed-filesystem-port.json']['unchangedBaseMethods'] = 44853
             docs['runtime-profile.json']['profile'] = 'runtime-managed'
             selection = docs['compiler-patches.json']['patches'][0]['selection']
-            selection.update(generatedHelperCount=95, aggregateTaskWait=self.receipt()['aggregateTaskWait'])
+            selection.update(generatedHelperCount=109, finiteWaitObservation=task_wait.FINITE_OBSERVATION,
+                             aggregateTaskWait=current['aggregateTaskWait'])
             def publish(selected):
                 for name, value in selected.items():
                     (root/name).write_bytes((json.dumps(value)+'\n').encode('utf-8'))

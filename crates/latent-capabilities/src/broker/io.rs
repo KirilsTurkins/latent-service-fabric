@@ -26,10 +26,16 @@ mod audit;
 mod buffer;
 mod future;
 mod limits;
-pub use future::{IoFuture, PreparedIoFuture, PreparedIoFutureWith};
+pub use future::{
+    IoFuture, PreparedIoFuture, PreparedIoFutureWith, PreparedStreamIoFutureWith,
+    StreamRetirementGuard, StreamRetirementObserver,
+};
 mod memory;
-pub(in crate::broker) use memory::HttpInputOrigin;
+mod output_slot;
 pub use memory::IoMemory;
+pub(in crate::broker) use memory::{HttpInputOrigin, HttpInputRetirement};
+#[doc(hidden)]
+pub use output_slot::stream_chunk_owner_allocation_bytes;
 mod stream;
 mod transfer;
 pub use buffer::IoBuffer;
@@ -298,26 +304,16 @@ impl<T: ?Sized> DerefMut for RunningCall<T> {
         self.value.as_deref_mut().expect("live running call")
     }
 }
-// Safe conservative cleanup: if a value destructor unwinds, this SAME original
-// guard is retained. No unsafe code, allocator replacement or leaked authority.
-struct RefundAfterRetirement(Option<HostMemoryReservation>);
-impl RefundAfterRetirement {
-    fn refund(mut self) {
-        drop(self.0.take());
-    }
-}
-impl Drop for RefundAfterRetirement {
-    fn drop(&mut self) {
-        if let Some(allocation) = self.0.take() {
-            std::mem::forget(allocation);
-        }
-    }
-}
 impl<T: ?Sized> Drop for RunningCall<T> {
     fn drop(&mut self) {
-        let allocation = RefundAfterRetirement(self.allocation.take());
-        drop(self.value.take()); // actual T AND its Box backing retire first
-        allocation.refund();
+        let allocation = self.allocation.take();
+        // The pinned Rust 1.97.1 Box drop glue deallocates its own backing
+        // after T, including on payload unwind. Separately retained owners
+        // continue to hold their own reservations.
+        // https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/compiler/rustc_mir_transform/src/elaborate_drop.rs#L745-L753
+        // https://github.com/rust-lang/rust/blob/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/alloc/src/boxed.rs#L1885-L1898
+        drop(self.value.take());
+        drop(allocation);
     }
 }
 impl Operation {

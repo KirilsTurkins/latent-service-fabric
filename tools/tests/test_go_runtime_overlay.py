@@ -569,6 +569,101 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                 checkpoints.transform(compiler, source.parent,
                     [{'Dir': str(source.parent), 'GoFiles': [source.name]}], {source}, root)
 
+    def test_checkpoints_select_only_the_pinned_standard_iterator_and_preserve_its_receipt(self):
+        from tools.go_guest import checkpoints
+        from tools.rust_capsule_project import digest
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            generated, output, goroot = root/'module', root/'overlay', root/'goroot'
+            app = generated/'main.go'
+            standard = goroot/'src/slices/iter.go'
+            unrelated = goroot/'src/slices/sort.go'
+            for path in (app, standard, unrelated):
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'package fixture\nfunc Run(){}\n')
+            output.mkdir()
+            packages = [
+                {'Dir': str(app.parent), 'GoFiles': [app.name]},
+                {'ImportPath': 'slices', 'Standard': True, 'Dir': str(standard.parent),
+                 'GoFiles': [standard.name, unrelated.name]},
+            ]
+            sites = [{'line': line, 'column': column, 'suspendable': True}
+                     for line, column in checkpoints.STANDARD_ITERATOR_SITES]
+            def execute(_label, _tool, request, destination):
+                selected = json.loads(request.read_bytes())
+                self.assertEqual({row['path'] for row in selected}, {str(app), str(standard)})
+                destination.mkdir()
+                rows = []
+                for index, row in enumerate(selected):
+                    source = Path(row['path'])
+                    adapted = destination/(str(index)+'.go')
+                    adapted.write_bytes(source.read_bytes()+b'// checkpoint\n')
+                    rows.append({'path': str(source), 'adapted': str(adapted),
+                                 'upstreamDigest': digest(source.read_bytes()),
+                                 'adaptedDigest': digest(adapted.read_bytes()),
+                                 'sites': sites if source == standard else [{'line': 2, 'column': 12, 'suspendable': True}]})
+                return json.dumps(rows)
+            pin = hashlib.sha256(standard.read_bytes()).hexdigest()
+            with patch.object(checkpoints, 'STANDARD_ITERATOR_SHA256', pin):
+                replacements, records = checkpoints.transform(SimpleNamespace(run=execute, goroot=goroot),
+                                                                generated, packages, {app}, output)
+            self.assertEqual(set(replacements), {str(app), str(standard)})
+            row = next(record for record in records if record['name'] == 'go-compiler-checkpoints/standard/slices/iter.go')
+            self.assertEqual(row['upstreamDigest'], 'sha256:'+pin)
+            self.assertEqual(row['sites'], sites)
+            self.assertEqual(unrelated.read_bytes(), b'package fixture\nfunc Run(){}\n')
+
+    def test_standard_iterator_metadata_input_and_parser_drift_fail_closed(self):
+        from tools.go_guest import checkpoints
+        from tools.rust_capsule_project import digest
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            generated, goroot = root/'module', root/'goroot'
+            generated.mkdir()
+            standard = goroot/'src/slices/iter.go'
+            standard.parent.mkdir(parents=True)
+            original = b'package slices\nfunc Values(){}\n'
+            standard.write_bytes(original)
+            pin = hashlib.sha256(original).hexdigest()
+            package = {'ImportPath': 'slices', 'Standard': True, 'Dir': str(standard.parent),
+                       'GoFiles': ['iter.go']}
+            def run_case(mutation):
+                output = root/mutation
+                output.mkdir()
+                row = dict(package)
+                packages = [row]
+                if mutation == 'foreign-directory': row['Dir'] = str(generated)
+                if mutation == 'nonstandard': row['Standard'] = False
+                if mutation == 'missing-source': row['GoFiles'] = []
+                if mutation == 'duplicate-package': packages.append(dict(row))
+                if mutation == 'changed-source': standard.write_bytes(original+b'changed')
+                def execute(_label, _tool, request, destination):
+                    destination.mkdir()
+                    adapted = destination/'selected.go'
+                    adapted.write_bytes(b'adapted')
+                    sites = [{'line': line, 'column': column, 'suspendable': True}
+                             for line, column in checkpoints.STANDARD_ITERATOR_SITES]
+                    if mutation == 'missing-site': sites.pop()
+                    if mutation == 'non-suspendable': sites[0]['suspendable'] = False
+                    if mutation == 'integer-suspendable': sites[0]['suspendable'] = 1
+                    if mutation == 'float-position': sites[0]['line'] = float(sites[0]['line'])
+                    if mutation == 'changed-after-selection': standard.write_bytes(original+b'changed')
+                    return json.dumps([{'path': str(standard), 'adapted': str(adapted),
+                        'upstreamDigest': digest(original), 'adaptedDigest': digest(adapted.read_bytes()), 'sites': sites}])
+                compiler = SimpleNamespace(run=execute, goroot=goroot)
+                try:
+                    with patch.object(checkpoints, 'STANDARD_ITERATOR_SHA256', pin), self.assertRaisesRegex(
+                            ValueError, 'standard-iterator-(source|output)-drift'):
+                        checkpoints.transform(compiler, generated, packages, set(), output)
+                finally:
+                    standard.write_bytes(original)
+            for mutation in ('foreign-directory', 'nonstandard', 'missing-source', 'duplicate-package',
+                             'changed-source', 'missing-site', 'non-suspendable', 'integer-suspendable',
+                             'float-position', 'changed-after-selection'):
+                with self.subTest(mutation=mutation): run_case(mutation)
+
     def test_checkpoint_parser_cannot_omit_selected_application_or_dependency(self):
         from tools.go_guest import checkpoints
         from types import SimpleNamespace

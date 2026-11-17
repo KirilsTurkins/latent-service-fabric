@@ -483,6 +483,7 @@ async fn retiring_the_broker_wakes_existing_queues_and_denies_new_waiters() {
     assert_eq!(io.snapshot(), IoSnapshot::default());
 }
 
+mod http_body;
 mod transfer;
 
 pub(super) fn native_request(
@@ -676,13 +677,9 @@ fn native_running_box_cleanup_is_physical_first_and_unwind_conservative() {
         }));
         assert_eq!(result.is_err(), mode != 0);
         assert_eq!(drops.load(Ordering::SeqCst), 1);
-        if mode == 2 {
-            assert_eq!(budget.host_memory_bytes(), bytes); // SAME uncertain guard
-            assert_eq!(budget.outstanding_reservations(), 1);
-        } else {
-            assert_eq!(budget.host_memory_bytes(), 0);
-            assert_eq!(budget.outstanding_reservations(), 0);
-        }
+        // The original Box allocation is freed even on payload unwind.
+        assert_eq!(budget.host_memory_bytes(), 0);
+        assert_eq!(budget.outstanding_reservations(), 0);
     }
     let (_, control) = native_request(&fixture, "native-box-zst");
     let owner = PreparedRunningCall::<()>::reserve(&control.budget)
@@ -698,6 +695,78 @@ fn native_running_box_cleanup_is_physical_first_and_unwind_conservative() {
     assert!(owner.allocation.is_none());
     drop(owner);
     assert_eq!(legacy.budget.host_memory_bytes(), 0);
+}
+
+#[test]
+fn native_running_slice_drop_refunds_only_its_original_backing() {
+    const CAPTURE_BYTES: u64 = 512;
+    struct Retained {
+        _allocation: HostMemoryReservation,
+    }
+    struct Entry {
+        budget: ActivationBudget,
+        expected: u64,
+        _retained: Arc<Retained>,
+        drops: Arc<AtomicUsize>,
+        all_paid: Arc<AtomicBool>,
+        should_panic: bool,
+    }
+    impl Drop for Entry {
+        fn drop(&mut self) {
+            self.all_paid.fetch_and(
+                self.budget.host_memory_bytes() == self.expected,
+                Ordering::SeqCst,
+            );
+            self.drops.fetch_add(1, Ordering::SeqCst);
+            assert!(!self.should_panic, "original ring element destructor");
+        }
+    }
+
+    let fixture = Fixture::new(CapabilityBrokerLimits::default());
+    for mode in 0..3 {
+        let (_, control) = native_request(&fixture, "native-ring-drop");
+        let budget = control.budget.clone();
+        let mut captured = budget.reserve_host_memory(CAPTURE_BYTES).unwrap();
+        captured.confirm();
+        let retained = Arc::new(Retained {
+            _allocation: captured,
+        });
+        let layout = Layout::array::<Option<Entry>>(3).unwrap();
+        let bytes = (layout.size() + ALLOCATION_BOOKKEEPING) as u64;
+        let allocation = reserve_allocation(&budget, layout, false).unwrap();
+        let drops = Arc::new(AtomicUsize::new(0));
+        let all_paid = Arc::new(AtomicBool::new(true));
+        let mut entries = Vec::with_capacity(3);
+        for index in 0..3 {
+            entries.push(Some(Entry {
+                budget: budget.clone(),
+                expected: CAPTURE_BYTES + bytes,
+                _retained: retained.clone(),
+                drops: drops.clone(),
+                all_paid: all_paid.clone(),
+                should_panic: mode == 2 && index == 1,
+            }));
+        }
+        assert_eq!(entries.capacity(), 3);
+        let owner = RunningCall::from_box(entries.into_boxed_slice(), allocation);
+        assert_eq!(budget.host_memory_bytes(), CAPTURE_BYTES + bytes);
+        assert_eq!(budget.outstanding_reservations(), 2);
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
+            let actual_body = owner;
+            if mode == 1 {
+                panic!("unrelated caller unwind");
+            }
+            drop(actual_body);
+        }));
+        assert_eq!(result.is_err(), mode != 0);
+        assert_eq!(drops.load(Ordering::SeqCst), 3);
+        assert!(all_paid.load(Ordering::SeqCst));
+        assert_eq!(budget.host_memory_bytes(), CAPTURE_BYTES);
+        assert_eq!(budget.outstanding_reservations(), 1);
+        drop(retained);
+        assert_eq!(budget.host_memory_bytes(), 0);
+        assert_eq!(budget.outstanding_reservations(), 0);
+    }
 }
 
 #[tokio::test]

@@ -843,6 +843,113 @@ async fn actual_stream_host_ready_pending_ready_and_error_preserve_cleanup() {
     drop(none);
 }
 
+#[tokio::test]
+async fn actual_host_accept_future_uses_original_budget_until_retired() {
+    let engine = engine();
+    let original = budget(MIB);
+    let observed = Arc::new(Observations::default());
+    let mut first = store(&engine, &original, &observed).unwrap();
+    warm(&mut first).await;
+    let (producer, consumer) = gates();
+    producer.ready.store(true, SeqCst);
+    consumer.ready.store(false, SeqCst);
+    let first_poll = Arc::new(AtomicUsize::new(0));
+    StreamReader::new(&mut first, Producer(producer.clone()))
+        .unwrap()
+        .pipe(
+            &mut first,
+            ObservedConsumer {
+                inner: Consumer(consumer.clone()),
+                observations: observed.clone(),
+                first_poll_requests: first_poll.clone(),
+            },
+        )
+        .unwrap();
+    let before = requests(&observed).len();
+    let mut running = Box::pin(drive(&mut first, &producer, &consumer));
+    assert!(running
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
+    let first_ordinal = first_poll.load(SeqCst);
+    assert!(first_ordinal > before);
+    let local_ordinal = first_ordinal - before;
+    assert!(consumer.polls.load(SeqCst) > 0);
+    let row = allocation_rows(&observed)[first_ordinal - 1].clone();
+    assert!(row.bytes > 0 && row.admitted && row.confirmed && !row.released);
+    assert!(original.host_memory_bytes() >= row.bytes as u64 + OWNER);
+    consumer.release();
+    running.await.unwrap();
+    assert_eq!(consumer.payload.load(SeqCst), 42);
+    assert!(allocation_rows(&observed)[first_ordinal - 1].released);
+    drop(first);
+    producer.release();
+    consumer.release();
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+
+    // Refuse this same production allocation against the original 1MiB
+    // budget. The producer has already produced; the consumer has not run.
+    let original = budget(MIB);
+    let observed = Arc::new(Observations::default());
+    let mut first = store(&engine, &original, &observed).unwrap();
+    warm(&mut first).await;
+    let (producer, consumer) = gates();
+    producer.ready.store(true, SeqCst);
+    let first_poll = Arc::new(AtomicUsize::new(0));
+    StreamReader::new(&mut first, Producer(producer.clone()))
+        .unwrap()
+        .pipe(
+            &mut first,
+            ObservedConsumer {
+                inner: Consumer(consumer.clone()),
+                observations: observed.clone(),
+                first_poll_requests: first_poll.clone(),
+            },
+        )
+        .unwrap();
+    let before = requests(&observed).len();
+    let padding = Arc::new(Mutex::new(None::<Padding>));
+    let consumed = Arc::new(AtomicU64::new(0));
+    let requested = Arc::new(AtomicU64::new(0));
+    let kept = padding.clone();
+    let kept_consumed = consumed.clone();
+    let kept_requested = requested.clone();
+    let invocation = original.clone();
+    observed.before_request(before + local_ordinal, move |bytes| {
+        let request = bytes as u64 + OWNER;
+        let payload = MIB - invocation.host_memory_bytes() - request + 1 - OWNER;
+        let mut owner = crate::native_tables::reserve(&invocation, payload as usize)
+            .unwrap()
+            .unwrap();
+        let bytes = vec![0u8; payload as usize];
+        assert_eq!(bytes.capacity(), payload as usize);
+        owner.allocated();
+        *kept.lock().unwrap() = Some(Padding {
+            _bytes: bytes,
+            _owner: owner,
+        });
+        kept_consumed.store(invocation.host_memory_bytes(), SeqCst);
+        kept_requested.store(request, SeqCst);
+    });
+    let error = drive(&mut first, &producer, &consumer).await.unwrap_err();
+    denial(&error, MIB, consumed.load(SeqCst), requested.load(SeqCst));
+    assert_eq!(consumed.load(SeqCst) + requested.load(SeqCst), MIB + 1);
+    assert!(producer.polls.load(SeqCst) > 0);
+    assert_eq!(consumer.polls.load(SeqCst), 0);
+    assert_eq!(first_poll.load(SeqCst), 0);
+    let refused = allocation_rows(&observed)[before + local_ordinal - 1].clone();
+    assert_eq!(refused.bytes, row.bytes);
+    assert!(!refused.admitted && !refused.confirmed && !refused.released);
+    drop(error);
+    drop(padding.lock().unwrap().take());
+    drop(first);
+    producer.release();
+    consumer.release();
+    assert_eq!(original.host_memory_bytes(), 0);
+    assert_eq!(original.outstanding_reservations(), 0);
+}
+
 // Actual public producer creation/conversion on the ORIGINAL 1MiB/1B/5s
 // ActivationBudget adapter, separate from the implementation counter controls.
 #[repr(align(256))]

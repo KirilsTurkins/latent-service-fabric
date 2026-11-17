@@ -24,18 +24,30 @@ class DependencyError(ValueError):
     """A static diagnostic, safe to put in public failed-stage evidence."""
 
 
-def path_name(value: str) -> str:
+def _path_name(value: str, *, archive_only: bool) -> str:
     if (not isinstance(value, str) or not 0 < len(value) <= 512 or "\\" in value
             or value.startswith("/") or len(value.split("/")) > 32):
         raise DependencyError("dependency-path-invalid")
+    # A tilde is accepted only while inventorying an opt-in archive; every
+    # selected output is checked again with the unchanged portable grammar.
+    pattern = (r"[A-Za-z0-9_!$@+.,() \[\]~-]{1,128}" if archive_only
+               else r"[A-Za-z0-9_!$@+.,() \[\]-]{1,128}")
     for part in value.split("/"):
         # '$' and '!' are literal filename characters (JVM nested classes and
         # Go module testdata, respectively). Consumers use file APIs/argument
         # vectors; names never become shell source or substituted templates.
-        if (not re.fullmatch(r"[A-Za-z0-9_!$@+.,() \[\]-]{1,128}", part) or part in {".", ".."}
+        if (not re.fullmatch(pattern, part) or part in {".", ".."}
                 or part.endswith((".", " ")) or DEVICE.fullmatch(part)):
             raise DependencyError("dependency-path-invalid")
     return value
+
+
+def path_name(value: str) -> str:
+    return _path_name(value, archive_only=False)
+
+
+def _archive_only_path_name(value: str) -> str:
+    return _path_name(value, archive_only=True)
 
 
 def regular_path(path: Path) -> Path:
@@ -121,7 +133,8 @@ class Store:
 
 
 class Entries:
-    def __init__(self):
+    def __init__(self, name_validator=path_name):
+        self.name_validator = name_validator
         self.files: dict[str, bytes] = {}
         self.spellings: dict[str, str] = {}
         self.directories: set[str] = set()
@@ -130,7 +143,7 @@ class Entries:
         self.count = 0
 
     def add(self, name: str, data: bytes | None):
-        name = path_name(name)
+        name = self.name_validator(name)
         if name in self.headers:
             raise DependencyError("dependency-path-collision")
         self.headers.add(name)
@@ -175,10 +188,18 @@ def directory_files(root: Path, *, exclude: tuple[str, ...] = ()) -> dict[str, b
     return dict(sorted(entries.files.items()))
 
 
-def archive_files(data: bytes, kind: str) -> dict[str, bytes]:
+def archive_files(data: bytes, kind: str, *, selected_prefixes: tuple[str, ...] | None = None) -> dict[str, bytes]:
     if len(data) > MAX_OBJECT:
         raise DependencyError("dependency-object-limit")
-    entries = Entries()
+    if selected_prefixes is not None:
+        if (not isinstance(selected_prefixes, tuple) or not 0 < len(selected_prefixes) <= 64
+                or any(path_name(prefix) != prefix for prefix in selected_prefixes)):
+            raise DependencyError("dependency-archive-selection-invalid")
+        folded = [prefix.casefold() for prefix in selected_prefixes]
+        if len(set(folded)) != len(folded) or any(
+                left != right and right.startswith(left + "/") for left in folded for right in folded):
+            raise DependencyError("dependency-archive-selection-invalid")
+    entries = Entries(_archive_only_path_name if selected_prefixes is not None else path_name)
     try:
         if kind == "zip":
             with zipfile.ZipFile(io.BytesIO(data)) as archive:
@@ -241,6 +262,21 @@ def archive_files(data: bytes, kind: str) -> dict[str, bytes]:
             raise DependencyError("dependency-archive-format")
     except (zipfile.BadZipFile, tarfile.TarError, RuntimeError, EOFError, OSError):
         raise DependencyError("dependency-archive-invalid") from None
+    if selected_prefixes is not None:
+        # The whole archive has already passed its normal type, collision,
+        # count and expanded-size checks. Only portable selected paths escape.
+        matched = {prefix: False for prefix in selected_prefixes}
+        selected = {}
+        for name, payload in entries.files.items():
+            for prefix in selected_prefixes:
+                if name == prefix or name.startswith(prefix + "/"):
+                    path_name(name)
+                    selected[name] = payload
+                    matched[prefix] = True
+                    break
+        if not all(matched.values()):
+            raise DependencyError("dependency-archive-selection-empty")
+        return dict(sorted(selected.items()))
     return dict(sorted(entries.files.items()))
 
 

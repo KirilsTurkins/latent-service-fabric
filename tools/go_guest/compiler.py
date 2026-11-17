@@ -261,6 +261,8 @@ class Compiler:
                 from tools.go_guest.checkpoints import transform
                 packages = json_stream(self.run('checkpoint-selected-packages', 'go', 'list', '-deps', '-json', './...').encode())
                 added, checkpoints_inputs = transform(self, generated, packages, application_source_paths, overlay_path.parent)
+                if set(added) & set(replacements):
+                    raise ValueError('go-checkpoint-overlaps-runtime-overlay')
                 replacements.update(added)
                 overlay_path.write_text(json.dumps({'Replace': replacements}, indent=2, sort_keys=True) + '\n')
                 transforms.extend(checkpoints_inputs)
