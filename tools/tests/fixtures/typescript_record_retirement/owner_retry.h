@@ -16,6 +16,7 @@ struct JSClass { const char* name; unsigned flags; };
 namespace js { template<class T> using UniquePtr = std::unique_ptr<T>; }
 namespace fixture {
 inline unsigned roots = 0, buffers = 0, allocations = 0, resolutions = 0, rejections = 0;
+inline unsigned plan_roots = 0;
 inline std::size_t buffer_bytes = 0, peak_buffer_bytes = 0;
 inline unsigned fail_allocation = 0, calls = 0;
 inline bool fail_capture = false, fail_array = false, fail_promise = false;
@@ -26,6 +27,7 @@ struct Value {
   enum Kind { Undefined, Integer, Boolean, Object, Pointer, Number, String } kind = Undefined;
   union Data { int32_t integer; double number; bool boolean; JSObject* object; void* pointer; Data() : pointer(nullptr) {} } data;
   bool isInt32() const { return kind == Integer; }
+  bool isObject() const { return kind == Object; }
   int32_t toInt32() const { return data.integer; }
   bool toBoolean() const { return data.boolean; }
   void* toPrivate() const { return data.pointer; }
@@ -50,6 +52,7 @@ struct RootedObject : HandleObject {
   explicit RootedObject(JSContext*, JSObject* p=nullptr) : HandleObject(p) {}
   RootedObject(JSContext*, HandleObject p) : HandleObject(p) {}
   RootedObject& operator=(JSObject* p) { value=p; return *this; }
+  void set(HandleObject p) { value=p.get(); }
 };
 struct MutableHandleObject {
   JSObject** output;
@@ -57,14 +60,33 @@ struct MutableHandleObject {
   void set(JSObject* p) const { *output=p; }
 };
 struct PersistentRootedObject : HandleObject {
-  explicit PersistentRootedObject(JSContext*, HandleObject p={}) : HandleObject(p) { ++fixture::roots; }
-  ~PersistentRootedObject() { --fixture::roots; }
+  bool counted=false, plan=false;
+  PersistentRootedObject()=default;
+  explicit PersistentRootedObject(JSContext*, HandleObject p={}) : HandleObject(p), counted(true) { ++fixture::roots; }
+  ~PersistentRootedObject() { if (counted) { if (plan) --fixture::plan_roots; else --fixture::roots; } }
   PersistentRootedObject& operator=(JSObject* p) { value=p; return *this; }
+  void init(JSContext*, HandleObject p) { value=p.get(); counted=true; plan=true; ++fixture::plan_roots; }
+};
+struct HandleId {
+  int value=0;
+  bool isSymbol() const { return value!=0; }
+  int get() const { return value; }
+};
+struct PersistentRootedId : HandleId {
+  bool counted=false;
+  ~PersistentRootedId() { if (counted) --fixture::plan_roots; }
+  void init(JSContext*, HandleId p) { value=p.value; counted=true; ++fixture::plan_roots; }
+};
+struct RootedId : HandleId {
+  explicit RootedId(JSContext*) {}
+  void set(HandleId p) { value=p.value; }
 };
 struct RootedValue {
   Value value;
   explicit RootedValue(JSContext*, Value v={}) : value(v) {}
   operator Value() const { return value; }
+  bool isObject() const { return value.isObject(); }
+  JSObject& toObject() const { return value.toObject(); }
 };
 struct RootedString {
   JSString* value;
@@ -156,6 +178,10 @@ inline void* NumberToBigInt(JSContext*,uint64_t) { static unsigned n; return &n;
 }
 struct JSAutoRealm { JSAutoRealm(JSContext*,JS::HandleObject) {} };
 inline JSObject* JS_NewObject(JSContext*,const JSClass* c) { auto* p=fixture::object(); p->klass=c; return p; }
+inline JSObject* JS_NewObjectWithGivenProto(JSContext*,const JSClass*,JS::HandleObject) { return fixture::object(); }
+inline bool JS_DefinePropertyById(JSContext*,JS::HandleObject,JS::HandleId,JS::RootedValue,unsigned) { return true; }
+inline bool JS_WrapValue(JSContext*,JS::RootedValue*) { return true; }
+#define JSPROP_PERMANENT 1
 inline JSString* JS_NewStringCopyZ(JSContext*,const char*) { static JSString s; return &s; }
 inline bool JS_IsExceptionPending(JSContext* cx) { return cx->exception; }
 inline void JS_ClearPendingException(JSContext* cx) { cx->exception=false; cx->detail=nullptr; }

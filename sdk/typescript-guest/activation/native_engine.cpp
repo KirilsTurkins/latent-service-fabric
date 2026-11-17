@@ -197,7 +197,7 @@ bool cancel_job_dispatch(JSContext* cx) {
   const bool jobs_retired = queue && queue->cancelQueued(cx);
   const bool timers_retired = timers.cancel(cx);
   partial_own.cancelAll();
-  const bool imports_retired = imports.cancelAll(cx) && partial_own.collect(cx);
+  const bool imports_retired = imports.cancelAll(cx) && partial_own.collectCancelled(cx);
   return jobs_retired && timers_retired && imports_retired && readiness.retire(cx);
 }
 

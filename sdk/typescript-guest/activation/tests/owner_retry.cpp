@@ -1,13 +1,39 @@
 // Execute the production timer/import/broker headers with finite JS/host doubles.
 // Tests exact reservation identities, capture destruction, and failure fences;
 // does not execute SpiderMonkey, a signed component, or Store destruction.
+#define LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS 1
 #include "../native_timers.h"
-#include "../native_imports.h"
+#include "../native_import_partial.h"
 #include <array>
 #include <cstdio>
 #include <cstring>
+#include <new>
+
+// Observe actual deletion of the selected production sidecar, before its host
+// ACK. The finite fixture never writes a pointer or token to its output.
+static const void* watched_sidecar=nullptr;
+static bool watched_sidecar_deleted=false;
+void* operator new(std::size_t n) {
+  if (auto* p=std::malloc(n ? n : 1)) return p;
+  throw std::bad_alloc();
+}
+void* operator new(std::size_t n,const std::nothrow_t&) noexcept { return std::malloc(n ? n : 1); }
+void operator delete(void* p) noexcept {
+  if (p && p==watched_sidecar) watched_sidecar_deleted=true;
+  std::free(p);
+}
+void operator delete(void* p,std::size_t) noexcept { ::operator delete(p); }
+void operator delete(void* p,const std::nothrow_t&) noexcept { ::operator delete(p); }
 
 using namespace lsf::typescript::activation;
+namespace lsf::typescript::activation {
+struct PartialOwnLiftControls {
+  static bool hasNode(PartialOwnLifts& p, uint32_t id) { return p.find(id)!=nullptr; }
+  static const void* node(PartialOwnLifts& p, uint32_t id) { return p.find(id); }
+  static Token owner(PartialOwnLifts& p, uint32_t id) { return p.find(id)->owner.token; }
+  static Token failedOwner(PartialOwnLifts& p) { return p.failed_owner_.token; }
+};
+}
 namespace {
 struct Owner { bool live=false; uint8_t kind=0; unsigned refunds=0, attempts=0; };
 struct Wait { bool live=false, joined=false, cancelled=false; };
@@ -16,6 +42,12 @@ std::array<Wait,32> waits{};
 std::array<unsigned,8> counts{}, peaks{}, limits{16,2,2,16,8,8,8,64};
 uint64_t generation=1, next_owner=1, refuse_id=0, last_native=0;
 uint64_t observed_record=0, observed_native=0, observed_result=0;
+uint64_t observed_partial=0;
+uint32_t observed_partial_id=0;
+PartialOwnLifts* observed_partial_manager=nullptr;
+bool partial_destroyed_before_ack=false;
+JSContext* partial_reentry_cx=nullptr;
+bool partial_reenter=false, partial_reentry_refused=false;
 unsigned expected_roots_at_ack=0, expected_buffers_at_ack=0;
 bool record_destroyed_before_ack=false, native_destroyed_before_ack=false, result_destroyed_before_ack=false;
 uint32_t next_wait=1;
@@ -35,6 +67,13 @@ bool valid(const latent_runtime_activation_token_t* t) {
 }
 unsigned all_live() { unsigned total=0; for (auto n:counts) total+=n; return total; }
 bool dispose(uint32_t) { ++disposals; return !refuse_disposer; }
+bool partial_init(JSContext*) { return true; }
+uint64_t partial_get(uint32_t) { return 0; }
+bool partial_dispose(uint32_t,uint32_t,uint32_t) { ++disposals; return !refuse_disposer; }
+bool partial_bind(JSContext* cx,PartialOwnLifts& partial,JSObject* prototype) {
+  JS::HandleId symbol; symbol.value=1;
+  return partial.begin(cx,2,1,1) && partial.bind(cx,12,4,1,0,0,1,prototype,symbol) && partial.seal(cx);
+}
 struct Environment {
   JSContext cx;
   BrokerAccounting jobs{allowed};
@@ -42,6 +81,7 @@ struct Environment {
   ReadinessSet readiness{native};
   Timers timers{jobs,native,readiness};
   Imports imports{jobs,native,readiness};
+  PartialOwnLifts partial{imports,partial_init};
   JSObject callback;
   bool begin() { return jobs.beginRoot(&cx); }
   bool finish() {
@@ -105,6 +145,13 @@ bool latent_runtime_activation_wake(latent_runtime_activation_token_t* t,latent_
 bool latent_runtime_activation_settle(latent_runtime_activation_token_t* t,latent_runtime_activation_error_t* e) {
   if (!valid(t)) return failure(e,LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_TOKEN);
   auto& owner=owners[t->id]; ++owner.attempts;
+  if (t->id==observed_partial && observed_partial_manager)
+    partial_destroyed_before_ack=watched_sidecar_deleted &&
+        !PartialOwnLiftControls::hasNode(*observed_partial_manager,observed_partial_id);
+  if (t->id==observed_partial && partial_reenter) {
+    partial_reenter=false;
+    partial_reentry_refused=!observed_partial_manager->collectCancelled(partial_reentry_cx);
+  }
   if (t->id==refuse_id || owner.kind==refuse_kind)
     return failure(e,LATENT_RUNTIME_ACTIVATION_ERROR_UNAVAILABLE);
   const bool physically_retired=fixture::roots==expected_roots_at_ack &&
@@ -570,6 +617,161 @@ bool lazy() {
   CHECK(registrations==0 && fixture::roots==0 && fixture::buffers==0 && set_new==0);
   CHECK(!e.imports.hasPending() && !e.timers.hasPending()); return true;
 }
+bool partial_cancel_undispatched() {
+  Environment e; CHECK(e.begin()); uint32_t id=0;
+  CHECK(partial_bind(&e.cx,e.partial,&e.callback));
+  CHECK(e.reserve(id) && e.partial.prepare(&e.cx,id,12,partial_get,partial_dispose,1));
+  const auto sidecar=PartialOwnLiftControls::owner(e.partial,id).id;
+  observed_partial=sidecar; observed_partial_id=id; observed_partial_manager=&e.partial;
+  watched_sidecar=PartialOwnLiftControls::node(e.partial,id);
+  CHECK(owners[sidecar].live && PartialOwnLiftControls::hasNode(e.partial,id));
+  CHECK(!e.partial.collectCancelled(&e.cx) && e.partial.collect(&e.cx));
+  e.partial.cancelAll();
+  CHECK(e.imports.cancelAll(&e.cx));
+  CHECK(!e.imports.hasPending() && PartialOwnLiftControls::hasNode(e.partial,id) &&
+        owners[sidecar].live && fixture::buffers==0 && fixture::roots==0 && disposals==0);
+  CHECK(e.partial.collectCancelled(&e.cx));
+  CHECK(!e.partial.hasPending() && !owners[sidecar].live && owners[sidecar].refunds==1 &&
+        partial_destroyed_before_ack && disposals==0);
+  CHECK(e.imports.cancelAll(&e.cx) && e.partial.collectCancelled(&e.cx) && owners[sidecar].attempts==1);
+  uint32_t rejected=99; const auto admitted=registrations;
+  CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},rejected));
+  CHECK(rejected==0 && registrations==admitted && !e.imports.hasPending());
+  CHECK(e.finish()); return true;
+}
+bool partial_cancel_retry() {
+  Environment e; CHECK(e.begin()); uint32_t first=0,second=0;
+  CHECK(partial_bind(&e.cx,e.partial,&e.callback));
+  CHECK(e.reserve(first) && e.partial.prepare(&e.cx,first,12,partial_get,partial_dispose,1));
+  const auto a=PartialOwnLiftControls::owner(e.partial,first);
+  CHECK(e.reserve(second) && e.partial.prepare(&e.cx,second,12,partial_get,partial_dispose,1));
+  const auto b=PartialOwnLiftControls::owner(e.partial,second);
+  observed_partial=b.id; observed_partial_id=second; observed_partial_manager=&e.partial;
+  watched_sidecar=PartialOwnLiftControls::node(e.partial,second);
+  e.partial.cancelAll(); CHECK(e.imports.cancelAll(&e.cx));
+  refuse_id=b.id;
+  for (unsigned attempt=1; attempt<=3; ++attempt) {
+    JS_ClearPendingException(&e.cx);
+    CHECK(!e.partial.collectCancelled(&e.cx));
+    const auto retained=PartialOwnLiftControls::failedOwner(e.partial);
+    CHECK(retained.id==b.id && retained.generation==b.generation && owners[b.id].live &&
+          owners[b.id].attempts==attempt && owners[b.id].refunds==0 && partial_destroyed_before_ack &&
+          !PartialOwnLiftControls::hasNode(e.partial,second) && PartialOwnLiftControls::hasNode(e.partial,first) &&
+          owners[a.id].live && owners[a.id].attempts==0 && fixture::buffers==0 && disposals==0);
+  }
+  refuse_id=0; JS_ClearPendingException(&e.cx);
+  CHECK(e.imports.cancelAll(&e.cx) && e.partial.collectCancelled(&e.cx));
+  CHECK(!e.partial.hasPending() && owners[b.id].attempts==4 && owners[b.id].refunds==1 &&
+        owners[a.id].attempts==1 && owners[a.id].refunds==1 && disposals==0);
+  CHECK(e.partial.collectCancelled(&e.cx) && owners[b.id].attempts==4 && owners[a.id].attempts==1);
+  CHECK(e.finish()); return true;
+}
+bool partial_cancel_pending() {
+  Environment e; CHECK(e.begin()); uint32_t id=0;
+  CHECK(partial_bind(&e.cx,e.partial,&e.callback));
+  CHECK(e.reserve(id) && e.partial.prepare(&e.cx,id,12,partial_get,partial_dispose,1));
+  const auto sidecar=PartialOwnLiftControls::owner(e.partial,id).id;
+  CHECK(e.imports.beginLowering(&e.cx,id));
+  const auto wait=next_wait++; waits[wait].live=true; ++import_dispatches;
+  JS::RootedObject promise(&e.cx);
+  CHECK(e.imports.started(&e.cx,id,(wait<<4)|JOBS_SUBTASK_STARTED,&promise));
+  deferred=true; e.partial.cancelAll();
+  CHECK(!e.imports.cancelAll(&e.cx) && !e.partial.collectCancelled(&e.cx));
+  CHECK(e.imports.hasPending() && PartialOwnLiftControls::hasNode(e.partial,id) && owners[sidecar].live &&
+        owners[sidecar].attempts==0 && waits[wait].live && waits[wait].joined && drops==0 &&
+        fixture::buffers==2 && disposals==0);
+  event={JOBS_EVENT_SUBTASK,wait,JOBS_SUBTASK_STARTED_CANCELLED};
+  CHECK(e.readiness.dispatch(&e.cx,true));
+  CHECK(e.imports.cancelAll(&e.cx) && e.partial.collectCancelled(&e.cx));
+  CHECK(!e.imports.hasPending() && !e.partial.hasPending() && !waits[wait].live && drops==1 &&
+        !owners[sidecar].live && owners[sidecar].refunds==1 && disposals==0);
+  CHECK(e.finish()); return true;
+}
+bool partial_cancel_returned() {
+  Environment e; CHECK(e.begin()); uint32_t id=0;
+  CHECK(partial_bind(&e.cx,e.partial,&e.callback));
+  CHECK(e.reserve(id) && e.partial.prepare(&e.cx,id,12,partial_get,partial_dispose,1));
+  const auto sidecar=PartialOwnLiftControls::owner(e.partial,id).id;
+  CHECK(e.returned(id)); e.partial.cancelAll();
+  CHECK(e.imports.cancelAll(&e.cx) && e.partial.collectCancelled(&e.cx));
+  CHECK(disposals==1 && !e.partial.hasPending() && owners[sidecar].refunds==1);
+  CHECK(e.imports.cancelAll(&e.cx) && e.partial.collectCancelled(&e.cx) && disposals==1);
+  CHECK(e.finish()); return true;
+}
+bool partial_regular_ack_retry() {
+  Environment e; CHECK(e.begin()); uint32_t id=0;
+  CHECK(partial_bind(&e.cx,e.partial,&e.callback));
+  CHECK(e.reserve(id) && e.partial.prepare(&e.cx,id,12,partial_get,partial_dispose,1));
+  const auto owner=PartialOwnLiftControls::owner(e.partial,id);
+  observed_partial=owner.id; observed_partial_id=id; observed_partial_manager=&e.partial;
+  watched_sidecar=PartialOwnLiftControls::node(e.partial,id);
+  CHECK(e.imports.cancel(&e.cx,id) && !e.imports.hasPending());
+  refuse_id=owner.id;
+  CHECK(!e.partial.collect(&e.cx) && partial_destroyed_before_ack && owners[owner.id].live);
+  CHECK(PartialOwnLiftControls::failedOwner(e.partial).id==owner.id &&
+        PartialOwnLiftControls::failedOwner(e.partial).generation==owner.generation);
+  JS_ClearPendingException(&e.cx);
+  CHECK(e.imports.cancelAll(&e.cx) && !e.partial.collectCancelled(&e.cx));
+  CHECK(owners[owner.id].attempts==2 && owners[owner.id].refunds==0);
+  refuse_id=0; JS_ClearPendingException(&e.cx);
+  CHECK(e.imports.cancelAll(&e.cx) && e.partial.collectCancelled(&e.cx));
+  CHECK(owners[owner.id].attempts==3 && owners[owner.id].refunds==1 && disposals==0);
+  CHECK(e.finish()); return true;
+}
+bool partial_failed_ack_fences_prepare() {
+  Environment e; CHECK(e.begin()); uint32_t still_reserved=0,completed=0;
+  CHECK(partial_bind(&e.cx,e.partial,&e.callback));
+  CHECK(e.reserve(still_reserved) && e.reserve(completed));
+  CHECK(e.partial.prepare(&e.cx,completed,12,partial_get,partial_dispose,1));
+  const auto owner=PartialOwnLiftControls::owner(e.partial,completed);
+  CHECK(e.imports.cancel(&e.cx,completed)); refuse_id=owner.id;
+  CHECK(!e.partial.collect(&e.cx) && owners[owner.id].live);
+  const auto admitted=registrations;
+  for (unsigned attempt=0;attempt<2;++attempt) {
+    JS_ClearPendingException(&e.cx);
+    CHECK(!e.partial.prepare(&e.cx,still_reserved,12,partial_get,partial_dispose,1));
+    const auto retained=PartialOwnLiftControls::failedOwner(e.partial);
+    CHECK(registrations==admitted && retained.id==owner.id && retained.generation==owner.generation &&
+          owners[owner.id].live && owners[owner.id].attempts==1);
+  }
+  refuse_id=0; JS_ClearPendingException(&e.cx); e.partial.cancelAll();
+  CHECK(e.imports.cancelAll(&e.cx) && e.partial.collectCancelled(&e.cx));
+  CHECK(owners[owner.id].attempts==2 && owners[owner.id].refunds==1 && disposals==0);
+  CHECK(e.finish()); return true;
+}
+bool partial_cancel_reentrant_ack() {
+  Environment e; CHECK(e.begin()); uint32_t first=0,second=0;
+  CHECK(partial_bind(&e.cx,e.partial,&e.callback));
+  CHECK(e.reserve(first) && e.partial.prepare(&e.cx,first,12,partial_get,partial_dispose,1));
+  const auto a=PartialOwnLiftControls::owner(e.partial,first).id;
+  CHECK(e.reserve(second) && e.partial.prepare(&e.cx,second,12,partial_get,partial_dispose,1));
+  const auto b=PartialOwnLiftControls::owner(e.partial,second).id;
+  observed_partial=b; observed_partial_id=second; observed_partial_manager=&e.partial;
+  watched_sidecar=PartialOwnLiftControls::node(e.partial,second); partial_reentry_cx=&e.cx;
+  e.partial.cancelAll(); CHECK(e.imports.cancelAll(&e.cx));
+  // Inject a nested call in the host double; this does not claim real-host reentry.
+  partial_reenter=true;
+  CHECK(!e.partial.collectCancelled(&e.cx) && partial_reentry_refused && partial_destroyed_before_ack);
+  CHECK(owners[b].refunds==1 && owners[b].attempts==1 && owners[a].live && owners[a].attempts==0 &&
+        PartialOwnLiftControls::hasNode(e.partial,first));
+  JS_ClearPendingException(&e.cx);
+  CHECK(!e.partial.collectCancelled(&e.cx) && owners[b].attempts==1 && owners[a].attempts==0);
+  return true; // A disrupted collection quarantines remaining original owners.
+}
+bool partial_cancel_quarantine() {
+  Environment e; CHECK(e.begin()); uint32_t id=0;
+  CHECK(partial_bind(&e.cx,e.partial,&e.callback));
+  CHECK(e.reserve(id) && e.partial.prepare(&e.cx,id,12,partial_get,partial_dispose,1));
+  const auto sidecar=PartialOwnLiftControls::owner(e.partial,id).id;
+  CHECK(e.returned(id)); refuse_disposer=true; e.partial.cancelAll();
+  CHECK(!e.imports.cancelAll(&e.cx) && disposals==1 && !e.partial.collectCancelled(&e.cx));
+  CHECK(e.imports.hasPending() && PartialOwnLiftControls::hasNode(e.partial,id) &&
+        owners[sidecar].live && owners[sidecar].attempts==0);
+  refuse_disposer=false; JS_ClearPendingException(&e.cx);
+  CHECK(!e.imports.cancelAll(&e.cx) && !e.partial.collectCancelled(&e.cx));
+  CHECK(disposals==1 && owners[sidecar].live && owners[sidecar].attempts==0);
+  return true; // The uncertain resource and exact owners deliberately remain quarantined.
+}
 bool repeated() {
   for (unsigned invocation=0;invocation<12;++invocation) {
     Environment e; CHECK(e.begin()); int32_t id=0; uint32_t imported=0;
@@ -667,6 +869,14 @@ bool run(const char* name) {
   if (!std::strcmp(name,"import-queue-refused-immediate-return")) return import_immediate_start_refused(false);
   if (!std::strcmp(name,"import-join-refusal-retains-subtask")) return import_join_refused();
   if (!std::strcmp(name,"import-disposer-quarantine")) return import_quarantine();
+  if (!std::strcmp(name,"partial-cancel-undispatched")) return partial_cancel_undispatched();
+  if (!std::strcmp(name,"partial-cancel-retry")) return partial_cancel_retry();
+  if (!std::strcmp(name,"partial-cancel-pending")) return partial_cancel_pending();
+  if (!std::strcmp(name,"partial-cancel-returned")) return partial_cancel_returned();
+  if (!std::strcmp(name,"partial-regular-ack-retry")) return partial_regular_ack_retry();
+  if (!std::strcmp(name,"partial-failed-ack-fences-prepare")) return partial_failed_ack_fences_prepare();
+  if (!std::strcmp(name,"partial-cancel-reentrant-ack")) return partial_cancel_reentrant_ack();
+  if (!std::strcmp(name,"partial-cancel-quarantine")) return partial_cancel_quarantine();
   if (!std::strcmp(name,"lazy-synchronous")) return lazy();
   if (!std::strcmp(name,"repeated-generations")) return repeated();
   if (!std::strcmp(name,"native-live-slot")) return native_readmission(false);
