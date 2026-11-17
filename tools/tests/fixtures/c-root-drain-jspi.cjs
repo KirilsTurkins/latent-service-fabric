@@ -8,7 +8,7 @@ async function until(predicate,label){
 }
 function harness(module,scenario){
  const memory=new WebAssembly.Memory({initial:64,maximum:64});
- const contexts={},queues={10:[],11:[],12:[]},parkCounts={10:0,11:0,12:0};
+ const contexts={},queues={10:[],11:[],12:[]},parkCounts={10:0,11:0,12:0},cancelOnResume=new Set();
  const hold=gate(),held=gate(),admit=gate(),admitted=gate(),park=gate(),parked=gate();
  const importsFor=id=>({env:{memory},test:{context:()=>contexts[id],
   hold:new WebAssembly.Suspending(()=>{held.resolve();return hold.promise;}),
@@ -20,7 +20,7 @@ function harness(module,scenario){
    }),
    '[thread-resume-later]':target=>{
     assert.ok(queues[target]&&queues[target].length,'only a suspended target may resume');
-    queues[target].shift().resolve(0);
+    queues[target].shift().resolve(cancelOnResume.has(target)?1:0);
    }}});
  const root=new WebAssembly.Instance(module,importsFor(10));
  const first=new WebAssembly.Instance(module,importsFor(11));
@@ -30,7 +30,7 @@ function harness(module,scenario){
  second.exports.__stack_pointer.value=0x310000;
  root.exports.setup(scenario);
  contexts[10]=root.exports.root_pointer();contexts[11]=root.exports.first_pointer();contexts[12]=root.exports.second_pointer();
- return {root,first,second,queues,parkCounts,hold,held,admit,admitted,park,parked};
+ return {root,first,second,queues,parkCounts,cancelOnResume,hold,held,admit,admitted,park,parked};
 }
 async function joinChain(module,claimedBeforeRoot){
  const h=harness(module,0),e=h.root.exports;
@@ -172,6 +172,84 @@ async function rwlockControls(module){
  }
  console.log('PASS rwlock source: readers, writers, wakeups, refusals and cancellation; JSPI test ports only');
 }
+async function semaphoreControls(module){
+ {
+  const h=harness(module,0),e=h.root.exports;
+  assert.equal(e.ss_setup(1),0);assert.equal(e.ss_getvalue(),1);assert.equal(e.ss_errno(),37);
+  assert.equal(e.ss_trywait(),0);assert.equal(e.ss_getvalue(),0);
+  assert.equal(e.ss_trywait(),-1);assert.equal(e.ss_errno(),e.ss_eagain());
+  assert.equal(e.ss_post(),0);assert.equal(e.ss_getvalue(),1);assert.equal(e.ss_wait(),0);
+  assert.equal(e.ss_getvalue(),0);assert.equal(e.ss_destroy(),0);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;
+  assert.equal(e.ss_setup(0),0);
+  const first=WebAssembly.promising(h.first.exports.ss_wait)();
+  const second=WebAssembly.promising(h.second.exports.ss_wait)();
+  await until(()=>h.parkCounts[11]===1 && h.parkCounts[12]===1,'both semaphore waiters');
+  assert.equal(e.read_live(),2);assert.equal(e.ss_getvalue(),0);
+  assert.equal(e.ss_destroy(),-1);assert.equal(e.ss_errno(),e.ss_ebusy());
+  assert.equal(e.ss_post(),0);assert.equal(await first,0);assert.equal(e.read_live(),1);
+  assert.equal(e.ss_getvalue(),0);assert.equal(e.ss_trywait(),-1);assert.equal(e.ss_errno(),e.ss_eagain());
+  assert.equal(e.ss_post(),0);assert.equal(await second,0);
+  assert.equal(e.read_live(),0);assert.equal(e.read_admitted(),2);assert.equal(e.read_settled(),2);
+  assert.equal(e.ss_destroy(),0);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;
+  assert.equal(e.ss_setup(0),0);e.ss_refuse_wait(1);
+  assert.equal(await WebAssembly.promising(h.first.exports.ss_wait)(),-1);
+  assert.equal(e.ss_errno(),e.ss_eagain());assert.equal(e.read_live(),0);assert.equal(e.read_admitted(),0);
+  assert.equal(e.ss_post(),0);assert.equal(e.ss_getvalue(),1);assert.equal(e.ss_destroy(),0);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;
+  assert.equal(e.ss_setup(0),0);e.ss_pause_admission();
+  const waiter=WebAssembly.promising(h.first.exports.ss_wait)();await h.admitted.promise;
+  assert.equal(e.read_live(),1);assert.equal(e.ss_post(),0);assert.equal(e.ss_getvalue(),1);
+  h.admit.resolve();assert.equal(await waiter,0);assert.equal(h.parkCounts[11],0);
+  assert.equal(e.ss_getvalue(),0);assert.equal(e.read_live(),0);assert.equal(e.read_settled(),1);
+ }
+ {
+  const h=harness(module,2),e=h.root.exports;
+  assert.equal(e.ss_setup(0),0);const waiter=WebAssembly.promising(e.ss_wait)();await h.parked.promise;
+  assert.equal(e.read_live(),1);assert.equal(h.first.exports.ss_post(),0);h.park.resolve();
+  assert.equal(await waiter,0);assert.equal(h.parkCounts[10],0);assert.equal(e.read_live(),0);
+  assert.equal(e.read_settled(),1);assert.equal(e.ss_getvalue(),0);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;
+  assert.equal(e.ss_setup(0),0);const waiter=WebAssembly.promising(h.first.exports.ss_wait)();
+  await until(()=>h.parkCounts[11]===1,'cancelled semaphore wait');h.queues[11].shift().resolve(1);
+  await assert.rejects(waiter,WebAssembly.RuntimeError);
+  assert.equal(e.read_live(),1);assert.equal(e.read_settled(),0);assert.equal(e.ss_getvalue(),0);
+  assert.equal(e.ss_destroy(),-1);assert.equal(e.ss_errno(),e.ss_ebusy());
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;
+  assert.equal(e.ss_setup(0),0);const waiter=WebAssembly.promising(h.first.exports.ss_wait)();
+  await until(()=>h.parkCounts[11]===1,'handoff before cancelled continuation');
+  h.cancelOnResume.add(11);assert.equal(e.ss_post(),0);await assert.rejects(waiter,WebAssembly.RuntimeError);
+  assert.equal(e.read_live(),1);assert.equal(e.read_settled(),0);
+  assert.equal(e.ss_getvalue(),0);assert.equal(e.ss_trywait(),-1);assert.equal(e.ss_errno(),e.ss_eagain());
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;
+  assert.equal(e.ss_setup(0),0);const waiter=WebAssembly.promising(h.first.exports.ss_wait)();
+  await until(()=>h.parkCounts[11]===1,'posted waiter before semaphore destruction');
+  assert.equal(e.ss_post(),0);assert.equal(e.ss_destroy(),0);
+  assert.equal(await waiter,0);assert.equal(e.read_live(),0);assert.equal(e.read_settled(),1);
+ }
+ {
+  const h=harness(module,0),e=h.root.exports;
+  assert.equal(e.ss_setup(e.ss_intmax()),0);assert.equal(e.ss_post(),-1);assert.equal(e.ss_errno(),e.ss_overflow());
+  assert.equal(e.ss_getvalue(),e.ss_intmax());assert.equal(e.ss_shared(),-1);assert.equal(e.ss_errno(),e.ss_notsup());
+  assert.equal(e.ss_invalid(),-1);assert.equal(e.ss_errno(),e.ss_einval());
+  assert.equal(e.ss_getvalue(),e.ss_intmax());assert.equal(e.ss_timedwait(),-1);assert.equal(e.ss_errno(),e.ss_notsup());
+  assert.equal(e.read_admitted(),0);assert.equal(e.ss_destroy(),0);
+ }
+ console.log('PASS semaphore source: permits, wait ownership, races, refusal and cancellation; JSPI test ports only');
+}
 function createHarness(module,options={}){
  const memory=new WebAssembly.Memory({initial:64,maximum:64});
  const contexts=[],last=[],admission=gate(),admissionReached=gate(),settle=gate(),settleReached=gate();
@@ -284,7 +362,14 @@ async function createControls(module){
 (async()=>{
  const module=new WebAssembly.Module(fs.readFileSync(process.argv[2]));
  const mode=process.argv[3]||'all';
+ if(mode==='semaphore-imports'){
+  const imports=WebAssembly.Module.imports(module).filter(value=>value.kind==='function').map(value=>value.name);
+  const expected=['sem_init','sem_destroy','sem_getvalue','sem_trywait','sem_wait','sem_post','sem_timedwait'];
+  for(const name of expected){assert.ok(imports.includes('__lsf_c_'+name));assert.ok(!imports.includes(name));}
+  console.log('PASS captured semaphore caller: seven private SDK imports');return;
+ }
  if(mode==='rwlock'){await rwlockControls(module);return;}
+ if(mode==='semaphore'){await semaphoreControls(module);return;}
  if(mode==='baseline-create'){await oldCreateLimit(module);return;}
  if(mode==='create'){await createControls(module);return;}
  if(mode==='baseline-preclaimed'){await oldPreclaimed(module);return;}

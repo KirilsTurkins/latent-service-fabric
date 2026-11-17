@@ -32,6 +32,9 @@ RWLOCK_SYMBOLS = ('pthread_rwlock_init', 'pthread_rwlock_destroy', 'pthread_rwlo
                   'pthread_rwlock_tryrdlock', 'pthread_rwlock_wrlock', 'pthread_rwlock_trywrlock',
                   'pthread_rwlock_unlock', 'pthread_rwlock_timedrdlock', 'pthread_rwlock_timedwrlock')
 RWLOCK_PORT = 'c-cooperative-rwlock-v1'
+SEMAPHORE_SYMBOLS = ('sem_init', 'sem_destroy', 'sem_getvalue', 'sem_trywait',
+                     'sem_wait', 'sem_post', 'sem_timedwait')
+SEMAPHORE_PORT = 'c-cooperative-semaphore-v1'
 YIELD_SYMBOLS = ('thrd_yield',)
 ONCE_SYMBOLS = ('pthread_once', '__pthread_once', 'call_once')
 LEGACY_TIME_SYMBOLS = ('nanosleep', 'thrd_sleep')
@@ -111,6 +114,10 @@ POLL_FD_LIBC = {
     'lib/libc/include/wasm-wasi-musl/__macro_FD_SETSIZE.h': 'd2ac9784db69fe83aa2fb6e0275767e54e195fc758297c22533ed5a438d6ae1f',
 }
 POLL_LIBC_MAX_BYTES = 65536
+SEMAPHORE_LIBC = {
+    'lib/libc/include/generic-musl/semaphore.h': '75b08ab57e6dc8d1fd6745404375d3caef99dec66f4bcbd423c77a9078c52912',
+    'lib/libc/include/wasm-wasi-musl/limits.h': '1254342638cdb1a152ec700d47d566893fa81427ef151c1d9a69544e007e7733',
+}
 
 
 def linked_defines(defines, *, timed_clock=False, time_response=False):
@@ -131,17 +138,26 @@ def linked_defines(defines, *, timed_clock=False, time_response=False):
             *(name + '=__lsf_c_' + name for name in emitted))
 
 
-def captured_rwlock_port(runtime):
-    """Use the port only when the already-captured SDK explicitly selects it."""
+def captured_optional_ports(runtime):
+    """Read exact captured selections, preserving older SDK snapshots."""
     document = read_json(runtime / 'thread-abi.json', 32768)
     if type(document) is not dict:
         raise ValueError('c-threading-invalid-abi')
     ports = document.get('optionalPorts')
     if ports is None:
-        return False
-    if type(ports) is not dict or ports != {'rwlock': RWLOCK_PORT}:
+        return {}
+    if type(ports) is not dict or ports not in (
+            {'rwlock': RWLOCK_PORT}, {'rwlock': RWLOCK_PORT, 'semaphore': SEMAPHORE_PORT}):
         raise ValueError('c-threading-invalid-optional-ports')
-    return True
+    return ports
+
+
+def captured_rwlock_port(runtime):
+    return 'rwlock' in captured_optional_ports(runtime)
+
+
+def captured_semaphore_port(runtime):
+    return 'semaphore' in captured_optional_ports(runtime)
 
 
 def rwlock_defines(defines):
@@ -149,6 +165,13 @@ def rwlock_defines(defines):
     if any(value.split('=', 1)[0] in reserved for value in defines):
         raise ValueError('c-threading-compiler-owned-rwlock-symbol')
     return (*defines, 'LSF_C_RWLOCKS=1', *(name + '=__lsf_c_' + name for name in RWLOCK_SYMBOLS))
+
+
+def semaphore_defines(defines):
+    reserved = {'LSF_C_SEMAPHORES', *SEMAPHORE_SYMBOLS, *('__lsf_c_' + name for name in SEMAPHORE_SYMBOLS)}
+    if any(value.split('=', 1)[0] in reserved for value in defines):
+        raise ValueError('c-threading-compiler-owned-semaphore-symbol')
+    return (*defines, 'LSF_C_SEMAPHORES=1', *(name + '=__lsf_c_' + name for name in SEMAPHORE_SYMBOLS))
 
 
 def timed_alias_response(sdk):
@@ -179,6 +202,19 @@ def libc_material_name(path):
     if path not in LIBC or path not in LIBC_MATERIAL_NAMES:
         raise ValueError('c-threading-original-libc-material-path')
     return LIBC_MATERIAL_NAMES[path]
+
+
+def semaphore_libc_inputs(zig):
+    paths = {name: zig.parent / name for name in SEMAPHORE_LIBC}
+    if any(digest(read_file(path, 32768)) != 'sha256:' + SEMAPHORE_LIBC[name] for name, path in paths.items()):
+        raise ValueError('c-threading-original-libc-semaphore-preimage')
+    return paths
+
+
+def semaphore_libc_material_name(path):
+    if path not in SEMAPHORE_LIBC:
+        raise ValueError('c-threading-original-libc-semaphore-material-path')
+    return 'c-threading-semaphore-' + str(sorted(SEMAPHORE_LIBC).index(path))
 
 
 def clock_libc_inputs(zig):

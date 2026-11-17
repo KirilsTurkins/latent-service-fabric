@@ -23,6 +23,7 @@ HEADERS = {
     'libc/include/generic-musl/threads.h': {'bytes': 1794, 'sha256': '402b75ff71dd5051ebf8744fe7e09a9e43740b9798e6c02701929c852972a2fc'},
     'libc/include/wasm-wasi-musl/__errno_values.h': {'bytes': 2975, 'sha256': '87dedbaff433fe74c68e17437c0192081401c9cf8f6430fde3449948c9b78598'},
     'libc/include/wasm-wasi-musl/wasi/api.h': {'bytes': 56969, 'sha256': '8cf2859277ea2fc984780a00048686955805fd8a00c7be1d8f916105becf0174'},
+    'libc/include/generic-musl/semaphore.h': {'bytes': 809, 'sha256': '75b08ab57e6dc8d1fd6745404375d3caef99dec66f4bcbd423c77a9078c52912'},
 }
 SOURCES = ('tools/c_sync_source_controls.py', FIXTURE + 'c', FIXTURE + 'cjs',
     'tools/tests/fixtures/c-once-jspi.c', 'tools/tests/fixtures/c-once-jspi.cjs',
@@ -51,13 +52,13 @@ GNU_JOIN_INPUTS = {
 
 def public_abi(headers):
     """Extract only exact pinned memory32 declarations for explicit test ports."""
-    types, pthread, c11, errors, api = (headers[name].decode() for name in HEADERS)
+    types, pthread, c11, errors, api, semaphore = (headers[name].decode() for name in HEADERS)
     parts = ['/* Exact pinned public declarations; all host operations are doubles. */\n']
     def one(expression, text):
         matches = re.findall(expression, text, re.M)
         require(len(matches) == 1, 'c-sync-one-pinned-public-declaration')
         return matches[0]
-    for name in ('EINVAL', 'EAGAIN', 'ENOTSUP', 'EPERM', 'EBUSY', 'EDEADLK', 'ESRCH'):
+    for name in ('EINVAL', 'EAGAIN', 'ENOTSUP', 'EPERM', 'EBUSY', 'EDEADLK', 'ESRCH', 'EOVERFLOW'):
         wasi = one(r'^#define ' + name + r' (__WASI_ERRNO_\w+)$', errors)
         parts.extend([one(r'^#define ' + wasi + r' .*$', api) + '\n',
             '#define ' + name + ' ' + wasi + '\n'])
@@ -66,6 +67,7 @@ def public_abi(headers):
         parts.append(one(r'^typedef struct .* ' + name + r';$', types) + '\n')
     parts.append(one(r'^typedef int pthread_once_t;$', types) + '\n')
     parts.append(one(r'^typedef int once_flag;$', c11) + '\n')
+    parts.append('#define _SEMAPHORE_H\n' + one(r'^(typedef struct \{\s*volatile int __val\[4\*sizeof\(long\)/sizeof\(int\)\];\s*\} sem_t;)$', semaphore) + '\n')
     parts.append(one(r'^#define PTHREAD_ONCE_INIT 0$', pthread) + '\n')
     parts.append(one(r'^#define ONCE_FLAG_INIT 0$', c11) + '\n')
     # C, not C++, selects the original opaque pointer pthread_t declaration.
@@ -151,11 +153,21 @@ def run(output, zig, node):
             'pthread_rwlock_tryrdlock', 'pthread_rwlock_wrlock', 'pthread_rwlock_trywrlock',
             'pthread_rwlock_unlock', 'pthread_rwlock_timedrdlock', 'pthread_rwlock_timedwrlock')
         rwlock_flags = ('-DLSF_C_RWLOCKS=1', *('-D' + name + '=__lsf_c_' + name for name in rwlock_symbols))
+        semaphore_symbols = ('sem_init', 'sem_destroy', 'sem_getvalue', 'sem_trywait',
+                             'sem_wait', 'sem_post', 'sem_timedwait')
+        semaphore_flags = ('-DLSF_C_SEMAPHORES=1', *('-D' + name + '=__lsf_c_' + name for name in semaphore_symbols))
         # Compile the full actual production TU against original WASI headers.
         command([zig, *flags, '-matomics', '-mbulk-memory', '-pthread', *wasi,
             '-c', runtime / 'threads.c', '-o', output / 'threads.o'])
-        command([zig, *flags, '-matomics', '-mbulk-memory', '-pthread', *wasi, *rwlock_flags,
+        command([zig, *flags, '-matomics', '-mbulk-memory', '-pthread', *wasi, *rwlock_flags, *semaphore_flags,
             '-c', runtime / 'threads.c', '-o', output / 'threads-rwlock.o'])
+        command([zig, *flags, '-matomics', '-mbulk-memory', '-pthread', *wasi, *semaphore_flags,
+            '-DLSF_C_SEMAPHORE_CLIENT=1', '-c', ROOT / 'tools/tests/fixtures/c-root-drain-jspi.c',
+            '-o', output / 'semaphore-client.o'])
+        stdout = command([node, '--max-old-space-size=64', ROOT / 'tools/tests/fixtures/c-root-drain-jspi.cjs',
+            output / 'semaphore-client.o', 'semaphore-imports'])
+        require(stdout == b'PASS captured semaphore caller: seven private SDK imports\n',
+            'c-thread-semaphore-private-caller-imports')
         # Execute identical source bodies with explicit serialized ports, not
         # canonical Wasmtime intrinsics or the activation broker.
         command([zig, *flags, '-fno-builtin', '-fno-stack-protector', '-nostdlib',
@@ -185,9 +197,12 @@ def run(output, zig, node):
             'read_root_observer', 'rw_setup', 'rw_set_shared', 'rw_set_reader_limit', 'rw_refuse_wait',
             'rw_pause_admission', 'rw_init_default', 'rw_destroy', 'rw_read', 'rw_write', 'rw_tryread',
             'rw_trywrite', 'rw_unlock', 'rw_timedread', 'rw_timedwrite', 'rw_errno', 'rw_busy',
-            'rw_again', 'rw_notsup', 'rw_perm', 'rw_deadlock')
+            'rw_again', 'rw_notsup', 'rw_perm', 'rw_deadlock',
+            'ss_setup', 'ss_shared', 'ss_invalid', 'ss_destroy', 'ss_getvalue', 'ss_wait', 'ss_trywait',
+            'ss_post', 'ss_timedwait', 'ss_pause_admission', 'ss_refuse_wait', 'ss_errno',
+            'ss_eagain', 'ss_ebusy', 'ss_einval', 'ss_overflow', 'ss_notsup', 'ss_intmax')
         command([zig, *flags, '-fno-builtin', '-fno-stack-protector', '-nostdlib',
-            *rwlock_flags,
+            *rwlock_flags, *semaphore_flags,
             '-Wl,--no-entry', '-Wl,--import-memory', '-Wl,--initial-memory=4194304',
             '-Wl,--max-memory=4194304', '-Wl,-z,stack-size=65536',
             *('-Wl,--export=' + name for name in drain_exports), '-I', output, '-I', runtime,
@@ -202,6 +217,11 @@ def run(output, zig, node):
         require(stdout == b'PASS rwlock source: readers, writers, wakeups, refusals and cancellation; JSPI test ports only\n',
             'c-thread-rwlock-jspi-source-control-result')
         report['rwlockScenarios'] = 8
+        stdout = command([node, '--max-old-space-size=64', '--experimental-wasm-jspi',
+            ROOT / 'tools/tests/fixtures/c-root-drain-jspi.cjs', output / 'root-drain-jspi.wasm', 'semaphore'])
+        require(stdout == b'PASS semaphore source: permits, wait ownership, races, refusal and cancellation; JSPI test ports only\n',
+            'c-thread-semaphore-jspi-source-control-result')
+        report['semaphoreScenarios'] = 9
         create_exports = ('__stack_pointer', 'setup_create', 'caller_pointer', 'start_create',
             'close_create_root', 'create_count', 'create_list_count', 'create_live',
             'create_settled', 'create_admissions', 'create_allocations', 'create_frees',
@@ -237,7 +257,7 @@ def run(output, zig, node):
             'c-sync-pinned-gnu-join-result')
         report['gnuJoinCases'] = 2
         report['outputs'] = {name: identity(output / name, 1024 * 1024) for name in
-            ('threads.o', 'threads-rwlock.o', 'reference.wasm', 'once-jspi.wasm', 'root-drain-jspi.wasm', 'create-jspi.wasm',
+            ('threads.o', 'threads-rwlock.o', 'semaphore-client.o', 'reference.wasm', 'once-jspi.wasm', 'root-drain-jspi.wasm', 'create-jspi.wasm',
              'pinned-pthread-join.o', 'gnu-join-reference.wasm',
              abi.name, body.name, drain_body.name, creation_body.name, gnu_join_body.name)}
         require(header_ids == {name: identity(lib / name, 1024 * 1024) for name in HEADERS},
