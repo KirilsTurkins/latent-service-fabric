@@ -72,7 +72,7 @@ struct FakeImportAccounting final:ImportAccounting {
     work.task={1,next++};work.task_live=true;work.queued={1,next++};work.queued_live=true;jobs_live+=2;
     n.token={2,next++};n.live=true;r.token={2,next++};r.live=true;native_live+=2;return true;
   }
-  bool rollback(JSContext*,JobOwners&,NativeOwner&,NativeOwner&) override {return false;}
+  bool rollbackWork(JSContext*,JobOwners&) override {return false;}
   bool park(JSContext*,JobOwners& work) override {if(!work.queued_live)return false;work.queued_live=false;--jobs_live;return true;}
   bool resume(JSContext*,JobOwners&) override {return true;}
   bool complete(JSContext*,JobOwners& work) override {if(work.task_live){work.task_live=false;--jobs_live;}return true;}
