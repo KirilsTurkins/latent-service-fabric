@@ -17,6 +17,22 @@ from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, checked_path, decode_json, digest, fresh, inventory, read_file, write_json
 
 
+def resolver_interface(observed: dict) -> bool:
+    # LLVM may emit local helpers and constant data for the captured resolver.
+    # Keep its external API and every allowed internal definition finite.
+    exported = observed['strongSymbols']
+    legacy = ['freeaddrinfo', 'getaddrinfo']
+    current = ['freeaddrinfo', 'gai_strerror', 'getaddrinfo', 'getnameinfo']
+    if exported not in (legacy, current):
+        return False
+    locals_allowed = {'numeric_canonical_name'}
+    if exported == current:
+        locals_allowed.update({'.L.str', '.Lswitch.table.gai_strerror'})
+        locals_allowed.update(f'.L.str.{index}' for index in range(1, 12))
+    defined = set(observed['definedSymbols'])
+    return set(exported) <= defined <= set(exported) | locals_allowed
+
+
 def safe_path(path: Path) -> Path:
     def unsafe(value: str) -> bool:
         return (any(ord(char) < 32 or ord(char) == 127 or char in ';\"\'$`' for char in value)
@@ -146,8 +162,7 @@ def prepare(project_path: Path, output: Path, *, installed: dict[str, Path] | No
             observed = wasm_object(body, include_all_symbols=True)
             imports = re.findall(r'\(import "([^"\n]+)" "([^"\n]+)" ', read_file(wat, 4 * 1024 * 1024).decode())
             allowed = {('env', '__linear_memory'), ('env', '__stack_pointer'), ('env', 'malloc'), ('env', 'free')}
-            if (observed['strongSymbols'] != ['freeaddrinfo', 'getaddrinfo']
-                    or observed['definedSymbols'] != ['freeaddrinfo', 'getaddrinfo']
+            if (not resolver_interface(observed)
                     or set(imports) != allowed or len(imports) != len(allowed)):
                 raise ValueError('c-feature-probe-unexpected-object-interface')
             (output / 'numeric-resolver.o').write_bytes(body)
@@ -212,7 +227,7 @@ def verify(project_path: Path, kit: Path, expected: str, zig: Path) -> str:
         if obj['digest'] != digest(body) or obj['size'] != len(body) or obj['imports'] != allowed:
             raise ValueError('c-feature-probe-object-changed')
         observed = wasm_object(body, include_all_symbols=True)
-        if observed['strongSymbols'] != ['freeaddrinfo', 'getaddrinfo'] or observed['definedSymbols'] != observed['strongSymbols']:
+        if not resolver_interface(observed):
             raise ValueError('c-feature-probe-unexpected-object-interface')
     elif obj is not None:
         raise ValueError('c-feature-probe-unexpected-object')
