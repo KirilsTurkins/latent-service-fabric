@@ -20,11 +20,19 @@ public final class ManagedNullFactoryOwnerControl {
             && Activation.count(LatentRuntimeActivationOwnerKind.Executor) == executor);
     }
     private static void await(CountDownLatch latch) throws InterruptedException { require(latch.await(5, TimeUnit.SECONDS)); }
-    private static void inert(Runnable target) throws Exception {
+    private static Object worker(Runnable target) throws Exception {
         var capture = target.getClass().getDeclaredFields()[0]; capture.setAccessible(true);
-        Object worker = capture.get(target);
+        return capture.get(target);
+    }
+    private static long preference(Object worker) throws Exception {
+        var first = worker.getClass().getDeclaredField("first"); first.setAccessible(true);
+        require(first.getType() == long.class);
+        return first.getLong(worker);
+    }
+    private static void inert(Runnable target) throws Exception {
+        Object worker = worker(target);
         var field = worker.getClass().getDeclaredField("pool"); field.setAccessible(true);
-        require(field.get(worker) == null); target.run();
+        require(field.get(worker) == null && preference(worker) == 0); target.run();
     }
     private static void unavailable() throws Exception {
         AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
@@ -54,10 +62,11 @@ public final class ManagedNullFactoryOwnerControl {
             if (later) {
                 require(attempts.get() == 2 && !first.isDone()); held(1, 1, 1);
                 second = pool.submit(calls::incrementAndGet);
+                second.get(5, TimeUnit.SECONDS);
             }
             await(entered);
             require(attempts.get() == (later ? 3 : 2));
-            held(later ? 1 : 0, later ? 2 : 1, 1);
+            held(0, 1, 1);
             release.countDown(); first.get(5, TimeUnit.SECONDS);
             if (second != null) second.get(5, TimeUnit.SECONDS);
             require(calls.get() == (later ? 2 : 1));
@@ -114,6 +123,120 @@ public final class ManagedNullFactoryOwnerControl {
         } finally { release.countDown(); pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
         Activation.idle();
     }
+    private static void preferredRunningShutdown() throws Exception {
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        AtomicReference<Runnable> target = new AtomicReference<>();
+        CountDownLatch entered = new CountDownLatch(1), release = new CountDownLatch(1);
+        var pool = Executors.newFixedThreadPool(1, command -> {
+            if (attempts.incrementAndGet() <= 2) return null;
+            target.set(command); return new Thread(command);
+        });
+        try {
+            var older = pool.submit(() -> { throw new AssertionError("withdrawn-older-ran"); });
+            held(1, 1, 1);
+            var preferred = pool.submit(() -> {
+                calls.incrementAndGet(); entered.countDown();
+                while (true) try { release.await(); return; } catch (InterruptedException ignored) { }
+            });
+            await(entered); held(1, 2, 1);
+            require(preference(worker(target.get())) == 0);
+            var removed = pool.shutdownNow();
+            require(removed.size() == 1 && removed.get(0) == older && !older.isDone());
+            held(0, 1, 1);
+            release.countDown(); preferred.get(5, TimeUnit.SECONDS);
+            require(pool.awaitTermination(5, TimeUnit.SECONDS) && calls.get() == 1); held(0, 0, 0);
+            require(older.cancel(false)); inert(target.get());
+        } finally { release.countDown(); pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
+        Activation.idle();
+    }
+    private static void preferredWithdrawn() throws Exception {
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        AtomicReference<Runnable> target = new AtomicReference<>();
+        CountDownLatch workerEntered = new CountDownLatch(1), release = new CountDownLatch(1);
+        var pool = Executors.newFixedThreadPool(1, command -> {
+            if (attempts.incrementAndGet() <= 2) return null;
+            target.set(command);
+            return new Thread(() -> {
+                workerEntered.countDown();
+                while (true) try { release.await(); break; } catch (InterruptedException ignored) { }
+                command.run();
+            });
+        });
+        try {
+            var older = pool.submit(calls::incrementAndGet);
+            var preferred = pool.submit(calls::incrementAndGet);
+            await(workerEntered); held(2, 2, 1);
+            var removed = pool.shutdownNow();
+            require(removed.size() == 2 && removed.contains(older) && removed.contains(preferred));
+            held(0, 0, 1);
+            Object heldWorker = worker(target.get());
+            require(preference(heldWorker) != 0);
+            for (var field : heldWorker.getClass().getDeclaredFields()) {
+                if (!field.getType().isPrimitive() && !field.getName().equals("pool") && !field.getName().equals("thread")) {
+                    field.setAccessible(true); require(field.get(heldWorker) == null);
+                }
+            }
+            release.countDown(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0, 0);
+            require(calls.get() == 0 && !older.isDone() && !preferred.isDone());
+            require(older.cancel(false) && preferred.cancel(false)); inert(target.get());
+        } finally { release.countDown(); pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
+        Activation.idle();
+    }
+    private static void preferenceExhaustion() throws Exception {
+        AtomicInteger attempts = new AtomicInteger();
+        AtomicReference<Runnable> firstTarget = new AtomicReference<>();
+        CountDownLatch firstPaused = new CountDownLatch(1), releaseFirst = new CountDownLatch(1);
+        CountDownLatch secondPaused = new CountDownLatch(1), releaseSecond = new CountDownLatch(1);
+        CountDownLatch secondRunning = new CountDownLatch(1), finishSecond = new CountDownLatch(1);
+        StringBuffer calls = new StringBuffer();
+        var pool = Executors.newFixedThreadPool(2, target -> {
+            boolean first = attempts.incrementAndGet() == 1;
+            if (first) firstTarget.set(target);
+            return new Thread(() -> {
+                (first ? firstPaused : secondPaused).countDown();
+                while (true) try { (first ? releaseFirst : releaseSecond).await(); break; }
+                catch (InterruptedException ignored) { }
+                target.run();
+            });
+        });
+        var counter = pool.getClass().getDeclaredField("nextPreference"); counter.setAccessible(true);
+        counter.setLong(pool, Long.MAX_VALUE - 1);
+        try {
+            var older = pool.submit(() -> calls.append('A'));
+            await(firstPaused);
+            var second = pool.submit(() -> {
+                calls.append('B'); secondRunning.countDown();
+                while (true) try { finishSecond.await(); return; } catch (InterruptedException ignored) { }
+            });
+            await(secondPaused);
+            Object heldWorker = worker(firstTarget.get());
+            require(preference(heldWorker) == Long.MAX_VALUE && counter.getLong(pool) == Long.MAX_VALUE);
+            var queueField = pool.getClass().getDeclaredField("queue"); queueField.setAccessible(true);
+            synchronized (pool) {
+                Object[] entries = ((java.util.ArrayDeque<?>)queueField.get(pool)).toArray();
+                require(entries.length == 2);
+                var id = entries[0].getClass().getDeclaredField("preference"); id.setAccessible(true);
+                require(id.getLong(entries[0]) == Long.MAX_VALUE && id.getLong(entries[1]) == 0);
+            }
+            releaseSecond.countDown(); await(secondRunning); older.get(5, TimeUnit.SECONDS);
+            var later = pool.submit(() -> calls.append('C'));
+            synchronized (pool) {
+                Object[] entries = ((java.util.ArrayDeque<?>)queueField.get(pool)).toArray();
+                require(entries.length == 1);
+                var id = entries[0].getClass().getDeclaredField("preference"); id.setAccessible(true);
+                require(id.getLong(entries[0]) == 0 && preference(heldWorker) == Long.MAX_VALUE);
+            }
+            releaseFirst.countDown(); later.get(5, TimeUnit.SECONDS);
+            require(calls.toString().equals("ABC"));
+            finishSecond.countDown(); second.get(5, TimeUnit.SECONDS);
+            pool.shutdown(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0, 0);
+            inert(firstTarget.get());
+        } finally {
+            releaseFirst.countDown(); releaseSecond.countDown(); finishSecond.countDown();
+            pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS));
+        }
+        Activation.idle();
+    }
     private static void nestedFallbackThrow() throws Exception {
         AtomicReference<ExecutorService> selected = new AtomicReference<>();
         AtomicReference<Future<?>> nested = new AtomicReference<>();
@@ -167,6 +290,7 @@ public final class ManagedNullFactoryOwnerControl {
     }
     private static void fallbackStartFailure(boolean uncertain) throws Exception {
         AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        CountDownLatch originalRan = new CountDownLatch(1);
         AtomicReference<Thread> worker = new AtomicReference<>();
         AtomicReference<Runnable> target = new AtomicReference<>();
         var failure = new IllegalStateException("fallback-worker-start-failed");
@@ -182,7 +306,7 @@ public final class ManagedNullFactoryOwnerControl {
         });
         Activation.retainFailedStart = uncertain;
         try {
-            try { pool.submit(calls::incrementAndGet); throw new AssertionError("missing-start-failure"); }
+            try { pool.submit(() -> { calls.incrementAndGet(); originalRan.countDown(); }); throw new AssertionError("missing-start-failure"); }
             catch (IllegalStateException error) { require(error == failure); }
             require(attempts.get() == 2 && calls.get() == 0 && ((Activation.ManagedPool)pool).hasPendingWork());
             held(1, 1, 1);
@@ -200,6 +324,7 @@ public final class ManagedNullFactoryOwnerControl {
             }
             inert(target.get());
             pool.submit(() -> {}).get(5, TimeUnit.SECONDS);
+            await(originalRan);
             require(attempts.get() == 3 && calls.get() == 1);
             pool.shutdown(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0, 0);
         } finally {
@@ -282,6 +407,9 @@ public final class ManagedNullFactoryOwnerControl {
             case "fallback-live-thread" -> fallbackLiveThread();
             case "cached-null" -> cached();
             case "existing-worker" -> existingWorker();
+            case "preferred-running-shutdown" -> preferredRunningShutdown();
+            case "preferred-withdrawn" -> preferredWithdrawn();
+            case "preference-exhaustion" -> preferenceExhaustion();
             case "fallback-shutdown" -> fallbackShutdown("none");
             case "fallback-denied" -> fallbackShutdown("denied");
             case "fallback-lost" -> fallbackShutdown("lost");
