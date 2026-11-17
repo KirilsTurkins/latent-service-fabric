@@ -12,6 +12,168 @@ use std::{
 };
 use tokio::{io::AsyncReadExt, net::TcpListener};
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum DrainLockCase {
+    ReleasedBeforeDeadline,
+    HeldPastDeadline,
+    ConnectionRegistry,
+}
+
+async fn drain_with_contended_snapshot(case: DrainLockCase) {
+    use std::sync::{mpsc, Mutex};
+
+    struct HoldAfterWake {
+        thread: std::thread::ThreadId,
+        armed: AtomicBool,
+        request: mpsc::Sender<()>,
+        acquired: Mutex<mpsc::Receiver<()>>,
+    }
+    impl Wake for HoldAfterWake {
+        fn wake(self: Arc<Self>) {
+            self.wake_by_ref();
+        }
+        fn wake_by_ref(self: &Arc<Self>) {
+            if std::thread::current().id() == self.thread
+                && self.armed.swap(false, Ordering::AcqRel)
+            {
+                self.request.send(()).unwrap();
+                self.acquired
+                    .lock()
+                    .unwrap()
+                    .recv_timeout(Duration::from_secs(2))
+                    .unwrap();
+            }
+        }
+    }
+
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let mut configuration = config();
+    configuration.destinations[0].endpoint.port = listener.local_addr().unwrap().port();
+    let endpoint = configuration.destinations[0].endpoint.clone();
+    let fixture = Fixture::new(configuration);
+    let lifecycle = Arc::new(
+        StreamLifecycle::from_installed_for_qualification("streams", fixture.provider.clone())
+            .unwrap(),
+    );
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let handle = lifecycle
+        .start(
+            &session,
+            StreamConnectRequest {
+                endpoint,
+                timeout_millis: None,
+            },
+        )
+        .unwrap()
+        .await
+        .unwrap();
+    let (peer, _) = listener.accept().await.unwrap();
+    let (requested, request) = mpsc::channel();
+    let (acquired, wait_acquired) = mpsc::channel();
+    let (release, wait_release) = mpsc::channel();
+    let holding_lifecycle = lifecycle.clone();
+    let holding_registry = fixture.provider.inner.connections.clone();
+    let holding = std::thread::spawn(move || {
+        if request.recv_timeout(Duration::from_secs(2)).is_ok() {
+            let hold = || {
+                let _ = acquired.send(());
+                let _ = wait_release.recv_timeout(Duration::from_secs(2));
+            };
+            if case == DrainLockCase::ConnectionRegistry {
+                let _state = holding_registry.lock_for_test();
+                hold();
+            } else {
+                holding_lifecycle.with_state_lock_for_test(hold);
+            }
+        }
+    });
+    let observer = Arc::new(HoldAfterWake {
+        thread: std::thread::current().id(),
+        armed: AtomicBool::new(false),
+        request: requested,
+        acquired: Mutex::new(wait_acquired),
+    });
+    let wake = Waker::from(observer.clone());
+    let mut read = Box::pin(handle.read(1, None).unwrap());
+    assert!(matches!(
+        read.as_mut().poll(&mut Context::from_waker(&wake)),
+        Poll::Pending
+    ));
+    observer.armed.store(true, Ordering::Release);
+    let wait = if case == DrainLockCase::HeldPastDeadline {
+        150
+    } else {
+        500
+    };
+    let mut drain = Box::pin(lifecycle.drain(Instant::now() + Duration::from_millis(wait)));
+    let first = drain.as_mut().poll(&mut Context::from_waker(&wake));
+    let pending = matches!(first, Poll::Pending);
+    let initial_error = match first {
+        Poll::Ready(Err(error)) => Some(error.code),
+        _ => None,
+    };
+    let deadline_error = if pending && case == DrainLockCase::HeldPastDeadline {
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        match drain.as_mut().poll(&mut Context::from_waker(&wake)) {
+            Poll::Ready(Err(error)) => Some(error.code),
+            _ => None,
+        }
+    } else {
+        None
+    };
+    let paid_during_contention = control.budget.host_memory_bytes() > baseline;
+    let _ = release.send(());
+    holding.join().unwrap();
+    drop((read, handle, peer));
+    let finished = if pending && case == DrainLockCase::ReleasedBeforeDeadline {
+        Some(drain.await)
+    } else {
+        drop(drain);
+        None
+    };
+    drop((lifecycle, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+    assert!(
+        paid_during_contention,
+        "original connection owner must remain paid during status contention"
+    );
+    match case {
+        DrainLockCase::ReleasedBeforeDeadline => {
+            assert!(
+                pending,
+                "drain must retry the busy lifecycle snapshot, got {initial_error:?}"
+            );
+            assert_eq!(finished.unwrap().unwrap().usage.owners, 0);
+        }
+        DrainLockCase::HeldPastDeadline => {
+            assert!(pending, "drain must wait until the original deadline");
+            assert_eq!(deadline_error, Some(StreamErrorCode::Exhausted));
+        }
+        DrainLockCase::ConnectionRegistry => {
+            assert!(!pending, "non-lifecycle exhaustion must not be retried");
+            assert_eq!(initial_error, Some(StreamErrorCode::Exhausted));
+        }
+    }
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn drain_waits_for_lifecycle_snapshot_lock_without_releasing_original_owner() {
+    drain_with_contended_snapshot(DrainLockCase::ReleasedBeforeDeadline).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn drain_retains_original_deadline_when_lifecycle_snapshot_stays_busy() {
+    drain_with_contended_snapshot(DrainLockCase::HeldPastDeadline).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn drain_does_not_retry_connection_registry_exhaustion() {
+    drain_with_contended_snapshot(DrainLockCase::ConnectionRegistry).await;
+}
+
 #[tokio::test]
 async fn actual_stream_socket_and_connection_layouts_are_prepaid() {
     let fixture = Fixture::new(config());
