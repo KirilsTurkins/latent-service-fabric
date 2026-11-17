@@ -119,6 +119,8 @@ int original_poll(struct pollfd *fds,nfds_t count,int timeout) {
 
 #define CHECK(value) do { if(!(value))return __LINE__; } while(0)
 _Static_assert(MSG_NOSIGNAL == 0x4000, "unexpected stream profile flag");
+_Static_assert(SO_RCVTIMEO == 66, "unexpected WASI receive-timeout option");
+_Static_assert(SO_RCVTIMEO != SO_TYPE, "timeout must not alias the supported socket option");
 static struct sockaddr_in address(void) {
     struct sockaddr_in result={.sin_family=AF_INET};
     unsigned char octets[]={127,0,0,1},port[]={0x1f,0x90};
@@ -155,6 +157,14 @@ __attribute__((export_name("descriptor_controls"))) int descriptor_controls(void
     CHECK(__lsf_c_net_fcntl(current_fd,F_GETFL)==O_RDWR);
     CHECK(__lsf_c_net_fcntl(current_fd,F_SETFL,O_NONBLOCK)==-1 && lsf_test_errno==ENOTSUP);
     CHECK(__lsf_c_net_setsockopt(current_fd,SOL_SOCKET,SO_TYPE,&socket_type,sizeof(socket_type))==-1 && lsf_test_errno==ENOTSUP);
+    struct timeval timeout={0};
+    CHECK(setsockopt(current_fd,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout))==-1 && lsf_test_errno==ENOTSUP);
+    timeout.tv_usec=1000;
+    CHECK(setsockopt(current_fd,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout))==-1 && lsf_test_errno==ENOTSUP);
+    socket_type_len=sizeof(socket_type);
+    CHECK(getsockopt(current_fd,SOL_SOCKET,SO_RCVTIMEO,&socket_type,&socket_type_len)==-1 && lsf_test_errno==ENOTSUP);
+    CHECK(host_calls==calls_before);
+    CHECK(setsockopt(-1,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout))==-1 && lsf_test_errno==EBADF);
     allow_host=0;CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==-1);
     CHECK(lsf_test_errno==EACCES && reentry_ok && host_calls==1);
     CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==-1 && lsf_test_errno==EIO);
@@ -162,6 +172,9 @@ __attribute__((export_name("descriptor_controls"))) int descriptor_controls(void
     CHECK(__lsf_c_net_close(current_fd)==0 && close_calls==0);
     current_fd=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);allow_host=1;
     CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==0 && reentry_ok);
+    calls_before=host_calls;
+    CHECK(setsockopt(current_fd,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout))==-1 && lsf_test_errno==ENOTSUP);
+    CHECK(host_calls==calls_before);
     CHECK(__lsf_c_net_send(current_fd,"xyz",3,0)==2 && reentry_ok);
     char input[3];CHECK(__lsf_c_net_recv(current_fd,input,3,0)==3 && reentry_ok);
     CHECK(input[0]=='a' && input[1]=='b' && input[2]=='c' && drop_calls==1 && free_calls==1);

@@ -143,6 +143,10 @@ descriptor is refused. Exceptional descriptor sets, descriptor `poll`, nonblocki
 socket option changes, local bind, IPv6 and unsupported message flags are refused;
 `SO_TYPE` is observable, with output truncated to the supplied buffer length,
 and TLS is not supplied by this profile.
+`SO_RCVTIMEO` can be named by selected source, but `setsockopt` returns
+`ENOTSUP` for it, including a zero value. Libraries that ignore this error do
+not receive their requested socket deadline; use only their untimed mode with
+this profile, subject to the original provider and activation deadlines.
 Selected-source `send` accepts `MSG_NOSIGNAL` (using the pinned WASI preview2
 value `0x4000`) with the same write and error behavior as flag zero. The adapter
 does not raise `SIGPIPE`, with or without this flag. The flag does not enable
