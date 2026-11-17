@@ -339,7 +339,9 @@ OWNER_RETRY_CASES = (
     'import-queue-refused-late-return', 'import-queue-refused-late-cancel',
     'import-park-refused-immediate-return', 'import-queue-refused-immediate-return',
     'import-join-refusal-retains-subtask',
-    'import-disposer-quarantine', 'partial-cancel-undispatched', 'partial-cancel-retry',
+    'import-disposer-quarantine', 'borrow-unallocated-cleanup', 'borrow-unallocated-ack-retry',
+    'borrow-partial-setup-quarantine', 'borrow-published-release',
+    'partial-cancel-undispatched', 'partial-cancel-retry',
     'partial-cancel-pending', 'partial-cancel-returned', 'partial-regular-ack-retry', 'partial-failed-ack-fences-prepare',
     'partial-cancel-reentrant-ack', 'partial-cancel-quarantine', 'lazy-synchronous', 'repeated-generations',
     'native-live-slot', 'snapshot-live-slot', 'accepted-after-root',
@@ -399,9 +401,9 @@ class OwnerRetryTests(unittest.TestCase):
                 self.assertEqual(row['case'], case)
                 self.assertIs(row['passed'], True)
                 self.assertIs(row['engineQualified'], False)
-                # Refused non-retryable disposal is retention, never successful
-                # cleanup. Every other scenario proves all original ACKs once.
-                if case in ('import-disposer-quarantine', 'partial-cancel-quarantine',
+                # Quarantined physical state retains its original owners.
+                # Every other scenario proves all original ACKs once.
+                if case in ('import-disposer-quarantine', 'borrow-partial-setup-quarantine', 'partial-cancel-quarantine',
                             'partial-cancel-reentrant-ack'):
                     self.assertGreater(row['retainedOwners'], 0)
                 else:

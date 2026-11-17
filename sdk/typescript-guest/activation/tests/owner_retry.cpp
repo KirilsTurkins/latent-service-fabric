@@ -2,6 +2,7 @@
 // Tests exact reservation identities, capture destruction, and failure fences;
 // does not execute SpiderMonkey, a signed component, or Store destruction.
 #define LSF_TYPESCRIPT_PARTIAL_OWN_CONTROLS 1
+#define LSF_TYPESCRIPT_BORROW_CONTROLS 1
 #include "../native_timers.h"
 #include "../native_import_partial.h"
 #include <array>
@@ -13,11 +14,15 @@
 // ACK. The finite fixture never writes a pointer or token to its output.
 static const void* watched_sidecar=nullptr;
 static bool watched_sidecar_deleted=false;
+static bool fail_next_nothrow=false;
 void* operator new(std::size_t n) {
   if (auto* p=std::malloc(n ? n : 1)) return p;
   throw std::bad_alloc();
 }
-void* operator new(std::size_t n,const std::nothrow_t&) noexcept { return std::malloc(n ? n : 1); }
+void* operator new(std::size_t n,const std::nothrow_t&) noexcept {
+  if (fail_next_nothrow) { fail_next_nothrow=false; return nullptr; }
+  return std::malloc(n ? n : 1);
+}
 void operator delete(void* p) noexcept {
   if (p && p==watched_sidecar) watched_sidecar_deleted=true;
   std::free(p);
@@ -33,6 +38,12 @@ struct PartialOwnLiftControls {
   static Token owner(PartialOwnLifts& p, uint32_t id) { return p.find(id)->owner.token; }
   static Token failedOwner(PartialOwnLifts& p) { return p.failed_owner_.token; }
 };
+struct ImportBorrowControls {
+  static bool hasObservers(const Imports& imports) { return imports.observers_ || imports.observer_count_!=0; }
+  static const void* observer(const Imports& imports) { return imports.observers_.get(); }
+  static bool quarantined(const Imports& imports) { return imports.failed_observer_completion_; }
+  static NativeOwner failedOwner(const Imports& imports) { return imports.failed_record_owner_; }
+};
 }
 namespace {
 struct Owner { bool live=false; uint8_t kind=0; unsigned refunds=0, attempts=0; };
@@ -42,6 +53,8 @@ std::array<Wait,32> waits{};
 std::array<unsigned,8> counts{}, peaks{}, limits{16,2,2,16,8,8,8,64};
 uint64_t generation=1, next_owner=1, refuse_id=0, last_native=0;
 uint64_t observed_record=0, observed_native=0, observed_result=0;
+uint64_t observed_borrow=0;
+bool borrow_destroyed_before_ack=false;
 uint64_t observed_partial=0;
 uint32_t observed_partial_id=0;
 PartialOwnLifts* observed_partial_manager=nullptr;
@@ -145,6 +158,8 @@ bool latent_runtime_activation_wake(latent_runtime_activation_token_t* t,latent_
 bool latent_runtime_activation_settle(latent_runtime_activation_token_t* t,latent_runtime_activation_error_t* e) {
   if (!valid(t)) return failure(e,LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_TOKEN);
   auto& owner=owners[t->id]; ++owner.attempts;
+  if (t->id==observed_borrow)
+    borrow_destroyed_before_ack=watched_sidecar_deleted && fixture::roots==0 && fixture::buffers==0;
   if (t->id==observed_partial && observed_partial_manager)
     partial_destroyed_before_ack=watched_sidecar_deleted &&
         !PartialOwnLiftControls::hasNode(*observed_partial_manager,observed_partial_id);
@@ -639,6 +654,72 @@ bool partial_cancel_undispatched() {
   CHECK(rejected==0 && registrations==admitted && !e.imports.hasPending());
   CHECK(e.finish()); return true;
 }
+bool borrow_unallocated_retry(bool refused) {
+  Environment e; CHECK(e.begin()); uint32_t id=0; CHECK(e.reserve(id));
+  const auto owner=next_owner, before_objects=fixture::object_count;
+  JS::RootedObject handle(&e.cx);
+  fail_next_nothrow=true;
+  CHECK(!e.imports.watchBorrow(&e.cx,id,&handle));
+  CHECK(!fail_next_nothrow && !handle.get() && e.cx.exception &&
+        std::strcmp(e.cx.detail,"oom")==0 && fixture::object_count==before_objects &&
+        !ImportBorrowControls::hasObservers(e.imports) && owners[owner].live &&
+        ImportBorrowControls::failedOwner(e.imports).token.id==owner && import_dispatches==0);
+  uint32_t rejected=99; const auto admitted=registrations;
+  CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},rejected) && rejected==0 &&
+        registrations==admitted && std::strcmp(e.cx.detail,"oom")==0);
+  CHECK(!e.imports.turn(&e.cx) && std::strcmp(e.cx.detail,"oom")==0);
+  // The ordinary generated finally cancels the reserved import while its
+  // original OOM is pending. No observer allocation or handle ever existed.
+  refuse_id=refused ? owner : 0;
+  const bool first=e.imports.liftCompleted(&e.cx,id);
+  CHECK(first==!refused && e.cx.exception && std::strcmp(e.cx.detail,"oom")==0);
+  if (refused) {
+    CHECK(!ImportBorrowControls::quarantined(e.imports) && owners[owner].live &&
+          owners[owner].attempts==1 && fixture::buffers==2 && fixture::roots==2);
+    for (unsigned attempt=2;attempt<=3;++attempt) {
+      JS_ClearPendingException(&e.cx);
+      CHECK(!e.imports.cancelAll(&e.cx));
+      const auto retained=ImportBorrowControls::failedOwner(e.imports);
+      CHECK(retained.live && retained.token.id==owner && retained.token.generation==generation &&
+            owners[owner].live && owners[owner].attempts==attempt && owners[owner].refunds==0 &&
+            fixture::buffers==2 && fixture::roots==2 && import_dispatches==0);
+    }
+    refuse_id=0; JS_ClearPendingException(&e.cx); CHECK(e.imports.cancelAll(&e.cx));
+  }
+  CHECK(!e.imports.hasPending() && !owners[owner].live && owners[owner].refunds==1 &&
+        owners[owner].attempts==(refused ? 4u:1u) && fixture::buffers==0 && fixture::roots==0);
+  JS_ClearPendingException(&e.cx); CHECK(e.imports.cancelAll(&e.cx));
+  CHECK(owners[owner].attempts==(refused ? 4u:1u) && import_dispatches==0 && disposals==0);
+  CHECK(e.finish()); return true;
+}
+bool borrow_partial_setup_quarantine() {
+  Environment e; CHECK(e.begin()); uint32_t id=0; CHECK(e.reserve(id));
+  const auto owner=next_owner; JS::RootedObject handle(&e.cx);
+  fixture::fail_promise=true;
+  CHECK(!e.imports.watchBorrow(&e.cx,id,&handle) && !handle.get() && e.cx.exception &&
+        ImportBorrowControls::hasObservers(e.imports) && ImportBorrowControls::quarantined(e.imports));
+  CHECK(owners[owner].live && owners[owner].attempts==0 && fixture::buffers==2 && fixture::roots==3);
+  CHECK(!e.imports.liftCompleted(&e.cx,id));
+  for (unsigned attempt=0;attempt<2;++attempt) {
+    JS_ClearPendingException(&e.cx); CHECK(!e.imports.cancelAll(&e.cx));
+    CHECK(owners[owner].live && owners[owner].attempts==0 && fixture::buffers==2 &&
+          fixture::roots==3 && import_dispatches==0 && disposals==0);
+  }
+  return true; // An allocated, partially initialized observer stays quarantined.
+}
+bool borrow_published_release() {
+  Environment e; CHECK(e.begin()); uint32_t id=0; CHECK(e.reserve(id));
+  const auto owner=next_owner; JS::RootedObject handle(&e.cx),promise(&e.cx),again(&e.cx);
+  CHECK(e.imports.watchBorrow(&e.cx,id,&handle) && handle.get() &&
+        e.imports.observeBorrow(&e.cx,handle,false,&promise) && promise.get());
+  watched_sidecar=ImportBorrowControls::observer(e.imports); observed_borrow=owner;
+  CHECK(watched_sidecar && owners[owner].live && e.imports.cancel(&e.cx,id));
+  CHECK(!e.imports.hasPending() && borrow_destroyed_before_ack && owners[owner].refunds==1 &&
+        fixture::resolutions==1 && !ImportBorrowControls::hasObservers(e.imports));
+  CHECK(e.imports.observeBorrow(&e.cx,handle,false,&again) && again.get()==promise.get() &&
+        fixture::resolutions==1 && owners[owner].attempts==1);
+  CHECK(e.finish()); return true;
+}
 bool partial_cancel_retry() {
   Environment e; CHECK(e.begin()); uint32_t first=0,second=0;
   CHECK(partial_bind(&e.cx,e.partial,&e.callback));
@@ -870,6 +951,10 @@ bool run(const char* name) {
   if (!std::strcmp(name,"import-join-refusal-retains-subtask")) return import_join_refused();
   if (!std::strcmp(name,"import-disposer-quarantine")) return import_quarantine();
   if (!std::strcmp(name,"partial-cancel-undispatched")) return partial_cancel_undispatched();
+  if (!std::strcmp(name,"borrow-unallocated-cleanup")) return borrow_unallocated_retry(false);
+  if (!std::strcmp(name,"borrow-unallocated-ack-retry")) return borrow_unallocated_retry(true);
+  if (!std::strcmp(name,"borrow-partial-setup-quarantine")) return borrow_partial_setup_quarantine();
+  if (!std::strcmp(name,"borrow-published-release")) return borrow_published_release();
   if (!std::strcmp(name,"partial-cancel-retry")) return partial_cancel_retry();
   if (!std::strcmp(name,"partial-cancel-pending")) return partial_cancel_pending();
   if (!std::strcmp(name,"partial-cancel-returned")) return partial_cancel_returned();
