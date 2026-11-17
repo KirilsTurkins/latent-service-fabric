@@ -942,7 +942,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
                           'managed-null-pending', 'managed-null-fallback-throw', 'managed-null-worker-denied',
                           'managed-null-worker-uncertain', 'managed-preferred-root', 'managed-nested-null-root',
                           'managed-graceful-null-root', 'managed-graceful-thread-root',
-                          'managed-graceful-executor-denied-root')
+                          'managed-graceful-executor-denied-root', 'managed-obtrude-root')
     for mode in null_factory_modes:
         actual = compiler.run('scheduled-null-factory-activation-' + mode, 'java', '-Xmx256m', '-cp',
             str(output) + os.pathsep + classpath, 'ScheduledNullFactoryActivationControl', mode).strip()
@@ -1175,7 +1175,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     controls = [private / name for name in ('ScheduledOwnerControl.java', 'ScheduledCompletableOwnerControl.java',
         'ScheduledPeriodicOwnerControl.java', 'ScheduledPeriodicRollbackSettlementControl.java',
         'ScheduledFutureResultSettlementControl.java', 'CompletableFutureResultSettlementControl.java',
-        'ManagedReentrantFactoryOwnerControl.java', 'ManagedNullFactoryOwnerControl.java',
+        'ManagedReentrantFactoryOwnerControl.java', 'ManagedNullFactoryOwnerControl.java', 'CompletableObtrudeOwnerControl.java',
         'CompletableFutureQueuedRollbackControl.java', 'CompletableFutureQueuedSettlementControl.java',
         'ManagedExecutorQueuedSettlementControl.java',
         'ScheduledQueuedSettlementControl.java', 'FutureTaskInterruptFailureControl.java',
@@ -1197,6 +1197,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     manual_throw_reference = private / 'ManualPeriodicThrowReferenceControl.java'
     managed_factory_reference = private / 'ManagedReentrantFactoryReferenceControl.java'
     managed_null_reference = private / 'ManagedNullFactoryReferenceControl.java'
+    obtrude_reference = private / 'CompletableObtrudeReferenceControl.java'
     invoke_reference = private / 'ExecutorInvokeInterruptReferenceControl.java'
     invoke_any_reference = private / 'ExecutorInvokeAnyReadyReferenceControl.java'
     invoke_all_reference = private / 'ExecutorInvokeAllWaitReferenceControl.java'
@@ -1207,13 +1208,13 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     comparison_inputs = [private / name for name in ('ScheduledCompareReferenceControl.java',
         'ScheduledCompareFakeClock.java', 'ScheduledCompareClockControl.java')]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, managed_factory_reference, managed_null_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
+        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, managed_factory_reference, managed_null_reference, obtrude_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
                      null_failure_reference, monitor_reference, default_monitor_reference)}
     output.mkdir()
     jdk_output = output / 'reference-jdk'
     jdk_output.mkdir()
     compiler.run('scheduled-stopped-reference-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', jdk_output, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, managed_factory_reference, managed_null_reference, invoke_reference, termination_reference,
+        '-d', jdk_output, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, managed_factory_reference, managed_null_reference, obtrude_reference, invoke_reference, termination_reference,
         null_failure_reference, monitor_reference, default_monitor_reference, ready_reference, noop_reference, invoke_any_reference, invoke_all_reference)
     expected_stopped = ('SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;'
         'running;shutdown;shutdown-policy;physical-runner;worker-capacity;factory-failure-retry')
@@ -1246,6 +1247,11 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('managed-reentrant-factory-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ManagedReentrantFactoryReferenceControl').strip()
     if result != expected_managed_factory: raise ValueError('Java managed reentrant factory reference did not complete')
+    expected_obtrude = ('COMPLETABLE_OBTRUDE_REFERENCE PASS observers;overwrite;exception-identity;'
+        'cancellation;overrides;deferred;waiting-destination;running')
+    result = compiler.run('completable-obtrude-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
+        'CompletableObtrudeReferenceControl').strip()
+    if result != expected_obtrude: raise ValueError('Java completable obtrude reference did not complete')
     expected_managed_null = ('MANAGED_NULL_FACTORY PASS fixed;single;two-attempts;recovery;fallback-throw;'
         'existing-worker;nested;nested-initial-order;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order')
     result = compiler.run('managed-null-factory-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
@@ -1313,6 +1319,13 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + simple + ';')
     selected_managed_null = output / 'ManagedNullFactoryReferenceControl.java'
     selected_managed_null.write_bytes(text.encode('utf-8'))
+    text = read_file(obtrude_reference).decode('utf-8')
+    for simple in ('CompletableFuture', 'CompletionException'):
+        original = 'import java.util.concurrent.' + simple + ';'
+        if text.count(original) != 1: raise ValueError('Java completable obtrude source import is ambiguous')
+        text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + simple + ';')
+    selected_obtrude = output / 'CompletableObtrudeReferenceControl.java'
+    selected_obtrude.write_bytes(text.encode('utf-8'))
     text = read_file(throw_factory_reference).decode('utf-8')
     for simple in ('ScheduledThreadPoolExecutor', 'CompletableFuture'):
         original = 'import java.util.concurrent.' + simple + ';'
@@ -1377,8 +1390,18 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     selected_noop.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', output, *ports, *controls, selected, selected_periodic, selected_validation, selected_null_factory, selected_throw_factory, selected_manual_throw, selected_managed_factory, selected_managed_null, selected_invoke, selected_termination,
+        '-d', output, *ports, *controls, selected, selected_periodic, selected_validation, selected_null_factory, selected_throw_factory, selected_manual_throw, selected_managed_factory, selected_managed_null, selected_obtrude, selected_invoke, selected_termination,
         selected_null_failure, selected_monitor, selected_default_monitor, selected_ready, selected_noop, selected_invoke_any, selected_invoke_all)
+    result = compiler.run('completable-obtrude-source', 'java', '-Xmx256m', '-cp', output,
+        'CompletableObtrudeReferenceControl').strip()
+    if result != expected_obtrude: raise ValueError('Java completable obtrude source differs from reference')
+    obtrude_modes = ('queued', 'queued-queue-denied', 'queued-queue-lost', 'queued-result-denied',
+                     'queued-result-lost', 'running-value', 'running-error', 'waiting-value', 'waiting-error')
+    for mode in obtrude_modes:
+        result = compiler.run('completable-obtrude-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
+            'CompletableObtrudeOwnerControl', mode).strip()
+        if result != 'COMPLETABLE_OBTRUDE_OWNER PASS ' + mode:
+            raise ValueError('Java completable obtrude owner control did not complete: ' + mode)
     validation_result = compiler.run('scheduled-periodic-validation-source', 'java', '-Xmx256m', '-cp', output,
         'ScheduledPeriodicValidationReferenceControl').strip()
     if validation_result != expected_validation: raise ValueError('Java periodic validation source differs from reference')
@@ -1541,6 +1564,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'throwFactory': 'matched-jdk-accept-recovery-and-withdrawal',
         'manualThrowFactory': 'matched-jdk-deadline-and-queued-copy-count',
         'managedReentrantFactory': list(managed_factory_modes),
+        'completableObtrude': {'cases': list(obtrude_modes), 'status': 'JDK-and-SDK-source-controls-passed'},
         'managedNullFactory': {'cases': list(managed_null_modes), 'recoveryOrder': 'matched-jdk-new-first'},
         'futureCancelInterrupt': interrupt_control, 'executorOwnerSettlement': executor_settlement,
         'executorInvokeInterrupt': 'matched-14-preinterrupted-and-two-blocked-JDK-cases',

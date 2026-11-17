@@ -329,11 +329,17 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         }
     }
 
-    private boolean finish(T result, Throwable error) {
+    private boolean finish(T result, Throwable error) { return finish(result, error, false); }
+    private boolean finish(T result, Throwable error, boolean force) {
         Action[] ready;
         Action[] pending;
         synchronized (stateLock) {
-            if (completed) return false;
+            if (completed) {
+                if (!force) return false;
+                value = result; failure = error;
+                stateLock.notifyAll();
+                return true;
+            }
             ready = dependents.toArray(new Action[0]);
             pending = accepted.toArray(new Action[0]);
             value = result;
@@ -356,6 +362,8 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
     private void asyncFailure(Throwable error) { finish(null, wrapped(error)); }
     public boolean complete(T result) { return finish(result, null); }
     public boolean completeExceptionally(Throwable error) { return finish(null, Objects.requireNonNull(error)); }
+    public void obtrudeValue(T result) { finish(result, null, true); }
+    public void obtrudeException(Throwable error) { finish(null, Objects.requireNonNull(error), true); }
     @Override public boolean cancel(boolean interrupt) {
         return finish(null, new CancellationException()) || isCancelled();
     }
@@ -392,7 +400,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         }
     }
     private T getResult(T result, Throwable error) throws ExecutionException {
-        if (error instanceof CancellationException) throw (CancellationException)error;
+        if (error instanceof CancellationException) throw observedCancellation(error, "get");
         if (error != null) {
             if (error instanceof CompletionException) {
                 Throwable cause = error.getCause();
@@ -402,8 +410,14 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
         }
         return result;
     }
-    private T joinResult(T result, Throwable error) {
-        if (error instanceof CancellationException) throw (CancellationException)error;
+    private static CancellationException observedCancellation(Throwable error, String operation) {
+        var observed = new CancellationException(operation);
+        observed.initCause(error);
+        return observed;
+    }
+    private T joinResult(T result, Throwable error, String operation) {
+        if (error instanceof CancellationException)
+            throw operation == null ? (CancellationException)error : observedCancellation(error, operation);
         if (error != null) throw (CompletionException)wrapped(error);
         return result;
     }
@@ -452,7 +466,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
                 }
                 result = value; error = failure;
             }
-            return joinResult(result, error);
+            return joinResult(result, error, "join");
         } finally { if (interrupted) Thread.currentThread().interrupt(); }
     }
     public T getNow(T otherwise) {
@@ -462,7 +476,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             if (!completed) return otherwise;
             result = value; error = failure;
         }
-        return joinResult(result, error);
+        return joinResult(result, error, "getNow");
     }
     public int getNumberOfDependents() { synchronized (stateLock) { return dependents.size(); } }
     @Override public CompletableFuture<T> toCompletableFuture() { return this; }
@@ -514,7 +528,7 @@ public class CompletableFuture<T> implements java.util.concurrent.Future<T>, Com
             if (!completed) throw new IllegalStateException("activation-future-input-not-ready");
             result = value; error = failure;
         }
-        return joinResult(result, error);
+        return joinResult(result, error, null);
     }
     private <U> CompletableFuture<U> unary(Function<? super T, ? extends U> fn, Executor executor) {
         Objects.requireNonNull(fn);
