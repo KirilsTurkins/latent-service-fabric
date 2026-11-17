@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import shutil
 import sys
+import sysconfig
 
 if __package__ in (None, ''):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -27,12 +28,18 @@ def configure(output: Path, project: Path, kit: Path, expected: str, zig: Path, 
     executable = Path(sys.executable).resolve(strict=True)
     python = str(executable)
     mounts = []
+    python_library = None
     if not executable.is_relative_to('/usr'):
         prefix = Path(sys.base_prefix).resolve(strict=True)
         if not executable.is_relative_to(prefix):
             raise ValueError('c-feature-control-python-outside-prefix')
         mounts = ['--ro-bind', str(prefix), '/python']
         python = '/python/' + executable.relative_to(prefix).as_posix()
+        library_dir = sysconfig.get_config_var('LIBDIR')
+        if library_dir:
+            library = Path(library_dir).resolve()
+            if library.is_relative_to(prefix):
+                python_library = '/python/' + library.relative_to(prefix).as_posix()
     test_project = '/test/project with spaces'
     test_kit = '/test/kit with spaces'
     command = [sandbox, '--unshare-all', '--die-with-parent', '--new-session', '--clearenv',
@@ -42,6 +49,10 @@ def configure(output: Path, project: Path, kit: Path, expected: str, zig: Path, 
                '--setenv', 'ZIG_GLOBAL_CACHE_DIR', '/test/build/zig-global',
                '--setenv', 'ZIG_LOCAL_CACHE_DIR', '/test/build/zig-local',
                '--dir', '/test', '--ro-bind', '/usr', '/usr']
+    if python_library is not None:
+        # The sandbox clears inherited loader settings. A hosted Python may
+        # dynamically link libpython from its captured installation prefix.
+        command += ['--setenv', 'LD_LIBRARY_PATH', python_library]
     for name in ('/bin', '/lib', '/lib64'):
         if Path(name).exists():
             command += ['--ro-bind', str(Path(name).resolve()), name]
