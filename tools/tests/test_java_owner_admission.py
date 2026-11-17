@@ -52,6 +52,8 @@ class RecordingCompiler:
             return 'MANAGED_EXECUTOR_STATUS_ACTIVATION PASS interrupt;owned;root-fenced;retired'
         if stage == 'scheduled-executor-status-activation':
             return 'SCHEDULED_EXECUTOR_STATUS_ACTIVATION PASS interrupt;owned;root-fenced;retired'
+        if stage.startswith('scheduled-factory-concurrency-activation-'):
+            return 'SCHEDULED_FACTORY_CONCURRENCY_ACTIVATION PASS ' + argv[-1]
         if stage == 'timer-worker-admission-source-control':
             return 'TIMER_WAIT_ADMISSION_SOURCE PASS typed-refusal;accepted-callback-not-run;owners-retired;root-refused'
         if stage.startswith('owner-admission-source-'):
@@ -76,6 +78,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
             'timer-sleep-admission-source-compile', 'timer-sleep-admission-source-control',
             *('scheduled-null-factory-activation-' + case for case in NULL_FACTORY_CASES),
             'managed-executor-status-activation', 'scheduled-executor-status-activation',
+            'scheduled-factory-concurrency-activation-withdrawn', 'scheduled-factory-concurrency-activation-registering',
             'completable-minimal-activation-source',
             'future-task-interrupt-monitor-activation',
             'timer-worker-admission-source-compile', 'timer-worker-admission-source-control',
@@ -92,6 +95,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
             'fibers/conformance/compiler/timer-source-control/ScheduledNullFactoryActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/ManagedExecutorStatusActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/ScheduledExecutorStatusActivationControl.java',
+            'fibers/conformance/compiler/timer-source-control/ScheduledFactoryConcurrencyActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/CompletableMinimalStageActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/FutureTaskInterruptMonitorActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java',
@@ -115,10 +119,11 @@ class OwnerAdmissionPreparation(unittest.TestCase):
         self.assertEqual(receipt['futureTaskInterruptMonitorActivation'], 'private-host-running-root-fence-passed')
         self.assertEqual(receipt['managedExecutorStatusActivation'], 'private-host-running-root-fence-passed')
         self.assertEqual(receipt['scheduledExecutorStatusActivation'], 'private-host-running-root-fence-passed')
+        self.assertEqual(receipt['scheduledFactoryConcurrencyActivation'], ['withdrawn', 'registering'])
         for case, (_, argv) in zip(NULL_FACTORY_CASES, compiler.calls[2:2 + len(NULL_FACTORY_CASES)], strict=True):
             self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
             self.assertEqual(argv[-2:], ('ScheduledNullFactoryActivationControl', case))
-        start = 8 + len(NULL_FACTORY_CASES)
+        start = 10 + len(NULL_FACTORY_CASES)
         for case, (_, argv) in zip(OWNER_CASES, compiler.calls[start:start + len(OWNER_CASES)], strict=True):
             self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
             self.assertEqual(argv[-2:], ('OwnerAdmissionSourceControl', case))
@@ -199,6 +204,17 @@ class OwnerAdmissionPreparation(unittest.TestCase):
                     self.run_control(compiler)
                 self.assertEqual(compiler.calls[-1][0], stage)
 
+    def test_scheduled_factory_concurrency_output_matches_each_mode(self):
+        for mode in ('withdrawn', 'registering'):
+            stage = 'scheduled-factory-concurrency-activation-' + mode
+            good = 'SCHEDULED_FACTORY_CONCURRENCY_ACTIVATION PASS ' + mode
+            for invalid in ('', good + '\n' + good, 'SCHEDULED_FACTORY_CONCURRENCY_ACTIVATION PASS other'):
+                with self.subTest(mode=mode, output=invalid):
+                    compiler = RecordingCompiler(lambda actual: invalid if actual == stage else None)
+                    with self.assertRaisesRegex(ValueError, 'scheduled factory concurrency activation control did not complete: ' + mode):
+                        self.run_control(compiler)
+                    self.assertEqual(compiler.calls[-1][0], stage)
+
     def test_null_factory_outputs_must_match_each_selected_mode(self):
         for case in NULL_FACTORY_CASES:
             stage = 'scheduled-null-factory-activation-' + case
@@ -226,6 +242,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
         stages = ('timer-sleep-admission-source-compile', 'timer-sleep-admission-source-control',
                   *('scheduled-null-factory-activation-' + case for case in NULL_FACTORY_CASES),
                   'managed-executor-status-activation', 'scheduled-executor-status-activation',
+                  'scheduled-factory-concurrency-activation-withdrawn', 'scheduled-factory-concurrency-activation-registering',
                   'completable-minimal-activation-source',
                   'future-task-interrupt-monitor-activation',
                   'timer-worker-admission-source-compile', 'timer-worker-admission-source-control',
@@ -254,6 +271,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
                      'fibers/conformance/compiler/timer-source-control/ScheduledNullFactoryActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/ManagedExecutorStatusActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/ScheduledExecutorStatusActivationControl.java',
+                     'fibers/conformance/compiler/timer-source-control/ScheduledFactoryConcurrencyActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/CompletableMinimalStageActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/FutureTaskInterruptMonitorActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java'):

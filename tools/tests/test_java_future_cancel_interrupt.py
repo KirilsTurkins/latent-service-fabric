@@ -98,12 +98,14 @@ class FutureCancellationControl(unittest.TestCase):
         interrupt_monitor_modes = ('run', 'reset', 'denied', 'lost')
         managed_status_modes = ('denied', 'lost', 'inflight', 'running')
         scheduled_status_modes = ('denied', 'lost', 'inflight', 'running')
+        factory_concurrency_modes = ('shutdown', 'denied', 'claim', 'replacement', 'uncertain-start', 'graceful-failure', 'graceful-denied', 'graceful-lost', 'manual')
         new_reference_stages = ('scheduled-periodic-validation-reference-jdk', 'scheduled-null-factory-reference-jdk',
             'scheduled-throw-factory-reference-jdk', 'manual-periodic-throw-reference-jdk',
             'managed-reentrant-factory-reference-jdk', 'completable-obtrude-reference-jdk',
             'completable-default-async-reference-jdk', 'completable-minimal-reference-jdk',
             'future-task-interrupt-monitor-reference-jdk', 'managed-null-factory-reference-jdk',
-            'managed-executor-status-reference-jdk', 'scheduled-executor-status-reference-jdk')
+            'managed-executor-status-reference-jdk', 'scheduled-executor-status-reference-jdk',
+            'scheduled-factory-concurrency-reference-jdk')
         new_source_stages = ('completable-obtrude-source', *('completable-obtrude-owner-' + mode for mode in obtrude_modes),
             'completable-default-async-source', *('completable-default-async-owner-' + mode for mode in default_async_modes),
             'completable-minimal-source', *('completable-minimal-owner-' + mode for mode in minimal_modes),
@@ -113,7 +115,8 @@ class FutureCancellationControl(unittest.TestCase):
             *('managed-reentrant-factory-owner-' + mode for mode in managed_factory_modes),
             'managed-null-factory-source', *('managed-null-factory-owner-' + mode for mode in managed_null_modes),
             'managed-executor-status-source', *('managed-executor-status-owner-' + mode for mode in managed_status_modes),
-            'scheduled-executor-status-source', *('scheduled-executor-status-owner-' + mode for mode in scheduled_status_modes))
+            'scheduled-executor-status-source', *('scheduled-executor-status-owner-' + mode for mode in scheduled_status_modes),
+            'scheduled-factory-concurrency-source', *('scheduled-factory-concurrency-owner-' + mode for mode in factory_concurrency_modes))
 
         def run(stage, *argv):
             calls.append((stage, argv))
@@ -167,6 +170,11 @@ class FutureCancellationControl(unittest.TestCase):
                 return 'SCHEDULED_EXECUTOR_STATUS PASS open;shutdown;terminated;interrupt-hook'
             if stage.startswith('scheduled-executor-status-owner-'):
                 return 'SCHEDULED_EXECUTOR_STATUS_OWNER PASS ' + argv[-1]
+            if stage in ('scheduled-factory-concurrency-reference-jdk', 'scheduled-factory-concurrency-source'):
+                return ('SCHEDULED_FACTORY_CONCURRENCY PASS nested;shutdown;shutdown-throw;'
+                        'graceful-pruned;null-recovery;throw-recovery')
+            if stage.startswith('scheduled-factory-concurrency-owner-'):
+                return 'SCHEDULED_FACTORY_CONCURRENCY_OWNER PASS ' + argv[-1]
             if stage in ('executor-invoke-interrupt-reference-jdk', 'executor-invoke-interrupt-source'):
                 return ('EXECUTOR_INVOKE_INTERRUPT PASS preinterrupted-ready;empty;zero;pending-cancel;'
                     'blocked-interrupt')
@@ -231,6 +239,7 @@ class FutureCancellationControl(unittest.TestCase):
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskInterruptMonitorOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedExecutorStatusOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ScheduledExecutorStatusOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ScheduledFactoryConcurrencyOwnerControl.java', argv)
         for stage in new_reference_stages:
             self.assertIn(stage, [name for name, _ in calls])
         reference_argv = next(args for stage, args in calls if stage == 'scheduled-stopped-reference-compile')
@@ -247,6 +256,8 @@ class FutureCancellationControl(unittest.TestCase):
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedExecutorStatusReferenceControl.java',
                       reference_argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ScheduledExecutorStatusReferenceControl.java',
+                      reference_argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ScheduledFactoryConcurrencyReferenceControl.java',
                       reference_argv)
         for missing in ('executor-invoke-interrupt-reference-jdk', 'executor-invoke-interrupt-source',
                         'executor-invoke-interrupt-owner', 'executor-await-termination-reference-jdk',
@@ -272,7 +283,7 @@ class FutureCancellationControl(unittest.TestCase):
                 def incomplete(stage, *arguments):
                     return 'SKIPPED' if stage == missing else run(stage, *arguments)
                 incomplete_compiler = SimpleNamespace(sdk=sdk, run=incomplete)
-                with self.assertRaisesRegex(ValueError, 'Java (periodic validation|null-factory|throwing-factory|manual periodic|managed|scheduled executor status|completable obtrude|completable default async|completable minimal|future task interrupt monitor).* (did not complete|differs from reference)'):
+                with self.assertRaisesRegex(ValueError, 'Java (periodic validation|null-factory|throwing-factory|manual periodic|managed|scheduled executor status|scheduled factory concurrency|completable obtrude|completable default async|completable minimal|future task interrupt monitor).* (did not complete|differs from reference)'):
                     subject.scheduled_source_control(incomplete_compiler, Path(temporary) / 'source')
                 matrix.assert_not_called()
 
