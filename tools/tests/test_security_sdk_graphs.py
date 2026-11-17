@@ -505,6 +505,48 @@ class SdkGraphTests(unittest.TestCase):
                  self.assertRaises(SecurityError):
                 inventory(root)
 
+    def test_finite_wait_and_c_feature_fixture_manifests_are_exact_and_covered(self) -> None:
+        import xml.etree.ElementTree as xml
+        from tools.security_common import POLICY, read_file
+        root = Path(__file__).resolve().parents[2]
+        context = "sdk/dotnet-guest/tests/fixtures/task-wait-finite-context-control/FiniteContextControl.csproj"
+        il = "sdk/dotnet-guest/tests/fixtures/task-wait-finite-il-control/FiniteIlControl.csproj"
+        cmake = "tools/tests/fixtures/c-feature-probe/CMakeLists.txt"
+        expected = {
+            context: "cdd6f0b4e4b9c72196431282fc7f42508e52e0f6a10b88a948a157bbdabd220b",
+            il: "5bf4549e9c5a199e345ceed8aedfe7432ce19062b0b561ff63202b19afcf1043",
+            cmake: "880c1b4916c53920caebe4094711b3af11e5c7c1c42f0b80e04a0ed76205e453",
+        }
+        configuration = json.loads(read_file(POLICY, "inventory.json"))
+        for path, checksum in expected.items():
+            with self.subTest(path=path):
+                entries = [entry for entry in configuration["manifests"] if entry["path"] == path]
+                self.assertEqual(len(entries), 1)
+                self.assertEqual(entries[0]["kind"], "no-external-packages")
+                self.assertEqual(entries[0]["sha256"], checksum)
+                self.assertEqual(entries[0]["absent_when_directory_missing"], str(Path(path).parent).replace("\\", "/"))
+                self.assertEqual(digest(read_file(root, path).replace(b"\r\n", b"\n")), checksum)
+        for path in (context, il):
+            project = xml.fromstring(read_file(root, path))
+            for tag in ("PackageReference", "ProjectReference", "Import"):
+                self.assertEqual(list(project.iter(tag)), [])
+            references = [item.attrib for item in project.iter("Reference")]
+            self.assertEqual(references, [] if path == context else
+                             [{"Include": "Mono.Cecil", "HintPath": "$(LsfCecilPath)"}])
+        packages, records = inventory(root)
+        self.assertEqual({item["path"] for item in records if item["path"] in expected}, set(expected))
+        self.assertTrue(all(item["packages"] == 0 for item in records if item["path"] in expected))
+        self.assertIn(Package("NuGet", "Microsoft.NET.ILLink.Tasks", "10.0.0",
+                              "sdk/dotnet-guest/probes/smoke/packages.lock.json"), packages)
+        original = read_file(root, il)
+        changed_il = original.replace(b"$(LsfCecilPath)", b"outside.dll")
+        self.assertNotEqual(original, changed_il)
+        def changed(repo, name, *limits):
+            return changed_il if repo == root and name == il else read_file(repo, name, *limits)
+        with patch("tools.security_inventory.read_file", side_effect=changed), \
+             self.assertRaisesRegex(SecurityError, "unreviewed-sdk-manifest-change"):
+            inventory(root)
+
     def test_http_error_helpers_keep_exact_manifest_pins_and_the_scanned_compiler_dependency(self) -> None:
         import xml.etree.ElementTree as xml
         from tools.security_common import POLICY, read_file

@@ -7,12 +7,20 @@
 
 #define CHECK(x) do { if (!(x)) return __LINE__; } while (0)
 
+static int same_text(const char *left, const char *right) {
+    if (!left || !right) return 0;
+    while (*left && *left == *right) { ++left; ++right; }
+    return *left == *right;
+}
+
 #ifdef LSF_C_RESOLVER_TEST_ALLOC
 /* This compile-only allocator double targets refusal without invoking the
  * separately unqualified real-libc errno getter. */
 static struct { _Alignas(max_align_t) unsigned char data[128]; int used; } slots[4];
 static int refuse_allocation, live_allocations, bad_free;
+static size_t allocation_request;
 void *lsf_test_malloc(size_t size) {
+    allocation_request = size;
     if (refuse_allocation || size > sizeof(slots[0].data)) return NULL;
     for (unsigned i = 0; i < 4; ++i) {
         if (!slots[i].used) { slots[i].used = 1; ++live_allocations; return slots[i].data; }
@@ -60,8 +68,28 @@ int numeric_resolver_controls(void) {
     CHECK(getaddrinfo(NULL, "80", &hints, &first) == EAI_NONAME && first == NULL);
     CHECK(getaddrinfo("1.2.3.4.5", "80", &hints, &first) == EAI_NONAME && first == NULL);
     hints.ai_flags = AI_CANONNAME;
-    CHECK(getaddrinfo("127.0.0.1", "80", &hints, &first) == EAI_BADFLAGS && first == NULL);
+    char literal[] = "127.0.0.1";
+    CHECK(getaddrinfo(literal, "80", &hints, &first) == 0 && first);
+    CHECK(first->ai_canonname != literal && same_text(first->ai_canonname, "127.0.0.1"));
+    literal[0] = '9';
+    CHECK(same_text(first->ai_canonname, "127.0.0.1"));
+    hints.ai_flags = AI_CANONNAME | AI_NUMERICHOST | AI_NUMERICSERV;
+    CHECK(getaddrinfo("255.255.255.255", "443", &hints, &second) == 0 && second);
+    CHECK(second != first && second->ai_canonname != first->ai_canonname);
+    CHECK(same_text(second->ai_canonname, "255.255.255.255"));
+    freeaddrinfo(first); first = NULL;
+    CHECK(same_text(second->ai_canonname, "255.255.255.255"));
+    freeaddrinfo(second); second = NULL;
+    CHECK(getaddrinfo("0.9.10.100", NULL, &hints, &first) == 0 && first);
+    CHECK(same_text(first->ai_canonname, "0.9.10.100"));
+    freeaddrinfo(first); first = NULL;
+    CHECK(getaddrinfo("99.101.200.255", "0", &hints, &first) == 0 && first);
+    CHECK(same_text(first->ai_canonname, "99.101.200.255"));
+    freeaddrinfo(first); first = NULL;
+    CHECK(getaddrinfo("example.com", "443", &hints, &first) == EAI_NONAME && first == NULL);
     hints.ai_flags = AI_ADDRCONFIG;
+    CHECK(getaddrinfo("127.0.0.1", "80", &hints, &first) == EAI_BADFLAGS && first == NULL);
+    hints.ai_flags = AI_CANONNAME | AI_PASSIVE;
     CHECK(getaddrinfo("127.0.0.1", "80", &hints, &first) == EAI_BADFLAGS && first == NULL);
     hints.ai_flags = AI_NUMERICHOST | AI_NUMERICSERV;
     CHECK(getaddrinfo("127.0.0.1", "https", &hints, &first) == EAI_NONAME && first == NULL);
@@ -89,7 +117,17 @@ int numeric_resolver_allocation_refusal(void) {
     CHECK(result == NULL && live_allocations == 0 && !bad_free);
     refuse_allocation = 0;
     CHECK(getaddrinfo("127.0.0.1", "8080", &hints, &result) == 0 && result);
+    size_t original_request = allocation_request;
     CHECK(live_allocations == 1);
+    freeaddrinfo(result);
+    CHECK(live_allocations == 0 && !bad_free);
+    hints.ai_flags = AI_CANONNAME; refuse_allocation = 1;
+    CHECK(getaddrinfo("127.0.0.1", "8080", &hints, &result) == EAI_MEMORY);
+    CHECK(allocation_request == original_request + sizeof("127.0.0.1"));
+    CHECK(result == NULL && live_allocations == 0 && !bad_free);
+    refuse_allocation = 0;
+    CHECK(getaddrinfo("127.0.0.1", "8080", &hints, &result) == 0 && result);
+    CHECK(same_text(result->ai_canonname, "127.0.0.1") && live_allocations == 1);
     freeaddrinfo(result);
     CHECK(live_allocations == 0 && !bad_free);
     return 0;

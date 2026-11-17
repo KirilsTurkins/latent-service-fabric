@@ -240,7 +240,7 @@ pub use ingress::{
 };
 mod ingress {
     use super::*;
-    use crate::broker::io::IoMemory;
+    use crate::broker::io::{HttpInputRetirement, IoMemory};
     use crate::broker::session::{PreparedShared, SessionCoreOwner, Shared};
     use latent_core::HostMemoryReservation;
     use std::{alloc::Layout, ops::Deref, sync::Arc};
@@ -397,6 +397,30 @@ mod ingress {
     pub struct HttpBodyOwner {
         bytes: Vec<u8>,
         _memory: HttpInputMemory,
+    }
+    impl HttpBodyOwner {
+        /// Retain this body's actual Bytes allocation under the original
+        /// operation and activation until the final transport clone retires.
+        #[doc(hidden)]
+        pub fn into_http_bytes(self) -> Result<bytes::Bytes, HttpError> {
+            let charge =
+                bytes::Bytes::owner_with_retirement_allocation_size::<Self, HttpInputRetirement>()
+                    .checked_add(64)
+                    .ok_or(HttpError::RequestTooLarge)?;
+            let (logical, original) = match &self._memory.0 {
+                Memory::Legacy(logical) => (&**logical, None),
+                Memory::Funded { logical, original } => (&**logical, Some(&original.original)),
+            };
+            let retirement = logical.reserve_http_body_owner(original, charge)?;
+            Ok(match retirement {
+                Some(retirement) => {
+                    bytes::Bytes::from_owner_with_retirement(self, retirement, |guard| {
+                        guard.confirm()
+                    })
+                }
+                None => bytes::Bytes::from_owner(self),
+            })
+        }
     }
     impl AsRef<[u8]> for HttpBodyOwner {
         fn as_ref(&self) -> &[u8] {

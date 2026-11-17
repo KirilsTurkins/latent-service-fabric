@@ -17,8 +17,25 @@ from tools.c_guest import feature_detection, standard_facilities, threading
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot, write_json
 
 
+def relocated_python(executable: Path, prefix: Path) -> tuple[str, list[str]]:
+    """Bind an external Python and retain only its own shared-library paths."""
+    if not executable.is_relative_to(prefix):
+        raise ValueError('c-feature-control-python-outside-prefix')
+    python = '/python/' + executable.relative_to(prefix).as_posix()
+    options = ['--ro-bind', str(prefix), '/python']
+    libraries = []
+    for name in ('lib', 'lib64'):
+        directory = prefix / name
+        if directory.is_dir() and directory.resolve(strict=True).is_relative_to(prefix):
+            libraries.append('/python/' + name)
+    if libraries:
+        options += ['--setenv', 'LD_LIBRARY_PATH', ':'.join(libraries)]
+    return python, options
+
+
 def configure(output: Path, project: Path, kit: Path, expected: str, zig: Path, cmake: Path,
-              label: str, *, present: bool, wrong_compiler: bool = False, sdk_root: Path = ROOT):
+              label: str, *, present: bool, wrong_compiler: bool = False,
+              omit_socket: bool = False, sdk_root: Path = ROOT):
     sandbox = shutil.which('bwrap')
     if sys.platform != 'linux' or not sandbox or not cmake.is_relative_to('/usr'):
         raise ValueError('c-feature-control-requires-linux-system-cmake-and-bubblewrap')
@@ -28,10 +45,7 @@ def configure(output: Path, project: Path, kit: Path, expected: str, zig: Path, 
     mounts = []
     if not executable.is_relative_to('/usr'):
         prefix = Path(sys.base_prefix).resolve(strict=True)
-        if not executable.is_relative_to(prefix):
-            raise ValueError('c-feature-control-python-outside-prefix')
-        mounts = ['--ro-bind', str(prefix), '/python']
-        python = '/python/' + executable.relative_to(prefix).as_posix()
+        python, mounts = relocated_python(executable, prefix)
     test_project = '/test/project with spaces'
     test_kit = '/test/kit with spaces'
     command = [sandbox, '--unshare-all', '--die-with-parent', '--new-session', '--clearenv',
@@ -54,7 +68,9 @@ def configure(output: Path, project: Path, kit: Path, expected: str, zig: Path, 
                 '-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=/repo/tools/c_guest/feature_loader.cmake',
                 '-DLSF_C_FEATURE_PROJECT=' + test_project, '-DLSF_C_FEATURE_KIT=' + test_kit,
                 '-DLSF_C_FEATURE_EXPECT=' + expected, '-DLSF_C_FEATURE_PYTHON=' + python,
-                '-DLSF_EXPECT_FEATURE=' + ('ON' if present else 'OFF')]
+                '-DLSF_EXPECT_FEATURE=' + ('ON' if present else 'OFF'),
+                '-DLSF_EXPECT_SOCKET=' + ('OFF' if omit_socket else 'ON'),
+                '-DLSF_OMIT_SOCKET_SOURCE=' + ('ON' if omit_socket else 'OFF')]
     result = run_bounded_result(command, output, {'PATH': os.defpath}, 120, 4 * 1024 * 1024)
     (output / (label + '.stdout.txt')).write_bytes(result.stdout)
     (output / (label + '.stderr.txt')).write_bytes(result.stderr)
@@ -73,12 +89,18 @@ def run(output: Path, zig: Path, wit: Path, wasm: Path, cmake: Path) -> dict:
     expected = digest(receipt)
     value = json.loads(receipt)
     if (value['numericResolver'] != 'captured' or value['authority'] != 'none'
+            or value['socketProbe']['link'] != 'actual-sdk-source'
             or value['configureExecuted'] is not False or value['componentBuilt'] is not False
             or feature_detection.verify(project, kit, expected, zig) != value['object']['digest']):
         raise ValueError('c-feature-control-selected-receipt')
     good = configure(output / 'new-configure', project, kit, expected, zig, cmake, 'new', present=True)
     if good.returncode or read_file(output / 'new-configure/feature-result.txt') != b'passed\n':
         raise ValueError('c-feature-control-selected-cmake')
+
+    missing_socket = configure(output / 'missing-socket-configure', project, kit, expected,
+                               zig, cmake, 'missing-socket', present=True, omit_socket=True)
+    if missing_socket.returncode or read_file(output / 'missing-socket-configure/feature-result.txt') != b'passed\n':
+        raise ValueError('c-feature-control-socket-missing-source')
 
     old = output / 'old-project'
     shutil.copytree(project, old)
@@ -109,6 +131,23 @@ def run(output: Path, zig: Path, wit: Path, wasm: Path, cmake: Path) -> dict:
                            zig, cmake, 'tampered-object', present=True)
     if bad_object.returncode == 0 or b'c-feature-probe-object-changed' not in bad_object.stderr:
         raise ValueError('c-feature-control-object-tamper')
+    changed_binding = output / 'tampered-socket-binding-kit'
+    shutil.copytree(kit, changed_binding)
+    binding = changed_binding / 'socket-bindings/probe.h'
+    binding.write_bytes(read_file(binding) + b'\n/* changed after preparation */\n')
+    bad_binding = configure(output / 'tampered-socket-binding-configure', project, changed_binding,
+                            expected, zig, cmake, 'tampered-socket-binding', present=True)
+    if bad_binding.returncode == 0 or b'c-feature-probe-socket-bindings-changed' not in bad_binding.stderr:
+        raise ValueError('c-feature-control-socket-binding-tamper')
+    changed_declaration = output / 'tampered-socket-declaration-kit'
+    shutil.copytree(kit, changed_declaration)
+    declaration = changed_declaration / 'socket-probe.h'
+    declaration.write_bytes(read_file(declaration) + b'\n/* changed after preparation */\n')
+    bad_declaration = configure(output / 'tampered-socket-declaration-configure', project, changed_declaration,
+                                expected, zig, cmake, 'tampered-socket-declaration', present=True)
+    if bad_declaration.returncode == 0 or b'c-feature-probe-socket-bindings-changed' not in bad_declaration.stderr:
+        raise ValueError('c-feature-control-socket-declaration-tamper')
+
     changed_project = output / 'tampered-project'
     shutil.copytree(project, changed_project)
     selected_source = changed_project / standard_facilities.SDK_SOURCE_PREFIX / standard_facilities.RESOLVER_SOURCE
@@ -117,6 +156,17 @@ def run(output: Path, zig: Path, wit: Path, wasm: Path, cmake: Path) -> dict:
                            zig, cmake, 'tampered-source', present=True)
     if bad_source.returncode == 0 or b'vendored' not in bad_source.stderr or b'SDK changed' not in bad_source.stderr:
         raise ValueError('c-feature-control-source-tamper')
+    for label, name in (('socket-source', feature_detection.SOCKET_SOURCE),
+                        ('socket-wit', feature_detection.SOCKET_WIT)):
+        changed = output / ('tampered-' + label + '-project')
+        shutil.copytree(project, changed)
+        target = changed / name
+        target.write_bytes(read_file(target) + b'\n/* changed after preparation */\n')
+        result = configure(output / ('tampered-' + label + '-configure'), changed, kit, expected,
+                           zig, cmake, 'tampered-' + label, present=True)
+        if result.returncode == 0 or b'vendored' not in result.stderr or b'SDK changed' not in result.stderr:
+            raise ValueError('c-feature-control-' + label + '-tamper')
+
     changed_include = output / 'unexpected-include-kit'
     shutil.copytree(kit, changed_include)
     (changed_include / 'lsf-c-features.cmake').write_text('message(FATAL_ERROR "unexpected code executed")\n')
@@ -151,6 +201,8 @@ def run(output: Path, zig: Path, wit: Path, wasm: Path, cmake: Path) -> dict:
     result = {'status': 'passed', 'featureReceiptDigest': expected,
               'resolverDigest': value['source']['digest'], 'objectDigest': value['object']['digest'],
               'cases': ['paths-with-spaces', 'old-capture', 'old-compiler-tamper', 'object-tamper', 'source-tamper',
+                        'socket-link', 'missing-socket-source', 'socket-binding-tamper', 'socket-declaration-tamper',
+                        'socket-source-tamper', 'socket-wit-tamper',
                         'unexpected-include', 'changed-sdk-loader',
                         'wrong-compiler', 'unsafe-path-refusal'],
               'configureNetwork': 'denied', 'componentBuilt': False, 'realProvider': False}

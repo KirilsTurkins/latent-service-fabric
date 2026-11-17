@@ -117,6 +117,12 @@ byte counts, evidence/uncertainty and rejection class. Never inspect/store paylo
 protocol replies, keys or invented SQL/mail/HTTP attribution. No capacity means
 no new dispatch. Credential/revocation/rotation fences deny new work while
 already accepted physical work retains its original charge until destruction.
+During provider retirement, each captured connection and configured resolver is
+visited even if a wake panics. The first panic still reaches the caller; pending
+operations and unretired physical owners keep their original charges. If a
+secondary panic payload itself panics during destruction, the walk can stop;
+no double-panic recovery is claimed. This is not proof that a panicking
+operation or native kernel has physically retired.
 
 ## Caps, suspension and physical retirement
 
@@ -151,14 +157,34 @@ reservations do not measure RSS/allocator/kernel peak usage.
 The write future keeps its input, original chunk admission and connection
 until that input is destroyed. On the pinned Rust 1.97.1 Linux x86-64 non-test
 build with `development-outbound` enabled, this changes the measured
-write-future allocation from 4,896 to 5,216 bytes;
+write-future payload allocation from 4,896 to 5,216 bytes;
 with the existing 64-byte bookkeeping allowance its original activation
 reservation changes from 4,960 to 5,280 bytes. Admission reserves the actual
 compiled future before constructing the input or dispatching, so an activation
 with less than the extra 320 bytes available can refuse a write earlier. These
 measurements are compiler-layout specific, not a new fixed profile limit; the
-16 KiB connection-owner allowance is unchanged. Read and lowering-copy
-retirement still require separate qualification.
+16 KiB connection-owner allowance is unchanged.
+
+On that same build, generic output-slot backing increases from 200 to 216 bytes,
+and session backing increases by 8 bytes. Each retained stream read separately
+prepays its actual chunk Arc: 264 bytes including bookkeeping, within the existing
+512-byte node metadata window and in addition to the unchanged 16 KiB connection
+allowance. These original-activation reservations precede allocation and may
+cause earlier refusal under a tight budget. Broader read and lowering-copy
+lifecycle qualification remains open. The production connection path now
+prepays a private shared scope from its original activation before allocating
+its Arc. On the pinned Linux x86-64 build this adds 232 bytes including
+bookkeeping; the last private handle moves the scope and its charge out only
+after the Arc backing is freed. Tight budgets can refuse earlier. The legacy
+raw-Arc kernel-ownership API remains available and does not gain this private
+handle's lifetime guarantee. A standalone allocator witness observes the
+actual 168-byte private Arc on this build while its original 232-byte activation
+charge remains held through deallocation, including concurrent final clones and
+caller unwind. Its legacy Weak control confirms that the raw Arc can outlive
+its scope charge. During an ordinary failed dial, the socket value is destroyed
+before its original connection reservation. A second
+destructor panic during an existing unwind can abort the process; these controls
+do not establish recovery from that case.
 
 #736 readiness records park only the calling logical thread with sealed Store
 generation; siblings/nested calls may progress. No mutable Store borrow spans

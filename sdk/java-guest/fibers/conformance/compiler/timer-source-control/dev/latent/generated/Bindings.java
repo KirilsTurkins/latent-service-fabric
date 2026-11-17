@@ -24,7 +24,8 @@ public final class Bindings {
         private static final HashMap<LatentRuntimeActivationToken, LatentRuntimeActivationOwnerKind> owners = new HashMap<>();
         public static final ArrayList<LatentRuntimeActivationToken> selected = new ArrayList<>();
         public static int waits, stops;
-        public static long lastNanos;
+        public static long lastNanos, lastWaitNanos;
+        public static Option<LatentRuntimeActivationToken> lastWaitContinuation;
         public static boolean denyNext, denyStop, denySettle;
         public static boolean denyRegistration, nullRegistration;
         public static RuntimeException registrationFailure;
@@ -79,7 +80,8 @@ public final class Bindings {
         public static Reply<Void> wake(LatentRuntimeActivationToken token) { return new Reply<>(null, null); }
         public static Reply<Void> close() { return new Reply<>(null, null); }
         public static Reply<Void> waitFor(Unsigned64 nanos, Option<LatentRuntimeActivationToken> continuation) {
-            waits++; var owner = register(LatentRuntimeActivationOwnerKind.Timer, continuation);
+            waits++; lastWaitNanos = nanos.bits(); lastWaitContinuation = continuation;
+            var owner = register(LatentRuntimeActivationOwnerKind.Timer, continuation);
             return owner.isError() ? new Reply<>(null, owner.error()) : settle(owner.value());
         }
     }

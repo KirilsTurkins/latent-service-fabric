@@ -142,7 +142,36 @@ pub struct SessionResourceTableReservation {
     _metadata: Charge,
     _slot: Charge,
 }
+#[allow(dead_code)]
+struct OriginalResourceTableLayout {
+    core: SessionCoreOwner,
+    metadata: super::ownership::OriginalChargeLayout,
+    slot: super::ownership::OriginalChargeLayout,
+}
+impl Drop for OriginalResourceTableLayout {
+    fn drop(&mut self) {}
+}
+const _: () = {
+    assert!(
+        std::mem::size_of::<SessionResourceTableReservation>()
+            == std::mem::size_of::<OriginalResourceTableLayout>()
+    );
+    assert!(
+        std::mem::align_of::<SessionResourceTableReservation>()
+            == std::mem::align_of::<OriginalResourceTableLayout>()
+    );
+    assert!(
+        std::mem::size_of::<Option<SessionResourceTableReservation>>()
+            == std::mem::size_of::<Option<OriginalResourceTableLayout>>()
+    );
+};
 impl SessionResourceTableReservation {
+    pub(in crate::broker) fn set_stream_scope_tag(&mut self, tag: u32) {
+        self._slot.set_identity_tag(tag);
+    }
+    pub(in crate::broker) fn stream_scope_tag(&self) -> u32 {
+        self._slot.identity_tag()
+    }
     /// Admit the exact future backing before its source-owned builder runs.
     pub fn prepare_io_future<Make, F>(
         &self,

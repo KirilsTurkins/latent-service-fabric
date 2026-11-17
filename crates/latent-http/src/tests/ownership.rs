@@ -409,7 +409,10 @@ async fn native_http_ingress_bytes_and_driver_token_keep_original_credit_until_a
     caller.fill(0);
     // These are the ACTUAL types stored by Bytes and HttpConnection.input.
     let driver_token = request.memory().clone();
-    let body = bytes::Bytes::from_owner(request.take_body());
+    let before_owner = control.budget.host_memory_bytes();
+    let body = request.take_body().into_http_bytes().unwrap();
+    let owner_charge = control.budget.host_memory_bytes() - before_owner;
+    assert!(owner_charge > 0);
     let delayed = body.clone();
     drop(body);
     drop(request);
@@ -418,8 +421,96 @@ async fn native_http_ingress_bytes_and_driver_token_keep_original_credit_until_a
     let held = control.budget.host_memory_bytes();
     assert!(held > baseline);
     drop(delayed);
-    assert_eq!(control.budget.host_memory_bytes(), held); // driver still owns current hop
+    // The Box has retired, while the driver still owns the original ingress.
+    assert_eq!(control.budget.host_memory_bytes(), held - owner_charge);
     drop(driver_token);
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
+    assert_eq!(
+        f.io.snapshot(),
+        latent_capabilities::broker::io::IoSnapshot::default()
+    );
+    drop(session);
+    f.clean().await;
+}
+
+#[tokio::test]
+async fn native_http_buffered_body_last_clone_keeps_original_ingress_and_box_charge() {
+    use latent_capabilities::broker::http::PreparedHttpInput;
+    let f = Fixture::new(config(12345));
+    let (session, control) = f.session(5000);
+    let observer = session.observer();
+    let baseline = control.budget.host_memory_bytes();
+    let mut source = BorrowedHttpInput {
+        url: "http://localhost:12345/allowed",
+        body: Some(b"resident"),
+        headers: &[],
+        writes: 0,
+    };
+    let prepared = PreparedHttpInput::new(&session, &mut source).unwrap();
+    let client = f.provider.inner.client(0).unwrap();
+    let admission = f.pools.admit(&client, &session).unwrap();
+    let mut request = prepared
+        .finish(&admission, &mut source, ingress_limits())
+        .unwrap();
+    let before_host = control.budget.host_memory_bytes();
+    let before_node = f.io.snapshot().metadata_bytes;
+    let bytes = request.take_body().into_http_bytes().unwrap();
+    let owner_charge = control.budget.host_memory_bytes() - before_host;
+    assert!(owner_charge > 64);
+    assert_eq!(
+        f.io.snapshot().metadata_bytes,
+        before_node + owner_charge as usize
+    );
+    let clone = bytes.clone();
+    drop(bytes);
+    drop(request);
+    drop(admission);
+    assert_eq!(&clone[..], b"resident");
+    assert!(control.budget.host_memory_bytes() >= owner_charge);
+    assert!(f.io.snapshot().metadata_bytes >= owner_charge as usize);
+    assert!(!observer.is_quiescent());
+    drop(clone);
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
+    assert_eq!(
+        f.io.snapshot(),
+        latent_capabilities::broker::io::IoSnapshot::default()
+    );
+    drop(session);
+    assert!(observer.is_quiescent());
+    f.clean().await;
+}
+
+#[tokio::test]
+async fn native_http_buffered_funded_owner_refuses_before_transport_publication() {
+    use latent_capabilities::broker::http::PreparedHttpInput;
+    let f = Fixture::new(config(12345));
+    let (session, control) = f.session(5000);
+    let baseline = control.budget.host_memory_bytes();
+    let mut source = BorrowedHttpInput {
+        url: "http://localhost:12345/allowed",
+        body: Some(b"resident"),
+        headers: &[],
+        writes: 0,
+    };
+    let prepared = PreparedHttpInput::new(&session, &mut source).unwrap();
+    let client = f.provider.inner.client(0).unwrap();
+    let admission = f.pools.admit(&client, &session).unwrap();
+    let mut request = prepared
+        .finish(&admission, &mut source, ingress_limits())
+        .unwrap();
+    let before = control.budget.host_memory_bytes();
+    let node = f.io.snapshot();
+    let held = control.budget.granted().memory_bytes - before;
+    let padding = control.budget.reserve_host_memory(held).unwrap();
+    assert!(matches!(
+        request.take_body().into_http_bytes(),
+        Err(HttpError::BudgetExhausted)
+    ));
+    assert_eq!(control.budget.host_memory_bytes(), before + held);
+    assert_eq!(f.io.snapshot(), node);
+    drop(padding);
+    drop(request);
+    drop(admission);
     assert_eq!(control.budget.host_memory_bytes(), baseline);
     assert_eq!(
         f.io.snapshot(),

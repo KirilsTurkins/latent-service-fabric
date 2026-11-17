@@ -4,8 +4,9 @@ The original crate is bytes 1.12.1, registry archive SHA-256
 `fc652a48c352aef3ea3aed32080501cf3ef6ed5da78602a020c991775b0aff04`.
 `UPSTREAM.json` records the original file identities and retained MIT license.
 The original constructor, vtable, atomics and other source remain unchanged.
-The only source addition is `from_owner_with_retirement` and its separate
-private vtable; the Cargo manifest additionally registers its allocator test.
+The source additions are `from_owner_with_retirement`, its separate private
+vtable, and a hidden generic size query for that exact owner Box. The Cargo
+manifest additionally registers its allocator test.
 
 The original `from_owner` destroys fields of its owner before freeing the
 opaque owner Box. A reservation inside that owner can therefore refund the
@@ -22,7 +23,8 @@ The returned result keeps its existing ordinary execution budget owner as well
 as that physical-memory reservation. The original 256-byte owner escrow and
 all byte-capacity/refusal/clone/journal assertions remain.
 
-`test_owner_retirement` uses a real allocator observer. It rejects the former
+`test_owner_retirement` uses a real allocator observer and checks the queried
+size against the actual Box allocation. It rejects the former
 layout through the original constructor, then verifies the new ordering for
 stable-address owners, slices/clones, Vec and mutable copies, an empty payload,
 eight concurrent final clones and unwinding in confirmation, AsRef and Drop.

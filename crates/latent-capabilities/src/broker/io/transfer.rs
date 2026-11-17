@@ -1,4 +1,5 @@
 //! One accepted transfer, finite totals and independently owned resident chunks.
+use super::output_slot::OutputSlot;
 use super::{
     capacity, denied, invalid, Authority, Charge, IoBuffer, IoCall, IoMemory, Kind, OperationOwner,
     PlatformError, Shared,
@@ -23,6 +24,7 @@ struct Transfer {
     outstanding: AtomicUsize,
     closed: AtomicBool,
     host_memory: bool,
+    stream_scope: u32,
     _metadata: Charge,
     _stream: Charge,
 }
@@ -34,12 +36,26 @@ pub struct IoTransfer {
 struct Slot {
     inner: Shared<Transfer>,
 }
+#[cfg(test)]
+static PANIC_SLOT_ADDRESS: AtomicUsize = AtomicUsize::new(0);
 /// Can be moved directly into a transport's immutable byte owner without copying.
 pub struct IoInputChunk {
     bytes: Vec<u8>,
     _memory: IoMemory,
     _slot: Slot,
     owner: Option<Arc<dyn Send + Sync>>,
+}
+
+fn http_input_owner_bytes() -> Result<usize, PlatformError> {
+    // The vendored Bytes query uses the constructor's actual private Box type;
+    // its retirement guard is taken out before the Box is dropped, including
+    // during owner unwind. Do not mirror that layout in the caller.
+    bytes::Bytes::owner_with_retirement_allocation_size::<
+        IoInputChunk,
+        super::memory::HttpInputRetirement,
+    >()
+    .checked_add(super::ALLOCATION_BOOKKEEPING)
+    .ok_or_else(capacity)
 }
 /// One buffer and one outstanding slot prepaid by their original transfer.
 /// The allocation dies before its memory and slot reservations. A Store-side
@@ -80,6 +96,22 @@ impl PreparedIoInput {
     }
 }
 impl IoInputChunk {
+    /// Convert the original accepted input into its HTTP byte owner. Native
+    /// profiles prepay its exact backing and retain the original charges until
+    /// the last transport clone has physically released the allocation.
+    #[doc(hidden)]
+    pub fn into_http_bytes(self) -> Result<bytes::Bytes, PlatformError> {
+        let retirement = self
+            ._memory
+            .reserve_http_input_owner(http_input_owner_bytes()?)?;
+        Ok(match retirement {
+            Some(retirement) => {
+                bytes::Bytes::from_owner_with_retirement(self, retirement, |guard| guard.confirm())
+            }
+            None => bytes::Bytes::from_owner(self),
+        })
+    }
+
     pub fn retain_owner(&mut self, owner: Arc<dyn Send + Sync>) -> Result<(), PlatformError> {
         if self.owner.is_some() {
             return Err(denied());
@@ -99,7 +131,7 @@ impl AsRef<[u8]> for IoInputChunk {
 pub struct IoOutputChunk {
     bytes: IoBuffer,
     copy: Option<IoMemory>,
-    _slot: Shared<Slot>,
+    _slot: OutputSlot<Slot>,
     owner: Option<Arc<dyn Send + Sync>>,
 }
 
@@ -115,7 +147,7 @@ pub struct IoOutputCopy {
 // No erased wrapper allocation or manufactured owner is accepted.
 enum CopyRetention {
     Transfer {
-        _slot: Shared<Slot>,
+        _slot: OutputSlot<Slot>,
         _owner: Option<Arc<dyn Send + Sync>>,
     },
     Blob {
@@ -223,7 +255,7 @@ impl IoOutputChunk {
         })
     }
     pub fn retain_owner(&mut self, owner: Arc<dyn Send + Sync>) -> Result<(), PlatformError> {
-        if self.owner.is_some() || self.copy.is_none() {
+        if self.owner.is_some() || self.copy.is_none() || self._slot.has_stream() {
             return Err(denied());
         }
         self.owner = Some(owner);
@@ -233,16 +265,49 @@ impl IoOutputChunk {
 pub struct IoTransferBuffer {
     bytes: IoBuffer,
     copy: IoMemory,
-    slot: Shared<Slot>,
+    slot: OutputSlot<Slot>,
     owner: Option<Arc<dyn Send + Sync>>,
 }
 impl IoTransferBuffer {
     pub fn retain_owner(&mut self, owner: Arc<dyn Send + Sync>) -> Result<(), PlatformError> {
-        if self.owner.is_some() {
+        if self.owner.is_some() || self.slot.has_stream() {
             return Err(denied());
         }
         self.owner = Some(owner);
         Ok(())
+    }
+    /// Bind a stream's original connection and chunk admission to this output.
+    /// This trusted host-only path neither creates nor substitutes a guest grant.
+    #[doc(hidden)]
+    pub fn retain_stream_owner<T: Send + Sync + 'static>(
+        &mut self,
+        owner: T,
+        window: crate::broker::network::BoundStreamChunkReservation,
+    ) -> Result<(), PlatformError> {
+        let original_stream = {
+            let state = self
+                .slot
+                .inner
+                .operation
+                .execution
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            matches!(&state.authority, Authority::Running(call) if call.is_original_stream_connect())
+        };
+        let original_scope = self
+            .slot
+            .inner
+            .operation
+            .with_session(|session| window.belongs_to(self.slot.inner.stream_scope, session));
+        if self.owner.is_some() || self.slot.has_stream() || !original_stream || !original_scope {
+            return Err(denied());
+        }
+        let budget = self
+            .slot
+            .inner
+            .operation
+            .with_session(|session| session.core.budget.clone());
+        self.slot.retain_stream(owner, window, &budget)
     }
     pub fn spare_mut(&mut self) -> Result<&mut [u8], PlatformError> {
         self.bytes.spare_mut()
@@ -276,7 +341,7 @@ impl IoCall {
     /// Available only when the original final policy decision explicitly
     /// authorized a stream budget. This allowance can be issued only once.
     pub fn transfer(&self, options: IoTransferOptions) -> Result<IoTransfer, PlatformError> {
-        self.transfer_inner(options, false)
+        self.transfer_inner(options, false, None)
     }
     /// Track real stream buffers in the activation's original native-memory
     /// ledger as well as the shared node I/O ceilings.
@@ -284,14 +349,28 @@ impl IoCall {
         &self,
         options: IoTransferOptions,
     ) -> Result<IoTransfer, PlatformError> {
-        self.transfer_inner(options, true)
+        self.transfer_inner(options, true, None)
+    }
+    /// Bind this original stream connect call to its original scope once.
+    #[doc(hidden)]
+    pub fn transfer_for_stream(
+        &self,
+        options: IoTransferOptions,
+        scope: &crate::broker::network::StreamScope,
+    ) -> Result<IoTransfer, PlatformError> {
+        self.transfer_inner(options, true, Some(scope))
     }
     fn transfer_inner(
         &self,
         options: IoTransferOptions,
         host_memory: bool,
+        stream_scope: Option<&crate::broker::network::StreamScope>,
     ) -> Result<IoTransfer, PlatformError> {
         self.checkpoint()?;
+        let same_session = stream_scope.is_none_or(|scope| {
+            self.operation
+                .with_session(|session| scope.belongs_to(session))
+        });
         let runtime = &self.operation.runtime;
         if options.maximum_chunk_bytes == 0
             || options.maximum_chunk_bytes > runtime.limits.maximum_chunk_bytes
@@ -311,6 +390,9 @@ impl IoCall {
         let Authority::Running(call) = &state.authority else {
             return Err(denied());
         };
+        if !same_session || (stream_scope.is_some() && !call.is_original_stream_connect()) {
+            return Err(denied());
+        }
         let budget = call.stream_budget().ok_or_else(denied)?;
         if budget.input_bytes() > runtime.limits.maximum_stream_bytes
             || budget.output_bytes() > runtime.limits.maximum_stream_bytes
@@ -336,6 +418,7 @@ impl IoCall {
             outstanding: AtomicUsize::new(0),
             closed: AtomicBool::new(false),
             host_memory,
+            stream_scope: stream_scope.map_or(0, |scope| scope.identity_tag()),
             _metadata: metadata,
             _stream: stream,
         });
@@ -499,13 +582,13 @@ impl IoTransfer {
         let slot = Transfer::slot(&self.inner)?;
         // Source and materialized copy share ONE outstanding-chunk lifetime.
         // Prepay its actual Arc/billing backing before either byte allocation.
-        if Shared::<Slot>::allocation_bytes()? > 512 {
+        if OutputSlot::<Slot>::allocation_bytes()? > 512 {
             return Err(super::capacity());
         }
         let slot_backing = self
             .inner
             .operation
-            .with_session(|session| Shared::<Slot>::reserve(&session.core.budget))?;
+            .with_session(|session| OutputSlot::<Slot>::reserve(&session.core.budget))?;
         let copy = if self.inner.host_memory {
             IoMemory::reserve_host(&self.inner.operation, capacity, 512)?
         } else {
@@ -548,6 +631,18 @@ impl Drop for IoTransfer {
 impl Drop for Slot {
     fn drop(&mut self) {
         self.inner.outstanding.fetch_sub(1, Ordering::AcqRel);
+        #[cfg(test)]
+        if PANIC_SLOT_ADDRESS
+            .compare_exchange(
+                self as *const Self as usize,
+                0,
+                Ordering::SeqCst,
+                Ordering::SeqCst,
+            )
+            .is_ok()
+        {
+            panic!("controlled original output slot destructor");
+        }
     }
 }
 fn spend(counter: &AtomicU64, bytes: usize, maximum: u64) -> Result<(), PlatformError> {
@@ -576,6 +671,397 @@ mod native_tests {
     use std::sync::atomic::AtomicUsize;
     use std::time::Instant;
 
+    #[allow(dead_code)]
+    struct OriginalTransfer {
+        operation: OperationOwner,
+        budget: CapabilityStreamBudget,
+        options: IoTransferOptions,
+        input: AtomicU64,
+        output: AtomicU64,
+        outstanding: AtomicUsize,
+        closed: AtomicBool,
+        host_memory: bool,
+        metadata: Charge,
+        stream: Charge,
+    }
+
+    #[test]
+    fn output_slot_preserves_generic_value_layouts() {
+        #[allow(dead_code)]
+        struct OriginalInput {
+            bytes: Vec<u8>,
+            memory: IoMemory,
+            slot: Slot,
+            owner: Option<Arc<dyn Send + Sync>>,
+        }
+        #[allow(dead_code)]
+        struct OriginalOutput {
+            bytes: IoBuffer,
+            copy: Option<IoMemory>,
+            slot: Shared<Slot>,
+            owner: Option<Arc<dyn Send + Sync>>,
+        }
+        #[allow(dead_code)]
+        struct OriginalBuffer {
+            bytes: IoBuffer,
+            copy: IoMemory,
+            slot: Shared<Slot>,
+            owner: Option<Arc<dyn Send + Sync>>,
+        }
+        #[allow(dead_code)]
+        enum OriginalRetention {
+            Transfer {
+                slot: Shared<Slot>,
+                owner: Option<Arc<dyn Send + Sync>>,
+            },
+            Blob {
+                owner: crate::broker::pools::PoolCall,
+            },
+        }
+        #[allow(dead_code)]
+        struct OriginalCopy {
+            bytes: Vec<u8>,
+            memory: IoMemory,
+            retention: OriginalRetention,
+        }
+        assert_eq!(
+            std::mem::size_of::<IoInputChunk>(),
+            std::mem::size_of::<OriginalInput>()
+        );
+        assert_eq!(
+            std::mem::size_of::<IoOutputChunk>(),
+            std::mem::size_of::<OriginalOutput>()
+        );
+        assert_eq!(
+            std::mem::size_of::<IoTransferBuffer>(),
+            std::mem::size_of::<OriginalBuffer>()
+        );
+        assert_eq!(
+            std::mem::size_of::<IoOutputCopy>(),
+            std::mem::size_of::<OriginalCopy>()
+        );
+        assert_eq!(
+            std::mem::align_of::<OutputSlot<Slot>>(),
+            std::mem::align_of::<Shared<Slot>>()
+        );
+        let old = Shared::<Slot>::allocation_bytes().unwrap();
+        let new = OutputSlot::<Slot>::allocation_bytes().unwrap();
+        let old_transfer = Shared::<OriginalTransfer>::allocation_bytes().unwrap();
+        let new_transfer = Shared::<Transfer>::allocation_bytes().unwrap();
+        eprintln!("generic output slot original={old} current={new}; transfer original={old_transfer} current={new_transfer}");
+        assert!(new > old);
+        assert!(new_transfer >= old_transfer && new_transfer <= 2048);
+        #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
+        assert_eq!((old, new), (200, 216));
+    }
+
+    #[tokio::test]
+    async fn output_slot_extra_backing_is_admitted_from_the_original_budget() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = native_request(&fixture, "native-output-slot-extra");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        let before = control.budget.host_memory_bytes();
+        let old = Shared::<Slot>::allocation_bytes().unwrap();
+        let new = OutputSlot::<Slot>::allocation_bytes().unwrap();
+        let padding = control
+            .budget
+            .reserve_host_memory(request.budget.memory_bytes - before - old)
+            .unwrap();
+        let counters = io.snapshot();
+        assert!(transfer.output_buffer(16).is_err());
+        assert_eq!(io.snapshot(), counters);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+        assert_eq!(
+            control.budget.host_memory_bytes(),
+            request.budget.memory_bytes - old
+        );
+        drop(padding);
+        let output = transfer.output_buffer(16).unwrap();
+        assert_eq!(
+            control.budget.host_memory_bytes(),
+            before + new + 2 * (16 + super::super::ALLOCATION_BOOKKEEPING as u64)
+        );
+        drop(output);
+        assert_eq!(control.budget.host_memory_bytes(), before);
+    }
+
+    #[tokio::test]
+    async fn output_slot_rejects_foreign_authority_and_replacement_owners() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = native_request(&fixture, "native-output-slot-owner");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let scope = Arc::new(session.reserve_stream().unwrap());
+        let options = IoTransferOptions {
+            maximum_chunk_bytes: 16,
+            maximum_outstanding_chunks: 1,
+        };
+        assert!(call.transfer_for_stream(options, &scope).is_err());
+        let transfer = call.transfer(options).unwrap();
+        let mut buffer = transfer.output_buffer(16).unwrap();
+        let error = buffer
+            .retain_stream_owner((), scope.reserve_bound_chunk(16).unwrap())
+            .err()
+            .unwrap();
+        assert_eq!(error.code, latent_core::PlatformErrorCode::PermissionDenied);
+
+        // Install directly only to exercise the slot's replacement checks;
+        // the public path above cannot accept this non-stream provider.
+        buffer
+            .slot
+            .retain_stream((), scope.reserve_bound_chunk(16).unwrap(), &control.budget)
+            .unwrap();
+        assert!(buffer.retain_owner(Arc::new(())).is_err());
+        assert!(buffer
+            .slot
+            .retain_stream((), scope.reserve_bound_chunk(16).unwrap(), &control.budget)
+            .is_err());
+        buffer.spare_mut().unwrap()[0] = 42;
+        buffer.advance_written(1).unwrap();
+        let mut output = buffer.finish().unwrap();
+        assert!(output.retain_owner(Arc::new(())).is_err());
+        let copy = output.copy_bytes().unwrap();
+        drop(output);
+        assert_eq!(copy.as_ref(), &[42]);
+        drop(copy);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+    }
+
+    #[tokio::test]
+    async fn output_slot_stream_arc_is_prepaid_before_allocation() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = native_request(&fixture, "native-stream-chunk-backing");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        let scope = Arc::new(session.reserve_stream().unwrap());
+        let baseline = control.budget.host_memory_bytes();
+        let mut buffer = transfer.output_buffer(16).unwrap();
+        let before = control.budget.host_memory_bytes();
+        let bytes = super::super::stream_chunk_owner_allocation_bytes::<()>().unwrap() as u64;
+        let padding = control
+            .budget
+            .reserve_host_memory(request.budget.memory_bytes - before - bytes + 1)
+            .unwrap();
+        assert!(buffer
+            .slot
+            .retain_stream((), scope.reserve_bound_chunk(16).unwrap(), &control.budget)
+            .is_err());
+        assert!(!buffer.slot.has_stream());
+        drop(padding);
+        assert_eq!(control.budget.host_memory_bytes(), before);
+        buffer
+            .slot
+            .retain_stream((), scope.reserve_bound_chunk(16).unwrap(), &control.budget)
+            .unwrap();
+        assert_eq!(control.budget.host_memory_bytes(), before + bytes);
+        drop(buffer);
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+    }
+
+    #[tokio::test]
+    async fn output_slot_keeps_legacy_generic_ownership_and_refunds() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = fixture.request("legacy-output-slot");
+        assert!(!control.budget.profile().supports_descendants());
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        let mut buffer = transfer.output_buffer(16).unwrap();
+        assert!(buffer.slot.billing_is_absent_for_test());
+        let owner = Arc::new(());
+        buffer.retain_owner(owner.clone()).unwrap();
+        buffer.spare_mut().unwrap()[0] = 7;
+        buffer.advance_written(1).unwrap();
+        let mut output = buffer.finish().unwrap();
+        let copy = output.copy_bytes().unwrap();
+        assert_eq!(Arc::strong_count(&owner), 3);
+        drop(output);
+        assert_eq!(Arc::strong_count(&owner), 2);
+        drop(copy);
+        assert_eq!(Arc::strong_count(&owner), 1);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+        assert_eq!(control.budget.host_memory_bytes(), 0);
+        drop((transfer, call));
+        assert_eq!(io.snapshot(), super::super::IoSnapshot::default());
+    }
+
+    #[tokio::test]
+    async fn output_slot_payload_panic_keeps_original_billing_until_cleanup() {
+        struct Probe {
+            budget: latent_core::ActivationBudget,
+            minimum: u64,
+            drops: Arc<AtomicUsize>,
+            _original_connection: latent_core::HostMemoryReservation,
+        }
+        impl Drop for Probe {
+            fn drop(&mut self) {
+                assert!(self.budget.host_memory_bytes() >= self.minimum);
+                eprintln!("LSF_OUTPUT_SLOT_OWNER_DROP");
+                self.drops.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = native_request(&fixture, "output-slot-panic");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        let scope = Arc::new(session.reserve_stream().unwrap());
+        let baseline = control.budget.host_memory_bytes();
+        let reservations = control.budget.outstanding_reservations();
+        let mut original = scope.reserve_host_memory(16 * 1024).unwrap();
+        original.confirm();
+        let mut buffer = transfer.output_buffer(16).unwrap();
+        let payload = buffer.slot.payload_address_for_test();
+        let (_, offset) = std::alloc::Layout::new::<[AtomicUsize; 2]>()
+            .extend(std::alloc::Layout::new::<Slot>())
+            .unwrap();
+        let drops = Arc::new(AtomicUsize::new(0));
+        buffer
+            .slot
+            .retain_stream(
+                Probe {
+                    budget: control.budget.clone(),
+                    minimum: baseline
+                        + 16 * 1024
+                        + OutputSlot::<Slot>::allocation_bytes().unwrap()
+                        + super::super::stream_chunk_owner_allocation_bytes::<Probe>().unwrap()
+                            as u64,
+                    drops: drops.clone(),
+                    _original_connection: original,
+                },
+                scope.reserve_bound_chunk(16).unwrap(),
+                &control.budget,
+            )
+            .unwrap();
+        buffer.spare_mut().unwrap()[0] = 1;
+        buffer.advance_written(1).unwrap();
+        let mut output = buffer.finish().unwrap();
+        let copy = output.copy_bytes().unwrap();
+        drop(output);
+        if let Some(path) = std::env::var_os("LSF_OUTPUT_SLOT_WATCH_FILE") {
+            std::fs::write(path, format!("{:x}", payload - offset)).unwrap();
+        }
+        PANIC_SLOT_ADDRESS.store(payload, Ordering::SeqCst);
+        let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(copy)));
+        assert!(panic.is_err());
+        assert_eq!(PANIC_SLOT_ADDRESS.load(Ordering::SeqCst), 0);
+        assert_eq!(drops.load(Ordering::SeqCst), 1);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        assert_eq!(control.budget.outstanding_reservations(), reservations);
+    }
+
+    #[tokio::test]
+    async fn output_slot_stream_owner_panic_and_caller_unwind_refund_after_retirement() {
+        struct Probe {
+            budget: latent_core::ActivationBudget,
+            minimum: u64,
+            drops: Arc<AtomicUsize>,
+            panic: bool,
+            _original_connection: latent_core::HostMemoryReservation,
+        }
+        impl Drop for Probe {
+            fn drop(&mut self) {
+                assert!(self.budget.host_memory_bytes() >= self.minimum);
+                self.drops.fetch_add(1, Ordering::SeqCst);
+                eprintln!("LSF_STREAM_CHUNK_OWNER_DROP");
+                assert!(!self.panic, "controlled stream owner destructor");
+            }
+        }
+
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = native_request(&fixture, "stream-chunk-panic");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        let scope = Arc::new(session.reserve_stream().unwrap());
+        let baseline = control.budget.host_memory_bytes();
+        let reservations = control.budget.outstanding_reservations();
+        for mode in 0..2 {
+            let mut original = scope.reserve_host_memory(16 * 1024).unwrap();
+            original.confirm();
+            let mut buffer = transfer.output_buffer(16).unwrap();
+            let drops = Arc::new(AtomicUsize::new(0));
+            let chunk_bytes = super::super::stream_chunk_owner_allocation_bytes::<Probe>().unwrap();
+            buffer
+                .slot
+                .retain_stream(
+                    Probe {
+                        budget: control.budget.clone(),
+                        minimum: baseline
+                            + 16 * 1024
+                            + OutputSlot::<Slot>::allocation_bytes().unwrap()
+                            + chunk_bytes as u64,
+                        drops: drops.clone(),
+                        panic: mode == 0,
+                        _original_connection: original,
+                    },
+                    scope.reserve_bound_chunk(16).unwrap(),
+                    &control.budget,
+                )
+                .unwrap();
+            if mode == 0 {
+                if let Some(path) = std::env::var_os("LSF_OUTPUT_SLOT_WATCH_FILE") {
+                    let header = buffer.slot.stream_header_for_test::<Probe>().unwrap();
+                    std::fs::write(path, format!("{header:x}")).unwrap();
+                }
+            }
+            buffer.spare_mut().unwrap()[0] = 1;
+            buffer.advance_written(1).unwrap();
+            let mut output = buffer.finish().unwrap();
+            let copy = output.copy_bytes().unwrap();
+            drop(output);
+            let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                if mode == 0 {
+                    drop(copy);
+                } else {
+                    let _copy = copy;
+                    panic!("controlled caller unwind");
+                }
+            }));
+            assert!(panic.is_err());
+            assert_eq!(drops.load(Ordering::SeqCst), 1);
+            assert_eq!(transfer.outstanding_chunks(), 0);
+            assert_eq!(control.budget.host_memory_bytes(), baseline);
+            assert_eq!(control.budget.outstanding_reservations(), reservations);
+        }
+    }
+
     async fn start(io: &IoRuntime, session: &CapabilitySession) -> IoCall {
         let admission = io.admit(session).unwrap().wait().await.unwrap();
         let handle = session.bind(CAP, "read", resource()).unwrap();
@@ -593,6 +1079,210 @@ mod native_tests {
         session.close_handle(handle).unwrap();
         admission.start(provider).unwrap()
     }
+
+    #[tokio::test]
+    async fn http_input_owner_uses_original_budget_until_last_clone_and_unwind() {
+        use std::sync::atomic::{AtomicBool, Ordering};
+
+        struct ObserveDrop {
+            budget: latent_core::ActivationBudget,
+            io: Arc<IoRuntime>,
+            host: u64,
+            metadata: usize,
+            observed: Arc<AtomicBool>,
+            panic: bool,
+        }
+        impl Drop for ObserveDrop {
+            fn drop(&mut self) {
+                self.observed.store(
+                    self.budget.host_memory_bytes() == self.host
+                        && self.io.snapshot().metadata_bytes == self.metadata,
+                    Ordering::SeqCst,
+                );
+                assert!(!self.panic, "controlled input owner destructor");
+            }
+        }
+
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        for mode in 0..3 {
+            let (request, control) = native_request(&fixture, "http-input-retirement");
+            let session = fixture.session(&request, &control);
+            let io = Arc::new(IoRuntime::new(IoLimits::default()).unwrap());
+            let call = start(&io, &session).await;
+            let transfer = call
+                .transfer(IoTransferOptions {
+                    maximum_chunk_bytes: 16,
+                    maximum_outstanding_chunks: 1,
+                })
+                .unwrap();
+            let baseline = control.budget.host_memory_bytes();
+            let counts = io.snapshot();
+            let charge = http_input_owner_bytes().unwrap();
+            let mut input = transfer.input(b"data".to_vec()).unwrap();
+            let observed = Arc::new(AtomicBool::new(false));
+            input
+                .retain_owner(Arc::new(ObserveDrop {
+                    budget: control.budget.clone(),
+                    io: Arc::clone(&io),
+                    host: baseline + charge as u64,
+                    metadata: counts.metadata_bytes + charge,
+                    observed: Arc::clone(&observed),
+                    panic: mode == 1,
+                }))
+                .unwrap();
+            let before = control.budget.host_memory_bytes();
+            let before_metadata = io.snapshot().metadata_bytes;
+            let bytes = input.into_http_bytes().unwrap();
+            assert_eq!(&bytes[..], b"data");
+            assert_eq!(control.budget.host_memory_bytes(), before + charge as u64);
+            assert_eq!(io.snapshot().metadata_bytes, before_metadata + charge);
+            let clone = bytes.clone();
+            drop(bytes);
+            assert!(!observed.load(Ordering::SeqCst));
+            assert_eq!(control.budget.host_memory_bytes(), before + charge as u64);
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(move || {
+                if mode == 2 {
+                    let _caller_owner = clone;
+                    panic!("controlled caller unwind");
+                }
+                drop(clone);
+            }));
+            assert_eq!(result.is_err(), mode != 0);
+            assert!(observed.load(Ordering::SeqCst));
+            assert_eq!(control.budget.host_memory_bytes(), baseline);
+            assert_eq!(io.snapshot(), counts);
+        }
+    }
+
+    #[tokio::test]
+    async fn http_input_owner_refuses_original_host_and_metadata_exhaustion() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = native_request(&fixture, "http-input-refusal");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        let baseline = control.budget.host_memory_bytes();
+        let counts = io.snapshot();
+        let charge = http_input_owner_bytes().unwrap();
+
+        let input = transfer.input(b"host".to_vec()).unwrap();
+        let current = control.budget.host_memory_bytes();
+        let padding_bytes = request.budget.memory_bytes - current - charge as u64 + 1;
+        let padding = control.budget.reserve_host_memory(padding_bytes).unwrap();
+        assert_eq!(
+            input.into_http_bytes().err().unwrap().code,
+            latent_core::PlatformErrorCode::ResourceExhausted
+        );
+        assert_eq!(control.budget.host_memory_bytes(), baseline + padding_bytes);
+        assert_eq!(io.snapshot(), counts);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+        drop(padding);
+
+        let input = transfer.input(b"node".to_vec()).unwrap();
+        let padding = call
+            .operation
+            .runtime
+            .counters
+            .acquire(
+                Kind::Metadata,
+                IoLimits::default().maximum_metadata_bytes - io.snapshot().metadata_bytes - charge
+                    + 1,
+            )
+            .unwrap();
+        assert_eq!(
+            input.into_http_bytes().err().unwrap().code,
+            latent_core::PlatformErrorCode::ResourceExhausted
+        );
+        assert_eq!(control.budget.host_memory_bytes(), baseline);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+        drop(padding);
+        assert_eq!(io.snapshot(), counts);
+    }
+
+    #[tokio::test]
+    async fn http_input_owner_preserves_legacy_phase1_path() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = fixture.request("http-input-phase1");
+        assert!(!control.budget.profile().supports_descendants());
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        let baseline = io.snapshot();
+        let input = transfer.input(b"old".to_vec()).unwrap();
+        let before = io.snapshot();
+        let bytes = input.into_http_bytes().unwrap();
+        assert_eq!(&bytes[..], b"old");
+        assert_eq!(io.snapshot(), before);
+        assert_eq!(control.budget.host_memory_bytes(), 0);
+        drop(bytes);
+        assert_eq!(io.snapshot(), baseline);
+    }
+
+    #[tokio::test]
+    async fn http_input_owner_preserves_finalized_budget_error() {
+        let fixture = Fixture::new(CapabilityBrokerLimits::default());
+        let (request, control) = native_request(&fixture, "http-input-finalized");
+        let session = fixture.session(&request, &control);
+        let io = IoRuntime::new(IoLimits::default()).unwrap();
+        let call = start(&io, &session).await;
+        let transfer = call
+            .transfer(IoTransferOptions {
+                maximum_chunk_bytes: 16,
+                maximum_outstanding_chunks: 1,
+            })
+            .unwrap();
+        let counts = io.snapshot();
+        let input = transfer.input(b"data".to_vec()).unwrap();
+        let _ = control.budget.finalize_at(None, Instant::now());
+        let error = input.into_http_bytes().err().unwrap();
+        let expected = latent_core::BudgetError::AccountingFinalized.to_platform_error();
+        assert_eq!(error.code, expected.code);
+        assert_eq!(error.details, expected.details);
+        assert_eq!(io.snapshot(), counts);
+        assert_eq!(transfer.outstanding_chunks(), 0);
+    }
+
+    #[test]
+    fn http_input_owner_layout_matches_pinned_allocator_shape() {
+        let size = bytes::Bytes::owner_with_retirement_allocation_size::<
+            IoInputChunk,
+            super::super::memory::HttpInputRetirement,
+        >();
+        let charge = http_input_owner_bytes().unwrap();
+        assert_eq!(charge, size + super::super::ALLOCATION_BOOKKEEPING);
+        eprintln!(
+            "HTTP input: value={}, retirement={}, optional={}, Box={}, charge={charge}",
+            std::mem::size_of::<IoInputChunk>(),
+            std::mem::size_of::<super::super::memory::HttpInputRetirement>(),
+            std::mem::size_of::<Option<super::super::memory::HttpInputRetirement>>(),
+            size
+        );
+        #[cfg(all(target_arch = "x86_64", target_os = "linux"))]
+        assert_eq!(
+            (
+                std::mem::size_of::<IoInputChunk>(),
+                std::mem::align_of::<IoInputChunk>(),
+                std::mem::size_of::<super::super::memory::HttpInputRetirement>(),
+                std::mem::align_of::<super::super::memory::HttpInputRetirement>(),
+                std::mem::size_of::<Option<super::super::memory::HttpInputRetirement>>(),
+                size,
+            ),
+            (168, 8, 48, 8, 48, 224)
+        );
+    }
+
     #[tokio::test]
     async fn native_output_copy_is_affine_and_outlives_source_chunk_and_call() {
         let fixture = Fixture::new(CapabilityBrokerLimits::default());
@@ -609,7 +1299,7 @@ mod native_tests {
             })
             .unwrap();
         let before_buffer = control.budget.host_memory_bytes();
-        let slot_bytes = Shared::<Slot>::allocation_bytes().unwrap();
+        let slot_bytes = OutputSlot::<Slot>::allocation_bytes().unwrap();
         let padding_bytes = request.budget.memory_bytes - before_buffer - slot_bytes + 1;
         let padding = control.budget.reserve_host_memory(padding_bytes).unwrap();
         let before_refusal = io.snapshot();
@@ -652,8 +1342,11 @@ mod native_tests {
         buffer.spare_mut().unwrap()[..8].copy_from_slice(b"resident");
         buffer.advance_written(8).unwrap();
         let mut output = buffer.finish().unwrap();
+        let generic_owner = Arc::new(());
+        output.retain_owner(generic_owner.clone()).unwrap();
         let before = control.budget.host_memory_bytes();
         let copy = output.copy_bytes().unwrap();
+        assert_eq!(Arc::strong_count(&generic_owner), 3);
         assert_eq!(copy.as_ref(), b"resident");
         assert!(copy._memory.charged_to(&control.budget));
         assert_eq!(control.budget.host_memory_bytes(), before);
@@ -664,6 +1357,7 @@ mod native_tests {
         assert_eq!(control.budget.host_memory_bytes(), before);
         let resident = 16 + super::super::ALLOCATION_BOOKKEEPING as u64;
         drop(output);
+        assert_eq!(Arc::strong_count(&generic_owner), 2);
         assert_eq!(control.budget.host_memory_bytes(), before - resident);
         assert_eq!(io.snapshot().result_bytes, 0);
         assert_eq!(transfer.outstanding_chunks(), 1);
@@ -678,6 +1372,7 @@ mod native_tests {
         assert_eq!(io.snapshot().streams, 1);
         assert_eq!(io.snapshot().buffers, 1);
         drop(copy);
+        assert_eq!(Arc::strong_count(&generic_owner), 1);
         assert_eq!(control.budget.host_memory_bytes(), baseline);
         assert_eq!(control.budget.outstanding_reservations(), guards);
         assert_eq!(io.snapshot(), super::super::IoSnapshot::default());
@@ -695,10 +1390,21 @@ mod native_tests {
         let call = start(&io, &session).await;
         let baseline = control.budget.host_memory_bytes();
         let shell = Shared::<Transfer>::allocation_bytes().unwrap();
+        let old_shell = Shared::<OriginalTransfer>::allocation_bytes().unwrap();
         let options = IoTransferOptions {
             maximum_chunk_bytes: 64,
             maximum_outstanding_chunks: 1,
         };
+        if shell > old_shell {
+            let padding = control
+                .budget
+                .reserve_host_memory(request.budget.memory_bytes - baseline - old_shell)
+                .unwrap();
+            assert!(call.transfer(options).is_err());
+            assert!(!call.operation.execution.lock().unwrap().transfer_issued);
+            assert_eq!(io.snapshot().streams, 0);
+            drop(padding);
+        }
         let pad_bytes = request.budget.memory_bytes - baseline - shell + 1;
         let pad = control.budget.reserve_host_memory(pad_bytes).unwrap();
         assert_eq!(
@@ -745,7 +1451,7 @@ mod native_tests {
         let mut output = transfer.output_buffer(16).unwrap();
         assert_eq!(
             control.budget.host_memory_bytes(),
-            base + Shared::<Slot>::allocation_bytes().unwrap()
+            base + OutputSlot::<Slot>::allocation_bytes().unwrap()
                 + 2 * (16 + super::super::ALLOCATION_BOOKKEEPING as u64)
         );
         output.spare_mut().unwrap()[..8].copy_from_slice(b"resident");
@@ -767,7 +1473,7 @@ mod native_tests {
             control.budget.host_memory_bytes(),
             before
                 + shell
-                + Shared::<Slot>::allocation_bytes().unwrap()
+                + OutputSlot::<Slot>::allocation_bytes().unwrap()
                 + 2 * (16 + super::super::ALLOCATION_BOOKKEEPING as u64)
         );
         drop((resident, explicit, explicit_call));

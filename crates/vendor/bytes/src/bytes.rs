@@ -289,6 +289,18 @@ impl Bytes {
         ret
     }
 
+    /// Size of the actual Box used by [`Bytes::from_owner_with_retirement`].
+    /// This excludes any allocator bookkeeping and does not reserve memory.
+    #[doc(hidden)]
+    #[must_use]
+    pub const fn owner_with_retirement_allocation_size<T, R>() -> usize
+    where
+        T: AsRef<[u8]> + Send + 'static,
+        R: Send + Unpin + 'static,
+    {
+        mem::size_of::<OwnedRetiring<T, R>>()
+    }
+
     /// Construct an immutable owner with a separate physical-retirement guard.
     ///
     /// Unlike [`Bytes::from_owner`], `retirement` is dropped only after the

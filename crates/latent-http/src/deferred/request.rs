@@ -1,9 +1,8 @@
 use super::{attempt::AcceptedOperation, qualification::ENDPOINT_CONTRACT};
-use crate::protocol::{ProtocolBody, ProtocolHeader, ProtocolPage, ProtocolRequest};
+use crate::protocol::{ProtocolBody, ProtocolHeader, ProtocolRequest, SharedProtocolPage};
 use crate::{headers, HttpError};
 use latent_capabilities::broker::secrets::SecretError;
 use sha2::{Digest, Sha256};
-use std::sync::Arc;
 use zeroize::Zeroizing;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -31,9 +30,10 @@ pub(super) fn build(
         endpoint.operation_path.clone()
     };
     let body = if operation == Operation::Send && !owner.value.bytes.is_empty() {
-        let mut page = ProtocolPage::allocate(&inner.pools, owner.value.bytes.len())?;
-        page.append(&owner.value.bytes)?;
-        ProtocolBody::from_pages(&inner.pools, &[Arc::new(page)], 0..owner.value.bytes.len())?
+        let mut page = SharedProtocolPage::allocate(&inner.pools, owner.value.bytes.len())?;
+        page.try_append(&owner.value.bytes)
+            .ok_or(HttpError::Unavailable)??;
+        ProtocolBody::from_shared_pages(&inner.pools, &[page], 0..owner.value.bytes.len())?
     } else {
         ProtocolBody::empty(&inner.pools)?
     };

@@ -210,6 +210,7 @@ jobs:
           sudo apt-get install --yes bubblewrap
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           LSF_REQUIRE_COMPILER_ISOLATION=1 python3 -m unittest tools.tests.test_c_application_dependencies tools.tests.test_c_static_symbols tools.tests.test_captured_compiler_isolation tools.tests.test_application_dependency_tools tools.tests.test_c_dependency_authoring tools.tests.test_c_authoring_frontend
+          python3 -m unittest tools.tests.test_application_dependencies
           python3 tools/qualify_c_capsules.py --application-dependencies --static-application-dependencies --approved-generator --output "$RUNNER_TEMP/c-application-library"
       - name: Qualify actual C archive and isolated generated-header rejection controls
         run: |
@@ -339,6 +340,7 @@ jobs:
         if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
         run: |
           python3 -m unittest tools.tests.test_c_standard_logging
+          python3 -B tools/c_standard_logging_fixture_control.py --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --node "$(command -v node)" --output "$RUNNER_TEMP/c-standard-logging-fixture"
           python3 tools/qualify_c_standard_facilities.py --standard-logging --native-directory "$RUNNER_TEMP/c-standard-facilities/native-build/native" --native-tuple "$RUNNER_TEMP/c-standard-facilities/native-build/native/native-tuple.json" --zig "$(command -v zig)" --wit-bindgen "$(command -v wit-bindgen)" --wasm-tools "$(command -v wasm-tools)" --output "$RUNNER_TEMP/c-standard-logging"
       - name: Execute combined ordinary libc facilities with four explicit grants
         if: github.ref != 'refs/heads/feat/sdk-690-c-libfetch-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-libucl-http-20261029' && github.ref != 'refs/heads/feat/sdk-690-c-outside-capture-20261031'
@@ -474,6 +476,9 @@ jobs:
             ${{ runner.temp }}/c-standard-facilities/builds/*/component.wasm
             ${{ runner.temp }}/c-standard-facilities/builds/*/logs/**
             ${{ runner.temp }}/c-standard-facilities/node/public-workflow.json
+            ${{ runner.temp }}/c-standard-logging-fixture/control.json
+            ${{ runner.temp }}/c-standard-logging-fixture/FAILED.json
+            ${{ runner.temp }}/c-standard-logging-fixture/logs/**
             ${{ runner.temp }}/c-standard-logging/qualified.json
             ${{ runner.temp }}/c-standard-logging/FAILED.json
             ${{ runner.temp }}/c-standard-logging/logs/**

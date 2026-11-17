@@ -14,7 +14,45 @@ struct State {
     pending: Option<Bytes>,
     ended: bool,
     dropped: bool,
+    preparing: bool,
     waker: Option<Waker>,
+}
+
+// The permit must fit the existing queue allocation on every build target.
+// Match the former fields and their drop glue without constructing this type.
+#[allow(dead_code)]
+struct OriginalStateLayout {
+    pending: Option<Bytes>,
+    ended: bool,
+    dropped: bool,
+    waker: Option<Waker>,
+}
+const _: () = {
+    assert!(std::mem::size_of::<State>() == std::mem::size_of::<OriginalStateLayout>());
+    assert!(std::mem::align_of::<State>() == std::mem::align_of::<OriginalStateLayout>());
+    assert!(
+        std::mem::size_of::<Mutex<State>>() == std::mem::size_of::<Mutex<OriginalStateLayout>>()
+    );
+    assert!(
+        std::mem::align_of::<Mutex<State>>() == std::mem::align_of::<Mutex<OriginalStateLayout>>()
+    );
+};
+
+// No caller-owned value is held here. A preparation panic clears admission
+// without running a byte owner or waker under the queue mutex.
+struct SendPreparation<'a> {
+    state: &'a Mutex<State>,
+    active: bool,
+}
+impl Drop for SendPreparation<'_> {
+    fn drop(&mut self) {
+        if self.active {
+            self.state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .preparing = false;
+        }
+    }
 }
 pub(crate) struct Sender {
     state: Arc<Mutex<State>>,
@@ -42,14 +80,45 @@ pub(crate) fn channel(length: Option<u64>) -> (Sender, RequestBody) {
 }
 impl Sender {
     pub fn send(&self, chunk: IoInputChunk) -> Result<(), StreamingHttpError> {
+        self.send_with(|| chunk.into_http_bytes().map_err(Into::into))
+    }
+
+    fn send_with(
+        &self,
+        prepare: impl FnOnce() -> Result<Bytes, StreamingHttpError>,
+    ) -> Result<(), StreamingHttpError> {
+        {
+            let mut state = self
+                .state
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            if state.ended || state.dropped || state.preparing || state.pending.is_some() {
+                drop(state);
+                drop(prepare);
+                return Err(StreamingHttpError::InvalidState);
+            }
+            state.preparing = true;
+        }
+        // Reservation, allocation and every input-owner drop may execute host
+        // code. Prepare outside the queue lock, then revalidate the state. The
+        // permit prevents a second send from passing while this one prepares.
+        let mut preparation = SendPreparation {
+            state: &self.state,
+            active: true,
+        };
+        let bytes = prepare()?;
         let mut state = self
             .state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
+        state.preparing = false;
+        preparation.active = false;
         if state.ended || state.dropped || state.pending.is_some() {
+            drop(state);
+            drop(bytes);
             return Err(StreamingHttpError::InvalidState);
         }
-        state.pending = Some(Bytes::from_owner(chunk));
+        state.pending = Some(bytes);
         let wake = state.waker.take();
         drop(state);
         if let Some(wake) = wake {
@@ -177,6 +246,196 @@ fn ready_frame(
         *remaining -= data.len() as u64;
     }
     Poll::Ready(Some(Ok(Frame::data(data))))
+}
+
+#[cfg(test)]
+mod send_admission_tests {
+    use super::*;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Barrier, TryLockError, Weak,
+    };
+
+    struct ObserveOwner {
+        queue: Weak<Mutex<State>>,
+        result: Arc<AtomicUsize>,
+        value: u8,
+    }
+    impl AsRef<[u8]> for ObserveOwner {
+        fn as_ref(&self) -> &[u8] {
+            std::slice::from_ref(&self.value)
+        }
+    }
+    impl Drop for ObserveOwner {
+        fn drop(&mut self) {
+            let queue = self.queue.upgrade().unwrap();
+            let result = match queue.try_lock() {
+                Ok(_) => 1,
+                Err(TryLockError::WouldBlock) => 2,
+                Err(TryLockError::Poisoned(_)) => 3,
+            };
+            self.result.store(result, Ordering::SeqCst);
+        }
+    }
+    struct ObserveWake {
+        queue: Weak<Mutex<State>>,
+        result: Arc<AtomicUsize>,
+    }
+    impl std::task::Wake for ObserveWake {
+        fn wake(self: Arc<Self>) {
+            let queue = self.queue.upgrade().unwrap();
+            let result = match queue.try_lock() {
+                Ok(_) => 1,
+                Err(TryLockError::WouldBlock) => 2,
+                Err(TryLockError::Poisoned(_)) => 3,
+            };
+            self.result.store(result, Ordering::SeqCst);
+        }
+    }
+    fn owner(sender: &Sender, result: &Arc<AtomicUsize>, value: u8) -> ObserveOwner {
+        ObserveOwner {
+            queue: Arc::downgrade(&sender.state),
+            result: Arc::clone(result),
+            value,
+        }
+    }
+
+    #[test]
+    fn preparation_flag_preserves_original_queue_allocation_layout() {
+        assert_eq!(
+            std::mem::size_of::<State>(),
+            std::mem::size_of::<OriginalStateLayout>()
+        );
+        assert_eq!(
+            std::mem::align_of::<State>(),
+            std::mem::align_of::<OriginalStateLayout>()
+        );
+        assert_eq!(
+            std::mem::size_of::<Mutex<State>>(),
+            std::mem::size_of::<Mutex<OriginalStateLayout>>()
+        );
+        assert_eq!(
+            std::mem::align_of::<Mutex<State>>(),
+            std::mem::align_of::<Mutex<OriginalStateLayout>>()
+        );
+    }
+
+    #[test]
+    fn initially_invalid_send_drops_unprepared_owner_after_unlock() {
+        let (sender, _body) = channel(None);
+        sender.end();
+        let result = Arc::new(AtomicUsize::new(0));
+        let owner = owner(&sender, &result, 1);
+        assert!(matches!(
+            sender.send_with(move || Ok(Bytes::from_owner(owner))),
+            Err(StreamingHttpError::InvalidState)
+        ));
+        assert_eq!(result.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn preparation_unwind_and_send_wakeup_run_after_unlock() {
+        let (sender, body) = channel(None);
+        let result = Arc::new(AtomicUsize::new(0));
+        let owner = owner(&sender, &result, 1);
+        let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _ = sender.send_with(move || -> Result<Bytes, StreamingHttpError> {
+                let _original = owner;
+                panic!("controlled preparation unwind");
+            });
+        }));
+        assert!(panic.is_err());
+        assert_eq!(result.load(Ordering::SeqCst), 1);
+        assert!(sender.state.lock().unwrap().pending.is_none());
+        let woke = Arc::new(AtomicUsize::new(0));
+        sender.state.lock().unwrap().waker = Some(Waker::from(Arc::new(ObserveWake {
+            queue: Arc::downgrade(&sender.state),
+            result: Arc::clone(&woke),
+        })));
+        sender.send_with(|| Ok(Bytes::from_static(b"ok"))).unwrap();
+        assert_eq!(woke.load(Ordering::SeqCst), 1);
+        drop(body);
+    }
+
+    #[test]
+    fn end_during_preparation_refuses_and_retires_owner_after_unlock() {
+        let (sender, body) = channel(None);
+        let sender = Arc::new(sender);
+        let entered = Arc::new(Barrier::new(2));
+        let resume = Arc::new(Barrier::new(2));
+        let result = Arc::new(AtomicUsize::new(0));
+        let original = owner(&sender, &result, 7);
+        let worker = {
+            let sender = Arc::clone(&sender);
+            let entered = Arc::clone(&entered);
+            let resume = Arc::clone(&resume);
+            std::thread::spawn(move || {
+                sender.send_with(move || {
+                    entered.wait();
+                    resume.wait();
+                    Ok(Bytes::from_owner(original))
+                })
+            })
+        };
+        entered.wait();
+        sender.end();
+        resume.wait();
+        assert!(matches!(
+            worker.join().unwrap(),
+            Err(StreamingHttpError::InvalidState)
+        ));
+        assert_eq!(result.load(Ordering::SeqCst), 1);
+        let state = sender.state.lock().unwrap();
+        assert!(state.ended && state.pending.is_none());
+        drop(state);
+        drop(body);
+    }
+
+    #[test]
+    fn concurrent_sends_publish_at_most_one_frame_and_retire_loser_unlocked() {
+        let (sender, body) = channel(None);
+        let sender = Arc::new(sender);
+        let entered = Arc::new(Barrier::new(2));
+        let resume = Arc::new(Barrier::new(2));
+        let drops = [Arc::new(AtomicUsize::new(0)), Arc::new(AtomicUsize::new(0))];
+        let original = owner(&sender, &drops[0], 0);
+        let worker = {
+            let sender = Arc::clone(&sender);
+            let entered = Arc::clone(&entered);
+            let resume = Arc::clone(&resume);
+            std::thread::spawn(move || {
+                sender.send_with(move || {
+                    entered.wait();
+                    resume.wait();
+                    Ok(Bytes::from_owner(original))
+                })
+            })
+        };
+        entered.wait();
+        let competing = owner(&sender, &drops[1], 1);
+        assert!(matches!(
+            sender.send_with(move || Ok(Bytes::from_owner(competing))),
+            Err(StreamingHttpError::InvalidState)
+        ));
+        assert_eq!(drops[1].load(Ordering::SeqCst), 1);
+        assert!(sender.state.lock().unwrap().pending.is_none());
+        resume.wait();
+        assert!(worker.join().unwrap().is_ok());
+        let pending = sender.state.lock().unwrap().pending.take().unwrap();
+        assert_eq!(pending.len(), 1);
+        drop(pending);
+        assert!(drops.iter().all(|seen| seen.load(Ordering::SeqCst) == 1));
+
+        // A fully published and consumed first frame does not prevent the
+        // next serial write, matching the original queue behavior.
+        sender
+            .send_with(|| Ok(Bytes::from_static(b"next")))
+            .unwrap();
+        let next = sender.state.lock().unwrap().pending.take().unwrap();
+        assert_eq!(&next[..], b"next");
+        drop(next);
+        drop(body);
+    }
 }
 
 #[cfg(test)]

@@ -614,12 +614,69 @@ impl<T: Send + 'static> ProviderClient<T> {
                 _ => false, // Original ordinary/unproved quarantine stays permanent.
             };
             if retired {
-                let entry = step.entry.take();
-                self.core.epoch.quarantined.fetch_sub(1, Ordering::AcqRel);
-                drop(entry); // Actual resource/loan/Request/IoLease, OUTSIDE locks.
+                let entry = step.entry.take().expect("original retained resource");
+                if let Retained::Dial {
+                    reservation,
+                    _value,
+                    ..
+                } = entry
+                {
+                    self.retire_completed_dial(reservation, _value);
+                } else {
+                    self.core.epoch.quarantined.fetch_sub(1, Ordering::AcqRel);
+                    drop(entry); // Actual resource/loan/Request/IoLease, OUTSIDE locks.
+                }
             }
         }
     }
+
+    fn retire_completed_dial(&self, mut reservation: ConnectionReservation<T>, value: T) {
+        // The native step proves only the selected kernel state retired. The
+        // original Rust value and its transitive owners still need to drop
+        // while their same dial quota and original lease remain live.
+        let dropped = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| drop(value)));
+        if let Err(panic) = dropped {
+            self.retain_failed_dial_remainder(reservation, panic);
+        }
+        // A last original lease can invoke a panicking waker. Keep the quota
+        // and any untouched leases in the SAME prepaid quarantine slot.
+        let released = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            drop(reservation.activation.take());
+            drop(reservation.maintenance.take());
+            drop(reservation.ingress.take());
+        }));
+        if let Err(panic) = released {
+            self.retain_failed_dial_remainder(reservation, panic);
+        }
+        let mut lifetime = reservation.lifetime.take().expect("original dial quota");
+        let wake = lifetime.client.owner.upgrade();
+        lifetime.defer_notification = true;
+        drop(reservation);
+        drop(lifetime);
+        self.core.epoch.quarantined.fetch_sub(1, Ordering::AcqRel);
+        // Both quota and quarantine count are settled before a callback can
+        // reenter or panic; waiting for capacity gets the post-refund wake.
+        if let Some(owner) = wake {
+            owner.changed.notify_waiters();
+        }
+    }
+
+    fn retain_failed_dial_remainder(
+        &self,
+        reservation: ConnectionReservation<T>,
+        panic: Box<dyn Any + Send>,
+    ) -> ! {
+        // The dropped value or lease was consumed: retain only the exact
+        // remaining original owners, without reconstructing the destructor.
+        self.retain_failed_stream_retirement(
+            Retained::FailedStreamRetirement {
+                _reservation: reservation,
+            },
+            true,
+        );
+        std::panic::resume_unwind(panic);
+    }
+
     fn retain_quarantine(&self, value: Retained<T>) {
         // Every entry already holds exactly one live connection quota. Their
         // total is bounded before any dial, and this table was prepaid for that
@@ -870,6 +927,9 @@ impl<T: Send + 'static> PooledConnection<T> {
         mark_failed(&mut self.physical.as_mut().expect("connection owner").lifetime);
     }
 }
+
+#[cfg(test)]
+mod dial_custody_tests;
 
 #[cfg(test)]
 mod stream_custody_tests;
