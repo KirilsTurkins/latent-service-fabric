@@ -919,7 +919,8 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
     sources += [fixture / 'dev/latent/generated/Bindings.java', fixture / 'TimerSleepAdmissionSourceControl.java',
                 fixture / 'OwnerAdmissionSourceControl.java', fixture / 'OwnerSettlementSourceControl.java',
                 fixture / 'WorkFinishSourceControl.java', fixture / 'ScheduledNullFactoryActivationControl.java',
-                fixture / 'CompletableMinimalStageActivationControl.java']
+                fixture / 'CompletableMinimalStageActivationControl.java',
+                fixture / 'FutureTaskInterruptMonitorActivationControl.java']
     sources += sorted((sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
     timer_worker_sources = [sdk / ('fibers/dev/latent/guest/runtime/util/' + name + '.java')
                             for name in ('Timer', 'TimerTask')]
@@ -956,6 +957,10 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         str(output) + os.pathsep + classpath, 'CompletableMinimalStageActivationControl').strip()
     if actual != 'COMPLETABLE_MINIMAL_STAGE_ACTIVATION PASS copy-cancel;running;root-fenced;retired':
         raise ValueError('Java completable minimal activation control did not complete')
+    actual = compiler.run('future-task-interrupt-monitor-activation', 'java', '-Xmx256m', '-cp',
+        str(output) + os.pathsep + classpath, 'FutureTaskInterruptMonitorActivationControl').strip()
+    if actual != 'FUTURE_TASK_INTERRUPT_MONITOR_ACTIVATION PASS visible;interrupt-pending;root-fenced;retired':
+        raise ValueError('Java future task interrupt monitor activation control did not complete')
     timer_wait_admission_source_control(compiler, output / 'timer-worker-admission', output, classpath)
     owner_cases = ('normal', 'refused', 'lost', 'null', 'reentry', 'capacity')
     for case in owner_cases:
@@ -979,6 +984,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         'timerWorkerAdmission': 'private-ledger-refusal-and-root-fence-passed',
         'scheduledNullFactoryActivation': list(null_factory_modes),
         'completableMinimalActivation': 'private-host-running-root-fence-passed',
+        'futureTaskInterruptMonitorActivation': 'private-host-running-root-fence-passed',
         'ownerAdmissionCases': list(owner_cases), 'ownerSettlementCases': list(OWNER_SETTLEMENT_CASES),
         'workFinishCases': [list(case) for case in WORK_FINISH_CASES],
         'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False}
@@ -1197,7 +1203,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ScheduledQueuedSettlementControl.java', 'FutureTaskInterruptFailureControl.java',
         'ExecutorCloseInterruptControl.java', 'ExecutorOwnerSettlementControl.java',
         'ExecutorInvokeInterruptOwnerControl.java', 'ExecutorAwaitTerminationOwnerControl.java',
-        'FutureTaskNullFailureOwnerControl.java', 'FutureTaskMonitorOwnerControl.java',
+        'FutureTaskNullFailureOwnerControl.java', 'FutureTaskMonitorOwnerControl.java', 'FutureTaskInterruptMonitorOwnerControl.java',
         'DefaultExecutorOwnerControl.java', 'ScheduledReadyClockControl.java', 'ScheduledReadyFakeClock.java',
         'ScheduledNoopCancelOwnerControl.java', 'ScheduledNoopInflightControl.java',
         'InvokeAnyParallelOwnerProbe.java', 'InvokeAnyPendingOwnerProbe.java', 'InvokeAnyAcceptedThrowOwnerProbe.java',
@@ -1217,6 +1223,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     obtrude_reference = private / 'CompletableObtrudeReferenceControl.java'
     default_async_reference = private / 'CompletableDefaultAsyncReferenceControl.java'
     minimal_stage_reference = private / 'CompletableMinimalStageReferenceControl.java'
+    interrupt_monitor_reference = private / 'FutureTaskInterruptMonitorReferenceControl.java'
     invoke_reference = private / 'ExecutorInvokeInterruptReferenceControl.java'
     invoke_any_reference = private / 'ExecutorInvokeAnyReadyReferenceControl.java'
     invoke_all_reference = private / 'ExecutorInvokeAllWaitReferenceControl.java'
@@ -1227,13 +1234,13 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     comparison_inputs = [private / name for name in ('ScheduledCompareReferenceControl.java',
         'ScheduledCompareFakeClock.java', 'ScheduledCompareClockControl.java')]
     inputs = {path.relative_to(compiler.sdk).as_posix(): digest(read_file(path))
-        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, managed_factory_reference, managed_null_reference, obtrude_reference, default_async_reference, minimal_stage_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
+        for path in (*ports, *controls, *comparison_inputs, noop_reference, ready_reference, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, managed_factory_reference, managed_null_reference, obtrude_reference, default_async_reference, minimal_stage_reference, interrupt_monitor_reference, invoke_reference, invoke_any_reference, invoke_all_reference, termination_reference,
                      null_failure_reference, monitor_reference, default_monitor_reference)}
     output.mkdir()
     jdk_output = output / 'reference-jdk'
     jdk_output.mkdir()
     compiler.run('scheduled-stopped-reference-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', jdk_output, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, managed_factory_reference, managed_null_reference, obtrude_reference, default_async_reference, minimal_stage_reference, invoke_reference, termination_reference,
+        '-d', jdk_output, reference, periodic_reference, validation_reference, null_factory_reference, throw_factory_reference, manual_throw_reference, managed_factory_reference, managed_null_reference, obtrude_reference, default_async_reference, minimal_stage_reference, interrupt_monitor_reference, invoke_reference, termination_reference,
         null_failure_reference, monitor_reference, default_monitor_reference, ready_reference, noop_reference, invoke_any_reference, invoke_all_reference)
     expected_stopped = ('SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;'
         'running;shutdown;shutdown-policy;physical-runner;worker-capacity;factory-failure-retry')
@@ -1280,6 +1287,10 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     result = compiler.run('completable-minimal-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'CompletableMinimalStageReferenceControl').strip()
     if result != expected_minimal: raise ValueError('Java completable minimal reference did not complete')
+    expected_interrupt_monitor = 'FUTURE_TASK_INTERRUPT_MONITOR PASS visible;run-handoff;reset-handoff'
+    result = compiler.run('future-task-interrupt-monitor-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
+        'FutureTaskInterruptMonitorReferenceControl').strip()
+    if result != expected_interrupt_monitor: raise ValueError('Java future task interrupt monitor reference did not complete')
     expected_managed_null = ('MANAGED_NULL_FACTORY PASS fixed;single;two-attempts;recovery;fallback-throw;'
         'existing-worker;nested;nested-initial-order;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order')
     result = compiler.run('managed-null-factory-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
@@ -1368,6 +1379,12 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         text = text.replace(original, 'import dev.latent.guest.runtime.concurrent.' + simple + ';')
     selected_minimal = output / 'CompletableMinimalStageReferenceControl.java'
     selected_minimal.write_bytes(text.encode('utf-8'))
+    text = read_file(interrupt_monitor_reference).decode('utf-8')
+    original = 'import java.util.concurrent.FutureTask;'
+    if text.count(original) != 1: raise ValueError('Java future task interrupt monitor source import is ambiguous')
+    selected_interrupt_monitor = output / 'FutureTaskInterruptMonitorReferenceControl.java'
+    selected_interrupt_monitor.write_bytes(text.replace(original,
+        'import dev.latent.guest.runtime.concurrent.FutureTask;').encode('utf-8'))
     text = read_file(throw_factory_reference).decode('utf-8')
     for simple in ('ScheduledThreadPoolExecutor', 'CompletableFuture'):
         original = 'import java.util.concurrent.' + simple + ';'
@@ -1432,7 +1449,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
     selected_noop.write_bytes(text.replace(original,
         'import dev.latent.guest.runtime.concurrent.ScheduledThreadPoolExecutor;').encode('utf-8'))
     compiler.run('scheduled-source-compile', 'javac', '-proc:none', '--release', '25',
-        '-d', output, *ports, *controls, selected, selected_periodic, selected_validation, selected_null_factory, selected_throw_factory, selected_manual_throw, selected_managed_factory, selected_managed_null, selected_obtrude, selected_default_async, selected_minimal, selected_invoke, selected_termination,
+        '-d', output, *ports, *controls, selected, selected_periodic, selected_validation, selected_null_factory, selected_throw_factory, selected_manual_throw, selected_managed_factory, selected_managed_null, selected_obtrude, selected_default_async, selected_minimal, selected_interrupt_monitor, selected_invoke, selected_termination,
         selected_null_failure, selected_monitor, selected_default_monitor, selected_ready, selected_noop, selected_invoke_any, selected_invoke_all)
     result = compiler.run('completable-obtrude-source', 'java', '-Xmx256m', '-cp', output,
         'CompletableObtrudeReferenceControl').strip()
@@ -1463,6 +1480,15 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
             'CompletableMinimalStageOwnerControl', mode).strip()
         if result != 'COMPLETABLE_MINIMAL_STAGE_OWNER PASS ' + mode:
             raise ValueError('Java completable minimal owner control did not complete: ' + mode)
+    result = compiler.run('future-task-interrupt-monitor-source', 'java', '-Xmx256m', '-cp', output,
+        'FutureTaskInterruptMonitorReferenceControl').strip()
+    if result != expected_interrupt_monitor: raise ValueError('Java future task interrupt monitor source differs from reference')
+    interrupt_monitor_modes = ('run', 'reset', 'denied', 'lost')
+    for mode in interrupt_monitor_modes:
+        result = compiler.run('future-task-interrupt-monitor-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
+            'FutureTaskInterruptMonitorOwnerControl', mode).strip()
+        if result != 'FUTURE_TASK_INTERRUPT_MONITOR_OWNER PASS ' + mode:
+            raise ValueError('Java future task interrupt monitor owner control did not complete: ' + mode)
     validation_result = compiler.run('scheduled-periodic-validation-source', 'java', '-Xmx256m', '-cp', output,
         'ScheduledPeriodicValidationReferenceControl').strip()
     if validation_result != expected_validation: raise ValueError('Java periodic validation source differs from reference')
@@ -1628,6 +1654,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'completableObtrude': {'cases': list(obtrude_modes), 'status': 'JDK-and-SDK-source-controls-passed'},
         'completableDefaultAsync': {'cases': list(default_async_modes), 'status': 'JDK-and-SDK-source-controls-passed'},
         'completableMinimalStage': {'cases': list(minimal_modes), 'status': 'JDK-and-SDK-source-controls-passed'},
+        'futureTaskInterruptMonitor': {'cases': list(interrupt_monitor_modes), 'status': 'JDK-and-SDK-source-controls-passed'},
         'managedNullFactory': {'cases': list(managed_null_modes), 'recoveryOrder': 'matched-jdk-new-first'},
         'futureCancelInterrupt': interrupt_control, 'executorOwnerSettlement': executor_settlement,
         'executorInvokeInterrupt': 'matched-14-preinterrupted-and-two-blocked-JDK-cases',

@@ -182,6 +182,12 @@ TeaVM object-size cost has not been measured. Creating a view or converting it
 to a future uses the original queued-work and Result owners, even for a ready
 stage, and can be refused under those limits. Timeout conveniences remain
 unsupported. Source and host-double controls do not qualify a signed guest.
+`FutureTask` exposes its cancelled state while an application thread's
+`interrupt()` hook runs. A separate private gate prevents its runner from being
+reused until that interrupt attempt returns, retaining the original Result owner
+through physical completion. Each FutureTask allocates one additional private
+monitor object in the existing bounded Java heap; contended acquisition can
+suspend the runner, and the exact TeaVM memory cost has not been measured.
 The default-executor asynchronous stage methods honor subclass overrides of
 `defaultExecutor()` and `newIncompleteFuture()` without invoking a separate
 overridable explicit-executor overload.
