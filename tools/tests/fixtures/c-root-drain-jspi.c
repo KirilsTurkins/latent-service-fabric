@@ -1,4 +1,36 @@
-#if defined(LSF_C_SEMAPHORE_CLIENT)
+#if defined(LSF_C_BARRIER_BASELINE)
+/* Unmodified pinned libc stubs: no errno shim, provider or runtime is linked. */
+#include <pthread.h>
+#include <stddef.h>
+#include <stdint.h>
+static pthread_barrier_t baseline_one,baseline_two;
+__attribute__((export_name("baseline_single"))) int baseline_single(void) {
+    int result=pthread_barrier_init(&baseline_one,NULL,1);
+    if (result) return result;
+    return pthread_barrier_wait(&baseline_one)==PTHREAD_BARRIER_SERIAL_THREAD;
+}
+__attribute__((export_name("baseline_multiple"))) int baseline_multiple(void) {
+    int result=pthread_barrier_init(&baseline_two,NULL,2);
+    if (result) return result;
+    return pthread_barrier_wait(&baseline_two);
+}
+__attribute__((export_name("baseline_attributes"))) int baseline_attributes(void) {
+    pthread_barrierattr_t attr;uint32_t flags;
+    if (pthread_barrierattr_init(&attr)) return 0;
+    __builtin_memcpy(&flags,&attr,sizeof(flags));if (flags) return 0;
+    if (pthread_barrierattr_setpshared(&attr,PTHREAD_PROCESS_SHARED)) return 0;
+    __builtin_memcpy(&flags,&attr,sizeof(flags));return flags==UINT32_C(0x80000000);
+}
+#elif defined(LSF_C_BARRIER_CLIENT)
+/* Ordinary caller compiled against pinned pthread.h and SDK source defines. */
+#include <pthread.h>
+#include <stddef.h>
+int barrier_client(pthread_barrier_t *object) {
+    int result=pthread_barrier_init(object,NULL,2);
+    result+=pthread_barrier_wait(object);result+=pthread_barrier_destroy(object);
+    return result;
+}
+#elif defined(LSF_C_SEMAPHORE_CLIENT)
 /* Ordinary caller compiled with the real pinned semaphore.h and SDK defines. */
 #include <semaphore.h>
 int semaphore_client(sem_t *object,const struct timespec *deadline,int *value) {
@@ -257,5 +289,25 @@ int ss_einval(void) { return EINVAL; }
 int ss_overflow(void) { return EOVERFLOW; }
 int ss_notsup(void) { return ENOTSUP; }
 int ss_intmax(void) { return INT_MAX; }
+#endif
+#if defined(LSF_C_BARRIERS) && LSF_C_BARRIERS
+static pthread_barrier_t test_barrier;
+int bar_setup(unsigned count) { memset(&test_barrier,0,sizeof(test_barrier));return pthread_barrier_init(&test_barrier,NULL,count); }
+int bar_shared(void) {
+    pthread_barrierattr_t attr;uint32_t flags=UINT32_C(0x80000000);memcpy(&attr,&flags,sizeof(flags));
+    return pthread_barrier_init(&test_barrier,&attr,2);
+}
+int bar_invalid(void) { return pthread_barrier_init(&test_barrier,NULL,0); }
+int bar_above(void) { return pthread_barrier_init(&test_barrier,NULL,RECORD_LIMIT+2u); }
+int bar_destroy(void) { return pthread_barrier_destroy(&test_barrier); }
+int bar_wait(void) { return pthread_barrier_wait(&test_barrier); }
+void bar_pause_admission(void) { pause_admission=2; }
+void bar_refuse_wait(unsigned value) { refuse_wait=value; }
+int bar_errno(void) { return fake_errno; }
+int bar_serial(void) { return PTHREAD_BARRIER_SERIAL_THREAD; }
+int bar_eagain(void) { return EAGAIN; }
+int bar_ebusy(void) { return EBUSY; }
+int bar_einval(void) { return EINVAL; }
+int bar_notsup(void) { return ENOTSUP; }
 #endif
 #endif

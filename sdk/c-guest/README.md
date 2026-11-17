@@ -76,6 +76,14 @@ inside prebuilt libc objects are not supported. Cancellation traps the
 activation and retains the existing owners rather than reporting a successful
 wait. Source controls are not signed-node or actual-engine qualification.
 
+New cooperative-runtime captures also select reusable process-local pthread
+barriers for 1 through 33 participants. Each nonfinal participant retains its
+own admitted Wait until the last arrival releases that generation; exactly one
+participant receives `PTHREAD_BARRIER_SERIAL_THREAD`. A zero count returns
+`EINVAL`, counts above 33 return `EAGAIN`, and process-shared attributes return
+`ENOTSUP`. Calls inside prebuilt libc objects are not remapped. This is source
+compatibility, not signed-node or actual-engine qualification.
+
 `include/lsf/ownership.h` defines an explicit bounded scope (32 entries plus a
 caller-selected byte limit). Allocation, adoption, detach and release have
 separate ownership meanings. Close runs remaining cleanup in reverse order;
