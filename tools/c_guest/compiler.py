@@ -399,6 +399,8 @@ class Compiler:
                                                    time_response=time_response is not None)
             else:
                 defines = threading.linked_defines(defines)
+            if threading.captured_rwlock_port(runtime):
+                defines = threading.rwlock_defines(defines)
         numeric_resolver = (runtime_profile in standard_facilities.STREAM_PROFILES and
                             self.sdk / 'src' / standard_facilities.RESOLVER_SOURCE in sources)
         defines = standard_facilities.compiler_defines(runtime_profile, defines, numeric_resolver=numeric_resolver)

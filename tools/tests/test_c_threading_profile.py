@@ -47,6 +47,7 @@ class CThreadingProfile(unittest.TestCase):
             files = snapshot(project)
             actual, _, _ = c_capsule_project.validate(files)
             self.assertTrue(threading.selected(actual))
+            self.assertTrue(threading.captured_rwlock_port(project / 'vendor/lsf/sdk/c-guest/runtime'))
             selected = {name for name in files if name.startswith('vendor/lsf/sdk/c-guest/runtime/')}
             self.assertEqual(selected, {'vendor/lsf/sdk/c-guest/runtime/' + name for name in
                                        ('thread-abi.h', 'thread-abi.json', 'threads.c', 'tls-keys.c', 'template-copy.c', 'synchronization.c', 'timed-symbols.rsp')})
@@ -123,6 +124,34 @@ class CThreadingProfile(unittest.TestCase):
         for name in (*expected, *('__lsf_c_' + item for item in expected)):
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned-tls-symbol'):
                 threading.linked_defines((name + '=foreign',))
+
+    def test_rwlock_port_is_capture_selected_and_its_symbols_are_compiler_owned(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            runtime = Path(temporary)
+            abi = runtime / 'thread-abi.json'
+            abi.write_text('{}')
+            self.assertFalse(threading.captured_rwlock_port(runtime))
+            abi.write_text('[]')
+            with self.assertRaisesRegex(ValueError, 'invalid-abi'):
+                threading.captured_rwlock_port(runtime)
+            abi.write_text('{"optionalPorts":{},"optionalPorts":{"rwlock":"c-cooperative-rwlock-v1"}}')
+            with self.assertRaises(ValueError):
+                threading.captured_rwlock_port(runtime)
+            abi.write_text(json.dumps({'optionalPorts': {'rwlock': threading.RWLOCK_PORT}}))
+            self.assertTrue(threading.captured_rwlock_port(runtime))
+            for bad in ({}, {'rwlock': 'foreign'}, {'rwlock': threading.RWLOCK_PORT, 'extra': True}, []):
+                abi.write_text(json.dumps({'optionalPorts': bad}))
+                with self.subTest(ports=bad), self.assertRaisesRegex(ValueError, 'invalid-optional-ports'):
+                    threading.captured_rwlock_port(runtime)
+        expected = ('pthread_rwlock_init', 'pthread_rwlock_destroy', 'pthread_rwlock_rdlock',
+                    'pthread_rwlock_tryrdlock', 'pthread_rwlock_wrlock', 'pthread_rwlock_trywrlock',
+                    'pthread_rwlock_unlock', 'pthread_rwlock_timedrdlock', 'pthread_rwlock_timedwrlock')
+        self.assertEqual(threading.RWLOCK_SYMBOLS, expected)
+        self.assertEqual(threading.rwlock_defines(('OWNED=7',)),
+            ('OWNED=7', 'LSF_C_RWLOCKS=1', *(name + '=__lsf_c_' + name for name in expected)))
+        for name in ('LSF_C_RWLOCKS', *expected, *('__lsf_c_' + item for item in expected)):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'compiler-owned-rwlock-symbol'):
+                threading.rwlock_defines((name + '=foreign',))
 
     def test_timed_clock_namespace_is_explicit_and_preserves_untimed_defines(self):
         plain = threading.linked_defines(())

@@ -4,7 +4,7 @@ import re
 
 from tools.c_guest import standard_facilities
 from tools.c_guest.bindings import digest
-from tools.rust_capsule_project import read_file
+from tools.rust_capsule_project import read_file, read_json
 
 PROFILE = 'c-context144-sync-cooperative-v1'
 DEFAULT = 'single-threaded'
@@ -28,6 +28,10 @@ SYNC_SYMBOLS = ('pthread_mutex_init', 'pthread_mutex_lock', 'pthread_mutex_trylo
     'pthread_cond_signal', 'pthread_cond_broadcast', 'pthread_cond_timedwait',
     'mtx_init', 'mtx_lock', 'mtx_trylock', 'mtx_unlock', 'mtx_destroy', 'mtx_timedlock',
     'cnd_init', 'cnd_destroy', 'cnd_wait', 'cnd_signal', 'cnd_broadcast', 'cnd_timedwait')
+RWLOCK_SYMBOLS = ('pthread_rwlock_init', 'pthread_rwlock_destroy', 'pthread_rwlock_rdlock',
+                  'pthread_rwlock_tryrdlock', 'pthread_rwlock_wrlock', 'pthread_rwlock_trywrlock',
+                  'pthread_rwlock_unlock', 'pthread_rwlock_timedrdlock', 'pthread_rwlock_timedwrlock')
+RWLOCK_PORT = 'c-cooperative-rwlock-v1'
 YIELD_SYMBOLS = ('thrd_yield',)
 ONCE_SYMBOLS = ('pthread_once', '__pthread_once', 'call_once')
 LEGACY_TIME_SYMBOLS = ('nanosleep', 'thrd_sleep')
@@ -125,6 +129,26 @@ def linked_defines(defines, *, timed_clock=False, time_response=False):
     return (*defines, 'LSF_C_LINKED_LIBC=1',
             *(('LSF_C_TIMED_CLOCK=1',) if timed_clock else ()),
             *(name + '=__lsf_c_' + name for name in emitted))
+
+
+def captured_rwlock_port(runtime):
+    """Use the port only when the already-captured SDK explicitly selects it."""
+    document = read_json(runtime / 'thread-abi.json', 32768)
+    if type(document) is not dict:
+        raise ValueError('c-threading-invalid-abi')
+    ports = document.get('optionalPorts')
+    if ports is None:
+        return False
+    if type(ports) is not dict or ports != {'rwlock': RWLOCK_PORT}:
+        raise ValueError('c-threading-invalid-optional-ports')
+    return True
+
+
+def rwlock_defines(defines):
+    reserved = {'LSF_C_RWLOCKS', *RWLOCK_SYMBOLS, *('__lsf_c_' + name for name in RWLOCK_SYMBOLS)}
+    if any(value.split('=', 1)[0] in reserved for value in defines):
+        raise ValueError('c-threading-compiler-owned-rwlock-symbol')
+    return (*defines, 'LSF_C_RWLOCKS=1', *(name + '=__lsf_c_' + name for name in RWLOCK_SYMBOLS))
 
 
 def timed_alias_response(sdk):
