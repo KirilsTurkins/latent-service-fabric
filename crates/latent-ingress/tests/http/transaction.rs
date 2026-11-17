@@ -133,6 +133,27 @@ fn command_mapping_retains_original_key_path_precondition_with_credential_rotati
 }
 
 #[test]
+fn effect_lookup_requires_the_original_result_route_and_bounded_effect_identity() {
+    let effect = "a".repeat(64);
+    let header = HeaderView {
+        name: "effect-id",
+        value: effect.as_bytes(),
+    };
+    let (_, facts) = map("result", "GET", "/commands", b"", &[ID, header]).unwrap();
+    assert_eq!(facts.client_key(), Some("original-request"));
+    assert_eq!(facts.effect_id(), Some(effect.as_str()));
+    assert!(map("result", "GET", "/commands", b"", &[ID, header, header]).is_err());
+    assert!(map("query", "GET", "/commands?input=W10", b"", &[header]).is_err());
+    for invalid in ["A".repeat(64), "a".repeat(63), "g".repeat(64)] {
+        let header = HeaderView {
+            name: "effect-id",
+            value: invalid.as_bytes(),
+        };
+        assert!(map("result", "GET", "/commands", b"", &[ID, header]).is_err());
+    }
+}
+
+#[test]
 fn duplicates_and_ambiguous_preconditions_fail_before_invocation() {
     assert!(map("command", "POST", "/commands", b"[]", &[ID, ID]).is_err());
     assert!(map("command", "POST", "/commands?namespace=other", b"[]", &[ID]).is_err());

@@ -212,6 +212,7 @@ impl TransactionRoute {
 #[derive(Clone)]
 pub struct TransactionRequest {
     pub(super) client_key: Option<String>,
+    pub(super) effect_id: Option<String>,
     pub(super) preconditions: Vec<Precondition>,
     pub(super) minimum_view: Option<Vec<u8>>,
     pub(super) business_path: String,
@@ -243,6 +244,12 @@ impl TransactionRequest {
     #[must_use]
     pub fn client_key(&self) -> Option<&str> {
         self.client_key.as_deref()
+    }
+    /// An effect ID is only a selector; current command/effect authority is
+    /// checked again by the original result-read owner before delivery.
+    #[must_use]
+    pub fn effect_id(&self) -> Option<&str> {
+        self.effect_id.as_deref()
     }
     #[must_use]
     pub fn preconditions(&self) -> &[Precondition] {
