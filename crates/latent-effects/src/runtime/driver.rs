@@ -47,7 +47,7 @@ pub(super) async fn drive(
         }
         if pending_receipt.is_none() && services.shared.available() {
             for _ in 0..config.scan_pages_per_tick {
-                match scan(&services, &jobs, &config, cursor.take()).await {
+                match scan(&services, &jobs, &config, cursor.clone()).await {
                     Ok(next) => {
                         cursor = next;
                         if cursor.is_none() {
