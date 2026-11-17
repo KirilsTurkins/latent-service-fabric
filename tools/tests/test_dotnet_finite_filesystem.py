@@ -19,20 +19,20 @@ class FiniteFilesystemComposition(unittest.TestCase):
         port=f.prepare()
         return outer,port
 
-    def test_finite_chain_accepts_exact_tenth_helper_and_preserves_final_native_reference(self):
+    def test_finite_chain_accepts_exact_eleventh_helper_and_preserves_final_native_reference(self):
         outer,intermediate=self.control();f=outer.fixture
         def rewrite(stage,*args):
             self.assertEqual(stage,'closed-filesystem-rewrite')
             original,base,assembly,receipt=args[-4:]
             assembly.write_bytes(base.read_bytes()+b'-closed')
             write_json(receipt,{**outer.receipt,'baseDigest':intermediate.identity['digest'],
-                'outputDigest':digest(assembly.read_bytes()),'unchangedBaseMethods':44754})
+                'outputDigest':digest(assembly.read_bytes()),'unchangedBaseMethods':44755})
         selected=filesystem.prepare(f.sdk,f.tools,f.packages,f.root/'dotnet',f.project,f.output,f.evidence,
             rewrite,task_wait_port=intermediate)
         outer.references(selected,intermediate)
         result=intermediate.finish(f.project,f.evidence,corelib_port=selected)
-        self.assertEqual(intermediate.validated_helper_count(),10)
-        self.assertEqual(selected.evidence['unchangedBaseMethods'],44754)
+        self.assertEqual(intermediate.validated_helper_count(),11)
+        self.assertEqual(selected.evidence['unchangedBaseMethods'],44755)
         self.assertEqual(result['nativeAotReferenceBinding']['finalCoreLibDerivation']['selectedDigest'],selected.identity['digest'])
 
     def test_exact_counts_keep_unjoined_and_infinite_modes_and_refuse_arbitrary_count_or_port(self):
@@ -40,9 +40,9 @@ class FiniteFilesystemComposition(unittest.TestCase):
         pure=outer.receipt;filesystem.validate_receipt(pure,task_wait.SOURCE,False)
         infinite={**pure,'baseDigest':port.identity['digest'],'unchangedBaseMethods':44753}
         filesystem.validate_receipt(infinite,port.identity['digest'],True)
-        finite={**infinite,'unchangedBaseMethods':44754}
+        finite={**infinite,'unchangedBaseMethods':44755}
         filesystem.validate_receipt(finite,port.identity['digest'],True,task_wait_port=port)
-        for value in (44753,44755,True):
+        for value in (44753,44754,44756,True):
             with self.subTest(value=value),self.assertRaisesRegex(ValueError,'rewrite-receipt'):
                 filesystem.validate_receipt({**finite,'unchangedBaseMethods':value},port.identity['digest'],True,task_wait_port=port)
         for joined,selected in ((1,None),(False,port),(True,object())):
@@ -56,6 +56,11 @@ class FiniteFilesystemComposition(unittest.TestCase):
         for key,value in changes:
             port.evidence=copy.deepcopy(original);port.evidence[key]=value
             with self.subTest(key=key,value=value),self.assertRaises(ValueError):port.validated_helper_count()
+        port.evidence=copy.deepcopy(original)
+        del port.evidence['finiteWaitObservation']
+        port.evidence['generatedHelperCount']=10
+        with self.assertRaisesRegex(ValueError,'current-finite-observation-required'):
+            port.validated_helper_count()
         port.evidence=copy.deepcopy(original);port.evidence['selection']['requiredDeclarations'].pop()
         with self.assertRaisesRegex(ValueError,'authenticated-helper-count'):port.validated_helper_count()
         port.evidence=original

@@ -34,7 +34,7 @@ public final class ManagedExecutorQueuedSettlementControl {
         }
     }
     private static void rollback(String kind) throws Exception {
-        ExecutorService pool = Executors.newSingleThreadExecutor(task -> null);
+        ExecutorService pool = Executors.newSingleThreadExecutor(task -> { throw new IllegalStateException("factory-failed"); });
         failSettlement(kind);
         try {
             pool.execute(() -> { throw new AssertionError("rejected-work-ran"); });

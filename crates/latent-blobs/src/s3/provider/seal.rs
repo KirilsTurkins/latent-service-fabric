@@ -125,7 +125,7 @@ async fn transfer(
                 query: &[("partNumber", &part), ("uploadId", &id)],
                 extra: &[],
                 payload_sha: hash,
-                body: ProtocolBody::from_pages(&inner.pools, &data.pages, low..high)
+                body: ProtocolBody::from_shared_pages(&inner.pools, &data.pages, low..high)
                     .map_err(crate::s3::http)?,
             },
         )

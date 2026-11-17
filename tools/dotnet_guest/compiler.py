@@ -422,7 +422,7 @@ class Compiler:
                     'unchangedOriginalMethods', 'completeOriginalWaitRemainderPreserved', 'nativeAotReferenceBinding')}})
             if port['finiteAndCancellableWaits'] == 'original-Task-WhenAny-Delay':
                 self.compiler_patches[-1]['selection'].update({key: port[key] for key in (
-                    'finiteWaitCleanup', 'zeroTimeout', 'waitCancellation', 'publicWaitValidationAndExceptions')})
+                    'finiteWaitCleanup', 'finiteWaitObservation', 'zeroTimeout', 'waitCancellation', 'publicWaitValidationAndExceptions')})
             if 'aggregateTaskWait' in port:
                 self.compiler_patches[-1]['selection']['aggregateTaskWait'] = port['aggregateTaskWait']
             if managed:

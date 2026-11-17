@@ -5,7 +5,7 @@ export function installApplicationClocks(approved, snapshotActive, target = glob
     throw new TypeError('standard-clock-installation-shape');
   }
   const OriginalDate = target.Date, Unsupported = Error;
-  const apply = Reflect.apply, construct = Reflect.construct, get = Reflect.get;
+  const apply = Reflect.apply, construct = Reflect.construct;
   const originalNow = approved ? OriginalDate.now : null;
   const performance = target.performance ?? {};
   function descriptor(name) {
@@ -31,6 +31,11 @@ export function installApplicationClocks(approved, snapshotActive, target = glob
     if (!approved) throw new Unsupported('unsupported:standard-clock-without-approved-profile');
   }
   function now() { requireClock(); return apply(originalNow, OriginalDate, []); }
+  // The own property must be guarded too: descriptors, assignment, and freezing
+  // must observe the same function as ordinary Date.now access.
+  Object.defineProperty(OriginalDate, 'now', {
+    value: now, writable: true, configurable: true
+  });
   const SelectedDate = new Proxy(OriginalDate, {
     apply(target, self, args) {
       // Calling Date as a function always observes now, even Date('literal').
@@ -40,9 +45,6 @@ export function installApplicationClocks(approved, snapshotActive, target = glob
     construct(target, args, receiver) {
       if (args.length === 0) requireClock();
       return construct(target, args, receiver);
-    },
-    get(target, name, receiver) {
-      return name === 'now' ? now : get(target, name, receiver);
     }
   });
   Object.defineProperty(OriginalDate.prototype, 'constructor', {
