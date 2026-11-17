@@ -9,6 +9,8 @@
 mod component;
 #[path = "typescript_import_borrow_release/composition.rs"]
 mod composition;
+#[path = "typescript_import_borrow_release/current_source.rs"]
+mod current_source;
 #[path = "local_service/fixture.rs"]
 #[allow(dead_code)]
 mod fixture;
@@ -119,69 +121,74 @@ async fn configured(root: &Path, port: u16) -> Fixture {
     );
     let observation_raw = read(&prepared.join("BORROW-COMPILE.json"), 1024 * 1024);
     let observed: Value = serde_json::from_slice(&observation_raw).unwrap();
-    assert_eq!(
-        observed["schemaVersion"],
-        "latent.typescript.borrow-probe-compile.v1"
-    );
-    assert_eq!(observed["profile"], PROFILE);
-    assert_eq!(observed["status"], "passed");
-    assert_eq!(observed["sourceUnchanged"], true);
-    assert_eq!(observed["engineQualificationStatus"], "passed");
-    // The owning selector must authenticate this complete producer first;
-    // these bytes remain its original receipt, never rebound to this programme.
-    let own_raw = read(
-        &prepared.join("engine-qualification/OWN-RESULTS.json"),
-        4 * 1024 * 1024,
-    );
-    let own: Value = serde_json::from_slice(&own_raw).unwrap();
-    assert_eq!(
-        own["schemaVersion"],
-        "latent.typescript.owned-result-prerequisites.v1"
-    );
-    assert_eq!(own["status"], "passed");
-    assert_eq!(
-        own["scope"],
-        "fresh-normal-compiler-engine-unit-native-ABI-prerequisites"
-    );
-    for field in [
-        "canonicalOwnComponentExecuted",
-        "tableReuseQualified",
-        "signedExecution",
-        "physicalProviderQualified",
-        "wholeCostQualification",
-    ] {
+    let own_raw = if observed["schemaVersion"] == "latent.typescript.borrow-probe-compile.v2" {
+        current_source::validate(&prepared, &observed)
+    } else {
         assert_eq!(
-            own[field], false,
-            "prerequisite receipt must preserve its actual scope"
+            observed["schemaVersion"],
+            "latent.typescript.borrow-probe-compile.v1"
         );
-    }
-    for field in ["sourceCommit", "sourceTree"] {
-        let identity = own[field]
+        assert_eq!(observed["profile"], PROFILE);
+        assert_eq!(observed["status"], "passed");
+        assert_eq!(observed["sourceUnchanged"], true);
+        assert_eq!(observed["engineQualificationStatus"], "passed");
+        // The owning selector must authenticate this complete producer first;
+        // these bytes remain its original receipt, never rebound to this programme.
+        let own_raw = read(
+            &prepared.join("engine-qualification/OWN-RESULTS.json"),
+            4 * 1024 * 1024,
+        );
+        let own: Value = serde_json::from_slice(&own_raw).unwrap();
+        assert_eq!(
+            own["schemaVersion"],
+            "latent.typescript.owned-result-prerequisites.v1"
+        );
+        assert_eq!(own["status"], "passed");
+        assert_eq!(
+            own["scope"],
+            "fresh-normal-compiler-engine-unit-native-ABI-prerequisites"
+        );
+        for field in [
+            "canonicalOwnComponentExecuted",
+            "tableReuseQualified",
+            "signedExecution",
+            "physicalProviderQualified",
+            "wholeCostQualification",
+        ] {
+            assert_eq!(
+                own[field], false,
+                "prerequisite receipt must preserve its actual scope"
+            );
+        }
+        for field in ["sourceCommit", "sourceTree"] {
+            let identity = own[field]
+                .as_str()
+                .expect("actual Git source identity required");
+            assert_eq!(identity.len(), 40);
+            assert!(identity
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)));
+        }
+        let engine_input = own["engineProducts"]["engine-input.json"]["sha256"]
             .as_str()
-            .expect("actual Git source identity required");
-        assert_eq!(identity.len(), 40);
-        assert!(identity
+            .expect("actual fresh engine-input identity required");
+        assert_eq!(engine_input.len(), 71);
+        let engine_input_hex = engine_input
+            .strip_prefix("sha256:")
+            .expect("normal canonical digest required");
+        assert!(engine_input_hex
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)));
-    }
-    let engine_input = own["engineProducts"]["engine-input.json"]["sha256"]
-        .as_str()
-        .expect("actual fresh engine-input identity required");
-    assert_eq!(engine_input.len(), 71);
-    let engine_input_hex = engine_input
-        .strip_prefix("sha256:")
-        .expect("normal canonical digest required");
-    assert!(engine_input_hex
-        .bytes()
-        .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)));
-    assert_eq!(observed["engineInputDigest"], engine_input);
-    assert_eq!(observed["ownResultsDigest"], digest(&own_raw));
-    assert_eq!(observed["engineSourceCommit"], own["sourceCommit"]);
-    assert_ne!(
-        observed["engineInputDigest"],
-        "sha256:18557c70748fd27daefa296d7bcc156533f5f943317489c3a256e16b2c78918b",
-        "historical known generated-finally failure is NOT a pass candidate"
-    );
+        assert_eq!(observed["engineInputDigest"], engine_input);
+        assert_eq!(observed["ownResultsDigest"], digest(&own_raw));
+        assert_eq!(observed["engineSourceCommit"], own["sourceCommit"]);
+        assert_ne!(
+            observed["engineInputDigest"],
+            "sha256:18557c70748fd27daefa296d7bcc156533f5f943317489c3a256e16b2c78918b",
+            "historical known generated-finally failure is NOT a pass candidate"
+        );
+        own_raw
+    };
     for (name, expected) in [
         ("src/main.ts", SOURCE),
         ("wit/world.wit", WORLD),
@@ -218,6 +225,11 @@ async fn configured(root: &Path, port: u16) -> Fixture {
         // retained raw compile observation is separately bound, not rewritten.
         let mut capture = include_bytes!("local_service/packages.rs").to_vec();
         capture.extend_from_slice(include_bytes!("typescript_import_borrow_release.rs"));
+        if observed["schemaVersion"] == "latent.typescript.borrow-probe-compile.v2" {
+            capture.extend_from_slice(include_bytes!(
+                "typescript_import_borrow_release/current_source.rs"
+            ));
+        }
         capture.extend_from_slice(include_bytes!("typescript_import_borrow_release/gate.rs"));
         capture.extend_from_slice(include_bytes!(
             "typescript_import_borrow_release/composition.rs"
