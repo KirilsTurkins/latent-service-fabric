@@ -36,7 +36,7 @@ pub struct TransactionAdmissionOwners {
     pub(super) lanes: super::entity_queue::EntityQueue,
 }
 impl TransactionAdmissionOwners {
-    /// Current number of prepaid duplicate callers waiting for a claim.
+    /// Current number of authorized duplicate callers waiting for a claim.
     pub fn entity_duplicate_waiter_count(&self) -> Result<usize, PlatformError> {
         self.lanes.duplicate_waiter_count().map_err(|_| {
             error(

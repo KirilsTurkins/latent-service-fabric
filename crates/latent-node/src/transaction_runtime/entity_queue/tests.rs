@@ -1290,7 +1290,9 @@ fn duplicate_authorization_counts_against_shared_wait_limits() {
     let queue = EntityQueue::new(bounds, Arc::new(latent_core::SystemActivationClock)).unwrap();
     let key = scope("tenant-a", "hot");
     let authorization = queue.reserve_authorizing_duplicate(&key, 64, 1).unwrap();
-    assert_eq!(queue.duplicate_waiter_count().unwrap(), 1);
+    // An authorization reservation consumes capacity but is not yet an
+    // accepted waiter and cannot sponsor the original owner.
+    assert_eq!(queue.duplicate_waiter_count().unwrap(), 0);
     assert!(matches!(
         queue.reserve_waiting(&key, 64),
         Err(QueueError::Lane(EntityLaneError::Backpressure(

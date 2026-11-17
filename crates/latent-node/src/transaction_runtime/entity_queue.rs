@@ -109,7 +109,6 @@ impl Drop for DuplicateWaiter {
 // A duplicate still consumes queue capacity while its original result-read
 // authority is being checked, before it may sponsor the active owner.
 pub(super) struct AuthorizingWaiter {
-    _duplicate: DuplicateWaiter,
     _waiting: WaitingSlot,
 }
 
@@ -292,20 +291,7 @@ impl EntityQueue {
             .checked_add(metadata)
             .ok_or(QueueError::Unavailable)?;
         let waiting = self.reserve_waiting(scope, bytes)?;
-        let mut waiters = self
-            .duplicate_waiters
-            .lock()
-            .map_err(|_| QueueError::Unavailable)?;
-        *waiters.entry(scope.clone()).or_default() += 1;
-        drop(waiters);
-        Ok(AuthorizingWaiter {
-            _waiting: waiting,
-            _duplicate: DuplicateWaiter {
-                waiters: Arc::clone(&self.duplicate_waiters),
-                scope: scope.clone(),
-                _sponsor: None,
-            },
-        })
+        Ok(AuthorizingWaiter { _waiting: waiting })
     }
 
     pub(super) fn waiter_deadline(&self, deadline: Instant) -> Result<Instant, QueueError> {
