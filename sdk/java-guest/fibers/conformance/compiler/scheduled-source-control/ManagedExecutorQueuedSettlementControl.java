@@ -42,7 +42,9 @@ public final class ManagedExecutorQueuedSettlementControl {
         } catch (IllegalStateException expected) { }
         checkFailure(kind);
         pool.shutdownNow();
-        require(pool.awaitTermination(5, TimeUnit.SECONDS), "rollback-pool-not-terminated");
+        require(!pool.isTerminated() && ((Activation.ManagedPool)pool).hasPendingWork()
+            && Activation.count(LatentRuntimeActivationOwnerKind.Executor) == 1,
+            "uncertain-first-rollback-not-rooted");
         require(Activation.failedLeaseAttempts() == 1, "rollback-settlement-retried");
     }
     private static void shutdown(String kind) throws Exception {
@@ -80,7 +82,9 @@ public final class ManagedExecutorQueuedSettlementControl {
         require(workerError.get() instanceof IllegalStateException && invoked.get() == 0, "dispatch-not-refused");
         checkFailure(kind);
         pool.shutdownNow();
-        require(pool.awaitTermination(5, TimeUnit.SECONDS), "dispatch-pool-not-terminated");
+        require(!pool.isTerminated() && ((Activation.ManagedPool)pool).hasPendingWork()
+            && Activation.count(LatentRuntimeActivationOwnerKind.Executor) == 1,
+            "uncertain-first-dispatch-not-rooted");
         require(Activation.failedLeaseAttempts() == 1, "dispatch-settlement-retried");
     }
     public static void main(String[] args) throws Exception {

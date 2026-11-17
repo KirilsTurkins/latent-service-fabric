@@ -106,6 +106,7 @@ public final class Activation {
     public static boolean retainsOwner(Lease owner) { return retainedFailedQueued == owner && owner != null; }
     public static synchronized int failedLeaseAttempts() { return lastFailedLease == null ? 0 : lastFailedLease.attempts; }
     public static void fenceUncertainCompletion() { poisoned = true; }
+    public static boolean admissionPoisoned() { return poisoned; }
     public static void fenceUncertainResultSettlement() { fenceUncertainCompletion(); }
     public static void fenceUncertainQueuedWorkSettlement(Lease owner) { poisoned = true; retainedFailedQueued = owner; }
     public static synchronized void manage(ManagedPool pool) {

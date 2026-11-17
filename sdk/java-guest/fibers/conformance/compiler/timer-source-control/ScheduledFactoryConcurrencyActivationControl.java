@@ -90,13 +90,22 @@ public final class ScheduledFactoryConcurrencyActivationControl {
         var observation = new AtomicReference<Boolean>();
         var observationError = new AtomicReference<Throwable>();
         var failure = new AtomicReference<Throwable>();
-        var worker = new AtomicReference<Thread>();
+        // The JVM source control has real parallel threads. Deliver the root
+        // interrupt after closeAtRoot returns, as on the cooperative guest
+        // scheduler, rather than racing two owner-settlement attempts.
+        class DeferredInterruptThread extends Thread {
+            volatile boolean requested;
+            DeferredInterruptThread(Runnable target) { super(target); }
+            @Override public void interrupt() { requested = true; }
+            void deliver() { super.interrupt(); }
+        }
+        var worker = new AtomicReference<DeferredInterruptThread>();
         var pool = new ScheduledThreadPoolExecutor(1, target -> {
             if (attempts.incrementAndGet() == 1) return null;
             entered.countDown();
             try { await(release, "factory-release"); }
             catch (InterruptedException error) { throw new AssertionError(error); }
-            Thread thread = new Thread(() -> {
+            var thread = new DeferredInterruptThread(() -> {
                 try { Activation.starting(Thread.currentThread()); target.run(); }
                 finally { Activation.finished(Thread.currentThread()); }
             });
@@ -126,7 +135,14 @@ public final class ScheduledFactoryConcurrencyActivationControl {
             require(!manual.isAlive() && failure.get() == null && observationError.get() == null
                 && Boolean.TRUE.equals(observation.get()) && calls.get() == 1, "worker-registration-root-fence");
             held(1, 0, 0, 1);
-            invoke("retireIdlePools"); worker.get().join(5000);
+            long idleDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            while (pool.hasPendingWork()) {
+                require(System.nanoTime() - idleDeadline < 0, "pool-did-not-become-idle");
+                Thread.yield();
+            }
+            invoke("retireIdlePools");
+            require(worker.get().requested, "worker-interrupt-not-requested");
+            worker.get().deliver(); worker.get().join(5000);
             require(!worker.get().isAlive() && pool.isRetired()
                 && owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 0, "worker-retirement");
             held(1, 0, 0, 0);
