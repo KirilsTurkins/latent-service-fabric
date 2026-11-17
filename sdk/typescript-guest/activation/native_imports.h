@@ -163,6 +163,11 @@ class Imports final {
     return false;
   }
   bool quarantineBorrow(JSContext* cx, Record& item) {
+    // A failed cleanup is a manager-wide fence even when this import has
+    // no optional borrow observer. Retrying only through cancelAll prevents a
+    // caught exception from admitting or dispatching unrelated new work while
+    // this record's original disposition is still unresolved.
+    stopped_ = true;
     std::unique_ptr<ImportBorrowObserver>* link = nullptr;
     if (!observerLink(cx, item.id, item.record_owner.token, link)) return false;
     if (*link) {
@@ -198,6 +203,13 @@ class Imports final {
     item.disposition = Disposition::Disposed;
     stopped_ = was_stopped;
     return item.lifecycle.discardCompleted(cx);
+  }
+  bool discardUnstarted(JSContext* cx, Record& item) {
+    // The import has not been published or dispatched. Preserve the original
+    // exception and its exact owners if logical or physical retirement fails.
+    if (!item.lifecycle.cancel(cx)) { stopped_ = true; return false; }
+    if (!collect(cx)) { stopped_ = true; return false; }
+    return false;
   }
 public:
   Imports(BrokerAccounting& jobs, BrokerPromiseAccounting& native, ReadinessSet& readiness)
@@ -237,22 +249,21 @@ public:
       if (accepted.parameters) std::memset(accepted.parameters, 0, parameter_size);
     }
     if (parameter_size && !accepted.parameters) {
-      JS_ReportOutOfMemory(cx); (void)accepted.lifecycle.cancel(cx); (void)collect(cx); return false;
+      JS_ReportOutOfMemory(cx); return discardUnstarted(cx, accepted);
     }
     if (result_size) {
       accepted.result = JS_malloc(cx, result_size);
       if (accepted.result) std::memset(accepted.result, 0, result_size);
       if (!accepted.result) {
         JS_ReportOutOfMemory(cx);
-        (void)accepted.lifecycle.cancel(cx);
-        return false;
+        return discardUnstarted(cx, accepted);
       }
     }
     JS::RootedObject roots(cx,JS::NewArrayObject(cx,captures));
-    if (!roots) { (void)accepted.lifecycle.cancel(cx); (void)collect(cx); return false; }
+    if (!roots) return discardUnstarted(cx, accepted);
     accepted.captures = JS::ObjectValue(*roots);
     accepted.promise = JS::NewPromiseObject(cx, nullptr);
-    if (!accepted.promise) { (void)accepted.lifecycle.cancel(cx); return false; }
+    if (!accepted.promise) return discardUnstarted(cx, accepted);
     id = accepted.id;
     return true;
   }
@@ -376,7 +387,10 @@ public:
   bool cancel(JSContext* cx, uint32_t id) {
     auto* item = find(id);
     if (!item) return invalid(cx, "cancel-record");
-    return rejectCancelled(cx, *item) && cancelRecord(cx, *item) && collect(cx);
+    if (!rejectCancelled(cx, *item) || !cancelRecord(cx, *item))
+      return quarantineBorrow(cx, *item);
+    if (!collect(cx)) { stopped_ = true; return false; }
+    return true;
   }
   bool watchBorrow(JSContext* cx, uint32_t id, JS::MutableHandleObject handle) {
     auto* item = find(id);
