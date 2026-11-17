@@ -26,6 +26,11 @@
 "crates/latent-core/src/budget.rs",
 "crates/latent-core/src/budget/**",
 "crates/latent-streams/src/connection.rs",
+"crates/latent-streams/src/lib.rs",
+"crates/latent-streams/src/provider.rs",
+"crates/latent-streams/src/tls.rs",
+"crates/latent-streams/src/tls_owner.rs",
+"crates/latent-streams/src/transport.rs",
 "crates/latent-manifest/tests/fixtures/valid-capsule-v1alpha1.json",
 "tools/stream_scope_retirement_witness.py",
 "tools/stream_scope_retirement_witness.rs",
@@ -63,6 +68,11 @@
 "crates/latent-core/src/budget.rs",
 "crates/latent-core/src/budget/**",
 "crates/latent-streams/src/connection.rs",
+"crates/latent-streams/src/lib.rs",
+"crates/latent-streams/src/provider.rs",
+"crates/latent-streams/src/tls.rs",
+"crates/latent-streams/src/tls_owner.rs",
+"crates/latent-streams/src/transport.rs",
 "crates/latent-manifest/tests/fixtures/valid-capsule-v1alpha1.json",
 "tools/stream_scope_retirement_witness.py",
 "tools/stream_scope_retirement_witness.rs",
@@ -88,7 +98,7 @@
 "protocol-page-owner",
 "stream-scope-owner"
 ],
-"reviewReason":"Keep all physical result, page and stream controls and run the actual native-capacity lease deallocation witness on its source changes.",
+"reviewReason":"Keep all physical result, page, stream scope and native-capacity controls, and run the TLS configuration backing-owner witness on its source changes.",
 "schemaVersion":"latent.ci.contracts.v1",
 "workflow":".github/workflows/result-owner-retirement.yml"
 }

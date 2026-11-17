@@ -12,6 +12,9 @@ use std::sync::atomic::{AtomicBool, AtomicPtr, AtomicUsize, Ordering::SeqCst};
 use std::sync::{Arc, Barrier};
 use std::time::{Duration, Instant};
 
+#[path = "../crates/latent-streams/src/tls_owner.rs"]
+mod tls_owner;
+
 // The runner owns and cleans the private temporary root. This small shim lets
 // the unchanged authenticated fixture use its existing TempDir interface
 // without compiling the entire library test graph.
@@ -127,7 +130,65 @@ fn wait_for_deallocator() {
         panic!("scope Arc deallocator not reached");
     }
 }
+
+// Exercise the exact private wrapper used by the TLS configuration. The
+// marker stands for the value's trailing metadata charge; this does not
+// measure rustls allocations or qualify the host TLS profile.
+struct TlsChargeMarker(Arc<AtomicBool>);
+impl Drop for TlsChargeMarker {
+    fn drop(&mut self) {
+        self.0.store(false, SeqCst);
+    }
+}
+
+fn tls_configuration_backing() {
+    for mode in 0..3 {
+        let charged = Arc::new(AtomicBool::new(true));
+        start_capture();
+        let owner = tls_owner::TlsOwner::new(TlsChargeMarker(Arc::clone(&charged)));
+        stop_capture();
+        assert_eq!(CAPTURE_COUNT.load(SeqCst), 1);
+        let pointer = CAPTURE_PTR[0].load(SeqCst);
+        assert!(!pointer.is_null());
+        watch(pointer);
+        let mut workers = Vec::new();
+        if mode == 2 {
+            let barrier = Arc::new(Barrier::new(9));
+            for _ in 0..8 {
+                let clone = owner.clone();
+                let barrier = Arc::clone(&barrier);
+                workers.push(std::thread::spawn(move || {
+                    barrier.wait();
+                    drop(clone);
+                }));
+            }
+            drop(owner);
+            barrier.wait();
+        } else {
+            workers.push(std::thread::spawn(move || {
+                let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    if mode == 1 {
+                        let _owner = owner;
+                        panic!("controlled TLS owner unwind");
+                    }
+                    drop(owner);
+                }));
+                assert_eq!(result.is_err(), mode == 1);
+            }));
+        }
+        wait_for_deallocator();
+        let held = charged.load(SeqCst);
+        RELEASE.store(true, SeqCst);
+        for worker in workers {
+            worker.join().unwrap();
+        }
+        assert!(FREED.load(SeqCst) && held && !charged.load(SeqCst));
+        println!("TLS configuration backing mode={mode} marker held through deallocation");
+    }
+}
+
 fn main() {
+    tls_configuration_backing();
     let fixture = fixture::Fixture::new(CapabilityBrokerLimits::default());
     let (request, mut control) = fixture.request("scope-allocation-witness");
     let deadline = control.budget.deadline();
