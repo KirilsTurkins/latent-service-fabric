@@ -9,8 +9,9 @@ from tools.tests import test_dotnet_task_wait as controls
 
 FINITE = {
     'finiteAndCancellableWaits': 'original-Task-WhenAny-Delay',
-    'generatedHelperCount': 10,
+    'generatedHelperCount': 11,
     'finiteWaitCleanup': 'private-linked-source-cancel-dispose-finally',
+    'finiteWaitObservation': task_wait.FINITE_OBSERVATION,
     'zeroTimeout': 'query-only-before-cancellation',
     'waitCancellation': 'original-token-only',
     'publicWaitValidationAndExceptions': 'unchanged',
@@ -61,14 +62,36 @@ class FiniteTaskWaitTests(unittest.TestCase):
         value = self.control(DECLARATIONS)
         finite = {**value.receipt, **FINITE}
         task_wait.validate_receipt(finite, finite=True)
+        task_wait.validate_current_receipt(finite, finite=True, require_finite_observation=True)
+        historical = {**finite, 'generatedHelperCount': 10}
+        del historical['finiteWaitObservation']
+        task_wait.validate_receipt(historical, finite=True)
+        with self.assertRaisesRegex(ValueError, 'current-finite-observation-required'):
+            task_wait.validate_current_receipt(historical, finite=True, require_finite_observation=True)
         for receipt, selected in ((value.receipt, True), (finite, False), (finite, 1), (finite, 'true')):
             with self.subTest(selected=selected), self.assertRaises(ValueError):
                 task_wait.validate_receipt(receipt, finite=selected)
+
+    def test_task_runtime_qualifier_rejects_old_or_mismatched_observation(self):
+        from tools.qualify_dotnet_task_runtime import require_current_task_wait_receipt
+        value = self.control(DECLARATIONS)
+        current = {**value.receipt, **FINITE}
+        require_current_task_wait_receipt(current)
+        for changed in ('missing', 'wrong', 'count'):
+            candidate = copy.deepcopy(current)
+            if changed == 'missing':
+                del candidate['finiteWaitObservation']
+                candidate['generatedHelperCount'] = 10
+            elif changed == 'wrong': candidate['finiteWaitObservation'] = 'after-context-restore'
+            else: candidate['generatedHelperCount'] = 10
+            with self.subTest(changed=changed), self.assertRaises(ValueError):
+                require_current_task_wait_receipt(candidate)
 
     def test_finite_receipt_refuses_timer_leaks_synthetic_completion_and_changed_token_precedence(self):
         value = self.control(DECLARATIONS)
         finite = {**value.receipt, **FINITE}
         for key, changed in (('finiteWaitCleanup', 'dispose-without-cancel'),
+                             ('finiteWaitObservation', 'after-context-restoration'),
                              ('zeroTimeout', 'create-timer-before-query'),
                              ('waitCancellation', 'replacement-token'),
                              ('publicWaitValidationAndExceptions', 'rewritten'),

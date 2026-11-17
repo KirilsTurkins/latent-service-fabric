@@ -109,6 +109,7 @@ public:
   bool physical() const { return live_; }
   bool uncertain() const { return uncertain_; }
   bool unresolved() const { return live_ || uncertain_; }
+  bool joinedTo(const ReadinessSet& set) const { return joined_ && owner_set_ == &set; }
   bool matches(const jobs_event_t& event) const {
     return live_ && joined_ && handle_ && event.event == JOBS_EVENT_SUBTASK && event.waitable == handle_;
   }
@@ -141,12 +142,14 @@ public:
   bool initialize(JSContext* cx) {
     if (physical_) return true;
     if (native_.live) {
-      JS_ReportErrorASCII(cx, "activation-runtime-readiness-partial-admission");
+      if (!JS_IsExceptionPending(cx))
+        JS_ReportErrorASCII(cx, "activation-runtime-readiness-partial-admission");
       return false;
     }
     if (!accounting_.beforeAllocate(cx, native_)) return false;
     if (!native_.live) {
-      JS_ReportErrorASCII(cx, "activation-runtime-readiness-during-snapshot-denied");
+      if (!JS_IsExceptionPending(cx))
+        JS_ReportErrorASCII(cx, "activation-runtime-readiness-during-snapshot-denied");
       return false;
     }
     // The intrinsic may trap; live native ownership is already retained in

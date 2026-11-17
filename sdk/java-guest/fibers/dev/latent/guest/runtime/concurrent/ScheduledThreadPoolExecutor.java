@@ -36,6 +36,9 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     // Retain the original per-pool admission bound under reentry.
     private long sequence;
     private int running;
+    // Factories may reenter this pool before their thread is registered.
+    // Root retirement observes this without acquiring the pool monitor.
+    private volatile int startingWorkers;
 
     public ScheduledThreadPoolExecutor(int corePoolSize) {
         this(corePoolSize, Executors.defaultThreadFactory());
@@ -99,6 +102,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         boolean resultAccepted;
         boolean released;
         boolean releasing;
+        boolean factoryFailed;
         Entry(Task<?> task, Activation.Lease queued, boolean resultAccepted) {
             this.task = task; this.queued = queued; this.resultAccepted = resultAccepted;
         }
@@ -275,10 +279,14 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             pendingWork++; counted = true;
             queue.add(entry);
             installed = true;
-            if (workers.size() < parallelism && workers.size() < queue.size() + running) startWorker();
+            if (workers.size() < parallelism && workers.size() < queue.size() + running) startWorker(entry);
             notifyAll();
             return task;
         } catch (Throwable error) {
+            // The JDK leaves an already enqueued task in the scheduled queue
+            // when the application factory itself throws. The original entry
+            // remains charged even though the same failure reaches the caller.
+            if (entry != null && entry.factoryFailed) throw error;
             boolean withdrawn;
             try { withdrawn = withdrawFailed(entry, installed); }
             catch (Throwable uncertain) { throw error; }
@@ -343,11 +351,14 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             advance(task); advanced = true; revision = task.scheduleRevision;
             pendingWork++; counted = true;
             queue.add(entry); installed = true;
-            if (workers.size() < parallelism && workers.size() < queue.size() + running) startWorker();
+            if (workers.size() < parallelism && workers.size() < queue.size() + running) startWorker(entry);
             notifyAll();
         } catch (Throwable error) {
             // The no-copy path may have already attempted settlement.
             if (settlementAttempted) throw error;
+            // A factory throw follows successful insertion. Preserve this
+            // occurrence and its advanced deadline just like initial admission.
+            if (entry != null && entry.factoryFailed) throw error;
             boolean withdrawn;
             try { withdrawn = withdrawFailed(entry, installed); }
             catch (Throwable uncertain) { throw error; }
@@ -387,35 +398,68 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         void clear() { pool = null; thread = null; }
     }
 
-    private void startWorker() {
-        Worker worker = new Worker(this);
-        Thread thread = null;
-        int addedAt = -1;
+    private void startWorker() { startWorker(null); }
+
+    private void startWorker(Entry admitted) {
+        // All callers hold the pool monitor, including reentrant admissions.
+        // Reserve capacity before calling the application-supplied factory.
+        if (workers.size() >= parallelism - startingWorkers) return;
+        startingWorkers++;
+        boolean transferred = false;
+        Throwable failure = null;
         try {
-            thread = factory.newThread(worker::run);
-            if (thread == null || thread.isAlive())
-                throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
-            if (Activation.alive(thread)) throw new IllegalThreadStateException();
-            addedAt = workers.size();
-            workers.add(thread);
-            worker.prepare(thread);
-        } catch (Throwable error) {
-            // Admission has not started, so the retained target cannot own a
-            // managed worker. Preserve any pre-existing worker identity.
-            worker.clear();
-            if (addedAt >= 0 && addedAt < workers.size() && workers.get(addedAt) == thread)
-                workers.remove(addedAt);
-            throw error;
-        }
-        try { Activation.startManaged(thread, this); }
-        catch (Throwable error) {
-            // Accepted or rollback-uncertain work keeps both its thread and its
-            // target for root interruption and eventual physical settlement.
-            if (!Activation.ownsManaged(thread, this)) {
-                removeWorker(thread);
+            Worker worker = new Worker(this);
+            Thread thread = null;
+            int addedAt = -1;
+            try {
+                Runnable target = worker::run;
+                try { thread = factory.newThread(target); }
+                catch (Throwable error) {
+                    if (admitted != null) admitted.factoryFailed = true;
+                    throw error;
+                }
+                // The standard factory contract permits null. Accepted queue
+                // entries remain owned and a later admission can retry startup.
+                if (thread == null) { worker.clear(); return; }
+                if (thread.isAlive())
+                    throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
+                if (Activation.alive(thread)) throw new IllegalThreadStateException();
+                addedAt = workers.size();
+                workers.add(thread);
+                worker.prepare(thread);
+            } catch (Throwable error) {
+                // Admission has not started, so the retained target cannot own a
+                // managed worker. Preserve any pre-existing worker identity.
                 worker.clear();
+                if (addedAt >= 0 && addedAt < workers.size() && workers.get(addedAt) == thread)
+                    workers.remove(addedAt);
+                throw error;
             }
+            // The worker registry now carries this capacity and root custody.
+            startingWorkers--;
+            transferred = true;
+            try { Activation.startManaged(thread, this); }
+            catch (Throwable error) {
+                // Accepted or rollback-uncertain work keeps both its thread and its
+                // target for root interruption and eventual physical settlement.
+                if (!Activation.ownsManaged(thread, this)) {
+                    removeWorker(thread);
+                    worker.clear();
+                }
+                throw error;
+            }
+        } catch (Throwable error) {
+            failure = error;
             throw error;
+        } finally {
+            if (!transferred) startingWorkers--;
+            try { settleIfTerminated(); }
+            catch (Throwable uncertain) {
+                // The original admission error takes precedence; settlement
+                // already fenced uncertain ownership before throwing.
+                if (failure == null) throw uncertain;
+            }
+            notifyAll();
         }
     }
 
@@ -516,11 +560,13 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         return add(command, null, Objects.requireNonNull(unit).toNanos(delay), 0);
     }
     @Override public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
+        Objects.requireNonNull(command);
         Objects.requireNonNull(unit);
         if (period <= 0) throw new IllegalArgumentException();
         return add(new RunnableCall<>(command, null), command, unit.toNanos(initialDelay), unit.toNanos(period));
     }
     @Override public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+        Objects.requireNonNull(command);
         Objects.requireNonNull(unit);
         if (delay <= 0) throw new IllegalArgumentException();
         return add(new RunnableCall<>(command, null), command, unit.toNanos(initialDelay), -unit.toNanos(delay));
@@ -575,7 +621,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     }
     private void settleIfTerminated() { settleIfTerminated(false); }
     private void settleIfTerminated(boolean root) {
-        if ((shutdown || retiring) && pendingWork == 0 && workers.isEmpty()) settleOwner(root);
+        if ((shutdown || retiring) && pendingWork == 0 && startingWorkers == 0 && workers.isEmpty()) settleOwner(root);
     }
     private void settleOwner(boolean rootOrRollback) {
         if (owner != null) {
@@ -618,7 +664,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             return true;
         }
     }
-    @Override public boolean hasPendingWork() { return pendingWork != 0; }
+    @Override public boolean hasPendingWork() { return pendingWork != 0 || startingWorkers != 0; }
     @Override public void closeAtRoot() {
         retiring = true;
         for (Thread worker : workers) worker.interrupt();

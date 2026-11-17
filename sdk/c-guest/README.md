@@ -103,6 +103,30 @@ endpoint, the stream provider, clocks, entropy and the cooperative runtime.
 No hostname grant is converted to an address grant, and this profile does not
 resolve hostnames.
 
+Selected C source can use `getaddrinfo` and `freeaddrinfo` for strictly dotted
+decimal IPv4 addresses and a decimal port from 0 through 65535. A missing
+service selects port 0; a missing node or nonnumeric hostname returns
+`EAI_NONAME` without contacting a resolver. Named services return `EAI_SERVICE`
+(or `EAI_NONAME` with `AI_NUMERICSERV`), and ports beyond the five-digit,
+65535 bound return `EAI_SERVICE`. The supported flags are `AI_NUMERICHOST`,
+`AI_NUMERICSERV` and `AI_CANONNAME`. The last returns an owned canonical
+numeric literal derived from the parsed address, not a hostname or a grant.
+Flags such as `AI_ADDRCONFIG` and `AI_PASSIVE` return `EAI_BADFLAGS`. IPv6 returns
+`EAI_FAMILY`, and datagram or non-TCP requests return `EAI_SOCKTYPE`. Each
+successful call owns a separate result in the original bounded guest memory;
+`freeaddrinfo` releases it. The result is not an endpoint grant, and legacy
+hostname lookup functions remain unavailable.
+
+The captured component build selects this implementation when it is present
+in the project's verified SDK snapshot. Previously captured projects without
+the source retain their original behavior: a call to this API fails to link.
+To use the new source, create a project with the current tool bundle and migrate
+the application source, WIT and dependency declarations through normal review;
+editing a project's vendored SDK invalidates its lock. The SDK can prepare a
+verified [CMake feature-probe kit](../../docs/component-development/c-dependencies.md#captured-cmake-feature-probes)
+for a separate dependency configuration step. Detection exposes only this
+numeric subset and does not qualify a client or its complete behavior.
+
 One-descriptor `select`/`pselect` supports readable and writable interest with
 a NULL timeout; the provider and activation deadlines still apply. Finite
 descriptor wait timeouts, including zero-time polling, are refused because the
@@ -110,7 +134,8 @@ provider's timeout result does not distinguish observation expiry from expiry
 of the original connection or activation. Concurrent use or close of a busy
 descriptor is refused. Exceptional descriptor sets, descriptor `poll`, nonblocking mode,
 socket option changes, local bind, IPv6 and unsupported message flags are refused;
-`SO_TYPE` is observable and TLS is not supplied by this profile.
+`SO_TYPE` is observable, with output truncated to the supplied buffer length,
+and TLS is not supplied by this profile.
 Selected-source `send` accepts `MSG_NOSIGNAL` (using the pinned WASI preview2
 value `0x4000`) with the same write and error behavior as flag zero. The adapter
 does not raise `SIGPIPE`, with or without this flag. The flag does not enable
@@ -119,8 +144,9 @@ are refused.
 `SOCK_CLOEXEC` at creation and `F_GETFD`/`F_SETFD` retain the descriptor's
 `FD_CLOEXEC` flag. Other descriptor flags and duplication remain unsupported;
 this profile does not provide process execution or descriptor inheritance.
-`POLLPRI` is never silently ignored. Descriptor-free timer polls retain the
-existing timed runtime. Calls inside prebuilt libc objects are not remapped.
+`POLLPRI` for a live descriptor is never silently ignored. Descriptor-free
+timer polls retain the existing timed runtime and accept at most 64 ignored
+negative-descriptor entries. Calls inside prebuilt libc objects are not remapped.
 Selected-source `read`, `write` and `close` route only to this socket table;
 stdin, stdout and stderr are not socket descriptors and return `EBADF` through
 those calls. This profile does not combine the separate standard-stdio logging
@@ -140,6 +166,27 @@ possible-effect bit while the descriptor remains open.
 These are finite source-level capabilities. They do not establish signed node
 execution, physical kernel retirement, general POSIX compatibility or libcurl
 easy/multi support.
+
+For applications that also use the bounded log-backed standard output, select
+`c-stream-clock-entropy-stdio-v1` with the same cooperative threading profile.
+This separate profile imports the existing log capability in addition to the
+stream, clock and entropy capabilities; the operator must explicitly grant
+each one and provide a nonzero `logBytes` budget. It does not grant authority.
+Standard output and error use descriptors 1 and 2 and the existing bounded,
+UTF-8 log implementation; socket descriptors remain 3 through 10. Selected-source
+`write` routes those standard descriptors to that implementation and socket
+descriptors to the stream provider; libc `close` uses the same bounded table.
+Each stdio write submits at most 256 UTF-8 bytes in one log record. Longer
+writes return the accepted prefix length at a character boundary, so callers
+can continue with the remaining bytes; each accepted record uses its original
+log budget. A rejected record reports no bytes written. An incomplete UTF-8
+scalar at the end of the supplied input is not buffered across calls.
+The four selected libc stdio calls are linked within the component core, with
+no ambient WASI filesystem imports. Selected-source `read` of stdin returns
+`EBADF`; an unchanged libc `fread(stdin, ...)` requires the unsupported preview1
+`fd_read` and is refused during component construction. Closing stdout or stderr
+returns `ENOTSUP`, and other file descriptors and mixed descriptor polling are
+not supported. This combination has not been qualified through a signed node.
 
 ## Optional closed signal and jump declarations
 

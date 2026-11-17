@@ -9,6 +9,7 @@ struct ObservedAllocator;
 static ALLOCATOR: ObservedAllocator = ObservedAllocator;
 static ARM: AtomicBool = AtomicBool::new(false);
 static HEADER: AtomicPtr<u8> = AtomicPtr::new(null_mut());
+static HEADER_SIZE: AtomicUsize = AtomicUsize::new(0);
 static DATA: AtomicPtr<u8> = AtomicPtr::new(null_mut());
 static OWNER: AtomicUsize = AtomicUsize::new(0);
 static HEADER_FREED: AtomicBool = AtomicBool::new(false);
@@ -22,6 +23,7 @@ unsafe impl GlobalAlloc for ObservedAllocator {
         let pointer = System.alloc(layout);
         if ARM.swap(false, SeqCst) {
             HEADER.store(pointer, SeqCst);
+            HEADER_SIZE.store(layout.size(), SeqCst);
         }
         pointer
     }
@@ -85,6 +87,7 @@ fn prepare(length: usize, panic_ref: bool, panic_drop: bool) -> Owner {
         SeqCst,
     );
     HEADER.store(null_mut(), SeqCst);
+    HEADER_SIZE.store(0, SeqCst);
     OWNER.store(0, SeqCst);
     HEADER_FREED.store(false, SeqCst);
     DATA_FREED.store(false, SeqCst);
@@ -103,6 +106,10 @@ fn prepare(length: usize, panic_ref: bool, panic_drop: bool) -> Owner {
 fn construct(panic_ref: bool, panic_drop: bool, panic_confirm: bool) -> Bytes {
     Bytes::from_owner_with_retirement(prepare(512, panic_ref, panic_drop), Retirement, |_| {
         assert!(!HEADER.load(SeqCst).is_null());
+        assert_eq!(
+            HEADER_SIZE.load(SeqCst),
+            Bytes::owner_with_retirement_allocation_size::<Owner, Retirement>()
+        );
         assert!(!HEADER_FREED.load(SeqCst));
         CONFIRMED.store(true, SeqCst);
         assert!(!panic_confirm, "expected confirmation unwind");

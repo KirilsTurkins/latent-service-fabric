@@ -3435,10 +3435,20 @@ impl<T> StoreContextMut<'_, T> {
             WriteState::HostReady { .. } => {
                 // The producer remains untouched if its accept-factory
                 // admission fails. The same guard follows the retained Box.
-                let accept = own_host_accept_factory(&factory_memory, move |input| {
-                    let consume = consume_with_buffer.clone();
-                    async move { consume(Some(input.get_mut::<C::Item>()?)).await }.boxed()
-                })?;
+                let accept = if factory_memory.is_none() {
+                    own_host_accept_factory(&factory_memory, move |input| {
+                        let consume = consume_with_buffer.clone();
+                        async move { consume(Some(input.get_mut::<C::Item>()?)).await }.boxed()
+                    })?
+                } else {
+                    let future_memory = factory_memory.clone();
+                    own_typed_host_accept_factory(&factory_memory, move |input| {
+                        prepare_host_accept_future(&future_memory, input, |input| {
+                            let consume = consume_with_buffer.clone();
+                            async move { consume(Some(input.get_mut::<C::Item>()?)).await }
+                        })
+                    })?
+                };
                 // Reserve the first paid producer future while the original
                 // producer still occupies the transmit. A refusal leaves that
                 // state untouched; later loop iterations reserve separately.
@@ -3667,7 +3677,7 @@ async fn write<
             while !matches!(state, StreamResult::Dropped) && position < limit {
                 let mut slice_buffer = SliceBuffer::new(buffer, position, limit);
                 state = accept
-                    .invoke_accept(&mut UntypedWriteBuffer::new(&mut slice_buffer))
+                    .invoke_accept(&mut UntypedWriteBuffer::new(&mut slice_buffer))?
                     .await?;
                 (buffer, position, _) = slice_buffer.into_parts();
             }
@@ -3678,7 +3688,7 @@ async fn write<
 
                 while !(matches!(state, StreamResult::Dropped) || buffer.remaining().is_empty()) {
                     state = accept
-                        .invoke_accept(&mut UntypedWriteBuffer::new(buffer))
+                        .invoke_accept(&mut UntypedWriteBuffer::new(buffer))?
                         .await?;
                 }
             }
@@ -5808,20 +5818,7 @@ fn allow_intra_component_read_write(ty: Option<&InterfaceType>) -> bool {
 // transitive captures. Only their concrete closure backing is owned here.
 type ProducerPollFactory = ProducerFactory<dyn ProducerFutureFactory>;
 type ConsumerPollFactory = ProducerFactory<dyn ConsumerFactory>;
-type HostAccept = Box<
-    dyn for<'a> Fn(
-            &'a mut UntypedWriteBuffer<'a>,
-        ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>>
-        + Send
-        + Sync,
->;
-type HostAcceptFactory = ProducerFactory<
-    dyn for<'a> Fn(
-            &'a mut UntypedWriteBuffer<'a>,
-        ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>>
-        + Send
-        + Sync,
->;
+type HostAcceptFactory = ProducerFactory<dyn HostAccept>;
 type ProducerConversionFactory =
     ProducerFactory<dyn Fn(TypeId) -> Option<Box<dyn Any>> + Send + Sync>;
 
@@ -6011,10 +6008,13 @@ impl Future for OwnedProducerFuture {
 
 impl Drop for OwnedProducerFuture {
     fn drop(&mut self) {
-        // Destruction and deallocation precede the original guard refund.
+        // SAFETY: both fields are taken/dropped exactly once. Keep the original
+        // guard on the stack while Box drop destroys and deallocates its payload;
+        // Box drop glue also deallocates on a payload-destructor unwind.
         unsafe {
+            let allocation = ManuallyDrop::take(&mut self.allocation);
             ManuallyDrop::drop(&mut self.future);
-            ManuallyDrop::drop(&mut self.allocation);
+            drop(allocation);
         }
     }
 }
@@ -6210,12 +6210,115 @@ where
     Ok(ProducerFactory::from_parts(function, allocation))
 }
 
+type BoxedHostAcceptFuture<'a> = Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>>;
+
+struct OwnedHostAcceptFuture<'a> {
+    future: ManuallyDrop<BoxedHostAcceptFuture<'a>>,
+    allocation: ManuallyDrop<Option<Box<dyn crate::NativeAllocation>>>,
+}
+
+impl Unpin for OwnedHostAcceptFuture<'_> {}
+
+impl<'a> OwnedHostAcceptFuture<'a> {
+    fn from_parts(
+        future: BoxedHostAcceptFuture<'a>,
+        allocation: Option<Box<dyn crate::NativeAllocation>>,
+    ) -> Self {
+        let mut owner = Self {
+            future: ManuallyDrop::new(future),
+            allocation: ManuallyDrop::new(allocation),
+        };
+        if let Some(allocation) = owner.allocation.as_mut() {
+            allocation.allocated();
+        }
+        owner
+    }
+}
+
+impl Future for OwnedHostAcceptFuture<'_> {
+    type Output = Result<StreamResult>;
+
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+        self.get_mut().future.as_mut().poll(cx)
+    }
+}
+
+impl Drop for OwnedHostAcceptFuture<'_> {
+    fn drop(&mut self) {
+        // The inline guard remains live while the pinned Box and its borrowed
+        // payload are dropped. On a payload unwind, Box's drop glue still
+        // deallocates that Box before unwinding reaches this local guard.
+        // Separately owned captures retain their own independent charges.
+        unsafe {
+            let allocation = ManuallyDrop::take(&mut self.allocation);
+            ManuallyDrop::drop(&mut self.future);
+            drop(allocation);
+        }
+    }
+}
+
+trait HostAccept: Send + Sync {
+    fn invoke<'a>(
+        &self,
+        input: &'a mut UntypedWriteBuffer<'a>,
+    ) -> Result<OwnedHostAcceptFuture<'a>>;
+}
+
+#[repr(transparent)]
+struct LegacyHostAccept<F>(F);
+
+impl<F> HostAccept for LegacyHostAccept<F>
+where
+    F: for<'a> Fn(&'a mut UntypedWriteBuffer<'a>) -> BoxedHostAcceptFuture<'a> + Send + Sync,
+{
+    fn invoke<'a>(
+        &self,
+        input: &'a mut UntypedWriteBuffer<'a>,
+    ) -> Result<OwnedHostAcceptFuture<'a>> {
+        Ok(OwnedHostAcceptFuture::from_parts((self.0)(input), None))
+    }
+}
+
+#[repr(transparent)]
+struct TypedHostAccept<F>(F);
+
+impl<F> HostAccept for TypedHostAccept<F>
+where
+    F: for<'a> Fn(&'a mut UntypedWriteBuffer<'a>) -> Result<OwnedHostAcceptFuture<'a>>
+        + Send
+        + Sync,
+{
+    fn invoke<'a>(
+        &self,
+        input: &'a mut UntypedWriteBuffer<'a>,
+    ) -> Result<OwnedHostAcceptFuture<'a>> {
+        (self.0)(input)
+    }
+}
+
+fn prepare_host_accept_future<'a, F, Fut>(
+    memory: &crate::runtime::native_memory::Memory,
+    input: &'a mut UntypedWriteBuffer<'a>,
+    create: F,
+) -> Result<OwnedHostAcceptFuture<'a>>
+where
+    F: FnOnce(&'a mut UntypedWriteBuffer<'a>) -> Fut,
+    Fut: Future<Output = Result<StreamResult>> + Send + 'a,
+{
+    // Compute the actual future layout from its concrete return type, before
+    // invoking the factory, cloning captures, allocating, or polling.
+    let allocation =
+        crate::runtime::native_memory::reserve(memory, core::alloc::Layout::new::<Fut>().size())?;
+    let future: BoxedHostAcceptFuture<'a> = Box::pin(create(input));
+    Ok(OwnedHostAcceptFuture::from_parts(future, allocation))
+}
+
 impl HostAcceptFactory {
     fn invoke_accept<'a>(
         &self,
         input: &'a mut UntypedWriteBuffer<'a>,
-    ) -> Pin<Box<dyn Future<Output = Result<StreamResult>> + Send + 'a>> {
-        (self.function)(input)
+    ) -> Result<OwnedHostAcceptFuture<'a>> {
+        self.function.invoke(input)
     }
 }
 
@@ -6234,7 +6337,26 @@ where
     // The concrete capture remains stack-owned until its own admission.
     let allocation =
         crate::runtime::native_memory::reserve(memory, core::alloc::Layout::new::<F>().size())?;
-    let function: HostAccept = Box::new(function);
+    let function: Box<dyn HostAccept> = Box::new(LegacyHostAccept(function));
+    Ok(ProducerFactory::from_parts(function, allocation))
+}
+
+fn own_typed_host_accept_factory<F>(
+    memory: &crate::runtime::native_memory::Memory,
+    function: F,
+) -> Result<HostAcceptFactory>
+where
+    F: for<'a> Fn(&'a mut UntypedWriteBuffer<'a>) -> Result<OwnedHostAcceptFuture<'a>>
+        + Send
+        + Sync
+        + 'static,
+{
+    if memory.is_none() {
+        bail_bug!("typed host accept requires its original memory");
+    }
+    let allocation =
+        crate::runtime::native_memory::reserve(memory, core::alloc::Layout::new::<F>().size())?;
+    let function: Box<dyn HostAccept> = Box::new(TypedHostAccept(function));
     Ok(ProducerFactory::from_parts(function, allocation))
 }
 

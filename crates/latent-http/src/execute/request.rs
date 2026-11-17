@@ -43,9 +43,9 @@ pub(crate) fn build(
     destination: &Destination,
     credentials_allowed: bool,
 ) -> Result<Request<crate::streaming::wire::RequestBody>, HttpError> {
-    let body = crate::streaming::wire::RequestBody::Buffered(Full::new(bytes::Bytes::from_owner(
-        request.take_body(),
-    )));
+    let body = crate::streaming::wire::RequestBody::Buffered(Full::new(
+        request.take_body().into_http_bytes()?,
+    ));
     let length = http_body::Body::size_hint(&body).exact();
     build_with_body(
         inner,

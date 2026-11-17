@@ -32,6 +32,35 @@ without a pending exception is not a real Wasm trap.
 | Native/JS stacks and host structures | Existing native stack and NativeMemory admission, plus original host-memory envelope | Conservative sizes/escrows and separate stack retirement observations | Unchanged; no new stack or host allocation introduced by these fixes; complete physical coverage remains to be proved |
 | Store teardown / pool quarantine | Original activation ledger and allocation guards | HostState owner table can drop before guest instance backing; failed runtime finalization need not quarantine the execution report | **Unresolved.** This increment does not provide physical Store custody or a per-Store pool-decommit acknowledgement |
 
+## Subsequent import readiness admission fix
+
+The selected async-import bridge now reserves the existing shared readiness
+set before its host call. If the original Native limit refuses that reservation,
+the generated call is not dispatched. A pending returned subtask joins that
+set before the import Task is parked and its queued-work owner is acknowledged.
+When the host completes immediately and there is no existing set, this requires
+one additional shared Native owner and creates a set. The set remains charged
+after the import record retires and may be reused by other work. A subsequent
+timer-pump turn retires it only when there are no timer records or joined
+subtasks, so other activity can extend that lifetime. Such an import can
+therefore be refused at an earlier, tighter Native limit than before; the
+limits and grants themselves are unchanged.
+If either transition refuses, the generated `finally` requests cancellation
+without releasing the subtask, rooted captures, buffers or their owners. A
+blocked request retains them until a terminal event and actual drop; a returned
+result still passes through its original disposer. A private Promise that was
+never exposed because startup failed is not rejected as unhandled work. Purely
+synchronous calls still create no readiness set. This updates the import side
+of the canonical-readiness row above, not the separate timer-start ordering.
+
+The focused actual-source controls use serialized JS and host doubles: they
+check refusal before the host-call step, unused-set retirement after an
+immediate result, park/queue refusal followed by late return or cancellation,
+immediate returned-result disposal with a refused work acknowledgement, and an
+injected join failure that retains the original
+subtask and owners until a later retry and terminal event. They do not qualify
+a signed guest, production host, or physical Store destruction.
+
 ## Budget mapping and lifecycle
 
 `ActivationBudget` is the existing authority. The bridge does not mint a new

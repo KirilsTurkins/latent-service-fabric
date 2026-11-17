@@ -2,7 +2,7 @@
 
 `go-component-activation-v1` is an explicit finite compiler profile beneath
 ordinary Go `go`, channels, `select`, `sync.Mutex`, `sync.WaitGroup` and
-`time.Sleep`. Current source uses the pinned Go 1.27.3 compiler and componentize-go 0.4.3
+`time.Sleep`. Current source uses the pinned Go 1.27.4 compiler and componentize-go 0.4.3
 from the [Go SDK](../../sdk/go-guest/toolchain.lock.json), with authenticated
 runtime and dispatcher source overlays. Application source imports no LSF task
 facade. The existing `go-component-async-v1` default remains separately selected.
@@ -21,7 +21,7 @@ tuple rather than inferred from version order.
 | `go-component-activation-v4` | Moves linked module initialization into the first admitted async root; the eight initializer and thirteen published retry-worker calls passed [job117706598344](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39138076044/job/117706598344), with their original source/limits. |
 | `go-component-activation-v5` | Adds eight source-pinned maintenance capacity reservations, not eight observed live workers; actual [synchronization33](../development/go-synchronization.md), [cross-tenant admission12](../development/go-runtime-admission.md), [queued-owner34/20guests](../development/go-runtime-queued-ownership.md) and [timer43/native17](../development/go-managed-timers.md) retain separate bounded evidence. |
 | `go-component-activation-v6` | Adds an independent QueuedWork reservation before goroutine allocation/publication, retaining parked work until actual destruction; [25 attempts, including 19 entered calls](../testing/evidence/go-queued-work-signed-2026-10-21.json) retain their original source and limits. |
-| `go-component-activation-v7` | Inherits v6 and adds a fixed 1 MiB single-stack ceiling before allocation/copy/growth in pinned Go 1.27.3; [seven signed attempts](../development/go-stack-ceiling-v7.md) qualify that finite ceiling, not an independent aggregate stack/GC/native-byte ledger. |
+| `go-component-activation-v7` | Inherits v6 and adds a fixed 1 MiB single-stack ceiling before allocation/copy/growth. The [seven signed attempts](../development/go-stack-ceiling-v7.md) used their recorded Go 1.27.3 source and qualify that finite ceiling, not an independent aggregate stack/GC/native-byte ledger or the current compiler. |
 
 The v1-v3 startup restrictions below apply to those selections, not the v4-v7
 first-admitted-root initializer path. Providers, publication grants, owner
@@ -104,6 +104,18 @@ separate compiler infrastructure. Every 1,024 checkpoint calls suspend the
 current real goroutine through the canonical async callback, allowing runnable
 siblings and the host executor to progress. This path creates no timer, wall
 deadline, sleeping worker or application-visible scheduling facade.
+
+When the selected program imports the standard `slices` package, the compiler
+also instruments the authenticated Go 1.27.4 `slices/iter.go` source. This
+allows iteration entirely inside `slices.Values` and `slices.AppendSeq` to
+reach the same checkpoints. The existing checkpoint quantum still suspends
+without checking for runnable siblings: these added sites can allocate and
+yield even for a program with no application sibling, under the same guest and
+host limits. In a core-Wasm control with a test dispatcher pump, a one-million
+element `Values`/`AppendSeq` pass made 1,953 such yields without an application
+sibling; that is not a production-node measurement. This finite source
+selection does not establish fairness for other standard-library loops or
+constitute signed execution evidence.
 
 Original source bytes remain unchanged. Derived copies retain original
 diagnostic line/column positions, source and output digests, and suspension

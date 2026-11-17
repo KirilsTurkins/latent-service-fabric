@@ -107,10 +107,10 @@ int main(int argc, char** argv) {
       // Embedding destroys its actual record/captures/buffer between transfer
       // and this ACK. The reference tests exact owner transfer, not JS GC.
       ok = ok && broker.physicallyRetired(&cx, retired.native, retired.result) &&
-           !retired.native.live && !retired.result.live && broker.native_live == 0;
+           !retired.native.live && !retired.result.live && broker.native_live == 1;
     } else if (!std::strcmp(name, "immediate-result-keeps-lift-storage")) {
       ok = ok && import.started(&cx, JOBS_SUBTASK_RETURNED) && import.beginLifting(&cx) &&
-           import.resultMayBeRead() && broker.result_live == 1 && broker.native_live == 1 &&
+           import.resultMayBeRead() && broker.result_live == 1 && broker.native_live == 2 &&
            import.liftCompleted(&cx) && broker.tasks == 0 && broker.result_live == 1 &&
            import.physicalRetirementAcknowledged(&cx);
     } else {

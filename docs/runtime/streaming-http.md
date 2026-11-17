@@ -97,6 +97,16 @@ window returns `budget-exhausted` before another transport read; drop a held
 chunk before retrying. TCP backpressure suspends an upload within the same
 original deadline and finite input window.
 
+For native-accounted activations, each queued upload byte owner also reserves
+its actual transport allocation from the original activation and I/O metadata
+limits before publication. On the pinned Linux x86-64 build this is 288 bytes
+(224-byte owner plus 64-byte allocation bookkeeping) per live input owner;
+other targets use their computed layout. The charge remains until the last
+transport clone releases that allocation, and can cause earlier refusal under
+existing limits. The legacy Phase 1 logical-only profile keeps its prior path.
+This control covers the streaming input owner; it does not qualify buffered HTTP
+or all other transport allocations.
+
 Provider, broker, I/O, policy, pool and canonical-lifting limits intersect.
 Increasing a provider setting alone does not increase the others. These are
 logical ownership bounds, not total RSS measurements or an OS scheduling bound.

@@ -77,7 +77,9 @@ internal static class TaskWait
             new { key = type.FullName + "#" + index, method })).ToDictionary(item => item.key, item => item.method);
 
     private static MethodDefinition FiniteWait(ModuleDefinition module, TypeDefinition loop,
-        TypeDefinition task, MethodDefinition infinite, MethodDefinition completed)
+        TypeDefinition task, MethodDefinition completed, FieldDefinition depth, FieldDefinition current,
+        MethodDefinition invalid, FieldDefinition defaultContext, MethodDefinition callbackConstructor,
+        MethodDefinition pump, MethodDefinition runContext)
     {
         var token = module.Types.Single(type => type.FullName == "System.Threading.CancellationToken");
         var source = module.Types.Single(type => type.FullName == "System.Threading.CancellationTokenSource");
@@ -102,12 +104,19 @@ internal static class TaskWait
         method.Body.MaxStackSize = 3;
         var owned = new VariableDefinition(source);
         var result = new VariableDefinition(module.TypeSystem.Boolean);
+        var wake = new VariableDefinition(task);
+        var observation = new VariableDefinition(new ArrayType(module.TypeSystem.Object));
+        var previous = new VariableDefinition(task);
         method.Body.Variables.Add(owned); method.Body.Variables.Add(result);
+        method.Body.Variables.Add(wake); method.Body.Variables.Add(observation); method.Body.Variables.Add(previous);
         var il = method.Body.GetILProcessor();
         var incomplete = il.Create(OpCodes.Ldarg_1);
         var nonzero = il.Create(OpCodes.Ldarga, method.Parameters[2]);
         var body = il.Create(OpCodes.Ldarg_0);
-        var expired = il.Create(OpCodes.Ldarga, method.Parameters[2]);
+        var admitted = il.Create(OpCodes.Ldsfld, current);
+        var innerBody = il.Create(OpCodes.Ldloc, wake);
+        var innerCleanup = il.Create(OpCodes.Ldloc, previous);
+        var observed = il.Create(OpCodes.Ldloc, observation);
         var cleanup = il.Create(OpCodes.Ldloc, owned);
         var disposeOwned = il.Create(OpCodes.Ldloc, owned);
         var cleanupEnd = il.Create(OpCodes.Endfinally);
@@ -122,20 +131,37 @@ internal static class TaskWait
         il.Emit(OpCodes.Ldarg_2); il.Emit(OpCodes.Call, linked); il.Emit(OpCodes.Stloc, owned);
         il.Append(body);
         il.Emit(OpCodes.Ldarg_1); il.Emit(OpCodes.Ldloc, owned); il.Emit(OpCodes.Callvirt, getToken);
-        il.Emit(OpCodes.Call, delay); il.Emit(OpCodes.Call, whenAny);
-        // The unchanged stackful helper pumps the original queue until the real
-        // WhenAny task completes, retaining its depth/context/main-task fences.
-        il.Emit(OpCodes.Call, infinite); il.Emit(OpCodes.Pop);
-        il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Callvirt, completed);
-        il.Emit(OpCodes.Brfalse, expired);
-        il.Emit(OpCodes.Ldc_I4_1); il.Emit(OpCodes.Stloc, result); il.Emit(OpCodes.Leave, done);
-        il.Append(expired); il.Emit(OpCodes.Call, throwCancelled);
-        il.Emit(OpCodes.Ldc_I4_0); il.Emit(OpCodes.Stloc, result); il.Emit(OpCodes.Leave, done);
+        il.Emit(OpCodes.Call, delay); il.Emit(OpCodes.Call, whenAny); il.Emit(OpCodes.Stloc, wake);
+        // Keep the actual task and original token in this wait's private,
+        // activation-heap state. The pump records the decision before caller
+        // ExecutionContext restoration can run AsyncLocal notifications.
+        il.Emit(OpCodes.Ldc_I4_3); il.Emit(OpCodes.Newarr, module.TypeSystem.Object); il.Emit(OpCodes.Stloc, observation);
+        il.Emit(OpCodes.Ldloc, observation); il.Emit(OpCodes.Ldc_I4_0); il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Stelem_Ref);
+        il.Emit(OpCodes.Ldloc, observation); il.Emit(OpCodes.Ldc_I4_1); il.Emit(OpCodes.Ldloc, wake); il.Emit(OpCodes.Stelem_Ref);
+        il.Emit(OpCodes.Ldloc, observation); il.Emit(OpCodes.Ldc_I4_2); il.Emit(OpCodes.Ldarg_2); il.Emit(OpCodes.Box, token); il.Emit(OpCodes.Stelem_Ref);
+        // Use the same depth, main-task and caller-context restoration as the
+        // original join; only this finite callback records a wait decision.
+        il.Emit(OpCodes.Ldsfld, depth); il.Emit(OpCodes.Ldc_I4, 32); il.Emit(OpCodes.Blt, admitted);
+        il.Emit(OpCodes.Ldstr, "activation-task-wait-depth-limit"); il.Emit(OpCodes.Newobj, invalid); il.Emit(OpCodes.Throw);
+        il.Append(admitted); il.Emit(OpCodes.Stloc, previous);
+        il.Emit(OpCodes.Ldsfld, depth); il.Emit(OpCodes.Ldc_I4_1); il.Emit(OpCodes.Add); il.Emit(OpCodes.Stsfld, depth);
+        il.Append(innerBody); il.Emit(OpCodes.Stsfld, current);
+        il.Emit(OpCodes.Ldsfld, defaultContext); il.Emit(OpCodes.Ldnull); il.Emit(OpCodes.Ldftn, pump);
+        il.Emit(OpCodes.Newobj, callbackConstructor); il.Emit(OpCodes.Ldloc, observation); il.Emit(OpCodes.Call, runContext);
+        il.Emit(OpCodes.Leave, observed);
+        il.Append(innerCleanup); il.Emit(OpCodes.Stsfld, current);
+        il.Emit(OpCodes.Ldsfld, depth); il.Emit(OpCodes.Ldc_I4_1); il.Emit(OpCodes.Sub); il.Emit(OpCodes.Stsfld, depth);
+        il.Emit(OpCodes.Endfinally);
+        il.Append(observed); il.Emit(OpCodes.Ldc_I4_0); il.Emit(OpCodes.Ldelem_Ref);
+        il.Emit(OpCodes.Ldnull); il.Emit(OpCodes.Cgt_Un); il.Emit(OpCodes.Stloc, result); il.Emit(OpCodes.Leave, done);
         // Only this private token reaches Delay. Its losing timer/registration
         // is cancelled before disposal on success, timeout, cancellation or fault.
         il.Append(cleanup); il.Emit(OpCodes.Callvirt, cancel); il.Emit(OpCodes.Leave, cleanupEnd);
         il.Append(disposeOwned); il.Emit(OpCodes.Callvirt, dispose); il.Emit(OpCodes.Endfinally);
         il.Append(cleanupEnd); il.Append(done); il.Emit(OpCodes.Ret);
+        method.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally) {
+            TryStart = innerBody, TryEnd = innerCleanup, HandlerStart = innerCleanup, HandlerEnd = observed,
+        });
         method.Body.ExceptionHandlers.Add(new ExceptionHandler(ExceptionHandlerType.Finally) {
             TryStart = cleanup, TryEnd = disposeOwned, HandlerStart = disposeOwned, HandlerEnd = cleanupEnd,
         });
@@ -171,10 +197,12 @@ internal static class TaskWait
             var queue = module.Types.Single(type => type.FullName == "System.Threading.ThreadPoolWorkQueue");
             var context = module.Types.Single(type => type.FullName == "System.Threading.ExecutionContext");
             var callback = module.Types.Single(type => type.FullName == "System.Threading.ContextCallback");
+            var token = module.Types.Single(type => type.FullName == "System.Threading.CancellationToken");
             var wait = task.Methods.Single(method => method.Name == "InternalWaitCore");
             var previousLoop = loop.Methods.Single(method => method.Name == "PollWasiEventLoopUntilResolvedVoid");
             var dispatch = queue.Methods.Single(method => method.Name == "Dispatch");
             var completed = task.Methods.Single(method => method.Name == "get_IsCompleted");
+            var throwCancelled = token.Methods.Single(method => method.Name == "ThrowIfCancellationRequested");
             var current = loop.Fields.Single(field => field.Name == "s_mainTask");
             var runContext = context.Methods.Single(method => method.Name == "RunInternal");
             var restoreContext = context.Methods.Single(method => method.Name == "RestoreChangedContextToThread");
@@ -237,6 +265,34 @@ internal static class TaskWait
             dispatchIl.Emit(OpCodes.Brfalse, again);
             dispatchIl.Emit(OpCodes.Ret);
             loop.Methods.Add(pump);
+            MethodDefinition? finitePump = null;
+            if (finiteSelected)
+            {
+                finitePump = new MethodDefinition("LsfObserveFiniteTaskCompletion", MethodAttributes.Private |
+                    MethodAttributes.Static | MethodAttributes.HideBySig, module.TypeSystem.Void);
+                Require(!loop.Methods.Any(candidate => candidate.Name == finitePump.Name));
+                finitePump.Parameters.Add(new ParameterDefinition(module.TypeSystem.Object));
+                finitePump.Body.InitLocals = true;
+                finitePump.Body.MaxStackSize = 3;
+                var observation = new VariableDefinition(new ArrayType(module.TypeSystem.Object));
+                finitePump.Body.Variables.Add(observation);
+                var observeIl = finitePump.Body.GetILProcessor();
+                var observed = observeIl.Create(OpCodes.Ret);
+                observeIl.Emit(OpCodes.Ldarg_0); observeIl.Emit(OpCodes.Castclass, observation.VariableType);
+                observeIl.Emit(OpCodes.Stloc, observation);
+                // Reuse the original pump, including any managed readiness hook.
+                observeIl.Emit(OpCodes.Ldloc, observation); observeIl.Emit(OpCodes.Ldc_I4_1);
+                observeIl.Emit(OpCodes.Ldelem_Ref); observeIl.Emit(OpCodes.Call, pump);
+                observeIl.Emit(OpCodes.Ldloc, observation); observeIl.Emit(OpCodes.Ldc_I4_0);
+                observeIl.Emit(OpCodes.Ldelem_Ref); observeIl.Emit(OpCodes.Castclass, task);
+                observeIl.Emit(OpCodes.Callvirt, completed); observeIl.Emit(OpCodes.Brtrue, observed);
+                observeIl.Emit(OpCodes.Ldloc, observation); observeIl.Emit(OpCodes.Ldc_I4_2);
+                observeIl.Emit(OpCodes.Ldelem_Ref); observeIl.Emit(OpCodes.Unbox, token); observeIl.Emit(OpCodes.Call, throwCancelled);
+                observeIl.Emit(OpCodes.Ldloc, observation); observeIl.Emit(OpCodes.Ldc_I4_0);
+                observeIl.Emit(OpCodes.Ldnull); observeIl.Emit(OpCodes.Stelem_Ref);
+                observeIl.Append(observed);
+                loop.Methods.Add(finitePump);
+            }
             var helper = new MethodDefinition(Helper, MethodAttributes.Assembly | MethodAttributes.Static | MethodAttributes.HideBySig,
                 module.TypeSystem.Boolean);
             helper.Parameters.Add(new ParameterDefinition(task));
@@ -286,7 +342,8 @@ internal static class TaskWait
                 TryStart = body, TryEnd = cleanup, HandlerStart = cleanup, HandlerEnd = done,
             });
             loop.Methods.Add(helper);
-            var finite = finiteSelected ? FiniteWait(module, loop, task, helper, completed) : null;
+            var finite = finiteSelected ? FiniteWait(module, loop, task, completed, depth, current, invalid,
+                defaultContext, callbackConstructor, finitePump!, runContext) : null;
             var entry = wait.Body.GetILProcessor();
             var bounded = entry.Create(OpCodes.Ldarg_0);
             // Keep the old infinite/noncancellable join and entire non-WASI
@@ -353,7 +410,7 @@ internal static class TaskWait
             }
             var generatedHelpers = Methods(module).Where(item => !originalMap.ContainsKey(item.Key))
                 .ToDictionary(item => item.Value.FullName, item => BodyIdentity(item.Value));
-            Require(generatedHelpers.Count == (aggregateSelected ? 108 : managedSelected ? 104 : finiteSelected ? 10 : 9)
+            Require(generatedHelpers.Count == (aggregateSelected ? 109 : managedSelected ? 105 : finiteSelected ? 11 : 9)
                 && timerMethods.Length == 3 && modifiedBodies.Count == (aggregateSelected ? 37 : managedSelected ? 27 : 4));
             module.Write(output, new WriterParameters { WriteSymbols = false, DeterministicMvid = true });
             using (var written = ModuleDefinition.ReadModule(output))
@@ -413,6 +470,7 @@ internal static class TaskWait
             {
                 foreach (var (name, value) in new[] {
                     ("finiteWaitCleanup", "private-linked-source-cancel-dispose-finally"),
+                    ("finiteWaitObservation", "actual-task-and-token-before-caller-context-restore"),
                     ("zeroTimeout", "query-only-before-cancellation"), ("waitCancellation", "original-token-only"),
                     ("publicWaitValidationAndExceptions", "unchanged"),
                 }) record.Add(name, JsonSerializer.SerializeToElement(value));

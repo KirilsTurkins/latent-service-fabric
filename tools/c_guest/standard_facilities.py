@@ -11,20 +11,26 @@ COMBINED_PROFILE = 'c-standard-facilities-v1'
 FETCH_PROFILE = 'c-libfetch-http-v1'
 FETCH_STANDARD_PROFILE = 'c-libfetch-clock-entropy-v1'
 STREAM_PROFILE = 'c-stream-clock-entropy-v1'
+STREAM_STDIO_PROFILE = 'c-stream-clock-entropy-stdio-v1'
 FETCH_PROFILES = (FETCH_PROFILE, FETCH_STANDARD_PROFILE)
+STREAM_PROFILES = (STREAM_PROFILE, STREAM_STDIO_PROFILE)
+STDIO_PROFILES = (LOGGING_PROFILE, COMBINED_PROFILE, STREAM_STDIO_PROFILE)
+STDIO_ADAPTER_PROFILES = (LOGGING_PROFILE, COMBINED_PROFILE)
 DEFAULT = 'closed-synchronous-v1'
 IMPORTS = ('latent:clock/monotonic@0.1.0', 'latent:clock/wall@0.1.0', 'latent:random/random@0.1.0')
-SUPPORTED = frozenset((DEFAULT, PROFILE, LOGGING_PROFILE, COMBINED_PROFILE, *FETCH_PROFILES, STREAM_PROFILE))
+SUPPORTED = frozenset((DEFAULT, PROFILE, LOGGING_PROFILE, COMBINED_PROFILE, *FETCH_PROFILES, *STREAM_PROFILES))
 PROFILE_IMPORTS = {PROFILE: IMPORTS, LOGGING_PROFILE: ('latent:log/log@0.1.0',),
                    COMBINED_PROFILE: (*IMPORTS, 'latent:log/log@0.1.0'),
                    FETCH_PROFILE: ('latent:http/streaming@0.3.0',)}
 PROFILE_IMPORTS[FETCH_STANDARD_PROFILE] = (*PROFILE_IMPORTS[FETCH_PROFILE], *IMPORTS)
 PROFILE_IMPORTS[STREAM_PROFILE] = ('latent:network/streams@0.1.0', *IMPORTS)
+PROFILE_IMPORTS[STREAM_STDIO_PROFILE] = (*PROFILE_IMPORTS[STREAM_PROFILE], 'latent:log/log@0.1.0')
 PROFILE_SOURCES = {PROFILE: ('standard-clock-entropy.c',), LOGGING_PROFILE: ('standard-stdio.c',),
                    COMBINED_PROFILE: ('standard-clock-entropy.c', 'standard-stdio.c'),
                    FETCH_PROFILE: ('libfetch/fetch.c', 'libfetch/http.c', 'closed-file-abi.c')}
 PROFILE_SOURCES[FETCH_STANDARD_PROFILE] = (*PROFILE_SOURCES[FETCH_PROFILE], 'standard-clock-entropy.c')
-PROFILE_SOURCES[STREAM_PROFILE] = ('standard-clock-entropy.c', 'standard-streams.c')
+PROFILE_SOURCES[STREAM_PROFILE] = ('standard-clock-entropy.c', 'standard-streams.c', 'standard-resolver.c')
+PROFILE_SOURCES[STREAM_STDIO_PROFILE] = (*PROFILE_SOURCES[STREAM_PROFILE], 'standard-stdio.c')
 RECIPE = ('tools/c_guest/standard_facilities.py',)
 # The precompiled libc may extract other strong definitions from a member
 # needed by an unchanged dependency. Bind ordinary selected-source calls and
@@ -34,6 +40,16 @@ FETCH_CLOSED_SYMBOLS = ('open', 'close', 'fstat', 'mmap', 'munmap', 'realpath',
 STREAM_SYMBOLS = ('socket', 'connect', 'bind', 'send', 'recv', 'read', 'write', 'shutdown', 'close', 'poll',
                   'fcntl', 'getsockopt', 'setsockopt')
 STREAM_HEADER = 'include/lsf/standard-streams.h'
+RESOLVER_SOURCE = 'standard-resolver.c'
+SDK_SOURCE_PREFIX = 'vendor/lsf/sdk/c-guest/src/'
+
+
+def captured_sources(profile, files):
+    """Select only sources present in the already-verified SDK snapshot."""
+    sources = PROFILE_SOURCES[profile]
+    if profile in STREAM_PROFILES and SDK_SOURCE_PREFIX + RESOLVER_SOURCE not in files:
+        return tuple(name for name in sources if name != RESOLVER_SOURCE)
+    return sources
 
 
 def selected_profile(project, graph=None):
@@ -46,18 +62,24 @@ def selected_profile(project, graph=None):
     return profile
 
 
-def compiler_defines(profile, defines):
+def compiler_defines(profile, defines, *, numeric_resolver=False):
     """The selected GNU-cookie port owns its declaration feature selection."""
-    if profile == STREAM_PROFILE:
-        reserved = {'LSF_C_STREAM_NETWORK', 'LSF_C_STANDARD_STREAMS_H', 'MSG_NOSIGNAL', 'POLLPRI', 'POLLRDBAND',
-                    'POLLWRBAND', 'SO_KEEPALIVE', 'SOL_IP', 'abort', '__lsf_c_abort', *STREAM_SYMBOLS,
+    if profile in STREAM_PROFILES:
+        reserved = {'LSF_C_STREAM_NETWORK', 'LSF_C_STREAM_STDIO', 'LSF_C_STANDARD_STREAMS_H', 'MSG_NOSIGNAL', 'POLLPRI', 'POLLRDBAND',
+                    'POLLWRBAND', 'SO_KEEPALIVE', 'SOL_IP', 'abort', '__lsf_c_abort', 'net_stdio_write',
+                    '__lsf_c_stdio_initialize', *STREAM_SYMBOLS,
+                    *('__imported_wasi_snapshot_preview1_' + name for name in
+                      ('fd_write', 'fd_fdstat_get', 'fd_seek', 'fd_close')),
                     *('__lsf_c_net_' + name for name in STREAM_SYMBOLS)}
+        if numeric_resolver:
+            reserved.update(('getaddrinfo', 'freeaddrinfo'))
         if any(value.split('=', 1)[0] in reserved for value in defines):
             raise ValueError('c-stream-compiler-owned-symbol')
         # The selected WASI libc may pull its own abort together with another
         # needed symbol. Keep the SDK's source-level trap distinct, as in the
         # existing HTTP source profile; both paths remain non-returning traps.
-        return (*defines, 'LSF_C_STREAM_NETWORK=1', 'abort=__lsf_c_abort')
+        selected = (*defines, 'LSF_C_STREAM_NETWORK=1', 'abort=__lsf_c_abort')
+        return (*selected, 'LSF_C_STREAM_STDIO=1') if profile == STREAM_STDIO_PROFILE else selected
     if profile in FETCH_PROFILES:
         reserved = {*FETCH_CLOSED_SYMBOLS, *('__lsf_c_' + name for name in FETCH_CLOSED_SYMBOLS)}
         if any(value.split('=', 1)[0] in reserved for value in defines):

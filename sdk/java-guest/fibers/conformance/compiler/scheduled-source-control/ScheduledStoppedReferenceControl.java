@@ -7,6 +7,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public final class ScheduledStoppedReferenceControl {
     private static void require(boolean value) { if (!value) throw new AssertionError("scheduled-stopped-reference"); }
@@ -111,9 +112,57 @@ public final class ScheduledStoppedReferenceControl {
             require(!caller.isAlive() && completed.get() == 1 && future.isCancelled());
         } finally { release.countDown(); caller.join(5000); finish(pool); }
     }
+    private static void reentrantFactoryCapacity() throws Exception {
+        for (int limit : new int[]{1, 2}) {
+            AtomicReference<ScheduledThreadPoolExecutor> selected = new AtomicReference<>();
+            AtomicReference<ScheduledFuture<?>> nested = new AtomicReference<>();
+            AtomicInteger factories = new AtomicInteger(), running = new AtomicInteger(), maximum = new AtomicInteger();
+            CountDownLatch entered = new CountDownLatch(limit), release = new CountDownLatch(1);
+            Runnable task = () -> {
+                int active = running.incrementAndGet(); maximum.accumulateAndGet(active, Math::max);
+                try { hold(entered, release); } finally { running.decrementAndGet(); }
+            };
+            var pool = new ScheduledThreadPoolExecutor(limit, target -> {
+                if (factories.incrementAndGet() == 1)
+                    nested.set(selected.get().schedule(task, 0, TimeUnit.NANOSECONDS));
+                return new Thread(target);
+            });
+            selected.set(pool);
+            try {
+                var outer = pool.schedule(task, 0, TimeUnit.NANOSECONDS);
+                await(entered);
+                require(factories.get() == limit && maximum.get() == limit && nested.get() != null);
+                release.countDown();
+                nested.get().get(5, TimeUnit.SECONDS); outer.get(5, TimeUnit.SECONDS);
+                require(maximum.get() == limit);
+            } finally { release.countDown(); finish(pool); }
+        }
+    }
+    private static void reentrantFactoryFailureRetry() throws Exception {
+        AtomicReference<ScheduledThreadPoolExecutor> selected = new AtomicReference<>();
+        AtomicReference<ScheduledFuture<?>> nested = new AtomicReference<>();
+        AtomicInteger factories = new AtomicInteger(), calls = new AtomicInteger();
+        var failure = new IllegalStateException("reentrant-factory-failure");
+        var pool = new ScheduledThreadPoolExecutor(1, target -> {
+            if (factories.incrementAndGet() == 1) {
+                nested.set(selected.get().schedule(calls::incrementAndGet, 0, TimeUnit.NANOSECONDS));
+                throw failure;
+            }
+            return new Thread(target);
+        });
+        selected.set(pool);
+        try {
+            try { pool.schedule(() -> {}, 0, TimeUnit.NANOSECONDS); throw new AssertionError("expected-factory-failure"); }
+            catch (IllegalStateException expected) { require(expected == failure); }
+            require(factories.get() == 1 && nested.get() != null && !nested.get().isDone());
+            pool.schedule(() -> {}, 0, TimeUnit.NANOSECONDS).get(5, TimeUnit.SECONDS);
+            nested.get().get(5, TimeUnit.SECONDS);
+            require(factories.get() == 2 && calls.get() == 1);
+        } finally { finish(pool); }
+    }
     public static void main(String[] arguments) throws Exception {
         delayed(); periodic(true); periodic(false); nested(); nestedFuture(); runningAndShutdown();
-        disabledShutdownPolicies(); physicalRunner();
-        System.out.println("SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;running;shutdown;shutdown-policy;physical-runner");
+        disabledShutdownPolicies(); physicalRunner(); reentrantFactoryCapacity(); reentrantFactoryFailureRetry();
+        System.out.println("SCHEDULED_STOPPED_REFERENCE PASS delayed;fixed-rate;fixed-delay;nested;future;running;shutdown;shutdown-policy;physical-runner;worker-capacity;factory-failure-retry");
     }
 }

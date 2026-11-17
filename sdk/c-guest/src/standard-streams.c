@@ -20,7 +20,7 @@
 
 #include <lsf/standard-streams.h>
 
-enum { FIRST_FD = 3, SLOT_COUNT = 8, MAX_TRANSFER = 16384 };
+enum { FIRST_FD = 3, SLOT_COUNT = 8, MAX_TRANSFER = 16384, MAX_INACTIVE_POLL_FDS = 64 };
 
 /* Static storage belongs to this component instance's charged linear memory.
  * A busy slot cannot be closed or reused across a suspended canonical call.
@@ -130,10 +130,12 @@ int __lsf_c_net_fcntl(int fd, int command, ...) {
 int __lsf_c_net_getsockopt(int fd, int level, int option, void *value, socklen_t *length) {
     if (!find_descriptor(fd)) return fail(EBADF);
     if (level != SOL_SOCKET || option != SO_TYPE) return fail(ENOTSUP);
-    if (!value || !length || *length < sizeof(int)) return fail(EINVAL);
+    if (!length) return fail(EINVAL);
+    socklen_t copied = *length < sizeof(int) ? *length : sizeof(int);
+    if (copied && !value) return fail(EINVAL);
     int result = SOCK_STREAM;
-    memcpy(value, &result, sizeof(result));
-    *length = sizeof(result);
+    if (copied) memcpy(value, &result, copied);
+    *length = copied;
     return 0;
 }
 
@@ -254,7 +256,14 @@ ssize_t __lsf_c_net_read(int fd, void *buffer, size_t length) {
     return __lsf_c_net_recv(fd, buffer, length, 0);
 }
 
+#if defined(LSF_C_STREAM_STDIO) && LSF_C_STREAM_STDIO
+/* Only the combined profile links the existing bounded log-backed stdio. */
+extern ssize_t net_stdio_write(int, const void *, size_t) __asm__("write");
+#endif
 ssize_t __lsf_c_net_write(int fd, const void *buffer, size_t length) {
+#if defined(LSF_C_STREAM_STDIO) && LSF_C_STREAM_STDIO
+    if (fd == 1 || fd == 2) return net_stdio_write(fd, buffer, length);
+#endif
     return __lsf_c_net_send(fd, buffer, length, 0);
 }
 
@@ -276,6 +285,10 @@ int __lsf_c_net_shutdown(int fd, int how) {
 }
 
 int __lsf_c_net_close(int fd) {
+#if defined(LSF_C_STREAM_STDIO) && LSF_C_STREAM_STDIO
+    /* Match the existing stdio adapter, which does not close the log sink. */
+    if (fd == 1 || fd == 2) return fail(ENOTSUP);
+#endif
     struct descriptor *slot = find_descriptor(fd);
     if (!slot) return fail(EBADF);
     if (slot->busy) return fail(EBUSY);
@@ -360,9 +373,16 @@ int __lsf_c_net_pselect(int nfds, fd_set *readfds, fd_set *writefds,
  */
 extern int net_original_poll(struct pollfd *, nfds_t, int) __asm__("poll");
 int __lsf_c_net_poll(struct pollfd *fds, nfds_t count, int timeout) {
-    if (count > SLOT_COUNT) return fail(ENOTSUP);
+    if (count > MAX_INACTIVE_POLL_FDS) return fail(ENOTSUP);
     if (count && !fds) return fail(EINVAL);
     for (nfds_t index = 0; index < count; ++index)
         if (fds[index].fd >= 0) return fail(ENOTSUP);
-    return net_original_poll(fds, count, timeout);
+    if (count <= SLOT_COUNT) return net_original_poll(fds, count, timeout);
+    /* All entries are ignored descriptors. Reuse one original timer wait
+     * without growing libc's per-entry subscription array; publish cleared
+     * revents only after the wait succeeds. */
+    int result = net_original_poll(NULL, 0, timeout);
+    if (result != 0) return result;
+    for (nfds_t index = 0; index < count; ++index) fds[index].revents = 0;
+    return 0;
 }
