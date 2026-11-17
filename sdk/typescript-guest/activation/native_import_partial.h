@@ -366,7 +366,12 @@ public:
       return invalid(cx, "own-plan-disposal-owner");
     item->disposition = Imports::Disposition::Disposed;
     // From here any failure keeps Disposed/cleaning and cannot replay a drop.
-    if (!item->lifecycle.liftCompleted(cx) || !imports_.collect(cx)) return false;
+    if (!item->lifecycle.liftCompleted(cx)) {
+      if (!item->lifecycle.completionPending()) return imports_.quarantineBorrow(cx, *item);
+      imports_.stopped_ = true;
+      return false;
+    }
+    if (!imports_.collect(cx)) { imports_.stopped_ = true; return false; }
     return collect(cx);
   }
   void cancel(uint32_t id) { if (auto* p = find(id)) { p->uncertain = true; p->legacy_this = false; } }
