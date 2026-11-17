@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use latent_core::{
-    native_capacity::{NativeCapacityOwner, NativeCapacityShutdown},
+    native_capacity::{NativeCapacityError, NativeCapacityOwner, NativeCapacityShutdown},
     PlatformError,
 };
 use latent_effects::runtime::DeferredEffectAdapter;
@@ -359,16 +359,34 @@ impl StateKernel {
         // engine or namespace holder still owns the same lease independently.
         drop(namespaces);
         drop(bootstrap);
-        let native = capacity
-            .drain_async(deadline, tokio::time::sleep_until(deadline.into()))
-            .map_err(|_| super::unavailable())?
-            .await;
+        let native = drain_native_capacity(&capacity, deadline)
+            .await
+            .map_err(|_| super::unavailable())?;
         Ok(StateShutdownReport {
             clean: store.clean && joined.is_some() && native.clean && namespace_owners == 0,
             store,
             native,
             namespace_owners,
         })
+    }
+}
+
+/// The caller's timer must use the cutoff actually retained by this owner. A
+/// concurrent earlier drain can invalidate the observation; fail closed instead
+/// of waiting on a later timer or retrying with a renewed shutdown budget.
+async fn drain_native_capacity(
+    native: &NativeCapacityOwner,
+    proposed: Instant,
+) -> Result<NativeCapacityShutdown, NativeCapacityError> {
+    let attempt = native.drain_deadline(proposed).and_then(|deadline| {
+        native.drain_async(deadline, tokio::time::sleep_until(deadline.into()))
+    });
+    match attempt {
+        Ok(drain) => Ok(drain.await),
+        Err(error) => {
+            native.quarantine();
+            Err(error)
+        }
     }
 }
 
@@ -397,8 +415,5 @@ async fn retire_failed_bootstrap(bootstrap: StateBootstrap) {
     }
     drop(bootstrap);
     native.close();
-    if let Ok(retirement) = native.drain_async(deadline, tokio::time::sleep_until(deadline.into()))
-    {
-        let _retirement = retirement.await;
-    }
+    let _retirement = drain_native_capacity(&native, deadline).await;
 }

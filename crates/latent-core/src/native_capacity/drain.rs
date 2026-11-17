@@ -22,6 +22,10 @@ impl<F: Future<Output = ()>> NativeCapacityDrain<F> {
         original: Instant,
         deadline_wait: F,
     ) -> Result<Self, NativeCapacityError> {
+        // ActivationClock is an injected host implementation. Sample it before
+        // taking the capacity mutex, so this new check cannot run host code
+        // under the lock. A stale earlier sample may only reject conservatively.
+        let now = owner.clock.monotonic_now();
         let (generation, deadline) = {
             let mut state = owner
                 .state
@@ -29,6 +33,18 @@ impl<F: Future<Output = ()>> NativeCapacityDrain<F> {
                 .map_err(|_| NativeCapacityError::Poisoned)?;
             if state.waiter.is_some() {
                 return Err(NativeCapacityError::DrainWaiterBusy);
+            }
+            if state
+                .shutdown_deadline
+                .is_some_and(|old| original > old && now < old)
+                && !state.snapshot().physically_retired()
+            {
+                // The requested deadline is later than the retained cutoff. The
+                // caller's timer is not guaranteed to wake by that earlier time.
+                // Future destruction can call host code, so release the lock first.
+                drop(state);
+                drop(deadline_wait);
+                return Err(NativeCapacityError::DeadlineTooLong);
             }
             let generation = state
                 .next_waiter

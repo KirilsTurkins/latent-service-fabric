@@ -11,6 +11,62 @@ use std::{os::unix::fs::PermissionsExt, sync::Mutex, time::Duration};
 
 mod liveness;
 
+#[tokio::test]
+async fn native_drain_uses_retained_cutoff_and_quarantines_a_busy_owner() {
+    use latent_core::native_capacity::{
+        NativeAdmissionClass, NativeCapacityLimits, NativeReservationRequest,
+    };
+
+    let native = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
+    let original = Instant::now() + Duration::from_secs(4);
+    let reservation = native
+        .reserve(
+            NativeAdmissionClass::Recovery,
+            NativeReservationRequest::default(),
+            original,
+        )
+        .unwrap();
+    let cutoff = Instant::now() + Duration::from_millis(50);
+    drop(
+        native
+            .drain_async(cutoff, tokio::time::sleep_until(cutoff.into()))
+            .unwrap(),
+    );
+    let report = tokio::time::timeout(
+        Duration::from_secs(2),
+        drain_native_capacity(&native, original),
+    )
+    .await
+    .expect("native drain missed the original cutoff")
+    .unwrap();
+    assert!(!report.clean && report.snapshot.recovery.slots == 1);
+    assert!(report.snapshot.quarantined);
+    drop(reservation);
+
+    let busy = NativeCapacityOwner::new(NativeCapacityLimits::default()).unwrap();
+    let busy_deadline = Instant::now() + Duration::from_secs(4);
+    let retained = busy
+        .reserve(
+            NativeAdmissionClass::Ordinary,
+            NativeReservationRequest::default(),
+            busy_deadline,
+        )
+        .unwrap();
+    let active = busy
+        .drain_async(
+            busy_deadline,
+            tokio::time::sleep_until(busy_deadline.into()),
+        )
+        .unwrap();
+    assert_eq!(
+        drain_native_capacity(&busy, busy_deadline).await,
+        Err(NativeCapacityError::DrainWaiterBusy)
+    );
+    let snapshot = busy.snapshot().unwrap();
+    assert!(snapshot.quarantined && snapshot.ordinary.slots == 1);
+    drop((active, retained));
+}
+
 pub(in crate::standalone::state) struct Clock(Mutex<ClockSample>);
 impl Clock {
     pub(in crate::standalone::state) fn advance_to(&self, deadline: Instant) {
