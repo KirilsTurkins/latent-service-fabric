@@ -174,7 +174,7 @@ public final class ManagedNullFactoryReferenceControl {
             pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS));
         }
     }
-    private static void recoveryOrder(boolean sdk) throws Exception {
+    private static void recoveryOrder() throws Exception {
         AtomicInteger attempts = new AtomicInteger();
         StringBuffer calls = new StringBuffer();
         var pool = Executors.newFixedThreadPool(1, target -> attempts.incrementAndGet() <= 2 ? null : new Thread(target));
@@ -182,7 +182,26 @@ public final class ManagedNullFactoryReferenceControl {
             var first = pool.submit(() -> calls.append('A'));
             var later = pool.submit(() -> calls.append('B'));
             first.get(5, TimeUnit.SECONDS); later.get(5, TimeUnit.SECONDS);
-            require(attempts.get() == 3 && calls.toString().equals(sdk ? "AB" : "BA"));
+            require(attempts.get() == 3 && calls.toString().equals("BA"));
+        } finally { pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
+    }
+    private static void reentrantRecoveryOrder() throws Exception {
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<Future<?>> nested = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger();
+        StringBuffer calls = new StringBuffer();
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            int attempt = attempts.incrementAndGet();
+            if (attempt <= 2) return null;
+            nested.set(selected.get().submit(() -> calls.append('C')));
+            return new Thread(target);
+        });
+        selected.set(pool);
+        try {
+            var first = pool.submit(() -> calls.append('A'));
+            var later = pool.submit(() -> calls.append('B'));
+            first.get(5, TimeUnit.SECONDS); later.get(5, TimeUnit.SECONDS); nested.get().get(5, TimeUnit.SECONDS);
+            require(attempts.get() == 3 && calls.toString().equals("BAC"));
         } finally { pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
     }
     public static void main(String[] args) throws Exception {
@@ -190,7 +209,7 @@ public final class ManagedNullFactoryReferenceControl {
         for (boolean single : new boolean[]{false, true}) {
             unavailable(single); immediateRecovery(single); laterRecovery(single); fallbackThrows(single, false); fallbackThrows(single, true);
         }
-        existingWorker(); nested(); nestedFallbackThrows(); cached(); fallbackCompletable(); fallbackLiveThread(); recoveryOrder(args[0].equals("source"));
-        System.out.println("MANAGED_NULL_FACTORY PASS fixed;single;two-attempts;recovery;fallback-throw;existing-worker;nested;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order-difference");
+        existingWorker(); nested(); nestedFallbackThrows(); cached(); fallbackCompletable(); fallbackLiveThread(); recoveryOrder(); reentrantRecoveryOrder();
+        System.out.println("MANAGED_NULL_FACTORY PASS fixed;single;two-attempts;recovery;fallback-throw;existing-worker;nested;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order");
     }
 }
