@@ -95,6 +95,19 @@ __attribute__((export_name("stdio_stream_controls"))) int stdio_stream_controls(
     CHECK(actual_libc_close(current_fd) == 0 && close_calls == 1);
     CHECK(__lsf_c_net_write(current_fd, "xyz", 3) == -1 && lsf_test_errno == EBADF);
 
+    /* Source-level writev keeps the combined log sink and its short writes. */
+    uint8_t log_bytes[300];memset(log_bytes,'z',sizeof(log_bytes));
+    struct iovec log_parts[2]={{.iov_base=log_bytes,.iov_len=150},
+                               {.iov_base=log_bytes+150,.iov_len=150}};
+    capture_logs=true;unsigned vector_calls=log_calls;
+    CHECK(writev(1,log_parts,2)==256 && log_calls==vector_calls+1 && captured_bytes==256);
+    log_parts[0]=(struct iovec){.iov_base=log_bytes+256,.iov_len=44};
+    CHECK(writev(1,log_parts,1)==44 && log_calls==vector_calls+2 && captured_bytes==300);
+    for(size_t i=0;i<sizeof(log_bytes);++i) CHECK(captured_logs[i]=='z');
+    log_parts[1]=(struct iovec){.iov_base=NULL,.iov_len=1};vector_calls=log_calls;
+    CHECK(writev(1,log_parts,2)==-1 && lsf_test_errno==EFAULT && log_calls==vector_calls);
+    capture_logs=false;captured_bytes=0;
+
     /* A normal write can make bounded progress when a host log record is
      * smaller than the input. Never split a UTF-8 scalar across records. */
     uint8_t large[300];memset(large, 'x', sizeof(large));
@@ -173,5 +186,8 @@ __attribute__((export_name("stdio_missing_log_authority"))) int stdio_missing_lo
     CHECK(log_calls == 1 && accepted_logs == 0 && host_calls == 0);
     CHECK(__lsf_c_net_write(2, "err", 3) == -1 && lsf_test_errno == EIO);
     CHECK(log_calls == 2 && accepted_logs == 0 && host_calls == 0);
+    struct iovec denied={.iov_base=(void *)"out",.iov_len=3};
+    CHECK(writev(1,&denied,1)==-1 && lsf_test_errno==EIO);
+    CHECK(log_calls == 3 && accepted_logs == 0 && host_calls == 0);
     return 0;
 }

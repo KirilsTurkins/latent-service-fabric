@@ -282,8 +282,8 @@ class CThreadMinimal(unittest.TestCase):
    # timed-symbol response file. Authenticate the same additions in both
    # projects before comparing the unchanged historical fixture inventory.
    capture_addendum = {
-    'vendor/lsf/sdk/c-guest/include/lsf/standard-streams.h': '15440a102ff4975cd192ff76224421fc9a3c71c44ec92cd53965c81c79e8530e',
-    'vendor/lsf/sdk/c-guest/src/standard-streams.c': '492a170644fbfe103332e7c5053559050bc1a0f265cdb6c899d72c57ce5f244a',
+    'vendor/lsf/sdk/c-guest/include/lsf/standard-streams.h': 'e559adf6d67f2242d95a4ee334d53a7f1753eb1230cbc02dbcd0ab249d8f22c3',
+    'vendor/lsf/sdk/c-guest/src/standard-streams.c': '6676c4e3da44d4283a6d94e89cf4f9cacc755e80a96132fa14ef0048a3dfb566',
     'vendor/lsf/sdk/c-guest/src/standard-resolver.c': '1bb41612e2a9c33a8dd374d7573995bb1d9ef82ac9f65eab4a0bca99f42e3f0b',
     'vendor/lsf/sdk/c-guest/runtime/timed-symbols.rsp': '69c7c419534b95f697f185acf531bdd3dde31b506af5e5cc6ba1f2f789a63214',
    }
