@@ -18,7 +18,7 @@ namespace fixture {
 inline unsigned roots = 0, buffers = 0, allocations = 0, resolutions = 0, rejections = 0;
 inline std::size_t buffer_bytes = 0, peak_buffer_bytes = 0;
 inline unsigned fail_allocation = 0, calls = 0;
-inline bool fail_capture = false;
+inline bool fail_capture = false, fail_array = false, fail_promise = false;
 inline bool (*callback)(JSContext*) = nullptr;
 }
 namespace JS {
@@ -142,10 +142,16 @@ namespace JS {
 inline void SetReservedSlot(JSObject* o,unsigned s,Value v) { o->slots.at(s)=v; }
 inline Value GetReservedSlot(JSObject* o,unsigned s) { return o->slots.at(s); }
 inline const JSClass* GetClass(JSObject* o) { return o->klass; }
-inline JSObject* NewPromiseObject(JSContext*, std::nullptr_t) { return fixture::object(); }
+inline JSObject* NewPromiseObject(JSContext* cx, std::nullptr_t) {
+  if (fixture::fail_promise) { fixture::fail_promise=false; cx->exception=true; cx->detail="oom"; return nullptr; }
+  return fixture::object();
+}
 inline bool ResolvePromise(JSContext*, HandleObject, Value) { ++fixture::resolutions; return true; }
 inline bool RejectPromise(JSContext*, HandleObject, Value) { ++fixture::rejections; return true; }
-inline JSObject* NewArrayObject(JSContext*, const HandleValueArray&) { return fixture::object(); }
+inline JSObject* NewArrayObject(JSContext* cx, const HandleValueArray&) {
+  if (fixture::fail_array) { fixture::fail_array=false; cx->exception=true; cx->detail="oom"; return nullptr; }
+  return fixture::object();
+}
 inline void* NumberToBigInt(JSContext*,uint64_t) { static unsigned n; return &n; }
 }
 struct JSAutoRealm { JSAutoRealm(JSContext*,JS::HandleObject) {} };

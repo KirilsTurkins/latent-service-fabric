@@ -296,10 +296,95 @@ bool import_partial(bool buffers) {
   CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},id));
   CHECK(id==0 && fixture::resolutions==0);
   if (!buffers) CHECK(fixture::allocations==0 && counts[7]==0);
-  else CHECK(fixture::buffers==1 && fixture::buffer_bytes==16 && fixture::roots==2 &&
-             owners[observed_record].live && owners[observed_native].live && owners[observed_result].live);
+  else CHECK(fixture::buffers==0 && fixture::buffer_bytes==0 && fixture::roots==0 &&
+             !owners[observed_record].live && !owners[observed_native].live &&
+             !owners[observed_result].live && !e.imports.hasPending());
+  if (buffers) {
+    // Cleanup succeeded: catching the allocation error may admit fresh work.
+    fixture::fail_allocation=0; JS_ClearPendingException(&e.cx); uint32_t retry=0;
+    CHECK(e.reserve(retry) && e.returned(retry));
+  }
   deny_kind=-1; CHECK(e.finish());
   if (buffers) CHECK(record_destroyed_before_ack && native_destroyed_before_ack && result_destroyed_before_ack);
+  return true;
+}
+bool import_allocation_cleanup_fence(unsigned phase, bool refuse_task) {
+  Environment e; CHECK(e.begin()); uint32_t id=99;
+  const auto record=next_owner, task=record+1, queue=record+2,
+             native=record+3, result=record+4;
+  refuse_id=refuse_task ? task : queue;
+  if (phase<2) fixture::fail_allocation=phase+1;
+  else if (phase==2) fixture::fail_array=true;
+  else fixture::fail_promise=true;
+  const unsigned retained_buffers=phase==0 ? 0 : phase==1 ? 1 : 2;
+  CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},id));
+  CHECK(id==0 && e.cx.exception && std::strcmp(e.cx.detail,"oom")==0 && import_dispatches==0);
+  CHECK(owners[record].live && owners[native].live && owners[result].live &&
+        owners[refuse_id].live && fixture::roots==2 && fixture::buffers==retained_buffers);
+  const auto admitted=registrations;
+  JS_ClearPendingException(&e.cx); uint32_t rejected=99;
+  CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},rejected));
+  CHECK(rejected==0 && registrations==admitted && fixture::resolutions==0);
+  for (unsigned attempt=0;attempt<2;++attempt) {
+    const auto previous=owners[refuse_id].attempts;
+    JS_ClearPendingException(&e.cx); CHECK(!e.imports.cancelAll(&e.cx));
+    CHECK(owners[refuse_id].live && owners[refuse_id].attempts==previous+1 &&
+          owners[refuse_id].refunds==0 && owners[record].live &&
+          fixture::roots==2 && fixture::buffers==retained_buffers);
+    if (refuse_task) CHECK(owners[queue].attempts==1 && owners[queue].refunds==1);
+  }
+  refuse_id=0; fixture::fail_allocation=0; CHECK(e.finish());
+  CHECK(owners[record].refunds==1 && owners[task].refunds==1 && owners[queue].refunds==1 &&
+        owners[native].refunds==1 && owners[result].refunds==1 && import_dispatches==0);
+  return true;
+}
+bool import_allocation_ack_fence(unsigned stage) {
+  Environment e; CHECK(e.begin()); uint32_t id=99;
+  const auto record=next_owner, task=record+1, queue=record+2,
+             native=record+3, result=record+4;
+  observed_record=record; observed_native=native; observed_result=result;
+  expected_roots_at_ack=0; expected_buffers_at_ack=0;
+  refuse_id=stage==0 ? result : stage==1 ? native : record;
+  fixture::fail_allocation=2;
+  CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},id));
+  CHECK(id==0 && e.cx.exception && std::strcmp(e.cx.detail,"oom")==0 &&
+        fixture::roots==0 && fixture::buffers==0 && owners[refuse_id].live);
+  const auto admitted=registrations;
+  JS_ClearPendingException(&e.cx); uint32_t rejected=99;
+  CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},rejected));
+  CHECK(rejected==0 && registrations==admitted);
+  for (unsigned attempt=0;attempt<2;++attempt) {
+    const auto previous=owners[refuse_id].attempts;
+    JS_ClearPendingException(&e.cx); CHECK(!e.imports.cancelAll(&e.cx));
+    CHECK(owners[refuse_id].live && owners[refuse_id].attempts==previous+1 &&
+          owners[refuse_id].refunds==0 && fixture::roots==0 && fixture::buffers==0 &&
+          owners[result].refunds==(stage>0 ? 1u : 0u) &&
+          owners[native].refunds==(stage>1 ? 1u : 0u));
+  }
+  refuse_id=0; fixture::fail_allocation=0; CHECK(e.finish());
+  CHECK(owners[record].refunds==1 && owners[task].refunds==1 && owners[queue].refunds==1 &&
+        owners[native].refunds==1 && owners[result].refunds==1 && import_dispatches==0 &&
+        record_destroyed_before_ack && native_destroyed_before_ack && result_destroyed_before_ack);
+  return true;
+}
+bool import_dispatched_cleanup_fence(bool direct) {
+  Environment e; CHECK(e.begin()); uint32_t earlier=0,later=0;
+  CHECK(e.reserve(earlier)); ++import_dispatches; CHECK(e.returned(earlier));
+  CHECK(e.reserve(later)); ++import_dispatches; CHECK(e.returned(later));
+  const auto task=next_owner-4;
+  refuse_id=task;
+  CHECK(!(direct ? e.imports.cancel(&e.cx,later) : e.imports.liftCompleted(&e.cx,later)));
+  CHECK(e.cx.exception && disposals==1 && owners[task].live &&
+        fixture::roots==4 && fixture::buffers==4 && fixture::resolutions==0 &&
+        fixture::rejections==unsigned(direct));
+  const auto admitted=registrations;
+  JS_ClearPendingException(&e.cx); uint32_t rejected=99;
+  CHECK(!e.imports.reserve(&e.cx,4,16,ImportRawResult::I32,{},rejected));
+  CHECK(rejected==0 && registrations==admitted && import_dispatches==2);
+  refuse_id=0; JS_ClearPendingException(&e.cx);
+  CHECK(!e.imports.turn(&e.cx) && fixture::resolutions==0);
+  CHECK(e.finish()); CHECK(disposals==2 && fixture::resolutions==0 &&
+                           fixture::rejections==unsigned(direct) && import_dispatches==2);
   return true;
 }
 bool import_partial_rollback_retry(unsigned stage) {
@@ -430,7 +515,8 @@ bool import_immediate_start_refused(bool park) {
         fixture::roots==2 && owners[result].live && owners[native].live &&
         owners[record].live && owners[queued].live && owners[task].live && owners[set_owner].live);
   refuse_park=false; refuse_kind=-1; JS_ClearPendingException(&e.cx);
-  CHECK(e.imports.turn(&e.cx));
+  CHECK(!e.imports.turn(&e.cx)); JS_ClearPendingException(&e.cx);
+  CHECK(e.imports.cancelAll(&e.cx));
   CHECK(!e.imports.hasPending() && disposals==1 && fixture::rejections==0 &&
         fixture::resolutions==0 && fixture::buffers==0 && fixture::roots==0 &&
         owners[result].refunds==1 && owners[native].refunds==1 && owners[record].refunds==1 &&
@@ -456,9 +542,10 @@ bool import_join_refused() {
         waits[wait].live && !waits[wait].joined && fixture::buffers==2 &&
         fixture::roots==2 && counts[7]==2 && counts[6]==1);
   limits[7]=8; JS_ClearPendingException(&e.cx);
-  CHECK(e.imports.turn(&e.cx) && waits[wait].joined && set_new==2);
+  CHECK(!e.imports.turn(&e.cx)); JS_ClearPendingException(&e.cx);
+  CHECK(!e.imports.cancelAll(&e.cx) && waits[wait].joined && set_new==2);
   event={JOBS_EVENT_SUBTASK,wait,JOBS_SUBTASK_STARTED_CANCELLED};
-  CHECK(e.readiness.dispatch(&e.cx,true) && e.imports.turn(&e.cx));
+  CHECK(e.readiness.dispatch(&e.cx,true) && e.imports.cancelAll(&e.cx));
   CHECK(!e.imports.hasPending() && drops==1 && disposals==0 &&
         fixture::rejections==0 && fixture::resolutions==0 && fixture::buffers==0 &&
         fixture::roots==0 && counts[7]==1 && counts[6]==0);
@@ -553,6 +640,19 @@ bool run(const char* name) {
   if (!std::strcmp(name,"import-lift-fence")) return import_fence("lift");
   if (!std::strcmp(name,"import-partial-admission")) return import_partial(false);
   if (!std::strcmp(name,"import-partial-buffer")) return import_partial(true);
+  if (!std::strcmp(name,"import-param-cleanup-queue-fence")) return import_allocation_cleanup_fence(0,false);
+  if (!std::strcmp(name,"import-param-cleanup-task-fence")) return import_allocation_cleanup_fence(0,true);
+  if (!std::strcmp(name,"import-result-cleanup-queue-fence")) return import_allocation_cleanup_fence(1,false);
+  if (!std::strcmp(name,"import-result-cleanup-task-fence")) return import_allocation_cleanup_fence(1,true);
+  if (!std::strcmp(name,"import-array-cleanup-queue-fence")) return import_allocation_cleanup_fence(2,false);
+  if (!std::strcmp(name,"import-array-cleanup-task-fence")) return import_allocation_cleanup_fence(2,true);
+  if (!std::strcmp(name,"import-promise-cleanup-queue-fence")) return import_allocation_cleanup_fence(3,false);
+  if (!std::strcmp(name,"import-promise-cleanup-task-fence")) return import_allocation_cleanup_fence(3,true);
+  if (!std::strcmp(name,"import-allocation-result-ack-fence")) return import_allocation_ack_fence(0);
+  if (!std::strcmp(name,"import-allocation-native-ack-fence")) return import_allocation_ack_fence(1);
+  if (!std::strcmp(name,"import-allocation-record-ack-fence")) return import_allocation_ack_fence(2);
+  if (!std::strcmp(name,"import-dispatched-cleanup-fence")) return import_dispatched_cleanup_fence(false);
+  if (!std::strcmp(name,"import-dispatched-cancel-fence")) return import_dispatched_cleanup_fence(true);
   if (!std::strcmp(name,"import-partial-rollback-native")) return import_partial_rollback_retry(0);
   if (!std::strcmp(name,"import-partial-rollback-queue")) return import_partial_rollback_retry(1);
   if (!std::strcmp(name,"import-partial-rollback-task")) return import_partial_rollback_retry(2);

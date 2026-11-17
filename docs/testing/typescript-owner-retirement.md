@@ -215,3 +215,26 @@ The existing `activation-runtime-unselected-native-async-task-denied` and
 `activation-runtime-opaque-pending-work-on-close` diagnostics remain in force,
 but they do not close these gaps. Keep #745 open and do not promote the current
 profile on the strength of these local controls.
+
+## Import cleanup refusal fence
+
+If an unpublished import fails while allocating its parameter or result
+buffer, capture array, or Promise, it now attempts to retire the original
+logical work and physically destroy the record immediately. A refusal keeps
+the original owners live and retains any surviving buffers and roots, and it
+stops further import admission. A later `cancelAll` can retry the original
+unacknowledged owners;
+already acknowledged owners are not settled twice. If cleanup succeeds, the
+caller can catch the allocation error and admit a fresh import.
+
+Cleanup refusal after dispatch now also stops the import manager when no
+optional borrow observer exists, including direct cancellation. The existing
+readiness set can still observe a pending subtask, and cleanup remains pending
+until the actual terminal event and required disposal occur. The change does
+not add another byte ledger or change guest-memory page charges.
+
+The production-header controls use finite JSAPI and host doubles to exercise
+these paths, including repeated settlement refusal, post-destruction
+acknowledgement refusal, and eventual recovery. They do not establish real
+SpiderMonkey GC, signed-component, provider, or Store-retirement evidence;
+the remaining qualifications above still apply.
