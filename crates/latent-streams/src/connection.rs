@@ -970,7 +970,7 @@ async fn create_socket(
         }
         let transport = Arc::new(crate::transport::Transport::protected(
             Arc::clone(&socket),
-            inner.tls[index].as_ref().map(Arc::clone),
+            inner.tls[index].clone(),
             destination.endpoint.host.clone(),
         )?);
         // SAME original PooledConnection/Scope custody is attached BEFORE any
@@ -1057,7 +1057,7 @@ async fn create_socket(
     let transport = match &inner.tls[index] {
         Some(tls) => crate::transport::Transport::tls(
             stream,
-            Arc::clone(tls),
+            tls.clone(),
             destination.endpoint.host.clone(),
         )?,
         None => crate::transport::Transport::tcp(stream),

@@ -26,6 +26,12 @@ last physical `InstalledTls` owner, not a logical provider handle, releases the
 reservation. Root replacement/hash/link/mode denials must precede contact;
 protected restart and generation fencing must not migrate authenticated state.
 
+The private strong-only configuration owner now frees its outer Arc backing
+before dropping the configuration and its original metadata reservation. The
+allocator witness exercises that exact wrapper with a charge marker, including
+concurrent final owners; it does not measure rustls allocations or establish
+complete TLS accounting. Production host TLS remains unavailable.
+
 ## Connection, stack and kernel
 
 The original 256 KiB TLS host-memory/provider reservations precede connection

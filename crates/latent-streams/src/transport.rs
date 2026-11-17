@@ -9,7 +9,7 @@ use tokio::{io::Interest, net::TcpStream};
 pub(crate) struct Transport {
     wire: Wire,
     tls: Option<Mutex<TlsState>>,
-    _tls_configuration: Option<Arc<crate::tls::InstalledTls>>,
+    _tls_configuration: Option<crate::tls::InstalledTlsOwner>,
 }
 
 pub(crate) struct Readiness {
@@ -179,7 +179,7 @@ impl Transport {
     }
     pub fn tls(
         tcp: TcpStream,
-        config: Arc<crate::tls::InstalledTls>,
+        config: crate::tls::InstalledTlsOwner,
         name: String,
     ) -> Result<Self, StreamError> {
         let name = rustls::pki_types::ServerName::try_from(name).map_err(|_| failure())?;
@@ -201,7 +201,7 @@ impl Transport {
     #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
     pub fn protected(
         socket: Arc<crate::kernel::native::StreamSocket>,
-        config: Option<Arc<crate::tls::InstalledTls>>,
+        config: Option<crate::tls::InstalledTlsOwner>,
         name: String,
     ) -> Result<Self, StreamError> {
         let tls = match &config {
