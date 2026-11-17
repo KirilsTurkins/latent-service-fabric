@@ -1,10 +1,10 @@
 //! One bounded node-owned maintenance future. It never retains a Store or
 //! activation, dials a destination, or creates per-connection tasks.
-use crate::{StreamError, StreamLifecycle};
+use crate::{strong_owner::StrongOwner, StreamError, StreamLifecycle};
 use latent_capabilities::broker::pools::ProviderMetadata;
 use std::sync::{
     atomic::{AtomicBool, Ordering},
-    Arc, Weak,
+    Weak,
 };
 use std::time::{Duration, Instant};
 use tokio::sync::Notify;
@@ -17,19 +17,21 @@ struct Stop {
 
 pub struct StreamMaintenance {
     owner: Weak<StreamLifecycle>,
-    stop: Arc<Stop>,
+    // All handles use the strong-only owner, so its backing is freed before
+    // Stop drops the original metadata reservation.
+    stop: StrongOwner<Stop>,
 }
 
 /// A stop acknowledgement cannot release the driver metadata. Its actual
 /// future and every retained handle keep that allocation until real Drop.
 #[derive(Clone)]
-pub struct StreamMaintenanceStop(Arc<Stop>);
+pub struct StreamMaintenanceStop(StrongOwner<Stop>);
 
 impl StreamMaintenance {
     pub(crate) fn new(owner: Weak<StreamLifecycle>, metadata: ProviderMetadata) -> Self {
         Self {
             owner,
-            stop: Arc::new(Stop {
+            stop: StrongOwner::new(Stop {
                 stopped: AtomicBool::new(false),
                 changed: Notify::new(),
                 _metadata: metadata,
@@ -39,7 +41,7 @@ impl StreamMaintenance {
 
     #[must_use]
     pub fn stop_handle(&self) -> StreamMaintenanceStop {
-        StreamMaintenanceStop(Arc::clone(&self.stop))
+        StreamMaintenanceStop(self.stop.clone())
     }
 
     pub async fn run(self) -> Result<(), StreamError> {
