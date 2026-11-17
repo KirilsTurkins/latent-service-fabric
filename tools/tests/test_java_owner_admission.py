@@ -17,7 +17,7 @@ NULL_FACTORY_CASES = (
     'manual-factory-throw', 'manual-worker-admission-denied',
     'managed-factory-thread', 'managed-factory-null', 'managed-factory-throw',
     'managed-null-pending', 'managed-null-fallback-throw', 'managed-null-worker-denied',
-    'managed-null-worker-uncertain', 'managed-preferred-root',
+    'managed-null-worker-uncertain', 'managed-preferred-root', 'managed-nested-null-root',
 )
 SETTLEMENT_CASES = preparation.OWNER_SETTLEMENT_CASES
 WORK_CASES = preparation.WORK_FINISH_CASES

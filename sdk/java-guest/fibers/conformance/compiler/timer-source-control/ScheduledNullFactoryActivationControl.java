@@ -517,6 +517,30 @@ public final class ScheduledNullFactoryActivationControl {
             held(0, 0, 0); invoke("retireIdlePools"); finishRoot(root);
         } finally { release.countDown(); }
     }
+    private static void managedNestedNullRoot() throws Exception {
+        Object root = enter();
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<Future<?>> first = new AtomicReference<>(), second = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        var pool = Executors.newFixedThreadPool(1, target -> {
+            if (attempts.incrementAndGet() == 1) {
+                first.set(selected.get().submit(calls::incrementAndGet));
+                second.set(selected.get().submit(calls::incrementAndGet));
+            }
+            return null;
+        });
+        selected.set(pool);
+        var outer = pool.submit(calls::incrementAndGet);
+        require(attempts.get() == 2 && calls.get() == 0, "nested-null-unexpected-callback");
+        held(3, 3, 1); closeRoot();
+        require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools"), "nested-null-root-not-fenced");
+        List<Runnable> removed = pool.shutdownNow();
+        require(removed.size() == 3 && removed.get(0) == first.get() && removed.get(1) == second.get()
+            && removed.get(2) == outer && calls.get() == 0, "nested-null-queue-order");
+        held(0, 0, 0);
+        require(first.get().cancel(false) && second.get().cancel(false) && outer.cancel(false), "nested-null-cancel");
+        invoke("retireIdlePools"); finishRoot(root);
+    }
     public static void main(String[] args) throws Exception {
         String mode = args[0];
         if (mode.equals("scan-mutation") || mode.equals("retirement-scan-mutation"))
@@ -536,6 +560,7 @@ public final class ScheduledNullFactoryActivationControl {
             managedNullRoot(mode.substring("managed-null-".length()));
         else if (mode.equals("managed-null-worker-uncertain")) managedNullUncertainWorker();
         else if (mode.equals("managed-preferred-root")) managedPreferredRoot();
+        else if (mode.equals("managed-nested-null-root")) managedNestedNullRoot();
         else if (mode.equals("recovery") || mode.equals("reentrant")) recovery(mode.equals("reentrant"));
         else if (mode.equals("cancel") || mode.equals("remove") || mode.equals("factory-throw") || mode.equals("wait-denied")
                 || mode.equals("settle-result-denied") || mode.equals("settle-queue-denied")) noWorker(mode);

@@ -83,6 +83,8 @@ class FutureCancellationControl(unittest.TestCase):
                               'nested-fallback-throw', 'fallback-completable', 'fallback-start-failure',
                               'fallback-start-uncertain', 'fallback-live-thread', 'cached-null', 'existing-worker',
                               'preferred-running-shutdown', 'preferred-withdrawn', 'preference-exhaustion',
+                              'nested-initial-withdrawal', 'nested-initial-fallback-throw', 'nested-initial-shutdown',
+                              'nested-initial-rotation-failure', 'nested-outer-already-running',
                               'fallback-shutdown', 'fallback-denied', 'fallback-lost')
         new_reference_stages = ('scheduled-periodic-validation-reference-jdk', 'scheduled-null-factory-reference-jdk',
             'scheduled-throw-factory-reference-jdk', 'manual-periodic-throw-reference-jdk',
@@ -115,7 +117,7 @@ class FutureCancellationControl(unittest.TestCase):
                 return 'MANAGED_REENTRANT_FACTORY_OWNER PASS ' + argv[-1]
             if stage in ('managed-null-factory-reference-jdk', 'managed-null-factory-source'):
                 return ('MANAGED_NULL_FACTORY PASS fixed;single;two-attempts;recovery;fallback-throw;'
-                        'existing-worker;nested;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order')
+                        'existing-worker;nested;nested-initial-order;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order')
             if stage.startswith('managed-null-factory-owner-'):
                 return 'MANAGED_NULL_FACTORY_OWNER PASS ' + argv[-1]
             if stage in ('executor-invoke-interrupt-reference-jdk', 'executor-invoke-interrupt-source'):
