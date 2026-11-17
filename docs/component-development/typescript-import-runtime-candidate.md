@@ -21,6 +21,16 @@ the pump can retire it with no timer records or joined subtasks. Ordinary
 synchronous calls that do not use this bridge do not create the set. This
 source behavior does not establish signed-runtime qualification.
 
+Timer results that have already been observed ready retain their observation
+order until callback dispatch or clear. An immediately rearmed interval joins
+the end of that bounded order, and an observed unexpected cancellation fences
+further callbacks. The ordering links are part of the existing admitted timer
+records and do not introduce another owner or allocation. The shared timer
+contract does not return absolute deadlines or an expiry sequence, so this does
+not establish ordering between host completions that have not yet been
+delivered to the guest. Source controls and a Node reference are not current
+signed-guest qualification.
+
 The source candidate now distinguishes canonical result ownership from subtask
 retirement. Cancelling before typed lifting retains an actual returned outcome
 until a compiler-generated walk drops its imported `own<resource>` handles

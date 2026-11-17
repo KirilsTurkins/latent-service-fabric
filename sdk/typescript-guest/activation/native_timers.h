@@ -13,6 +13,9 @@
 namespace lsf::typescript::activation {
 
 class Timers final {
+#ifdef LSF_TYPESCRIPT_TIMER_QUEUE_TEST
+  friend struct TimerQueueTestAccess;
+#endif
   struct Record {
     NativeOwner native;
     latent_runtime_activation_token_t timer{};
@@ -27,6 +30,10 @@ class Timers final {
     Subtask next;
     latent_runtime_activation_result_u64_error_t outcome{};
     std::unique_ptr<Record> following;
+    // Intrusive ready order uses this already-admitted Record; no separate
+    // queue allocation or timer owner is created.
+    Record* ready_next = nullptr;
+    bool ready_enqueued = false;
     Record(JSContext* cx, const NativeOwner& owner, JS::HandleObject function)
         : native(owner), callback(cx, function), arguments(cx) {}
   };
@@ -37,11 +44,10 @@ class Timers final {
   ReadinessSet& readiness_;
   std::unique_ptr<Record> records_;
   Record* tail_ = nullptr;
+  Record* ready_head_ = nullptr;
+  Record* ready_tail_ = nullptr;
   NativeOwner retired_native_{};
   int32_t next_id_ = 1;
-  // IDs never repeat. A value cursor remains valid if a callback clears
-  // and physically retires its own or another timer record.
-  int32_t last_dispatched_id_ = 0;
   bool exhausted_ids_ = false;
   bool stopped_ = false;
   bool callback_dispatched_ = false;
@@ -54,6 +60,48 @@ class Timers final {
     return false;
   }
 
+  void enqueueReady(Record& record) {
+    if (record.closing || record.ready_enqueued || !record.next.resultReady()) return;
+    record.ready_enqueued = true;
+    record.ready_next = nullptr;
+    if (ready_tail_) ready_tail_->ready_next = &record;
+    else ready_head_ = &record;
+    ready_tail_ = &record;
+  }
+
+  void captureReady() {
+    // A returned result or delivered terminal event is an actual observation,
+    // not a reconstructed deadline. Repeated scans never move an existing
+    // ready item behind one observed later. Timer records are host-bounded.
+    for (auto* record = records_.get(); record; record = record->following.get())
+      enqueueReady(*record);
+  }
+
+  bool removeReady(JSContext* cx, Record& record) {
+    Record* previous = nullptr;
+    for (auto* current = ready_head_; current; current = current->ready_next) {
+      if (current == &record) {
+        if (!record.ready_enqueued ||
+            ((ready_tail_ == current) != (current->ready_next == nullptr))) {
+          stopped_ = true;
+          return fail(cx, "ready-queue-state", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
+        }
+        if (previous) previous->ready_next = current->ready_next;
+        else ready_head_ = current->ready_next;
+        if (ready_tail_ == current) ready_tail_ = previous;
+        record.ready_next = nullptr;
+        record.ready_enqueued = false;
+        return true;
+      }
+      previous = current;
+    }
+    if (record.ready_enqueued || record.ready_next || ready_tail_ == &record) {
+      stopped_ = true;
+      return fail(cx, "ready-queue-state", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
+    }
+    return true;
+  }
+
   bool begin_next(JSContext* cx, Record& record) {
     if (!record.timer_live || record.closing || record.next.unresolved())
       return fail(cx, "next-state", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
@@ -62,11 +110,14 @@ class Timers final {
     if (!record.next.started(cx,
           latent_runtime_activation_timer_next(record.timer, &record.outcome)))
       return false;
-    return readiness_.join(cx, record.next);
+    if (!readiness_.join(cx, record.next)) return false;
+    enqueueReady(record); // includes an immediately returned host result
+    return true;
   }
 
   bool stop(JSContext* cx, Record& record) {
     record.closing = true; // eligibility closes before either host operation
+    if (!removeReady(cx, record)) return false;
     if (record.timer_live) {
       latent_runtime_activation_error_t error{};
       if (!latent_runtime_activation_timer_stop(&record.timer, &error))
@@ -97,6 +148,9 @@ class Timers final {
         link = &record->following;
         continue;
       }
+      // Even after an earlier failed stop, never destroy a record while the
+      // intrusive ready queue still owns it or reports inconsistent state.
+      if (!removeReady(cx, *record)) return false;
       if (!record->next.drop(cx)) return false;
       if (record->timer_live) return false;
       NativeOwner retired = record->native;
@@ -181,6 +235,9 @@ public:
     *id = 0;
     if (stopped_ || retired_native_.live || exhausted_ids_)
       return fail(cx, "admission-closed", LATENT_RUNTIME_ACTIVATION_ERROR_RESOURCE_EXHAUSTED);
+    // A shared-set event may have been delivered before an intervening JS job
+    // started this timer. Capture it before a new immediate result can arrive.
+    captureReady();
     NativeOwner accepted;
     if (!native_.beforeAllocate(cx, accepted)) {
       if (accepted.live) { retired_native_ = accepted; stopped_ = true; }
@@ -261,25 +318,24 @@ public:
     callback_dispatched_ = false;
     if (stopped_) return fail(cx, "pump-stopped", LATENT_RUNTIME_ACTIVATION_ERROR_INVALID_STATE);
     if (!collect(cx)) return false;
-    // Select after the last dispatched ID, then wrap to the first ready ID.
-    // This bounds the scan by two traversals and prevents an immediately
-    // rearmed interval from repeatedly taking the first ready slot.
-    for (unsigned pass = 0; pass != 2; ++pass) {
-      for (auto* record = records_.get(); record; record = record->following.get()) {
-        if (record->closing || (record->id > last_dispatched_id_) != (pass == 0)) continue;
-        if (record->next.cancelledReady())
-          return fail(cx, "unexpected-cancellation", LATENT_RUNTIME_ACTIVATION_ERROR_CANCELLED);
-        if (record->next.resultReady()) {
-          if (record->outcome.is_err)
-            return fail(cx, "next", record->outcome.val.err);
-          // `invoke` may destroy this record after its JS callback returns.
-          last_dispatched_id_ = record->id;
-          const bool result = invoke(cx, *record);
-          callback_dispatched_ = true;
-          if (!result) stopped_ = true;
-          return result;
-        }
-      }
+    // An unexpected terminal cancellation fences callbacks before any other
+    // ready item runs, including an immediately rearmed recurring timer.
+    for (auto* record = records_.get(); record; record = record->following.get()) {
+      if (!record->closing && record->next.cancelledReady())
+        return fail(cx, "unexpected-cancellation", LATENT_RUNTIME_ACTIVATION_ERROR_CANCELLED);
+    }
+    // Shared-set delivery advances one subtask at a time. An interval is
+    // re-enqueued only after its callback returns, behind work already ready.
+    captureReady();
+    if (auto* record = ready_head_) {
+      if (!removeReady(cx, *record)) return false;
+      if (record->outcome.is_err)
+        return fail(cx, "next", record->outcome.val.err);
+      // `invoke` may destroy this record after its JS callback returns.
+      const bool result = invoke(cx, *record);
+      callback_dispatched_ = true;
+      if (!result) stopped_ = true;
+      return result;
     }
     if (!records_ && !readiness_.hasJoined()) return readiness_.retire(cx);
     return !dispatch || readiness_.dispatch(cx, idle);
