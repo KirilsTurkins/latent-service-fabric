@@ -921,6 +921,10 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                     if mutation == 'wrong-decode-stride': sites[-1]['stride'] += 1
                     if mutation == 'float-decode-stride': sites[-1]['stride'] = 1024.0
                     if mutation == 'missing-decode-site': sites.pop()
+                    if mutation == 'wrong-append-site': sites[4]['column'] += 1
+                    if mutation == 'wrong-append-stride': sites[4]['stride'] += 1
+                    if mutation == 'float-append-stride': sites[4]['stride'] = 1024.0
+                    if mutation == 'missing-append-site': sites.pop(4)
                     if mutation == 'changed-after-selection': source.write_bytes(original+b'changed')
                     return json.dumps([{'path': str(source), 'adapted': str(adapted), 'sites': sites,
                                         'upstreamDigest': digest(original), 'adaptedDigest': digest(adapted.read_bytes())}])
@@ -941,7 +945,8 @@ class GoRuntimeOverlayTests(unittest.TestCase):
             for mutation in ('valid', 'nonstandard', 'foreign-directory', 'missing-source', 'duplicate',
                              'changed-source', 'wrong-site', 'nonsuspendable', 'wrong-stride', 'float-stride',
                              'wrong-decode-site', 'wrong-decode-stride', 'float-decode-stride',
-                             'missing-decode-site', 'changed-after-selection'):
+                             'missing-decode-site', 'wrong-append-site', 'wrong-append-stride',
+                             'float-append-stride', 'missing-append-site', 'changed-after-selection'):
                 with self.subTest(mutation=mutation): run_case(mutation)
 
     def test_checkpoint_parser_cannot_omit_selected_application_or_dependency(self):

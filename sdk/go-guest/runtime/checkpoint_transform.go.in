@@ -34,6 +34,7 @@ func fail(err error) { fmt.Fprintln(os.Stderr, err); os.Exit(1) }
 
 const base64EncodeMode = "base64-encode-stride-v1"
 const base64CodecMode = "base64-codec-stride-v2"
+const base64AppendMode = "base64-append-stride-v3"
 const base64CodecDigest = "sha256:15e67707bc3f0925f7f56bd4002106681c6b64ba5bf553b4d8cc0bb8eca71aa5"
 
 func transform(row input, destination string) (result, error) {
@@ -42,7 +43,7 @@ func transform(row input, destination string) (result, error) {
 	if !info.Mode().IsRegular() || info.Size() > 32*1024*1024 { return result{}, fmt.Errorf("checkpoint-source-not-bounded-regular-file") }
 	raw, err := os.ReadFile(row.Path)
 	if err != nil { return result{}, err }
-	if row.Mode != "" && ((row.Mode != base64EncodeMode && row.Mode != base64CodecMode) || digest(raw) != base64CodecDigest) {
+	if row.Mode != "" && ((row.Mode != base64EncodeMode && row.Mode != base64CodecMode && row.Mode != base64AppendMode) || digest(raw) != base64CodecDigest) {
 		return result{}, fmt.Errorf("checkpoint-standard-mode-or-source-drift")
 	}
 	fset := token.NewFileSet()
@@ -107,10 +108,12 @@ func transform(row input, destination string) (result, error) {
 	add := func(position token.Pos) {
 		original := fset.Position(position)
 		if row.Mode == base64EncodeMode && (original.Line != 154 || original.Column != 21) { return }
-		if row.Mode == base64EncodeMode || row.Mode == base64CodecMode {
+		if row.Mode == base64EncodeMode || row.Mode == base64CodecMode || row.Mode == base64AppendMode {
 			switch [2]int{original.Line, original.Column} {
 			case [2]int{154, 21}, [2]int{315, 34}, [2]int{352, 63}, [2]int{368, 62},
 				[2]int{524, 68}, [2]int{549, 43}, [2]int{570, 21}:
+			case [2]int{411, 46}:
+				if row.Mode != base64AppendMode { return }
 			default: return
 			}
 		}
@@ -124,7 +127,7 @@ func transform(row input, destination string) (result, error) {
 		if !suspendable { callee = blocked }
 		stride := 0
 		call := "\n" + callee + "();\n"
-		if row.Mode == base64EncodeMode || row.Mode == base64CodecMode {
+		if row.Mode == base64EncodeMode || row.Mode == base64CodecMode || row.Mode == base64AppendMode {
 			if !suspendable { positionError = fmt.Errorf("checkpoint-standard-site-not-suspendable"); return }
 			switch original.Line {
 			case 154:
@@ -136,6 +139,10 @@ func transform(row input, destination string) (result, error) {
 				// arbitrarily long ignored-newline runs.
 				stride = 1024
 				call = "\nif si&1023 == 0 { " + callee + "() }\n"
+			case 411:
+				// AppendDecode decreases n by exactly one padding byte.
+				stride = 1024
+				call = "\nif n&1023 == 0 { " + callee + "() }\n"
 			default:
 				// A quantum can advance si by a variable amount. Compare
 				// against the last index instead of waiting for equality.
@@ -155,7 +162,7 @@ func transform(row input, destination string) (result, error) {
 	ast.Inspect(file, func(node ast.Node) bool {
 		switch node := node.(type) {
 		case *ast.FuncDecl:
-			if row.Mode == base64CodecMode && node.Name.Name == "Decode" && node.Body != nil {
+			if (row.Mode == base64CodecMode || row.Mode == base64AppendMode) && node.Name.Name == "Decode" && node.Body != nil {
 				position := node.Body.Lbrace + 1
 				original := fset.Position(position)
 				if original.Line != 513 || original.Column != 66 { positionError = fmt.Errorf("checkpoint-standard-decode-entry-drift"); return false }
@@ -181,6 +188,7 @@ func transform(row input, destination string) (result, error) {
 	if positionError != nil { return result{}, positionError }
 	if row.Mode == base64EncodeMode && len(record.Sites) != 1 { return result{}, fmt.Errorf("checkpoint-standard-site-drift") }
 	if row.Mode == base64CodecMode && (len(record.Sites) != 7 || decodeEntries != 1) { return result{}, fmt.Errorf("checkpoint-standard-site-drift") }
+	if row.Mode == base64AppendMode && (len(record.Sites) != 8 || decodeEntries != 1) { return result{}, fmt.Errorf("checkpoint-standard-site-drift") }
 	if len(record.Sites) > 65536 { return result{}, fmt.Errorf("checkpoint-sites-per-file-exhausted") }
 	if len(record.Sites) == 0 { return record, nil }
 	hasUnsafe := false

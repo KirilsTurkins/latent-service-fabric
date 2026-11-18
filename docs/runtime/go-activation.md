@@ -170,6 +170,19 @@ include input/output validation and do not establish speedup or production
 cost. The configured Go qualification runs the reference with a test
 activation and queue pump; it does not qualify a signed guest or real host.
 
+The authenticated `AppendDecode` trailing-padding loop reaches the same
+bridge every 1,024 padding bytes. With the current quantum, at most 1,048,576
+consecutive padding bytes pass between yields. In the pinned core-Wasm
+reference, 24 MiB of invalid padding returned before its ready sibling under
+the previous codec selection; this selection observed the sibling and 24
+yields. Tested partial outputs, errors, valid and custom padding, and an
+overlapping input/output buffer matched native Go. Two small no-sibling
+samples measured median child CPU of 231.45 versus 202.52 ms and 204.54
+versus 176.07 ms for the previous and new selection. These noisy measurements
+include startup and input/output work; they do not establish speedup or
+production cost. The existing Go qualification is configured to run the
+reference; no signed guest or real-host behavior is inferred.
+
 Original source bytes remain unchanged. Derived copies retain original
 diagnostic line/column positions, source and output digests, and suspension
 sites in the build transformation materials. The host parser is built and
