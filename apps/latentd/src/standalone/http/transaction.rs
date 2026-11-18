@@ -295,7 +295,7 @@ fn project_effect(
             t::EffectDisposition::AdministrativelyTerminated => "administratively-terminated",
             t::EffectDisposition::RetryScheduled => "retry-scheduled",
             t::EffectDisposition::DeadLettered => "dead-lettered",
-            _ => return Err(503),
+            t::EffectDisposition::Unspecified => return Err(503),
         };
     body.disposition = "effect";
     body.representation = "effect-status";
