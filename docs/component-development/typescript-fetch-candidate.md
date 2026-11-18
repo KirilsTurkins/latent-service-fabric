@@ -209,10 +209,31 @@ and the acquired body owner is disposed. Source controls compare ordinary cases
 with Node 24.19.0 and use the Web IDL rule for negative modulo and BigInt, where
 that Node version differs. These controls are not signed component qualification.
 
-The full `ResponseInit` conversion order remains incomplete. Web IDL processes
-`headers`, `status`, then `statusText`; this candidate currently reads `status`,
-then `statusText`, then `headers`, and may report an error at a different point.
-Code that depends on member getter order or exception precedence is not qualified.
+For the selected body types, `new Response` and `Response.json` convert
+`ResponseInit` members in Web IDL order: `headers`, `status`, then
+`statusText`. Header values become ByteStrings during conversion; status and
+reason-phrase checks, header syntax and pair-length validation follow later.
+The converted header values are captured before later getters can mutate the
+input. `Response.json` converts its initializer before serializing its value.
+The sequence converter caches each iterator's `next` method and does not close
+the iterators when conversion fails. Node 24.19 rereads `next`; Web IDL is the
+reference for that edge case. Node also rejects null for `Response.json`'s
+initializer, although Web IDL treats it as an empty dictionary.
+
+The temporary converted header snapshot is limited to 16,448 record fields and
+1,081,344 normalized name/value characters. Sequence initializers retain the
+existing 64-pair bound; a malformed pair is converted through at most 64
+elements before refusal. A valid final list within the existing 64-name and
+32-KiB limits fits the snapshot bounds: every duplicate contributes at least
+two separator characters to the final list, while each valid name is at most
+64 characters. Leading and trailing spaces and tabs are removed before the
+snapshot count. Oversized malformed input can therefore refuse before later
+initializer members are read. Enumerable Symbol record keys and non-ByteString
+values also refuse during conversion. The record's own-key enumeration and the
+snapshot's extra allocations remain subject to the original guest-memory limit;
+no engine backing-store or physical-retirement measurement is implied.
+Unsupported BodyInit types still refuse, and their exception precedence against
+initializer getters is not qualified by this control.
 
 ## Synthetic response factories
 
