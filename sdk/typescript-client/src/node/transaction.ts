@@ -30,7 +30,7 @@ function object(value: unknown): RecordValue {
   return result;
 }
 function text(value: unknown, maximum = 256, required = true): asserts value is string {
-  if (typeof value !== "string" || Buffer.byteLength(value) > maximum
+  if (typeof value !== "string" || value.length > maximum || Buffer.byteLength(value) > maximum
     || (required && (value.length === 0 || controls.test(value)))) throw new ShapeError();
 }
 function id(value: unknown): asserts value is string { text(value); }

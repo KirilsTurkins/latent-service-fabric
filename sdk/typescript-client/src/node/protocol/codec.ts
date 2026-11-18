@@ -67,8 +67,9 @@ function fieldInput(field: DescField, value: unknown, budget: Budget, depth: num
       || (field.scalar !== ScalarType.STRING && field.scalar !== ScalarType.UINT64)) throw new ShapeError();
     const result: RecordValue = Object.create(null);
     for (const [key, item] of entries) {
-      if (Buffer.byteLength(key, "utf8") > (budget.transaction ? 256 : 128)
-        || (field.scalar === ScalarType.STRING && (typeof item !== "string" || Buffer.byteLength(item, "utf8") > 1024))) throw new ShapeError();
+      const maximumKey = budget.transaction ? 256 : 128;
+      if (key.length > maximumKey || Buffer.byteLength(key, "utf8") > maximumKey
+        || (field.scalar === ScalarType.STRING && (typeof item !== "string" || item.length > 1024 || Buffer.byteLength(item, "utf8") > 1024))) throw new ShapeError();
       scalarInput(ScalarType.STRING, false, key, budget);
       result[key] = scalarInput(field.scalar, false, item, budget);
     }
@@ -92,7 +93,7 @@ function fieldInput(field: DescField, value: unknown, budget: Budget, depth: num
 function scalarInput(kind: ScalarType | undefined, enumeration: boolean, value: unknown, budget: Budget): unknown {
   debit(budget, 10);
   if (kind === ScalarType.STRING) {
-    if (typeof value !== "string") throw new ShapeError();
+    if (typeof value !== "string" || value.length > budget.bytes) throw new ShapeError();
     for (const character of value) {
       const point = character.codePointAt(0)!;
       if (point >= 0xd800 && point <= 0xdfff) throw new ShapeError();
