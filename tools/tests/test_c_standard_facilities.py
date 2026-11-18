@@ -1,4 +1,5 @@
 """Profile authority, derived contracts and retained original input identities."""
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -306,6 +307,7 @@ class StandardFacilities(unittest.TestCase):
         # A client that calls no clock/entropy API still has this exact profile.
         from unittest.mock import patch
         from tools.c_guest.compiler import Compiler
+        from tools.c_guest import threading
         from tools.tests.test_c_threading_profile import graph
         from tools.c_guest.threading import PROFILE as threading_profile
         class CommandCaptured(Exception):
@@ -317,6 +319,20 @@ class StandardFacilities(unittest.TestCase):
                           'c-threading-transformer': self.root / 'transformer'}
         compiler.sdk, compiler.platform = ROOT / 'sdk/c-guest', None
         compiler.commands, compiler.isolation = None, None
+        compiler.materials = {}
+        compiler.threading_semaphore_inputs = {}
+        compiler.threading_barrier_inputs = {}
+        port_pins = []
+        for source_pins in (threading.SEMAPHORE_LIBC, threading.BARRIER_LIBC):
+            pins = {}
+            for name in source_pins:
+                content = ('fixture:' + name).encode()
+                path = self.root / name; path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(content)
+                pins[name] = hashlib.sha256(content).hexdigest()
+            port_pins.append(pins)
+        pinned_ports = patch.multiple(threading, SEMAPHORE_LIBC=port_pins[0], BARRIER_LIBC=port_pins[1])
+        pinned_ports.start(); self.addCleanup(pinned_ports.stop)
         compiler.validate_static_libraries = lambda *args: None
         compiler.select_threading_clock_inputs = lambda: None
         compiler.threading_time_alias = None  # This stub models the legacy captured SDK.
@@ -359,6 +375,10 @@ class StandardFacilities(unittest.TestCase):
                 expected = (selected in facilities.FETCH_PROFILES or
                             (selected in facilities.STREAM_PROFILES and value == 'abort=__lsf_c_abort'))
                 self.assertEqual('-D' + value in command, expected)
+        self.assertEqual(set(compiler.materials), set(port_pins[0]) | set(port_pins[1]))
+        for pins in port_pins:
+            for name, expected_digest in pins.items():
+                self.assertEqual(compiler.materials[name]['digest'], 'sha256:' + expected_digest)
 
         # Run the normal owner's actual source/WIT selection for every profile;
         # capture at Compiler.compile before any compiler or external tool runs.
@@ -371,14 +391,19 @@ class StandardFacilities(unittest.TestCase):
                 self.sdk = sdk
                 self.paths = {'zig': tool, 'wit-bindgen': tool, 'wasm-tools': tool}
                 self.materials = {'zig': {'name': 'zig', 'size': 1, 'digest': digest(b'controlled')}}
+                self.selected_ports = []
             def enable_captured_isolation(self, _temporary):
                 return {}
             def select_threading_clock_inputs(self):
                 pass
+            def select_threading_semaphore_inputs(self):
+                self.selected_ports.append('semaphore')
+            def select_threading_barrier_inputs(self):
+                self.selected_ports.append('barrier')
             def compile(self, sources, wit, _world, _destination, **options):
                 captured.append((options['runtime_profile'],
                     [path.relative_to(self.sdk).as_posix() for path in sources if self.sdk in path.parents],
-                    '\n'.join(path.read_text() for path in wit.glob('*.wit'))))
+                    '\n'.join(path.read_text() for path in wit.glob('*.wit')), tuple(self.selected_ports)))
                 raise CommandCaptured()
         for ordinal, selected in enumerate(sorted(facilities.SUPPORTED)):
             application = project.create(self.root / ('source-profile-' + str(ordinal)), 'greeting',
@@ -392,8 +417,10 @@ class StandardFacilities(unittest.TestCase):
                 with self.assertRaises(CommandCaptured):
                     builder.build(application, self.root / ('captured-source-' + str(ordinal)),
                                   tool, None, 'https://example.test/developer-project')
-            actual, selected_sources, selected_wit = captured[-1]
+            actual, selected_sources, selected_wit, selected_ports = captured[-1]
             self.assertEqual(actual, selected)
+            self.assertEqual(selected_ports, ('semaphore', 'barrier') if selected in
+                             (*facilities.FETCH_PROFILES, *facilities.STREAM_PROFILES) else ())
             expected_sources = ['src/' + name for name in facilities.PROFILE_SOURCES.get(selected, ())]
             self.assertEqual(selected_sources, expected_sources)
             has_clock = 'src/standard-clock-entropy.c' in selected_sources
