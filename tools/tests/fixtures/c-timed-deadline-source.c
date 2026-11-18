@@ -36,7 +36,7 @@ static struct lsf_c_thread root,child,*active;
 static unsigned admissions,settlements,parks,wakes,suspends,resumes,timers,stops;
 static unsigned next_error,global_cancel,next_calls,wake_attempts,refuse_wait,refuse_timer;
 static uint64_t admitted_nanos;
-static void (*on_suspend)(void),(*on_timer_next)(void);
+static void (*on_suspend)(void),(*on_timer_next)(void),(*on_wake)(void);
 static void require(int value) { if (!value) __builtin_trap(); }
 static int token_live(struct lsf_c_token value) { return value.generation && value.id; }
 static struct lsf_c_thread *current(void) { return active; }
@@ -52,7 +52,14 @@ static void settle(struct lsf_c_token *token) {
     require(token->generation==1 && token->id==11);++settlements;*token=(struct lsf_c_token){0};
 }
 static void park(struct lsf_c_token token) { require(token.id);++parks; }
-static void wake(struct lsf_c_token token) { ++wake_attempts;require(token.id && !global_cancel);++wakes; }
+static void wake(struct lsf_c_token token) {
+    ++wake_attempts;require(token.id && !global_cancel);
+    if (on_wake) {
+        void (*callback)(void)=on_wake;on_wake=NULL;
+        struct lsf_c_thread *saved=active;active=&child;callback();active=saved;
+    }
+    ++wakes;
+}
 static int runtime_error(unsigned value) { if (value==2) return EAGAIN;__builtin_trap(); }
 #include "synchronization.c"
 
@@ -94,7 +101,7 @@ static void reset(void) {
     active=&root;sample=(struct timespec){2000000000,500000000};
     admissions=settlements=parks=wakes=suspends=resumes=timers=stops=0;
     admitted_nanos=0;clock_calls=clock_failure=0;source_errno=37;
-    next_error=global_cancel=next_calls=wake_attempts=refuse_wait=refuse_timer=0;on_suspend=on_timer_next=NULL;
+    next_error=global_cancel=next_calls=wake_attempts=refuse_wait=refuse_timer=0;on_suspend=on_timer_next=on_wake=NULL;
     memset(&mutex,0,sizeof(mutex));memset(&cond,0,sizeof(cond));
     memset(&c11_mutex,0,sizeof(c11_mutex));memset(&c11_cond,0,sizeof(c11_cond));
     memset(&queued,0,sizeof(queued));
@@ -279,6 +286,46 @@ __attribute__((export_name("condition_notification_during_refusal"))) int condit
     CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
     CHECK(pthread_mutex_unlock(&mutex)==0);return 0;
 }
+/* The timer's elapsed/refused result has returned before wake enters a
+ * potentially suspending host call. Later notifications must not win. */
+__attribute__((export_name("mutex_timeout_before_wake"))) int mutex_timeout_before_wake(void) {
+    reset();active=&child;CHECK(pthread_mutex_lock(&mutex)==0);active=&root;
+    on_wake=child_unlock;const struct timespec future={2000000001,500000000};
+    CHECK(pthread_mutex_timedlock(&mutex,&future)==ETIMEDOUT);
+    struct sync_mutex value=sync_mutex_read(&mutex);
+    CHECK(!value.owner && !value.head && !value.tail && !value.waiters);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    CHECK(pthread_mutex_trylock(&mutex)==0 && pthread_mutex_unlock(&mutex)==0);return 0;
+}
+__attribute__((export_name("condition_timeout_before_wake"))) int condition_timeout_before_wake(void) {
+    reset();CHECK(pthread_mutex_lock(&mutex)==0);on_wake=child_signal;
+    const struct timespec future={2000000001,500000000};
+    CHECK(pthread_cond_timedwait(&cond,&mutex,&future)==ETIMEDOUT);
+    struct sync_cond value=sync_cond_read(&cond);
+    CHECK(!value.head && !value.tail && !value.mutex && !value.waiters);
+    CHECK(sync_mutex_read(&mutex).owner==(uint32_t)(uintptr_t)&root);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    CHECK(pthread_mutex_unlock(&mutex)==0);return 0;
+}
+__attribute__((export_name("mutex_refusal_before_wake"))) int mutex_refusal_before_wake(void) {
+    reset();active=&child;CHECK(pthread_mutex_lock(&mutex)==0);active=&root;
+    next_error=2;on_wake=child_unlock;const struct timespec future={2000000001,500000000};
+    CHECK(pthread_mutex_timedlock(&mutex,&future)==EAGAIN);
+    struct sync_mutex value=sync_mutex_read(&mutex);
+    CHECK(!value.owner && !value.head && !value.tail && !value.waiters);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    CHECK(pthread_mutex_trylock(&mutex)==0 && pthread_mutex_unlock(&mutex)==0);return 0;
+}
+__attribute__((export_name("condition_refusal_before_wake"))) int condition_refusal_before_wake(void) {
+    reset();CHECK(pthread_mutex_lock(&mutex)==0);next_error=2;on_wake=child_signal;
+    const struct timespec future={2000000001,500000000};
+    CHECK(pthread_cond_timedwait(&cond,&mutex,&future)==EAGAIN);
+    struct sync_cond value=sync_cond_read(&cond);
+    CHECK(!value.head && !value.tail && !value.mutex && !value.waiters);
+    CHECK(sync_mutex_read(&mutex).owner==(uint32_t)(uintptr_t)&root);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    CHECK(pthread_mutex_unlock(&mutex)==0);return 0;
+}
 __attribute__((export_name("terminal_cancel"))) int terminal_cancel(void) {
     reset();active=&child;require(pthread_mutex_lock(&mutex)==0);active=&root;
     next_error=3;const struct timespec future={2000000001,500000000};
@@ -313,7 +360,7 @@ __attribute__((export_name("terminal_state"))) int terminal_state(void) {
         CHECK((next_error==2 || next_error==3) && wake_attempts==1);
         struct sync_mutex value=sync_mutex_read(&mutex);
         if (stops==1) CHECK(value.owner==(uint32_t)(uintptr_t)&root && !value.head && !value.waiters);
-        else CHECK(!stops && value.owner==(uint32_t)(uintptr_t)&child && value.head && value.waiters==1);
+        else CHECK(!stops && value.owner==(uint32_t)(uintptr_t)&child && !value.head && !value.waiters);
     } else CHECK((next_error==3 || next_error==4) && !stops && !wake_attempts);
     return 0;
 }
