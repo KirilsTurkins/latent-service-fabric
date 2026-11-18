@@ -488,11 +488,15 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *object) { int saved=errno,error=sync
 int pthread_rwlock_tryrdlock(pthread_rwlock_t *object) { int saved=errno,error=sync_rw_try(object,0,0);errno=saved;return error; }
 int pthread_rwlock_trywrlock(pthread_rwlock_t *object) { int saved=errno,error=sync_rw_try(object,1,0);errno=saved;return error; }
 int pthread_rwlock_unlock(pthread_rwlock_t *object) { int saved=errno,error=sync_rw_unlock(object);errno=saved;return error; }
+/* An immediately available lock does not require clock or Wait authority.
+ * A contended timed wait is still unsupported; never advertise a timeout. */
 int pthread_rwlock_timedrdlock(pthread_rwlock_t *restrict object,const struct timespec *restrict deadline) {
-    (void)object;(void)deadline;return ENOTSUP;
+    (void)deadline;int saved=errno,error=sync_rw_try(object,0,1);errno=saved;
+    return error==EBUSY?ENOTSUP:error;
 }
 int pthread_rwlock_timedwrlock(pthread_rwlock_t *restrict object,const struct timespec *restrict deadline) {
-    (void)object;(void)deadline;return ENOTSUP;
+    (void)deadline;int saved=errno,error=sync_rw_try(object,1,1);errno=saved;
+    return error==EBUSY?ENOTSUP:error;
 }
 #endif
 
