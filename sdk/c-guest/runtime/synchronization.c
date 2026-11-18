@@ -849,12 +849,12 @@ static int sync_remaining(uint32_t clock,const struct timespec *deadline,uint64_
     if (seconds>(UINT64_MAX-fraction)/1000000000u) return EOVERFLOW;
     *nanos=seconds*1000000000u+fraction;return 0;
 }
-static int sync_await_timer(struct sync_wait *node) {
+static int sync_timer_outcome(struct sync_wait *node,int *parked) {
     require(current()==node->thread && !node->suspended);
-    if (node->notified) return 0;
+    *parked=0;if (node->notified) return 0;
     struct lsf_c_token timer=node->timer;require(token_live(timer));
     int refusal=0;
-    park(node->thread->task);
+    park(node->thread->task);*parked=1;
     if (!node->notified) {
         struct sync_timer_result result={.tag=255};
         sync_host_timer_next(timer.generation,timer.id,&result);
@@ -867,10 +867,13 @@ static int sync_await_timer(struct sync_wait *node) {
         else require((result.tag==0 && result.value.skipped==0) ||
             (result.tag==1 && result.value.error==3 && node->notified));
     }
-    wake(node->thread->task);
-    /* A real notification may have transferred the lock before a refusal
-     * returned. Honour that handoff; wake above still checks Task liveness. */
+    /* A notification already observed during the host call owns the handoff. */
     return node->notified?0:refusal?refusal:ETIMEDOUT;
+}
+static int sync_await_timer(struct sync_wait *node) {
+    int parked,error=sync_timer_outcome(node,&parked);
+    if (parked) wake(node->thread->task);
+    return error;
 }
 static void sync_remove(struct sync_wait **head,struct sync_wait **tail,uint32_t *count,
                         struct sync_wait *node) {
@@ -900,12 +903,17 @@ static int sync_mutex_timed(void *object,const struct timespec *deadline) {
     node.linked=1;node.next=NULL;
     if (value.tail) value.tail->next=&node;else value.head=&node;
     value.tail=&node;++value.waiters;sync_mutex_write(object,value);
-    error=sync_await_timer(&node);value=sync_mutex_read(object);
+    int parked;error=sync_timer_outcome(&node,&parked);value=sync_mutex_read(object);
     if (error) {
         require(error==ETIMEDOUT || error==EAGAIN);
+        /* The elapsed/refused waiter must leave the queue before wake can
+         * suspend and allow a later unlock to transfer this mutex. */
         sync_remove(&value.head,&value.tail,&value.waiters,&node);
         sync_mutex_write(object,value);
-    } else {
+    }
+    if (parked) wake(node.thread->task);
+    if (!error) {
+        value=sync_mutex_read(object);
         require(!node.linked && value.owner==sync_identity() && value.count==1);
         __atomic_signal_fence(__ATOMIC_ACQUIRE);
     }
@@ -943,13 +951,16 @@ static int sync_cond_timed(void *object,void *mutex,const struct timespec *deadl
         value.tail=&node;value.mutex=mutex;++value.waiters;sync_cond_write(object,value);
     }
     require(sync_unlock(mutex)==0);
-    error=nanos==0?ETIMEDOUT:sync_await_timer(&node);
+    int parked=0;error=nanos==0?ETIMEDOUT:sync_timer_outcome(&node,&parked);
     if (node.linked) {
         require(error==ETIMEDOUT || error==EAGAIN);value=sync_cond_read(object);
+        /* A signal after the result cannot consume this expired waiter while
+         * the wake call is suspended. */
         sync_remove(&value.head,&value.tail,&value.waiters,&node);
         if (!value.head) value.mutex=NULL;
         sync_cond_write(object,value);
     }
+    if (parked) wake(node.thread->task);
     /* Timer close precedes untimed reacquisition. Retain the SAME Wait so a
      * second admission refusal cannot return with the mutex still unlocked. */
     sync_timer_retire(&node);
