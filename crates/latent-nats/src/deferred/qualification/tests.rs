@@ -35,7 +35,7 @@ fn setup() -> (NatsConfig, JetStreamQualification, serde_json::Value) {
     let response = json!({
         "type": "io.nats.jetstream.api.v1.stream_info_response", "created": qualification.stream_created,
         "config": {"name":"ORDERS", "subjects":["orders.new"], "storage":"file", "retention":"limits", "discard":"new", "num_replicas":1,
-            "max_msgs":64, "max_bytes":1_048_576, "max_age":0, "max_msg_size":65_536, "duplicate_window":30_000_000_000_u64,
+            "max_msgs":64, "max_msgs_per_subject":-1, "max_bytes":1_048_576, "max_age":0, "max_msg_size":65_536, "duplicate_window":30_000_000_000_u64,
             "deny_delete":true, "deny_purge":true},
     });
     (config, qualification, response)
@@ -54,6 +54,15 @@ fn qualified_stream_rejects_recreation_eviction_retention_transform_and_window_c
         )
     };
     check(&response).unwrap();
+    let mut global_limit = response.clone();
+    global_limit["config"]["max_msgs_per_subject"] = json!(65);
+    check(&global_limit).unwrap();
+    let mut missing_limit = response.clone();
+    missing_limit["config"]
+        .as_object_mut()
+        .unwrap()
+        .remove("max_msgs_per_subject");
+    assert_eq!(check(&missing_limit), Err(EventError::Unavailable));
     let mut changed = response.clone();
     changed["created"] = json!("2026-10-01T00:00:01.123Z");
     assert_eq!(check(&changed), Err(EventError::PermissionDenied));
@@ -61,14 +70,20 @@ fn qualified_stream_rejects_recreation_eviction_retention_transform_and_window_c
         ("name", json!("OTHER")),
         ("subjects", json!(["other.subject"])),
         ("storage", json!("memory")),
+        ("persist_mode", json!("async")),
+        ("persist_mode", json!("unknown")),
         ("retention", json!("interest")),
         ("discard", json!("old")),
         ("num_replicas", json!(2)),
         ("max_msgs", json!(63)),
+        ("max_msgs_per_subject", json!(1)),
+        ("max_msgs_per_subject", json!(64)),
+        ("max_msgs_per_subject", json!(0)),
         ("max_bytes", json!(65536)),
         ("max_age", json!(1)),
         ("max_msg_size", json!(32768)),
         ("duplicate_window", json!(60_000_000_000_u64)),
+        ("no_ack", json!(true)),
         ("deny_delete", json!(false)),
         ("deny_purge", json!(false)),
         ("sealed", json!(true)),

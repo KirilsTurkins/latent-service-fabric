@@ -60,6 +60,36 @@ fn sum_quarantined(total: usize, next: usize) -> Result<usize, StreamError> {
         .checked_add(next)
         .ok_or_else(|| StreamError::new(StreamErrorCode::Exhausted))
 }
+
+// Only contention on the lifecycle mutex is eligible for a drain retry.
+// Provider snapshots and generation changes retain their original errors.
+enum StatusObservationFailure {
+    LifecycleBusy,
+    Other(StreamError),
+}
+
+impl StatusObservationFailure {
+    fn into_stream_error(self) -> StreamError {
+        match self {
+            Self::LifecycleBusy => StreamError::new(StreamErrorCode::Exhausted),
+            Self::Other(error) => error,
+        }
+    }
+}
+
+impl From<StreamError> for StatusObservationFailure {
+    fn from(error: StreamError) -> Self {
+        Self::Other(error)
+    }
+}
+
+fn lifecycle_snapshot_lock_error<T>(error: std::sync::TryLockError<T>) -> StatusObservationFailure {
+    match error {
+        std::sync::TryLockError::WouldBlock => StatusObservationFailure::LifecycleBusy,
+        std::sync::TryLockError::Poisoned(_) => StatusObservationFailure::Other(unavailable()),
+    }
+}
+
 struct State {
     current: StreamProvider,
     retired: [Option<StreamProvider>; MAX_RETIRED],
@@ -133,6 +163,12 @@ fn unavailable() -> StreamError {
 }
 
 impl StreamLifecycle {
+    #[cfg(all(test, unix))]
+    pub(crate) fn with_state_lock_for_test(&self, action: impl FnOnce()) {
+        let _state = self.state.lock().unwrap();
+        action();
+    }
+
     /// Capture the sole connection in the currently installed development
     /// provider. No locks or callbacks are retained across the returned value.
     #[cfg(feature = "development-read-witness")]
@@ -356,11 +392,19 @@ impl StreamLifecycle {
         Ok(reference)
     }
     pub fn status(&self) -> Result<StreamStatus, StreamError> {
+        self.observe_status()
+            .map_err(StatusObservationFailure::into_stream_error)
+    }
+
+    fn observe_status(&self) -> Result<StreamStatus, StatusObservationFailure> {
         // A temporary connection observed below may be its last strong
         // owner. Its destructor can wake arbitrary waiters, so inspect only
         // after releasing the lifecycle mutex.
         let (current, retired, stopped) = {
-            let state = self.state.try_lock().map_err(crate::snapshot_lock_error)?;
+            let state = self
+                .state
+                .try_lock()
+                .map_err(lifecycle_snapshot_lock_error)?;
             (state.current.clone(), state.retired.clone(), state.stopped)
         };
         let reference = current.reference();
@@ -391,7 +435,10 @@ impl StreamLifecycle {
             usage.delivered_read_bytes += u.delivered_read_bytes;
         }
         let current_generation_retired = current.inner.installed.is_retired();
-        let state = self.state.try_lock().map_err(crate::snapshot_lock_error)?;
+        let state = self
+            .state
+            .try_lock()
+            .map_err(lifecycle_snapshot_lock_error)?;
         let same_retired =
             state
                 .retired
@@ -406,7 +453,9 @@ impl StreamLifecycle {
             || state.stopped != stopped
             || !same_retired
         {
-            return Err(StreamError::new(StreamErrorCode::Exhausted));
+            return Err(StatusObservationFailure::Other(StreamError::new(
+                StreamErrorCode::Exhausted,
+            )));
         }
         let retired_generations = retired.iter().filter(|p| p.is_some()).count();
         drop(state);
@@ -445,9 +494,13 @@ impl StreamLifecycle {
     pub async fn drain(&self, deadline: Instant) -> Result<StreamStatus, StreamError> {
         self.retire();
         loop {
-            let status = self.status()?;
-            if status.usage.owners == 0 || Instant::now() >= deadline {
-                return Ok(status);
+            match self.observe_status() {
+                Ok(status) if status.usage.owners == 0 || Instant::now() >= deadline => {
+                    return Ok(status);
+                }
+                Ok(_) => {}
+                Err(StatusObservationFailure::LifecycleBusy) if Instant::now() < deadline => {}
+                Err(failure) => return Err(failure.into_stream_error()),
             }
             tokio::time::sleep_until(
                 (Instant::now() + std::time::Duration::from_millis(5))

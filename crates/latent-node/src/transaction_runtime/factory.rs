@@ -36,7 +36,7 @@ pub struct TransactionAdmissionOwners {
     pub(super) lanes: super::entity_queue::EntityQueue,
 }
 impl TransactionAdmissionOwners {
-    /// Current number of prepaid duplicate callers waiting for a claim.
+    /// Current number of authorized duplicate callers waiting for a claim.
     pub fn entity_duplicate_waiter_count(&self) -> Result<usize, PlatformError> {
         self.lanes.duplicate_waiter_count().map_err(|_| {
             error(
@@ -107,7 +107,9 @@ impl TransactionAdmissionOwners {
             latent_state::entity_lanes::EntityLaneLimits {
                 global_queued: slots,
                 tenant_queued: tenant_slots,
-                entity_queued: (slots / 4).max(1),
+                // Leave room for the queued original and one authorized
+                // duplicate when the shared global capacity permits it.
+                entity_queued: (slots / 4).max(slots.min(2)),
                 global_keys: slots,
                 tenant_keys: tenant_slots,
                 global_active: slots,

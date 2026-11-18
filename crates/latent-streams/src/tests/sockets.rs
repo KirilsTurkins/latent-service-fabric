@@ -617,6 +617,336 @@ async fn abort_both_is_available_after_the_send_half_was_closed() {
 }
 
 #[tokio::test]
+async fn failed_send_shutdown_audit_fences_reuse_and_keeps_the_original_owner() {
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    assert_eq!(stream.write(b"X".to_vec(), None).unwrap().await.unwrap(), 1);
+    let mut sent = [0];
+    peer.read_exact(&mut sent).await.unwrap();
+    let held_read = stream.read(1, None).unwrap();
+    let owner = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    owner.test_fail_audit_once();
+    drop(owner);
+    let failure = stream
+        .shutdown(StreamShutdown::Send)
+        .unwrap()
+        .await
+        .err()
+        .unwrap();
+    let state = stream.inspect().state;
+    let readiness = stream.ready(StreamInterest::Readable, Some(1));
+    let accepted_again = readiness.is_ok();
+    drop(readiness);
+    let pending = fixture.provider.usage().unwrap().pending_operations;
+    let held_connection = fixture.pools.snapshot().unwrap().connections;
+    let paid = control.budget.host_memory_bytes() > baseline;
+    drop(held_read);
+    let connections_after_drop = fixture.pools.snapshot().unwrap().connections;
+    let mut eof = [0];
+    let peer_eof = tokio::time::timeout(Duration::from_secs(1), peer.read(&mut eof))
+        .await
+        .unwrap();
+    drop((peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+
+    assert_eq!(sent, *b"X");
+    assert_eq!(failure.code, StreamErrorCode::Uncertain);
+    assert!(failure.may_have_applied);
+    assert_eq!(state, StreamState::Stopping);
+    assert!(!accepted_again);
+    assert_eq!((pending, held_connection), (1, 1));
+    assert!(paid);
+    assert_eq!(connections_after_drop, 0);
+    assert_eq!(peer_eof.unwrap(), 0);
+}
+
+#[tokio::test]
+async fn cancelled_send_shutdown_audit_fences_reuse_and_keeps_the_original_owner() {
+    use crate::connection::TestWritePoint;
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let held_read = stream.read(1, None).unwrap();
+    let owner = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (entered, release) = owner.test_write_gate(TestWritePoint::AuditPending);
+    drop(owner);
+    let mut shutdown = stream.shutdown(StreamShutdown::Send).unwrap();
+    tokio::select! {
+        result = &mut shutdown => panic!("shutdown completed before the audit gate: {result:?}"),
+        reached = tokio::time::timeout(Duration::from_secs(1), entered) => reached.unwrap().unwrap(),
+    }
+    let mut eof = [0];
+    let peer_eof = tokio::time::timeout(Duration::from_secs(1), peer.read(&mut eof))
+        .await
+        .unwrap();
+    drop(shutdown);
+    drop(release);
+    let state = stream.inspect().state;
+    let readiness = stream.ready(StreamInterest::Readable, Some(1));
+    let accepted_again = readiness.is_ok();
+    drop(readiness);
+    let pending = fixture.provider.usage().unwrap().pending_operations;
+    let held_connection = fixture.pools.snapshot().unwrap().connections;
+    let paid = control.budget.host_memory_bytes() > baseline;
+    drop(held_read);
+    let connections_after_drop = fixture.pools.snapshot().unwrap().connections;
+    drop((peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+
+    assert_eq!(peer_eof.unwrap(), 0);
+    assert_eq!(state, StreamState::Stopping);
+    assert!(!accepted_again);
+    assert_eq!((pending, held_connection), (1, 1));
+    assert!(paid);
+    assert_eq!(connections_after_drop, 0);
+}
+
+#[tokio::test]
+async fn send_shutdown_rechecks_original_authority_after_audit() {
+    use crate::connection::TestWritePoint;
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let held_read = stream.read(1, None).unwrap();
+    let owner = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (entered, release) = owner.test_write_gate(TestWritePoint::AuditPending);
+    drop(owner);
+    let mut shutdown = stream.shutdown(StreamShutdown::Send).unwrap();
+    tokio::select! {
+        result = &mut shutdown => panic!("shutdown completed before audit gate: {result:?}"),
+        reached = tokio::time::timeout(Duration::from_secs(1), entered) => reached.unwrap().unwrap(),
+    }
+    let mut eof = [0];
+    let peer_eof = tokio::time::timeout(Duration::from_secs(1), peer.read(&mut eof))
+        .await
+        .unwrap();
+    fixture
+        .policies
+        .mutate(
+            MutationRequest {
+                tenant: "a",
+                actor: "operator",
+                id: "p",
+                kind: RecordKind::Policy,
+                operation_id: "revoke-send-shutdown-after-fin",
+                expected_revision: 2,
+                document: None,
+            },
+            Instant::now() + Duration::from_secs(1),
+            |_| Ok(()),
+        )
+        .unwrap();
+    release.send(()).unwrap();
+    let result = shutdown.await;
+    let state = stream.inspect().state;
+    let pending = fixture.provider.usage().unwrap().pending_operations;
+    let held_connection = fixture.pools.snapshot().unwrap().connections;
+    let paid = control.budget.host_memory_bytes() > baseline;
+    drop(held_read);
+    let connections_after_drop = fixture.pools.snapshot().unwrap().connections;
+    drop((peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+
+    assert_eq!(peer_eof.unwrap(), 0);
+    let failure = result
+        .err()
+        .expect("revocation must reject the late completion");
+    assert_eq!(failure.code, StreamErrorCode::Denied);
+    assert!(!failure.may_have_applied); // This connection attempted no application write.
+    assert_eq!(state, StreamState::Stopping);
+    assert_eq!((pending, held_connection), (1, 1));
+    assert!(paid);
+    assert_eq!(connections_after_drop, 0);
+}
+
+#[tokio::test]
+async fn send_shutdown_future_uses_the_original_budget_before_dispatch() {
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let before = control.budget.host_memory_bytes();
+    let future = stream.shutdown(StreamShutdown::Send).unwrap();
+    let charged = control.budget.host_memory_bytes();
+    drop(future);
+    let after_drop = control.budget.host_memory_bytes();
+
+    let remaining = control.budget.granted().memory_bytes - after_drop;
+    let padding = control.budget.reserve_host_memory(remaining).unwrap();
+    let failure = stream.shutdown(StreamShutdown::Send).err().unwrap();
+    let pending = fixture.provider.usage().unwrap().pending_operations;
+    let state = stream.inspect().state;
+    drop(padding);
+    assert_eq!(
+        stream.write(b"LIVE".to_vec(), None).unwrap().await.unwrap(),
+        4
+    );
+    let mut bytes = [0; 4];
+    peer.read_exact(&mut bytes).await.unwrap();
+    stream.close().await.unwrap();
+    drop(peer);
+    assert_eq!(control.budget.host_memory_bytes(), baseline);
+    drop(session);
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+
+    assert!(charged > before);
+    assert_eq!(after_drop, before);
+    assert_eq!(failure.code, StreamErrorCode::Exhausted);
+    assert_eq!(pending, 0);
+    assert_eq!(state, StreamState::Open);
+    assert_eq!(&bytes, b"LIVE");
+}
+
+#[tokio::test(flavor = "current_thread")]
+async fn send_shutdown_abort_wake_panic_keeps_the_original_owner_fenced() {
+    use std::{
+        future::{poll_fn, Future},
+        panic::{catch_unwind, AssertUnwindSafe},
+        pin::Pin,
+        sync::{
+            atomic::{AtomicBool, Ordering},
+            Arc,
+        },
+        task::{Context, Poll, Wake, Waker},
+    };
+
+    struct PanicWake {
+        armed: AtomicBool,
+        woke: AtomicBool,
+    }
+    impl Wake for PanicWake {
+        fn wake(self: Arc<Self>) {
+            self.wake_by_ref();
+        }
+        fn wake_by_ref(self: &Arc<Self>) {
+            if self.armed.swap(false, Ordering::AcqRel) {
+                self.woke.store(true, Ordering::Release);
+                panic!("send shutdown abort wake failed");
+            }
+        }
+    }
+
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let witness = Arc::new(PanicWake {
+        armed: AtomicBool::new(false),
+        woke: AtomicBool::new(false),
+    });
+    let wake = Waker::from(witness.clone());
+    let mut read = Box::pin(stream.read(1, None).unwrap());
+    assert!(matches!(
+        read.as_mut().poll(&mut Context::from_waker(&wake)),
+        Poll::Pending
+    ));
+    let owner = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    owner.test_fail_audit_once();
+    drop(owner);
+    witness.armed.store(true, Ordering::Release);
+    let mut shutdown = stream.shutdown(StreamShutdown::Send).unwrap();
+    let outcome =
+        poll_fn(
+            |cx| match catch_unwind(AssertUnwindSafe(|| Pin::new(&mut shutdown).poll(cx))) {
+                Ok(Poll::Ready(result)) => Poll::Ready(Ok(result)),
+                Ok(Poll::Pending) => Poll::Pending,
+                Err(panic) => Poll::Ready(Err(panic)),
+            },
+        )
+        .await;
+    let first_panic = outcome
+        .err()
+        .and_then(|value| value.downcast_ref::<&str>().copied());
+    let state = stream.inspect().state;
+    let retained = fixture.provider.usage().unwrap();
+    let paid = control.budget.host_memory_bytes() > baseline;
+    drop((shutdown, read));
+    let physical_after_drop = fixture.pools.snapshot().unwrap().connections;
+    let mut byte = [0];
+    let eof = tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+        .await
+        .unwrap();
+    drop((peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+
+    assert!(witness.woke.load(Ordering::Acquire));
+    assert_eq!(first_panic, Some("send shutdown abort wake failed"));
+    assert_eq!(state, StreamState::Stopping);
+    assert_eq!((retained.pending_operations, retained.connections), (1, 1));
+    assert!(paid);
+    assert_eq!(physical_after_drop, 0);
+    assert_eq!(eof.unwrap(), 0);
+}
+
+#[tokio::test]
 async fn abort_both_unpolled_reserves_control_and_blocks_new_send_without_dispatch() {
     let (fixture, listener) = fixture().await;
     let (session, control) = fixture.session(5000);

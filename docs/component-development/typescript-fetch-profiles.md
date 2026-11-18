@@ -25,7 +25,7 @@ Neither profile gives Fetch a separate connect/read-timeout option.
 | Surface | Finite contract |
 | --- | --- |
 | Request construction | Absolute HTTP(S) URL; GET, HEAD, POST, PUT, PATCH, DELETE and OPTIONS. Embedded URL credentials and unsupported options refuse. GET/HEAD reject a non-null body. |
-| Headers and credentials | Validated ordinary header APIs; reserved authentication/framing fields refuse. Operator credentials stay in the selected provider's protected scope. No ambient browser origin, cookie jar, proxy or Node configuration is inherited. |
+| Headers and credentials | Validated ordinary header APIs; iteration and `forEach` observe mutations to the bounded, sorted header list. Reserved authentication/framing fields refuse. Operator credentials stay in the selected provider's protected scope. No ambient browser origin, cookie jar, proxy or Node configuration is inherited. |
 | Request bodies | Copied UTF-8 strings, ArrayBuffer/views and supported URLSearchParams. Non-null bodies are one-shot. Unsupported streaming uploads, Blob and FormData refuse. |
 | Response bodies | Complete bounded buffering before Fetch resolves; `text`, `json`, `arrayBuffer`, independent buffered clones and the selected buffered reader/cancel interface. A buffered reader supplies no network backpressure or header-first resolution. |
 | HTTP status | HTTP 4xx/5xx resolve to responses. Parsing failure remains a parsing error; transport failure retains its typed cause and possible-dispatch uncertainty. |
@@ -37,8 +37,10 @@ Neither profile gives Fetch a separate connect/read-timeout option.
 The source profile caps a buffered body at 1 MiB, transfer chunks at 64 KiB,
 headers at 64 entries/32 KiB, URLs at 2048 characters and outstanding operations
 at sixteen per activation. Provider policy, guest memory and the original
-deadline impose additional limits. These API constants are not measurements of
-native or kernel memory. The explicit published-client execution profile uses
+deadline impose additional limits. Each header-iterator step re-sorts at most 64
+entries and allocates temporary arrays within the original guest memory limit.
+These API constants are not measurements of native or kernel memory. The
+explicit published-client execution profile uses
 64 task slots, 64 queued work slots and 256 native-owner slots; this is no claim
 that every compatible package requires that profile or that these are minima.
 The phase-client programme additionally declares the uniform initial
@@ -68,6 +70,74 @@ shared default, body/owner/memory limit, deadline, grant or helper budget.
    [independent HTTP installations](https://github.com/KirilsTurkins/latent-service-fabric/pull/1225).
 5. An unsupported runtime module or member reports its technical profile gap.
    Adding a compatible package requires no new LSF release or catalogue entry.
+
+## Select the phase contract for a new project
+
+For a phase-only project, create the project with the import runtime before
+capturing its npm dependencies. From the matching LSF checkout, choose a fresh
+outside-checkout path for `APP`:
+
+```bash
+APP=/absolute/path/to/my-fetch
+python3 tools/typescript_capsule.py new "$APP" --template greeting \
+  --runtime-profile spidermonkey-activation-promises-clocks-imports-v1
+```
+
+Add `import latent:http/phase-timing@0.4.0;` inside the `service` world in
+`$APP/wit/world.wit`. The phase interface uses the original streaming HTTP
+resource identities. Install its WIT and the checked, type-only legacy
+dependency from the captured SDK:
+
+```bash
+python3 - "$APP" <<'PY'
+from pathlib import Path
+import sys
+from tools.http_phase_wit import nominal_type_owner
+
+app = Path(sys.argv[1]).resolve(strict=True)
+sdk = app / 'vendor/lsf/wit/platform'
+dependencies = (
+    ('http-phases', (sdk / 'http-phases/package.wit').read_bytes()),
+    ('http-v3', nominal_type_owner((sdk / 'http-v3/package.wit').read_bytes())),
+)
+for name, contents in dependencies:
+    target = app / 'wit/deps' / name / 'package.wit'
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with target.open('xb') as output:
+        output.write(contents)
+PY
+wasm-tools component wit "$APP/wit"
+```
+
+The helper refuses a legacy WIT source that differs from this checkout and
+removes only its eight callable operations; it retains the original types and
+resources. The exclusive writes refuse existing dependency files. If the
+application also needs callable legacy HTTP, review that separate import and
+grant instead of replacing its dependency with this phase-only projection.
+WIT parsing checks the declarations, not a provider or signed execution.
+
+The greeting template starts with `limits.outboundRequests` set to zero. Set a
+finite nonzero request budget in `$APP/capsule-project.json` for the intended
+calls, within the node and policy ceilings; this budget is not a network grant.
+Choose CPU and owner limits that the deployment admits. In particular, the
+historical Ky 404 programme required the separately declared fuel allowance
+described above, rather than the greeting template's default.
+
+Add Ky through the normal capture workflow, using `--condition browser` on
+`resolve` if selecting the browser condition used by the published-client
+programme. The application can call `ky.get(url)` normally; no application
+transport callback is required. Build with matching source-bound import-engine
+and splicer inputs as described in the [import runtime guide](typescript-import-runtime-candidate.md).
+The operator must separately enable `providers.httpStreaming.phaseTiming`,
+install and bind `latent:http/phase-timing@0.4.0` with profile
+`bounded-streaming-http-phase-timing-v1`, and grant the publication only its
+required methods, origins and paths. The [phase authority guide](../testing/http-phase-operational-authority.md)
+describes the nominal dependency and the distinct operational grant.
+
+The historical signed phase programme includes unchanged Ky's 404 handling;
+that receipt is tied to its recorded source and engine. This recipe does not
+establish a passing signed result for a newer engine, enable production or
+change the legacy profile's unsupported `statusText` behavior.
 
 ## Optional public extensions
 

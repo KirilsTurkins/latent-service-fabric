@@ -369,10 +369,8 @@ public final class ScheduledNullFactoryActivationControl {
         AtomicReference<Thread> worker = new AtomicReference<>();
         var failure = new IllegalStateException("managed-factory-after-shutdown");
         var pool = Executors.newFixedThreadPool(1, target -> {
-            var current = selected.get();
-            removed.set(current.shutdownNow());
-            require(removed.get().size() == 1, "managed-withdrawal-count");
-            held(0, 0, 1);
+            var current = selected.get(); removed.set(current.shutdownNow());
+            require(removed.get().isEmpty(), "uncommitted-first-exposed"); held(1, 1, 1);
             try {
                 closeRoot();
                 require((boolean)invoke("pending") && !(boolean)invoke("retireIdlePools")
@@ -381,33 +379,20 @@ public final class ScheduledNullFactoryActivationControl {
             } catch (Exception error) { throw new AssertionError(error); }
             if (mode.equals("throw")) throw failure;
             if (mode.equals("null")) return null;
-            // A host JVM does not install the TeaVM Thread hooks itself.
-            Thread thread = new Thread(() -> {
-                try { Activation.starting(Thread.currentThread()); target.run(); }
-                finally { Activation.finished(Thread.currentThread()); }
-            });
-            worker.set(thread); return thread;
+            Thread thread = new Thread(target); worker.set(thread); return thread;
         });
         selected.set(pool);
-        if (!mode.equals("throw")) pool.submit(() -> { throw new AssertionError("withdrawn-managed-ran"); });
-        else {
-            try { pool.submit(() -> { throw new AssertionError("withdrawn-managed-ran"); });
-                throw new AssertionError("managed-factory-failure-missing"); }
-            catch (RuntimeException error) {
-                require(error == failure, "wrong-managed-factory-failure");
-            }
+        try { pool.submit(() -> { throw new AssertionError("rejected-managed-ran"); });
+            throw new AssertionError("managed-factory-rejection-missing"); }
+        catch (RuntimeException error) {
+            require(mode.equals("throw") ? error == failure : error instanceof RejectedExecutionException,
+                "wrong-managed-factory-failure");
         }
         require(pool.awaitTermination(5, TimeUnit.SECONDS), "managed-pool-not-retired");
-        if (worker.get() != null) {
-            worker.get().join(5000);
-            require(!worker.get().isAlive() && owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 0,
-                "managed-worker-owner-not-retired");
-        }
-        held(0, 0, 0);
-        var task = (Future<?>)removed.get().get(0);
-        require(!task.isDone() && task.cancel(false), "managed-withdrawn-future-not-cancelled");
-        invoke("retireIdlePools");
-        finishRoot(root);
+        if (worker.get() != null)
+            require(worker.get().getState() == Thread.State.NEW
+                && owners(LatentRuntimeActivationOwnerKind.ManagedIdleWorker) == 0, "rejected-worker-started");
+        held(0, 0, 0); invoke("retireIdlePools"); finishRoot(root);
     }
     private static void managedNullRoot(String mode) throws Exception {
         Object root = enter();

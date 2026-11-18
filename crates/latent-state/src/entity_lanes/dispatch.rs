@@ -30,6 +30,11 @@ impl<T> EntityLanes<T> {
                 .state
                 .lock()
                 .map_err(|_| EntityLaneError::Poisoned)?;
+            // Waiters behind an active or tenant-limited key must expire even
+            // while unrelated ready keys keep the dispatcher busy.
+            if let Some(expired) = state.take_expired(now) {
+                return Ok(Some(EntityDispatch::Rejected(expired)));
+            }
             if state.snapshot(None).active >= state.limits.global_active {
                 return Ok(state.take_expired(now).map(EntityDispatch::Rejected));
             }

@@ -111,14 +111,19 @@ struct StreamConfig<'a> {
     #[serde(borrow)]
     subjects: Vec<&'a str>,
     storage: &'a str,
+    #[serde(default, borrow)]
+    persist_mode: Option<&'a str>,
     retention: &'a str,
     discard: &'a str,
     num_replicas: u32,
     max_msgs: i64,
+    max_msgs_per_subject: i64,
     max_bytes: i64,
     max_age: u64,
     max_msg_size: i32,
     duplicate_window: u64,
+    #[serde(default)]
+    no_ack: bool,
     #[serde(default)]
     deny_delete: bool,
     #[serde(default)]
@@ -162,6 +167,7 @@ pub(super) fn validate_response(
         &mapping.stream,
         &expected,
         mapping.duplicate_window_millis,
+        true,
     )
 }
 
@@ -171,6 +177,7 @@ pub(crate) fn validate_stream_response(
     name: &str,
     expected: &[&str],
     duplicate_window_millis: u64,
+    require_publish_ack: bool,
 ) -> Result<()> {
     protocol::guard(bytes)?;
     let info: StreamInfo<'_> =
@@ -190,14 +197,20 @@ pub(crate) fn validate_stream_response(
             .iter()
             .any(|subject| !stream.subjects.contains(subject))
         || stream.storage != "file"
+        || stream.persist_mode.is_some_and(|mode| mode != "default")
         || stream.retention != "limits"
         || stream.discard != "new"
         || stream.num_replicas != 1
         || u64::try_from(stream.max_msgs).ok() != Some(qualification.maximum_messages)
+        // A tighter subject limit can evict accepted history before the
+        // global discard-new limit is reached. The broker must report it.
+        || (stream.max_msgs_per_subject != -1
+            && stream.max_msgs_per_subject <= stream.max_msgs)
         || u64::try_from(stream.max_bytes).ok() != Some(qualification.maximum_bytes)
         || stream.max_age != qualification.maximum_age_millis * 1_000_000
         || u32::try_from(stream.max_msg_size).ok() != Some(qualification.maximum_message_bytes)
         || stream.duplicate_window != duplicate_window_millis * 1_000_000
+        || (require_publish_ack && stream.no_ack)
         || !stream.deny_delete
         || !stream.deny_purge
         || stream.sealed
