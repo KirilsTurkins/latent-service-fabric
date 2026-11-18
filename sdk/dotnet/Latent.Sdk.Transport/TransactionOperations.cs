@@ -96,6 +96,11 @@ public sealed partial class BoundedClient : Tx.ITransactionClient
             if (wireRequest.CalculateSize() > state.RequestLimit) throw new GraphLimitException();
             // Snapshot before the first await. Caller mutations cannot refresh preconditions or keys.
             object original = ProfileCodec.FromWire(wireRequest, request.GetType());
+            // Caller-owned collections may enumerate differently after the first
+            // validation. Revalidate the bounded, owned wire snapshot before dispatch.
+            TransactionRules.Collections(original, new GraphBudget(Math.Min(config.MaxGraphBytes, 8 * 1024 * 1024),
+                Math.Min(config.MaxGraphNodes, 4096), deadline.Token));
+            TransactionRules.Request(original);
             state.TransactionIdentity = TransactionRules.IdentitySnapshot(original);
             state.ValidateTransactionResponse = wire =>
             {

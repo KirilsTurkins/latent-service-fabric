@@ -18,6 +18,18 @@ internal static partial class Program
         }
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     }
+    private sealed class ChangingVersions(Tx.ExpectedVersion item) : IReadOnlyList<Tx.ExpectedVersion>
+    {
+        private int enumerations;
+        public int Count => 1;
+        public Tx.ExpectedVersion this[int index] => item;
+        public IEnumerator<Tx.ExpectedVersion> GetEnumerator()
+        {
+            int count = ++enumerations <= 3 ? 1 : 129;
+            for (int i = 0; i < count; i++) yield return item with { Key = new byte[] { (byte)i } };
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
     private static async Task<Tx.TransactionFailure> TransactionFailure(Task operation, Profile.FailureCategory category, bool dispatched)
     {
         var failure = await TxFailure(operation, category); Check(failure.Transport.Dispatched == dispatched, "effect dispatch evidence changed"); return failure;
@@ -54,6 +66,15 @@ internal static partial class Program
         }
         catch (GraphLimitException) { Check(true, "wire encoding bounds a changing collection independently"); }
         return Task.CompletedTask;
+    }
+
+    private static async Task TransactionChangingCollectionCannotDispatch()
+    {
+        await using Peer peer = await Peer.Start(context => Peer.Error(context, "13"));
+        await using BoundedClient client = await BoundedClient.ConnectAsync(Options(peer.Endpoint));
+        var versions = new ChangingVersions(new Tx.ExpectedVersion(new byte[] { 1 }, null, new byte[] { 2 }));
+        var rejected = await TxFailure(client.InvokeCommandAsync(TxInvoke() with { ExpectedVersions = versions }, Defaults).AsTask(), Profile.FailureCategory.Limit);
+        Check(!rejected.Transport.Dispatched && peer.Requests.IsEmpty, "changing collection bypassed the owned snapshot validation");
     }
 
     private static Tx.PlanEffectMutationRequest TxEffectMutation() => new(new(Tx.CurrentTransactionProfile.Create(), TxSelector, new string('a', 64), TxPublication),
