@@ -20,6 +20,8 @@ class PromiseRecords final {
   struct Record {
     NativeOwner owner;
     JS::Heap<JSObject*> object;
+    // The hook holds this exact record until created/allocationFailed returns.
+    bool initializing = true;
     bool pending = false;
     bool physical = false;
     bool captured = false;
@@ -74,6 +76,7 @@ public:
   static void allocationFailed(void* pointer) {
     auto* record = static_cast<Record*>(pointer);
     if (!record) return;
+    record->initializing = false;
     record->pending = false;
     record->physical = false;
   }
@@ -82,6 +85,7 @@ public:
     auto* record = static_cast<Record*>(pointer);
     record->object = object;
     record->physical = record->pending = true;
+    record->initializing = false;
   }
   // A combinator element function has physical native ownership, but is not
   // itself an unresolved Promise or an independently scheduled reaction.
@@ -92,6 +96,7 @@ public:
     record->physical = true;
     record->pending = false;
     record->captured = true;
+    record->initializing = false;
   }
   void settled(JSContext*, JSObject* object) {
     for (auto* record = records_.get(); record; record = record->next.get()) {
@@ -135,7 +140,7 @@ public:
     auto* link = &records_;
     while (*link) {
       auto* record = link->get();
-      if (record->physical || record->pending) {
+      if (record->initializing || record->physical || record->pending) {
         link = &record->next;
         continue;
       }
@@ -170,6 +175,11 @@ public:
         JS_ReportErrorASCII(cx, "activation-runtime-snapshot-native-owner-denied");
       return false;
     }
+    if (hasInitializingAllocations()) {
+      if (!JS_IsExceptionPending(cx))
+        JS_ReportErrorASCII(cx, "activation-runtime-snapshot-promise-allocation-pending");
+      return false;
+    }
     if (!checkpoint(cx)) return false;
     if (hasUnownedCapturedFunctions()) {
       if (!JS_IsExceptionPending(cx))
@@ -180,7 +190,13 @@ public:
   }
   bool hasPendingPromises() const {
     for (auto* record = records_.get(); record; record = record->next.get()) {
-      if (record->pending) return true;
+      if (record->initializing || record->pending) return true;
+    }
+    return false;
+  }
+  bool hasInitializingAllocations() const {
+    for (auto* record = records_.get(); record; record = record->next.get()) {
+      if (record->initializing) return true;
     }
     return false;
   }

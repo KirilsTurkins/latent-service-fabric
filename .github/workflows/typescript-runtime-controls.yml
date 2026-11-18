@@ -19,9 +19,11 @@ on:
       - 'sdk/typescript-guest/activation/**'
       - 'tools/tests/test_typescript_event_ownership.py'
       - 'tools/tests/test_typescript_record_retirement.py'
+      - 'tools/tests/test_typescript_resolver_ownership.py'
       - 'tools/tests/test_typescript_abort_any_ownership.py'
       - 'tools/tests/fixtures/typescript_*.cpp'
       - 'tools/tests/fixtures/typescript_record_retirement/**'
+      - 'tools/tests/fixtures/typescript_resolver_ownership/**'
       - 'tools/tests/fixtures/typescript_runtime_profile/**'
       - 'tools/tests/fixtures/typescript_clock_profile/**'
   workflow_dispatch:
@@ -78,6 +80,8 @@ jobs:
             tools.tests.test_typescript_fetch_failure_evidence \
             tools.tests.test_typescript_export_task_meta \
             tools.tests.test_aot_profile_boundary -v
+      - name: Check Promise resolving-function ownership
+        run: python3 -B -m unittest tools.tests.test_typescript_resolver_ownership -v
       - name: Check bounded Fetch facade against the Node reference
         if: matrix.compiler == 'gcc'
         run: python3 -B -m unittest tools.tests.test_typescript_fetch tools.tests.test_typescript_fetch_phases -v
