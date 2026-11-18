@@ -352,6 +352,7 @@ impl NativeTransactionAdmission {
 
     #[expect(
         clippy::too_many_arguments,
+        clippy::too_many_lines,
         reason = "Keep the original budget, control, claim observation, and selected source together"
     )]
     async fn acquire_entity_lane(
@@ -393,6 +394,11 @@ impl NativeTransactionAdmission {
                 self.shared_owner.clone(),
             )
         });
+        let wait_deadline = self
+            .owners
+            .lanes
+            .waiter_deadline(deadline)
+            .map_err(entity_queue_error)?;
         let wait = async {
             let mut duplicate_authorized = false;
             let mut first_owner = None;
@@ -426,13 +432,43 @@ impl NativeTransactionAdmission {
                 if let Err(super::super::entity_queue::QueueError::DuplicateNeedsAuthorization {
                     source,
                     owner,
+                    wait_until,
                 }) = &result
                 {
                     let source = *source;
                     let owner = *owner;
-                    self.authorize_entity_duplicate(selection, envelope, budget)
-                        .await?;
-                    first_owner = Some((owner, source));
+                    let wait_until = *wait_until;
+                    // Authorization is itself part of waiting for the first
+                    // owner. Prepay and count it before starting the bounded
+                    // read, and keep that charge until the waiter is dropped.
+                    let waiter_permit = retained
+                        .native()
+                        .reserve_buffer(NativeBufferClass::Request, 16 * 1024)
+                        .map_err(|_| {
+                            error(
+                                latent_core::PlatformErrorCode::ResourceExhausted,
+                                "entity-queue-capacity",
+                            )
+                        })?;
+                    let waiter = self
+                        .owners
+                        .lanes
+                        .reserve_authorizing_duplicate(
+                            &scope,
+                            retained_bytes,
+                            envelope.activation_id.0.len(),
+                        )
+                        .map_err(entity_queue_error)?;
+                    let authorized = self.authorize_entity_duplicate(selection, envelope, budget);
+                    tokio::select! {
+                        result = authorized => result?,
+                        () = self.owners.lanes.wait_for_waiter_expiry(wait_until) => {
+                            return Err(entity_queue_error(super::super::entity_queue::QueueError::Expired));
+                        }
+                    }
+                    drop(waiter);
+                    drop(waiter_permit);
+                    first_owner = Some((owner, source, wait_until));
                     duplicate_authorized = true;
                     continue;
                 }
@@ -462,9 +498,20 @@ impl NativeTransactionAdmission {
                     (&mut wait).await.map(Some)
                 }
             };
+            let bounded = async {
+                tokio::select! {
+                    biased;
+                    () = self.owners.lanes.wait_for_waiter_expiry(wait_deadline) => {
+                        Err(entity_queue_error(super::super::entity_queue::QueueError::Expired))
+                    }
+                    result = next => result,
+                }
+            };
+            // Preserve the activation control's existing cancellation winner
+            // before considering the shorter entity wait deadline.
             let next = match control {
-                Some(control) => control.wait(next).await?,
-                None => next.await?,
+                Some(control) => control.wait(bounded).await?,
+                None => bounded.await?,
             };
             if let Some(lane) = next {
                 return Ok(Some(lane));
@@ -472,10 +519,23 @@ impl NativeTransactionAdmission {
             // The read job keeps its own physical owner after waiter loss. A
             // cancellation or a duplicate result drops the queued reservation.
             let read = self.replay_existing_entity(selection, envelope, budget);
-            match control {
-                Some(control) => control.wait(read).await?,
-                None => read.await?,
+            let bounded = async {
+                tokio::select! {
+                    biased;
+                    () = self.owners.lanes.wait_for_waiter_expiry(wait_deadline) => {
+                        Err(entity_queue_error(super::super::entity_queue::QueueError::Expired))
+                    }
+                    result = read => result,
+                }
             };
+            match control {
+                Some(control) => {
+                    control.wait(bounded).await?;
+                }
+                None => {
+                    bounded.await?;
+                }
+            }
         }
     }
 
