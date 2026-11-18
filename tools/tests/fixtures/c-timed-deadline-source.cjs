@@ -34,6 +34,7 @@ const cases = ['mutex_fast', 'mutex_expired', 'mutex_invalid', 'condition_expire
   'mutex_notification_during_refusal', 'condition_notification_during_refusal',
     'mutex_timeout_before_wake', 'condition_timeout_before_wake',
     'mutex_refusal_before_wake', 'condition_refusal_before_wake',
+    'mutex_timeout_with_later_waiter', 'condition_timeout_with_later_waiter',
   'poll_clock_zero', 'poll_clock_elapsed', 'poll_clock_refusals', 'poll_clock_invalid',
     'poll_clock_max', 'poll_clock_aliases'];
 let failed = 0;
