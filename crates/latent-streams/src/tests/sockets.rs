@@ -31,6 +31,8 @@ fn request(fixture: &Fixture) -> StreamConnectRequest {
 struct ConnectBusyFence {
     busy: std::sync::atomic::AtomicBool,
     observations: std::sync::atomic::AtomicUsize,
+    allow_once: std::sync::atomic::AtomicBool,
+    successes: std::sync::atomic::AtomicUsize,
 }
 
 impl latent_capabilities::broker::CapabilityRouteFence for ConnectBusyFence {
@@ -39,7 +41,7 @@ impl latent_capabilities::broker::CapabilityRouteFence for ConnectBusyFence {
         action: &mut dyn FnMut() -> Result<(), latent_core::PlatformError>,
     ) -> Result<(), latent_core::PlatformError> {
         use std::sync::atomic::Ordering;
-        if self.busy.load(Ordering::Acquire) {
+        if self.busy.load(Ordering::Acquire) && !self.allow_once.swap(false, Ordering::AcqRel) {
             self.observations.fetch_add(1, Ordering::AcqRel);
             return Err(latent_core::PlatformError {
                 code: latent_core::PlatformErrorCode::ResourceExhausted,
@@ -48,7 +50,11 @@ impl latent_capabilities::broker::CapabilityRouteFence for ConnectBusyFence {
                 details: Vec::new(),
             });
         }
-        action()
+        let result = action();
+        if result.is_ok() {
+            self.successes.fetch_add(1, Ordering::AcqRel);
+        }
+        result
     }
 }
 
@@ -83,6 +89,351 @@ fn install_connect_busy_fence(fixture: &mut Fixture, fence: std::sync::Arc<Conne
         .unwrap();
 }
 
+async fn reach_handoff_audit<F: std::future::Future + Unpin>(
+    future: &mut F,
+    reached: tokio::sync::oneshot::Receiver<()>,
+) {
+    tokio::select! {
+        _ = future => panic!("operation completed before the audit gate"),
+        reached = tokio::time::timeout(Duration::from_secs(1), reached) => reached.unwrap().unwrap(),
+    }
+}
+
+async fn hold_handoff_busy<F: std::future::Future + Unpin>(
+    future: &mut F,
+    release: tokio::sync::oneshot::Sender<()>,
+    fence: &ConnectBusyFence,
+) {
+    use std::sync::atomic::Ordering;
+    fence.busy.store(true, Ordering::Release);
+    release.send(()).unwrap();
+    tokio::time::timeout(Duration::from_secs(1), async {
+        loop {
+            tokio::select! {
+                _ = &mut *future => panic!("bookkeeping contention prematurely settled handoff"),
+                () = tokio::task::yield_now() => {}
+            }
+            if fence.observations.load(Ordering::Acquire) != 0 {
+                break;
+            }
+        }
+    })
+    .await
+    .unwrap();
+}
+
+async fn handoff_busy_fixture() -> (Fixture, TcpListener, std::sync::Arc<ConnectBusyFence>) {
+    let (mut fixture, listener) = fixture().await;
+    let fence = std::sync::Arc::new(ConnectBusyFence {
+        busy: std::sync::atomic::AtomicBool::new(false),
+        observations: std::sync::atomic::AtomicUsize::new(0),
+        allow_once: std::sync::atomic::AtomicBool::new(false),
+        successes: std::sync::atomic::AtomicUsize::new(0),
+    });
+    install_connect_busy_fence(&mut fixture, fence.clone());
+    (fixture, listener, fence)
+}
+
+#[tokio::test]
+async fn write_handoff_retries_bookkeeping_busy_without_replay() {
+    use crate::connection::TestWritePoint;
+    use std::sync::atomic::Ordering;
+
+    let (mut fixture, listener) = fixture().await;
+    let fence = std::sync::Arc::new(ConnectBusyFence {
+        busy: std::sync::atomic::AtomicBool::new(false),
+        observations: std::sync::atomic::AtomicUsize::new(0),
+        allow_once: std::sync::atomic::AtomicBool::new(false),
+        successes: std::sync::atomic::AtomicUsize::new(0),
+    });
+    install_connect_busy_fence(&mut fixture, fence.clone());
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let held_read = stream.read(1, None).unwrap();
+    let owner = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (entered, release) = owner.test_write_gate(TestWritePoint::AuditPending);
+    let mut write = stream.write(b"ONCE".to_vec(), None).unwrap();
+    reach_handoff_audit(&mut write, entered).await;
+    let mut bytes = [0; 4];
+    peer.read_exact(&mut bytes).await.unwrap();
+    assert_eq!(&bytes, b"ONCE");
+    let before_checks = fence.successes.load(Ordering::Acquire);
+    fence.allow_once.store(true, Ordering::Release);
+    hold_handoff_busy(&mut write, release, &fence).await;
+    // The original connect check passed; the operation check is busy.
+    assert_eq!(fence.successes.load(Ordering::Acquire), before_checks + 1);
+    assert_eq!(stream.inspect().accepted_write_bytes, 4);
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 2);
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    fence.busy.store(false, Ordering::Release);
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), write)
+            .await
+            .unwrap()
+            .unwrap(),
+        4
+    );
+    // Retry must check both original authorities, not just the busy one.
+    assert_eq!(fence.successes.load(Ordering::Acquire), before_checks + 3);
+    assert_eq!(stream.inspect().state, StreamState::Open);
+    drop(held_read);
+    stream.close().await.unwrap();
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .unwrap()
+            .unwrap(),
+        0
+    );
+    drop((owner, peer, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn dropped_eof_read_during_handoff_busy_fences_original_owner() {
+    use crate::connection::TestWritePoint;
+    use std::sync::atomic::Ordering;
+
+    let (mut fixture, listener) = fixture().await;
+    let fence = std::sync::Arc::new(ConnectBusyFence {
+        busy: std::sync::atomic::AtomicBool::new(false),
+        observations: std::sync::atomic::AtomicUsize::new(0),
+        allow_once: std::sync::atomic::AtomicBool::new(false),
+        successes: std::sync::atomic::AtomicUsize::new(0),
+    });
+    install_connect_busy_fence(&mut fixture, fence.clone());
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let held_write = stream.write(b"held".to_vec(), None).unwrap();
+    let owner = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (entered, release) = owner.test_write_gate(TestWritePoint::AuditPending);
+    peer.shutdown().await.unwrap();
+    let mut read = stream.read(1, None).unwrap();
+    reach_handoff_audit(&mut read, entered).await;
+    assert_eq!(stream.inspect().state, StreamState::ReadEof);
+    hold_handoff_busy(&mut read, release, &fence).await;
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 2);
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    drop(read);
+    fence.busy.store(false, Ordering::Release);
+    assert_eq!(stream.inspect().state, StreamState::Stopping);
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 1);
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    assert_eq!(
+        stream.read(1, None).err().unwrap().code,
+        StreamErrorCode::Cancelled
+    );
+    drop(held_write);
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .unwrap()
+            .unwrap(),
+        0
+    );
+    drop((owner, peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn dropped_write_during_handoff_busy_keeps_accepted_prefix() {
+    use crate::connection::TestWritePoint;
+    use std::sync::atomic::Ordering;
+
+    let (fixture, listener, fence) = handoff_busy_fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let held_read = stream.read(1, None).unwrap();
+    let owner = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (entered, release) = owner.test_write_gate(TestWritePoint::AuditPending);
+    let mut write = stream.write(b"ONCE".to_vec(), None).unwrap();
+    reach_handoff_audit(&mut write, entered).await;
+    let mut bytes = [0; 4];
+    peer.read_exact(&mut bytes).await.unwrap();
+    assert_eq!(&bytes, b"ONCE");
+    hold_handoff_busy(&mut write, release, &fence).await;
+    drop(write);
+    fence.busy.store(false, Ordering::Release);
+    assert_eq!(stream.inspect().state, StreamState::Stopping);
+    assert_eq!(stream.inspect().accepted_write_bytes, 4);
+    assert!(stream.inspect().application_write_attempted);
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 1);
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    let failure = stream.write(b"retry".to_vec(), None).err().unwrap();
+    assert_eq!(failure.code, StreamErrorCode::Cancelled);
+    assert!(failure.may_have_applied);
+    drop(held_read);
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .unwrap()
+            .unwrap(),
+        0
+    );
+    drop((owner, peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn write_handoff_busy_deadline_reports_accepted_prefix() {
+    use crate::connection::TestWritePoint;
+    use std::sync::atomic::Ordering;
+
+    let (fixture, listener, fence) = handoff_busy_fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let held_read = stream.read(1, None).unwrap();
+    let owner = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (entered, release) = owner.test_write_gate(TestWritePoint::AuditPending);
+    let mut write = stream.write(b"ONCE".to_vec(), Some(1000)).unwrap();
+    reach_handoff_audit(&mut write, entered).await;
+    let mut bytes = [0; 4];
+    peer.read_exact(&mut bytes).await.unwrap();
+    assert_eq!(&bytes, b"ONCE");
+    hold_handoff_busy(&mut write, release, &fence).await;
+    let failure = tokio::time::timeout(Duration::from_secs(2), write)
+        .await
+        .unwrap()
+        .unwrap_err();
+    assert_eq!(failure.code, StreamErrorCode::Timeout);
+    assert_eq!(failure.accepted_prefix_bytes, 4);
+    assert!(failure.may_have_applied);
+    fence.busy.store(false, Ordering::Release);
+    assert_eq!(stream.inspect().state, StreamState::Stopping);
+    assert_eq!(stream.inspect().accepted_write_bytes, 4);
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 1);
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    drop(held_read);
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .unwrap()
+            .unwrap(),
+        0
+    );
+    drop((owner, peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn dropped_send_shutdown_during_handoff_busy_fences_original_owner() {
+    use crate::connection::TestWritePoint;
+    use std::sync::atomic::Ordering;
+
+    let (fixture, listener, fence) = handoff_busy_fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let held_read = stream.read(1, None).unwrap();
+    let owner = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (entered, release) = owner.test_write_gate(TestWritePoint::AuditPending);
+    let mut shutdown = stream.shutdown(StreamShutdown::Send).unwrap();
+    reach_handoff_audit(&mut shutdown, entered).await;
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .unwrap()
+            .unwrap(),
+        0
+    );
+    hold_handoff_busy(&mut shutdown, release, &fence).await;
+    drop(shutdown);
+    fence.busy.store(false, Ordering::Release);
+    assert_eq!(stream.inspect().state, StreamState::Stopping);
+    assert!(!stream.inspect().application_write_attempted);
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 1);
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    drop(held_read);
+    assert_eq!(fixture.provider.usage().unwrap().connections, 0);
+    drop((owner, peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
 #[derive(Clone, Copy)]
 enum BusyCompletion {
     Resume,
@@ -101,6 +452,8 @@ async fn connect_final_busy_case(completion: BusyCompletion) {
     let fence = std::sync::Arc::new(ConnectBusyFence {
         busy: std::sync::atomic::AtomicBool::new(false),
         observations: std::sync::atomic::AtomicUsize::new(0),
+        allow_once: std::sync::atomic::AtomicBool::new(false),
+        successes: std::sync::atomic::AtomicUsize::new(0),
     });
     install_connect_busy_fence(&mut fixture, fence.clone());
     let (session, control) = fixture.session(5000);
