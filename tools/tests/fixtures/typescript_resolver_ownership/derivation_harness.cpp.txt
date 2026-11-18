@@ -1,0 +1,115 @@
+#include <cstdio>
+#include <cstring>
+#include <memory>
+
+#define MOZ_ALWAYS_INLINE inline
+#define MOZ_ASSERT(condition) ((void)0)
+
+struct JSFunction;
+struct JSContext;
+struct JSObject {
+  template<class T> T& as() { return static_cast<T&>(*this); }
+};
+struct Value { JSObject* object = nullptr; };
+Value UndefinedValue() { return {}; }
+Value ObjectValue(JSObject& value) { return {&value}; }
+using Native = bool (*)(JSContext*, unsigned, Value*);
+struct PropertyName {};
+template<class T> struct Handle {
+  T value;
+  Handle(T input) : value(input) {}
+};
+using HandleObject = JSObject*;
+struct MutableHandleObject {
+  JSObject** value;
+  void set(JSObject* object) { *value = object; }
+  explicit operator bool() const { return *value != nullptr; }
+  JSObject* operator->() const { return *value; }
+  JSObject* get() const { return *value; }
+};
+namespace gc { enum class AllocKind { FUNCTION_EXTENDED }; }
+constexpr int GenericObject = 0;
+constexpr int ResolveFunctionSlot_Promise = 0;
+constexpr int ResolveFunctionSlot_RejectFunction = 1;
+constexpr int RejectFunctionSlot_Promise = 0;
+constexpr int RejectFunctionSlot_ResolveFunction = 1;
+struct JSFunction : JSObject {
+  Native native = nullptr;
+  Value slots[2];
+  Native maybeNative() const { return native; }
+  void initExtendedSlot(int index, Value value) { slots[index] = value; }
+  void setExtendedSlot(int index, Value value) { slots[index] = value; }
+};
+struct JSContext {
+  struct Names { PropertyName* empty_ = nullptr; } names_value;
+  std::unique_ptr<JSFunction> objects[2];
+  int allocations = 0, attempts = 0, fail_at = 0;
+  bool exception = false;
+  Names& names() { return names_value; }
+};
+bool ResolvePromiseFunction(JSContext*, unsigned, Value*) { return true; }
+bool RejectPromiseFunction(JSContext*, unsigned, Value*) { return true; }
+JSFunction* GetRejectFunctionFromResolve(JSFunction* value) {
+  return &value->slots[ResolveFunctionSlot_RejectFunction].object->as<JSFunction>();
+}
+JSFunction* GetResolveFunctionFromReject(JSFunction* value) {
+  return &value->slots[RejectFunctionSlot_ResolveFunction].object->as<JSFunction>();
+}
+JSFunction* NewNativeFunction(JSContext* cx, Native native, int, Handle<PropertyName*>,
+                              gc::AllocKind, int) {
+  if (++cx->attempts == cx->fail_at) { cx->exception = true; return nullptr; }
+  if (cx->allocations == 2) { cx->exception = true; return nullptr; }
+  auto& object = cx->objects[cx->allocations++];
+  object = std::make_unique<JSFunction>();
+  object->native = native;
+  return object.get();
+}
+struct Hooks {
+  bool (*beforeCapturedAllocate)(JSContext*, void**);
+  void (*allocationFailed)(void*);
+  void (*capturedCreated)(JSContext*, JSObject*, void*);
+};
+static JSContext* activationPromiseContext = nullptr;
+static Hooks* activationPromiseHooks = nullptr;
+static int limit = 0, admitted = 0, created = 0, failed = 0;
+static int tokens[2];
+bool before(JSContext* cx, void** output) {
+  if (admitted >= limit) { cx->exception = true; return false; }
+  *output = &tokens[admitted++]; return true;
+}
+void allocation_failed(void*) { ++failed; }
+void captured_created(JSContext*, JSObject*, void*) { ++created; }
+
+/* LSF_SETTLE_TARGET */
+/* LSF_CREATE_TARGET */
+
+int main(int argc, char** argv) {
+  if (argc != 2) return 2;
+  JSContext cx;
+  Hooks hooks{before, allocation_failed, captured_created};
+  activationPromiseContext = &cx;
+  activationPromiseHooks = std::strcmp(argv[1], "unselected") ? &hooks : nullptr;
+  limit = !std::strcmp(argv[1], "capacity") ? 1 : 2;
+  if (!std::strcmp(argv[1], "first-oom")) cx.fail_at = 1;
+  if (!std::strcmp(argv[1], "second-oom")) cx.fail_at = 2;
+  JSObject promise;
+  JSObject* resolve = nullptr;
+  JSObject* reject = nullptr;
+  const bool result = CreateResolvingFunctions(&cx, &promise, {&resolve}, {&reject});
+  bool slots_cleared = false;
+  if (result && resolve && reject) {
+    SetAlreadyResolvedResolutionFunction(&resolve->as<JSFunction>());
+    auto& a = resolve->as<JSFunction>(); auto& b = reject->as<JSFunction>();
+    slots_cleared = !a.slots[0].object && !a.slots[1].object &&
+                    !b.slots[0].object && !b.slots[1].object;
+  }
+  std::printf("{\"case\":\"%s\",\"result\":%s,\"exception\":%s,"
+              "\"allocations\":%d,\"attempts\":%d,\"admitted\":%d,"
+              "\"created\":%d,\"failed\":%d,\"resolvePresent\":%s,"
+              "\"rejectPresent\":%s,\"slotsCleared\":%s,\"engineQualified\":false}\n",
+              argv[1], result ? "true" : "false", cx.exception ? "true" : "false",
+              cx.allocations, cx.attempts, admitted, created, failed,
+              resolve ? "true" : "false", reject ? "true" : "false",
+              slots_cleared ? "true" : "false");
+  return 0;
+}
