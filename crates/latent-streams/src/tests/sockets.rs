@@ -28,6 +28,415 @@ fn request(fixture: &Fixture) -> StreamConnectRequest {
     }
 }
 
+struct ConnectBusyFence {
+    busy: std::sync::atomic::AtomicBool,
+    observations: std::sync::atomic::AtomicUsize,
+}
+
+impl latent_capabilities::broker::CapabilityRouteFence for ConnectBusyFence {
+    fn with_current(
+        &self,
+        action: &mut dyn FnMut() -> Result<(), latent_core::PlatformError>,
+    ) -> Result<(), latent_core::PlatformError> {
+        use std::sync::atomic::Ordering;
+        if self.busy.load(Ordering::Acquire) {
+            self.observations.fetch_add(1, Ordering::AcqRel);
+            return Err(latent_core::PlatformError {
+                code: latent_core::PlatformErrorCode::ResourceExhausted,
+                message: "capability-busy".into(),
+                retryable: false,
+                details: Vec::new(),
+            });
+        }
+        action()
+    }
+}
+
+fn install_connect_busy_fence(fixture: &mut Fixture, fence: std::sync::Arc<ConnectBusyFence>) {
+    use latent_capabilities::broker::CapabilityBindingSpec;
+
+    let reference = fixture.provider.reference();
+    let definition = latent_artifacts::package::artifact_blob_digest(b"stream-fixture-binding-v1");
+    let operations = super::fixture::OPERATIONS.map(str::to_owned);
+    let policies = ["p".to_owned()];
+    let deployment = latent_core::DeploymentId("stream-deployment".into());
+    fixture.plan = fixture
+        .broker
+        .compile_invocation_plan(
+            &fixture.revision,
+            Some(&deployment),
+            &[CapabilityBindingSpec {
+                definition_digest: Some(&definition),
+                provider: &reference,
+                imported_operations: &operations,
+                policy_ids: &policies,
+                provider_binding_id: "binding",
+                deployment_restriction_json: br#"{"operations":[]}"#,
+            }],
+            &fixture.publication,
+            &[],
+            &[],
+            &[],
+            Some(fence),
+            Instant::now() + Duration::from_secs(10),
+        )
+        .unwrap();
+}
+
+#[derive(Clone, Copy)]
+enum BusyCompletion {
+    Resume,
+    Abandon,
+    Expire,
+}
+
+#[expect(
+    clippy::too_many_lines,
+    reason = "One original connected owner through busy currentness and retirement."
+)]
+async fn connect_final_busy_case(completion: BusyCompletion) {
+    use std::sync::atomic::Ordering;
+
+    let (mut fixture, listener) = fixture().await;
+    let fence = std::sync::Arc::new(ConnectBusyFence {
+        busy: std::sync::atomic::AtomicBool::new(false),
+        observations: std::sync::atomic::AtomicUsize::new(0),
+    });
+    install_connect_busy_fence(&mut fixture, fence.clone());
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let (entered, reached) = tokio::sync::oneshot::channel();
+    let (release, resume) = tokio::sync::oneshot::channel();
+    assert!(fixture
+        .provider
+        .inner
+        .connect_audit_gate
+        .lock()
+        .unwrap()
+        .replace((entered, resume))
+        .is_none());
+    let mut requested = request(&fixture);
+    if matches!(completion, BusyCompletion::Expire) {
+        requested.timeout_millis = Some(1000);
+    }
+    let mut connecting = fixture.provider.start(&session, requested).unwrap();
+    tokio::select! {
+        _ = &mut connecting => panic!("connect completed before the audit gate"),
+        reached = tokio::time::timeout(Duration::from_secs(1), reached) => reached.unwrap().unwrap(),
+    }
+    let (mut peer, _) = listener.accept().await.unwrap();
+    fence.busy.store(true, Ordering::Release);
+    release.send(()).unwrap();
+    tokio::time::timeout(Duration::from_secs(1), async {
+        loop {
+            tokio::select! {
+                _ = &mut connecting => panic!("bookkeeping contention prematurely settled connect"),
+                () = tokio::task::yield_now() => {}
+            }
+            if fence.observations.load(Ordering::Acquire) != 0 {
+                break;
+            }
+        }
+    })
+    .await
+    .unwrap();
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    let retained = if matches!(completion, BusyCompletion::Abandon) {
+        Some(
+            fixture
+                .provider
+                .inner
+                .connections
+                .snapshot(0)
+                .unwrap()
+                .expect("original registered connection"),
+        )
+    } else {
+        None
+    };
+    match completion {
+        BusyCompletion::Abandon => {
+            drop(connecting);
+            fence.busy.store(false, Ordering::Release);
+        }
+        BusyCompletion::Resume => {
+            fence.busy.store(false, Ordering::Release);
+            let stream = tokio::time::timeout(Duration::from_secs(1), connecting)
+                .await
+                .unwrap()
+                .unwrap();
+            assert_eq!(stream.write(b"X".to_vec(), None).unwrap().await.unwrap(), 1);
+            let mut byte = [0];
+            peer.read_exact(&mut byte).await.unwrap();
+            assert_eq!(&byte, b"X");
+            stream.close().await.unwrap();
+        }
+        BusyCompletion::Expire => {
+            let failure = tokio::time::timeout(Duration::from_secs(2), connecting)
+                .await
+                .unwrap()
+                .err()
+                .expect("busy connect exceeded its original deadline");
+            assert_eq!(failure.code, StreamErrorCode::Timeout);
+            assert!(!failure.may_have_applied);
+            fence.busy.store(false, Ordering::Release);
+        }
+    }
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .unwrap()
+            .unwrap(),
+        0
+    );
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
+    if let Some(retained) = retained {
+        let held_bytes = control.budget.host_memory_bytes();
+        assert!(held_bytes > baseline);
+        drop(retained);
+        assert!(control.budget.host_memory_bytes() < held_bytes);
+    }
+    assert!(
+        tokio::time::timeout(Duration::from_millis(20), listener.accept())
+            .await
+            .is_err()
+    );
+    drop((peer, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn connect_final_bookkeeping_contention_reuses_original_connection() {
+    connect_final_busy_case(BusyCompletion::Resume).await;
+}
+
+#[tokio::test]
+async fn connect_final_bookkeeping_contention_respects_original_deadline() {
+    connect_final_busy_case(BusyCompletion::Expire).await;
+}
+
+#[tokio::test]
+async fn dropped_connect_while_final_bookkeeping_busy_retires_original_connection() {
+    connect_final_busy_case(BusyCompletion::Abandon).await;
+}
+
+#[derive(Clone, Copy)]
+enum ConnectAuditInterruption {
+    Revoked,
+    Cancelled,
+    Expired,
+    Abandoned,
+}
+
+async fn connect_audit_interrupted(interruption: ConnectAuditInterruption) {
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let (entered, reached) = tokio::sync::oneshot::channel();
+    let (release, resume) = tokio::sync::oneshot::channel();
+    assert!(fixture
+        .provider
+        .inner
+        .connect_audit_gate
+        .lock()
+        .unwrap()
+        .replace((entered, resume))
+        .is_none());
+    let mut requested = request(&fixture);
+    if matches!(interruption, ConnectAuditInterruption::Expired) {
+        requested.timeout_millis = Some(1000);
+    }
+    let mut connecting = fixture.provider.start(&session, requested).unwrap();
+    tokio::select! {
+        _ = &mut connecting => panic!("connect completed before the audit gate"),
+        reached = tokio::time::timeout(Duration::from_secs(1), reached) => reached.unwrap().unwrap(),
+    }
+    let (mut peer, _) = tokio::time::timeout(Duration::from_secs(1), listener.accept())
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    let expected = match interruption {
+        ConnectAuditInterruption::Revoked => {
+            fixture
+                .policies
+                .mutate(
+                    MutationRequest {
+                        tenant: "a",
+                        actor: "operator",
+                        id: "p",
+                        kind: RecordKind::Policy,
+                        operation_id: "revoke-connect-during-audit",
+                        expected_revision: 2,
+                        document: None,
+                    },
+                    Instant::now() + Duration::from_secs(1),
+                    |_| Ok(()),
+                )
+                .unwrap();
+            Some(StreamErrorCode::Denied)
+        }
+        ConnectAuditInterruption::Cancelled => {
+            control
+                .probe
+                .0
+                .store(true, std::sync::atomic::Ordering::Release);
+            Some(StreamErrorCode::Cancelled)
+        }
+        ConnectAuditInterruption::Expired => {
+            tokio::time::sleep(Duration::from_millis(1100)).await;
+            Some(StreamErrorCode::Timeout)
+        }
+        ConnectAuditInterruption::Abandoned => None,
+    };
+    if let Some(expected) = expected {
+        release.send(()).unwrap();
+        let failure = tokio::time::timeout(Duration::from_secs(1), connecting)
+            .await
+            .unwrap()
+            .err()
+            .expect("stale connect returned a handle");
+        assert_eq!(failure.code, expected);
+        assert_eq!(failure.accepted_prefix_bytes, 0);
+        assert!(!failure.may_have_applied);
+    } else {
+        drop(connecting);
+        drop(release);
+    }
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .unwrap()
+            .unwrap(),
+        0
+    );
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
+    drop((peer, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn connect_revocation_during_audit_refuses_handoff() {
+    connect_audit_interrupted(ConnectAuditInterruption::Revoked).await;
+}
+
+#[tokio::test]
+async fn connect_cancellation_during_audit_refuses_handoff() {
+    connect_audit_interrupted(ConnectAuditInterruption::Cancelled).await;
+}
+
+#[tokio::test]
+async fn connect_deadline_during_audit_refuses_handoff() {
+    connect_audit_interrupted(ConnectAuditInterruption::Expired).await;
+}
+
+#[tokio::test]
+async fn connect_dropped_during_audit_retires_original_socket() {
+    connect_audit_interrupted(ConnectAuditInterruption::Abandoned).await;
+}
+
+async fn connect_registration_interrupted(interruption: ConnectAuditInterruption) {
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let (reached, resume) = fixture.provider.inner.connections.pause_next_registration();
+    let mut requested = request(&fixture);
+    if matches!(interruption, ConnectAuditInterruption::Expired) {
+        requested.timeout_millis = Some(1000);
+    }
+    let connecting = tokio::spawn(fixture.provider.start(&session, requested).unwrap());
+    let (mut peer, _) = tokio::time::timeout(Duration::from_secs(1), listener.accept())
+        .await
+        .unwrap()
+        .unwrap();
+    tokio::task::spawn_blocking(move || reached.recv_timeout(Duration::from_secs(3)))
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    let expected = match interruption {
+        ConnectAuditInterruption::Revoked => {
+            fixture
+                .policies
+                .mutate(
+                    MutationRequest {
+                        tenant: "a",
+                        actor: "operator",
+                        id: "p",
+                        kind: RecordKind::Policy,
+                        operation_id: "revoke-connect-before-registration",
+                        expected_revision: 2,
+                        document: None,
+                    },
+                    Instant::now() + Duration::from_secs(1),
+                    |_| Ok(()),
+                )
+                .unwrap();
+            StreamErrorCode::Denied
+        }
+        ConnectAuditInterruption::Cancelled => {
+            control
+                .probe
+                .0
+                .store(true, std::sync::atomic::Ordering::Release);
+            StreamErrorCode::Cancelled
+        }
+        ConnectAuditInterruption::Expired => {
+            // The existing registration gate blocks a runtime worker. Wait on
+            // this test thread so the deadline does not depend on that driver.
+            std::thread::sleep(Duration::from_millis(1100));
+            StreamErrorCode::Timeout
+        }
+        ConnectAuditInterruption::Abandoned => unreachable!(),
+    };
+    resume.send(()).unwrap();
+    let failure = tokio::time::timeout(Duration::from_secs(1), connecting)
+        .await
+        .unwrap()
+        .unwrap()
+        .err()
+        .expect("stale connect returned a handle");
+    assert_eq!(failure.code, expected);
+    assert!(!failure.may_have_applied);
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .unwrap()
+            .unwrap(),
+        0
+    );
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
+    drop((peer, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn connect_policy_revocation_before_registration_refuses_handoff() {
+    connect_registration_interrupted(ConnectAuditInterruption::Revoked).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn connect_cancellation_before_registration_refuses_handoff() {
+    connect_registration_interrupted(ConnectAuditInterruption::Cancelled).await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn connect_deadline_before_registration_refuses_handoff() {
+    connect_registration_interrupted(ConnectAuditInterruption::Expired).await;
+}
+
 #[tokio::test]
 async fn actual_tcp_partial_reads_eof_and_send_half_close() {
     let (fixture, listener) = fixture().await;

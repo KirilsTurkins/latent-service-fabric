@@ -707,6 +707,14 @@ pub(crate) async fn connect(
     } else {
         AuditProviderOutcome::Unknown
     })?;
+    #[cfg(all(test, unix))]
+    {
+        let gate = inner.connect_audit_gate.lock().unwrap().take();
+        if let Some((entered, release)) = gate {
+            let _ = entered.send(());
+            let _ = release.await;
+        }
+    }
     if call.io_mut().finish_audit().await == CapabilityAuditDurability::OutcomeUnknown {
         return Err(error(StreamErrorCode::Uncertain));
     }
@@ -780,7 +788,15 @@ pub(crate) async fn connect(
         opening_custody,
     );
     inner.connections.register(&opening_owner, &connection)?;
-    Ok(Box::new(Handle { connection }))
+    let handle = Box::new(Handle { connection });
+    // Audit and publication can outlive the original connect authority. A
+    // rejected handoff stops this same paid owner, including when another
+    // observer has already retained the registered connection.
+    if let Err(failure) = handle.connection.connect_handoff_current().await {
+        handle.connection.abort(failure.code);
+        return Err(handle.connection.terminal_error(failure));
+    }
+    Ok(handle)
 }
 
 #[expect(
@@ -1594,6 +1610,27 @@ impl ConnectionOwner {
         wait_current(self.call.io(), deadline, future)
             .await
             .map_err(Into::into)
+    }
+    async fn connect_handoff_current(&self) -> Result<(), StreamError> {
+        let io = self.call.io();
+        let deadline = self.deadline.min(io.deadline());
+        // Retry only the broker's exact transient bookkeeping contention;
+        // recheck the same call under its original deadline and stop signal.
+        recheck_io(io, deadline).await.map_err(StreamError::from)?;
+        let state = self
+            .state
+            .lock()
+            .map_err(|_| error(StreamErrorCode::Exhausted))?;
+        if state.closing {
+            return Err(
+                error(state.failure.unwrap_or(StreamErrorCode::InvalidState))
+                    .uncertain(state.attempted_write),
+            );
+        }
+        if Instant::now() >= deadline {
+            return Err(error(StreamErrorCode::Timeout).uncertain(state.attempted_write));
+        }
+        Ok(())
     }
     // A read, write, observation or send shutdown must retain the exact
     // original connect and operation authorities through audit and deadlines.
