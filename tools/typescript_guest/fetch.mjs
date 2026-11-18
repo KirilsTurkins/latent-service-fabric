@@ -275,8 +275,14 @@ export function installFetch(http, snapshotActive, target = globalThis, profile 
   class Response extends Body {
     constructor(body = null, init = {}) {
       super();
-      const status = init.status === undefined ? 200 : Number(init.status);
-      if (!Number.isInteger(status) || status < 200 || status > 599) throw new RangeError('invalid-response-status');
+      if (init == null) init = {};
+      if (typeof init !== 'object' && typeof init !== 'function') throw new TypeError('invalid-response-init');
+      const statusValue = init.status;
+      // ResponseInit.status is a Web IDL unsigned short. Convert the single
+      // captured value before applying Fetch's 200..599 status bound.
+      const numeric = statusValue === undefined ? 200 : +statusValue;
+      const status = Number.isFinite(numeric) ? ((Math.trunc(numeric) % 65536) + 65536) % 65536 : 0;
+      if (status < 200 || status > 599) throw new RangeError('invalid-response-status');
       const {content, type} = extractBody(body);
       if ([204, 205, 304].includes(status) && content !== null) throw new TypeError('body-for-null-body-status');
       this.status = status;
@@ -411,8 +417,12 @@ export function installFetch(http, snapshotActive, target = globalThis, profile 
         for (const part of parts) { contentBytes.set(part, offset); offset += part.byteLength; }
         const headers = new Headers(received.headers.map(({name, value}) => [name, value]));
         if (received.bodyMediaType && !headers.has('content-type')) headers.set('content-type', received.bodyMediaType);
-        const result = new Response(request.method === 'HEAD' || [204, 205, 304].includes(received.status) ? null : contentBytes,
-          {status: received.status, headers});
+        // WIT supplies a u16. Never apply public ResponseInit coercion to a
+        // malformed provider result or fabricate a different wire status.
+        const status = received.status;
+        if (!Number.isInteger(status) || status < 200 || status > 599) throw new RangeError('invalid-response-status');
+        const result = new Response(request.method === 'HEAD' || [204, 205, 304].includes(status) ? null : contentBytes,
+          {status, headers});
         readonly(result, {url: request.url, type: 'basic'});
         if (phaseTiming && received.reasonPhrase !== undefined) {
           readonly(result, {statusText: wireReason(received.reasonPhrase)});

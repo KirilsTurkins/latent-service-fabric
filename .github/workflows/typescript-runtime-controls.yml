@@ -9,6 +9,8 @@ on:
       - 'tools/qualify_typescript_fetch_runtime.py'
       - 'tools/tests/test_typescript_fetch_failure.py'
       - 'tools/tests/test_typescript_fetch_failure_evidence.py'
+      - 'tools/tests/test_typescript_fetch.py'
+      - 'tools/tests/test_typescript_fetch_phases.py'
       - 'tools/tests/test_typescript_export_task_meta.py'
       - 'tools/tests/fixtures/typescript_fetch_export_binding.js'
       - 'tools/tests/test_aot_profile_boundary.py'
@@ -76,3 +78,6 @@ jobs:
             tools.tests.test_typescript_fetch_failure_evidence \
             tools.tests.test_typescript_export_task_meta \
             tools.tests.test_aot_profile_boundary -v
+      - name: Check bounded Fetch facade against the Node reference
+        if: matrix.compiler == 'gcc'
+        run: python3 -B -m unittest tools.tests.test_typescript_fetch tools.tests.test_typescript_fetch_phases -v

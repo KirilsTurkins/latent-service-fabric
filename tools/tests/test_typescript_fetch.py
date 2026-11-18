@@ -12,6 +12,59 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class TypeScriptFetchTests(unittest.TestCase):
+    def test_response_status_dictionary_is_read_once_and_uses_unsigned_short_conversion(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+for (const profile of ['lsf-fetch-buffered-v1', 'lsf-fetch-phase-buffered-v2']) {
+  installFetch({}, () => false, target, profile);
+  for (const Response of [globalThis.Response, target.Response]) {
+    assert.equal(new Response(null, null).status, 200);
+    for (const [input, expected] of [[200.9, 200], [599.9, 599], [65736, 200], [131272, 200]]) {
+      assert.equal(new Response(null, {status: input}).status, expected);
+    }
+    for (const value of [0, 199.9, 600, NaN, Infinity, -Infinity, null, Symbol('invalid')]) {
+      assert.throws(() => new Response(null, {status: value}));
+    }
+    for (const value of [0, false, 'invalid', Symbol('invalid')]) {
+      assert.throws(() => new Response(null, value), TypeError);
+    }
+    let reads = 0, conversions = 0;
+    const init = {get status() {
+      reads++;
+      return {valueOf() {conversions++; return 201.9;}};
+    }};
+    assert.equal(new Response(null, init).status, 201);
+    assert.equal(reads, 1);
+    assert.equal(conversions, 1);
+    const cause = new Error('status getter');
+    assert.throws(() => new Response(null, {get status() {throw cause;}}), error => error === cause);
+  }
+  // Web IDL integer conversion uses ToNumber and mathematical modulo. Node
+  // 24.19 differs for these edge cases, so use the standard as the reference.
+  assert.equal(new target.Response(null, {status: -65336}).status, 200);
+  assert.throws(() => new target.Response(null, {status: 200n}), TypeError);
+}
+""")
+
+    def test_response_status_conversion_does_not_relax_typed_provider_validation(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+for (const profile of ['lsf-fetch-buffered-v1', 'lsf-fetch-phase-buffered-v2']) {
+  for (const status of [200.9, 65736, -65336, 200n]) {
+    let destroyed = 0;
+    const upload = {[Symbol.dispose]() { throw new Error('consumed upload disposed'); }};
+    const body = {[Symbol.dispose]() {destroyed++;}};
+    installFetch({
+      async open() { return upload; },
+      async finish() { return {status, headers: [], body}; },
+      async read() { return undefined; }
+    }, () => false, target, profile);
+    await assert.rejects(target.fetch('https://example.test/'), /invalid-response-status/);
+    assert.equal(destroyed, 1);
+  }
+}
+""")
+
     def test_response_status_text_preserves_valid_reason_phrase_bytes(self):
         self.run_javascript(r"""
 const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};

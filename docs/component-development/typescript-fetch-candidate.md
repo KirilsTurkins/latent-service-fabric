@@ -199,6 +199,21 @@ contact a real provider, or run unchanged published/private clients. Those gates
 the HTTP/Abort/body/lifecycle matrix and physical cleanup remain required; engine
 support stays `unknown` / `not-evaluated` after a successful build.
 
+## Synthetic response construction
+
+`new Response(body, init)` accepts a null or omitted initializer, reads its
+`status` property once, and applies Web IDL unsigned-short conversion before
+the Fetch 200–599 status check. The typed HTTP provider remains separate: a
+malformed provider status is rejected rather than coerced into another status,
+and the acquired body owner is disposed. Source controls compare ordinary cases
+with Node 24.19.0 and use the Web IDL rule for negative modulo and BigInt, where
+that Node version differs. These controls are not signed component qualification.
+
+The full `ResponseInit` conversion order remains incomplete. Web IDL processes
+`headers`, `status`, then `statusText`; this candidate currently reads `status`,
+then `statusText`, then `headers`, and may report an error at a different point.
+Code that depends on member getter order or exception precedence is not qualified.
+
 ## Synthetic response factories
 
 The buffered profile supplies `Response.error()` and
@@ -206,9 +221,10 @@ The buffered profile supplies `Response.error()` and
 class. These are pure response constructors: they contact no provider, follow no
 redirect and confer no request authority. `error()` produces status 0, type
 `error`, an empty immutable header list and a null body; public `new Response`
-still requires status 200 to 599. Both factory results and their clones retain the
-immutable header guard. Reading a null body returns empty bytes/text without
-marking it used; parsing that empty text as JSON still rejects.
+still requires status 200 to 599 after conversion. Both factory results and
+their clones retain the immutable header guard. Reading a null body returns
+empty bytes/text without marking it used; parsing that empty text as JSON still
+rejects.
 
 `redirect()` accepts strings and objects with a string-returning `toString()`,
 including a URL object supplied by a compatible selected library. It supports
