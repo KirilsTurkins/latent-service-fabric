@@ -58,9 +58,14 @@ final class TransactionProtocol {
         Protocol.require(buffer.remaining() <= maximum && (!nonempty || buffer.hasRemaining()));
         return buffer;
     }
-    private static List<?> list(Object value, int maximum) {
+    static List<?> list(Object value, int maximum) {
         Protocol.require(value instanceof List<?> && ((List<?>) value).size() <= maximum);
-        return (List<?>) value;
+        var bounded = new java.util.ArrayList<>();
+        for (Object item : (List<?>) value) {
+            Protocol.require(bounded.size() < maximum);
+            bounded.add(item);
+        }
+        return bounded;
     }
     private static void same(Object left, Object right) { Protocol.require(java.util.Objects.equals(left, right)); }
     private static void digest(Object value) { Protocol.require(id(value).matches("sha256:[0-9a-f]{64}")); }
@@ -161,8 +166,9 @@ final class TransactionProtocol {
     }
     private static void metadata(Object value, boolean caller) {
         Protocol.require(value instanceof Map<?, ?> && ((Map<?, ?>) value).size() <= 32);
-        int total = 0;
+        int total = 0, count = 0;
         for (var entry : ((Map<?, ?>) value).entrySet()) {
+            Protocol.require(++count <= 32);
             String key = id(entry.getKey()), member = text(entry.getValue(), 1024, false);
             Protocol.require(!caller || !key.toLowerCase(java.util.Locale.ROOT).matches("latent\\.(auth|principal)\\..*"));
             total += key.getBytes(StandardCharsets.UTF_8).length + member.getBytes(StandardCharsets.UTF_8).length;

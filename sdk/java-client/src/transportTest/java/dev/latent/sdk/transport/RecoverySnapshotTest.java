@@ -33,6 +33,31 @@ final class RecoverySnapshotTest {
         };
         context.capture(new Transactions.InvokeCommandRequest(Optional.empty(), Optional.empty(), Optional.empty(), "format", large, Optional.empty()));
         check(identity(context).expectedVersions().isEmpty());
+        var misleading = new AbstractList<Integer>() {
+            @Override public int size() { return 1; }
+            @Override public Integer get(int index) { return index; }
+            @Override public java.util.Iterator<Integer> iterator() {
+                return java.util.stream.IntStream.range(0, 129).boxed().iterator();
+            }
+        };
+        try { TransactionProtocol.list(misleading, 128); throw new AssertionError("accepted misleading list"); }
+        catch (Protocol.Invalid expected) { /* iteration stays within the declared bound */ }
+        var misleadingMap = new java.util.AbstractMap<String, String>() {
+            @Override public java.util.Set<Entry<String, String>> entrySet() {
+                return new java.util.AbstractSet<>() {
+                    @Override public int size() { return 1; }
+                    @Override public java.util.Iterator<Entry<String, String>> iterator() {
+                        return java.util.stream.IntStream.range(0, 33)
+                                .mapToObj(i -> (Entry<String, String>) new SimpleImmutableEntry<>("key" + i, "value"))
+                                .iterator();
+                    }
+                };
+            }
+        };
+        var metadata = TransactionProtocol.class.getDeclaredMethod("metadata", Object.class, boolean.class);
+        metadata.setAccessible(true);
+        try { metadata.invoke(null, misleadingMap, true); throw new AssertionError("accepted misleading map"); }
+        catch (java.lang.reflect.InvocationTargetException expected) { check(expected.getCause() instanceof Protocol.Invalid); }
     }
     public static void main(String[] args) throws Exception { run(); System.out.println("Java recovery snapshots passed"); }
 }
