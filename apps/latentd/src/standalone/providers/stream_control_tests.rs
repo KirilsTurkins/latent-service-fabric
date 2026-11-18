@@ -752,3 +752,125 @@ fn busy_status_observation_is_bounded_and_never_probes_after_its_deadline() {
         }
     });
 }
+
+// A stream retirement wake can panic after the broker is fenced. The node
+// must still close its original pool and preserve the same physical owners.
+#[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "one actual node and TCP peer retain their original owners across a panicking wake"
+)]
+fn stream_wake_panic_does_not_skip_node_pool_retirement() {
+    use latent_policy::capability::{StreamEndpoint, StreamTransport};
+    use std::{
+        future::{poll_fn, Future},
+        panic::{catch_unwind, AssertUnwindSafe},
+        sync::{
+            atomic::{AtomicBool, Ordering},
+            Arc,
+        },
+        task::{Context, Poll, Wake, Waker},
+    };
+    struct PanicOnce {
+        owner: std::thread::ThreadId,
+        armed: AtomicBool,
+        woke: AtomicBool,
+    }
+    impl Wake for PanicOnce {
+        fn wake(self: Arc<Self>) {
+            self.wake_by_ref();
+        }
+        fn wake_by_ref(self: &Arc<Self>) {
+            if std::thread::current().id() == self.owner && self.armed.swap(false, Ordering::AcqRel)
+            {
+                self.woke.store(true, Ordering::Release);
+                panic!("stream-retirement-wake");
+            }
+        }
+    }
+    let fixture = Fixture::new();
+    let (control, invocation) = runtimes();
+    let (node, artifacts) = physical::node(&fixture, &control, &invocation);
+    let endpoint = StreamEndpoint {
+        host: "127.0.0.1".into(),
+        port: fixture.listener.local_addr().unwrap().port(),
+        transport: StreamTransport::Tcp,
+    };
+    // This permitted policy does not require audit; retain the normal audited
+    // 1 MiB fixture separately and keep this test's larger grant explicit.
+    let (session, execution) = invocation.block_on(physical::session_with_profile(
+        &node,
+        &artifacts,
+        endpoint.clone(),
+        4 * 1024 * 1024,
+        false,
+    ));
+    let session_bytes = session_native_bytes(&execution.budget);
+    let providers = node.providers.as_ref().unwrap();
+    let lifecycle = providers.streams.as_ref().unwrap().clone();
+    let pools = providers.pools.clone();
+    let stream = invocation.block_on(connect_control_stream(&lifecycle, &session, endpoint));
+    let (mut peer, _) = fixture.listener.accept().unwrap();
+    peer.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+    // Node retirement stops this same maintenance owner before retiring streams.
+    // Join it here so its independent scans do not race the pending-read setup.
+    assert!(invocation.block_on(
+        providers
+            .stream_driver
+            .as_ref()
+            .unwrap()
+            .join(std::time::Instant::now() + Duration::from_secs(1))
+    ));
+    let mut pending = Box::pin(stream.read(1, None).unwrap());
+    let probe = Arc::new(PanicOnce {
+        owner: std::thread::current().id(),
+        armed: AtomicBool::new(false),
+        woke: AtomicBool::new(false),
+    });
+    let waker = Waker::from(probe.clone());
+    invocation.block_on(poll_fn(|_| {
+        match pending.as_mut().poll(&mut Context::from_waker(&waker)) {
+            Poll::Pending => {}
+            Poll::Ready(Err(error)) => panic!("pending read failed before retirement: {error:?}"),
+            Poll::Ready(Ok(_)) => panic!("pending read unexpectedly completed before retirement"),
+        }
+        Poll::Ready(())
+    }));
+    probe.armed.store(true, Ordering::Release);
+    let result = catch_unwind(AssertUnwindSafe(|| providers.retire()));
+    let first_panic = result
+        .as_ref()
+        .err()
+        .and_then(|p| p.downcast_ref::<&str>())
+        .copied();
+    let woke = probe.woke.load(Ordering::Acquire);
+    let pool_closed = pools.snapshot().unwrap().closed;
+    let retained_bytes = execution.budget.host_memory_bytes();
+    let stream_status = lifecycle.status().unwrap();
+    // Cleanup on both baseline and candidate before checking the regression.
+    drop(pending);
+    drop(stream);
+    assert_closed_peer(&mut peer);
+    drop(waker);
+    drop(probe);
+    drop(session);
+    drop(lifecycle);
+    drop(pools);
+    clean(node, &invocation);
+    control.shutdown_timeout(Duration::from_secs(5));
+    invocation.shutdown_timeout(Duration::from_secs(5));
+    assert!(
+        woke,
+        "the actual pending read must wake on the retirement thread"
+    );
+    assert_eq!(first_panic, Some("stream-retirement-wake"));
+    assert!(stream_status.stopped);
+    assert!(
+        retained_bytes > session_bytes,
+        "the pending owner remains charged"
+    );
+    assert!(
+        pool_closed,
+        "the original node pool must retire even after stream wake panics"
+    );
+}
