@@ -114,6 +114,16 @@ frame-restoration path; a Task completing after the entry check may still enter
 that path. CLR and isolated emitted-helper controls cover this distinction;
 they are not signed-component qualification.
 
+The aggregate-managed profile also supports ordinary
+`ManualResetEventSlim.Wait()` and zero-time event queries using the existing
+bounded wait frame and admitted sibling work. It rewrites the two underlying
+BCL Wait methods for all their callers within that profile. Positive-timeout
+event waits and infinite waits with cancellable tokens retain the original WASI
+refusal. The BCL's async-enumerable caller, WaitHandle and general Monitor.Wait
+are not qualified. Pending-entry and nested-event evidence is currently from
+host projections; the prepared signed sibling-signal case does not establish
+that the event remained unset until Wait entered.
+
 The closed WASI adapter denies ambient files, sockets, wall time and entropy.
 NativeAOT GC monotonic time is routed through
 `latent:clock/monotonic@0.1.0`, declared in WIT and separately granted by

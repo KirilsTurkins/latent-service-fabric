@@ -190,6 +190,10 @@ internal static class AggregateTaskWait
         var wait = mres.Methods.Single(method => method.Name == "Wait" && method.Parameters.Count == 2
             && method.Parameters[0].ParameterType.MetadataType == MetadataType.Int32);
         Raw(reader, wait, 363, "352b3e91a4ef4bbca4d85c64f0d534c3f2606f1ac63e6eb0c7a1af73cc6761fb");
+        var simpleWait = mres.Methods.Single(method => method.Name == "Wait" && method.Parameters.Count == 0);
+        Raw(reader, simpleWait, 27, "942d520cbb14e20fb5e41a4a04e60dff34f01bdabbfec41f67d986cd29332860");
+        var simpleRemainder = TaskWait.BodyIdentity(simpleWait, 4);
+        var waitOriginal = TaskWait.BodyIdentity(wait);
         var tick = Type("System.Environment").Methods.Single(method => method.Name == "get_TickCount64");
         var remaining = Type("System.Threading.TimeoutHelper").Methods.Single(method => method.Name == "UpdateTimeOut");
         Raw(reader, tick, 6, "1963fc8ceb84b61703ea6156ed3d91cbedb480b0c0348697243943e73896cadd");
@@ -450,6 +454,32 @@ internal static class AggregateTaskWait
             code.Append(copied);
         }
         code.Emit(OpCodes.Ldarg_0); code.Emit(OpCodes.Ldarg_1); code.Emit(OpCodes.Ldarg_2); code.Emit(OpCodes.Call, entry); code.Emit(OpCodes.Ret);
+
+        // Ordinary event waits may reuse this same bounded frame only for a
+        // nonblocking query or a noncancellable infinite wait. The shim keeps
+        // the original disposal, cancellation and timeout checks. Other WASI
+        // calls retain the original refusal, and no new timer is admitted.
+        RemoveGuard(simpleWait);
+        Need(TaskWait.BodyIdentity(simpleWait) == simpleRemainder);
+        var originalWaitEntry = wait.Body.Instructions[0];
+        var eventSelected = Instruction.Create(OpCodes.Ldarg_0);
+        var eventPreamble = new[] {
+            Instruction.Create(OpCodes.Call, (MethodReference)originalGuard.Operand),
+            Instruction.Create(OpCodes.Brfalse, originalWaitEntry),
+            Instruction.Create(OpCodes.Ldarg_1), Instruction.Create(OpCodes.Brfalse, eventSelected),
+            Instruction.Create(OpCodes.Ldarg_1), Instruction.Create(OpCodes.Ldc_I4_M1),
+            Instruction.Create(OpCodes.Bne_Un, originalWaitEntry), Instruction.Create(OpCodes.Ldarga, wait.Parameters[1]),
+            Instruction.Create(OpCodes.Call, canCancel), Instruction.Create(OpCodes.Brtrue, originalWaitEntry),
+            eventSelected, Instruction.Create(OpCodes.Ldarg_1), Instruction.Create(OpCodes.Ldarg_2),
+            Instruction.Create(OpCodes.Call, shim), Instruction.Create(OpCodes.Ret),
+        };
+        var waitCode = wait.Body.GetILProcessor();
+        foreach (var instruction in eventPreamble) waitCode.InsertBefore(originalWaitEntry, instruction);
+        var selectedWait = TaskWait.BodyIdentity(wait);
+        foreach (var instruction in eventPreamble) waitCode.Remove(instruction);
+        try { Need(TaskWait.BodyIdentity(wait) == waitOriginal); }
+        finally { foreach (var instruction in eventPreamble) waitCode.InsertBefore(originalWaitEntry, instruction); }
+        Need(TaskWait.BodyIdentity(wait) == selectedWait && wait.Body.MaxStackSize >= 3);
         var blocking = members[^1];
         var oldCall = blocking.Body.Instructions.Single(instruction => instruction.OpCode == OpCodes.Callvirt
             && instruction.Operand is MethodReference method && method.Resolve() == wait);
@@ -461,13 +491,20 @@ internal static class AggregateTaskWait
         var timerPump = DetachTimerPumpBatch(module, reader);
 
         var receipt = new {
-            patch = "latent.dotnet.wait-all.v5", profile = "dotnet-aggregate-task-wait-candidate-v5",
+            patch = "latent.dotnet.wait-all.v6", profile = "dotnet-aggregate-task-wait-candidate-v6",
             prefetchedPollReadiness = "original-dispatch-slot-before-blocking-poll",
             originalMethods = Originals.Select((row, index) => new {
                 method = members[index].FullName, token = row.Token, ilBytes = row.Bytes, ilSha256 = "sha256:" + row.Sha256 }).ToArray(),
             originalRemainders = remainders,
-            rewrittenBodies = members.Append(check).Append(single).Append(finite).Append(ready).Append(body).Append(entry).Append(shim).Append(timerPump.Method)
+            rewrittenBodies = members.Append(check).Append(single).Append(finite).Append(ready).Append(body).Append(entry).Append(shim).Append(timerPump.Method).Append(simpleWait).Append(wait)
                 .ToDictionary(method => method.FullName, method => TaskWait.BodyIdentity(method)),
+            eventWait = new {
+                selection = "zero-or-infinite-noncancellable", originalSimpleIlSha256 = "sha256:942d520cbb14e20fb5e41a4a04e60dff34f01bdabbfec41f67d986cd29332860",
+                originalSimpleRemainder = simpleRemainder, originalTimedIlSha256 = "sha256:352b3e91a4ef4bbca4d85c64f0d534c3f2606f1ac63e6eb0c7a1af73cc6761fb",
+                originalTimedBody = waitOriginal, timedInverseExact = true, nativeOwners = 0,
+                custody = "original-event-and-existing-bounded-wait-frame",
+                unsupported = "positive-timeout-or-infinite-cancellable-original-wasi-refusal",
+            },
             finiteMask = new {
                 originalBodyIdentity = "8606fa511dc66800891d7d1d6aa9a39e581e1de59a27e4524356ef292002dd1e",
                 rewrittenBodyIdentity = finiteIdentity, inverseExact = true, generatedFields = 0, nativeOwners = 0,
@@ -491,7 +528,7 @@ internal static class AggregateTaskWait
             nonWasi = "original-MRES-Wait-entry-without-duplicate-validation",
             productionSelected = false, qualificationComplete = false, limitsChanged = false,
         };
-        return (members.Append(check).Append(timerPump.Method).ToArray(), receipt, remainders, timerPump.Original);
+        return (members.Append(check).Append(timerPump.Method).Append(simpleWait).Append(wait).ToArray(), receipt, remainders, timerPump.Original);
     }
 
     internal static void VerifyRemainders(ModuleDefinition module, IReadOnlyDictionary<string, string> expected)
@@ -531,8 +568,12 @@ internal static class AggregateTaskWait
                     && (method.Name is "WaitAll" or "WaitAllCore" or "WaitAllBlockingCore")
                 || method.DeclaringType.FullName == "System.Threading.WasiEventLoop"
                     && (method.Name is "CheckPollables" or "LsfWaitForActualTaskCompletion" or "LsfWaitForActualTaskOrTimeout")
+                || method.DeclaringType.FullName == "System.Threading.ManualResetEventSlim" && method.Name == "Wait"
+                    && (method.Parameters.Count == 0 || method.Parameters.Count == 2
+                        && method.Parameters[0].ParameterType.MetadataType == MetadataType.Int32
+                        && method.Parameters[1].ParameterType.FullName == "System.Threading.CancellationToken")
                 || method.DeclaringType.FullName == "System.Threading.TimerQueue" && method.Name == "PumpTimerQueue").ToArray();
-        Need(selected.Length == 17);
+        Need(selected.Length == 19);
         foreach (var method in selected)
         {
             var instructions = method.Body.Instructions.ToArray();

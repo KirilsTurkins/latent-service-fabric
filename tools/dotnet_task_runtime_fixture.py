@@ -23,7 +23,8 @@ BASELINE_CASES = ('run', 'when-all', 'thread-pool', 'scheduler', 'error', 'cance
          'timer-periodic-context', 'timer-change', 'timer-dispose', 'timer-self-dispose-drain')
 CASES = BASELINE_CASES + ('cancel-pending',)
 RESET_NOTIFICATION_MODE = 'reset-notification-refusal'
-QUALIFICATION_CASES = CASES + (RESET_NOTIFICATION_MODE,)
+EVENT_WAIT_MODE = 'manual-reset-sibling'
+QUALIFICATION_CASES = CASES + (EVENT_WAIT_MODE, RESET_NOTIFICATION_MODE)
 CANCEL_CASE = '        case "cancel-pending": {\n            using var cancellation = new CancellationTokenSource();\n            var token = cancellation.Token;\n            var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);\n            var running = Task.Run(async () => {\n                Stage = "cancel-pending-delay";\n                var delay = Task.Delay(10000, token);\n                Incomplete(delay);\n                entered.SetResult(true);\n                await delay.ConfigureAwait(false);\n                throw new Exception("pending cancellation ignored");\n            }, token);\n            Stage = "cancel-pending-enter";\n            entered.Task.GetAwaiter().GetResult();\n            Incomplete(running);\n            Stage = "cancel-pending-cancel";\n            cancellation.Cancel();\n            try { running.GetAwaiter().GetResult(); throw new Exception("running task did not cancel"); }\n            catch (OperationCanceledException error) {\n                if (error.CancellationToken != token || !running.IsCanceled)\n                    throw new Exception("pending cancellation identity or state changed");\n            }\n            break;\n        }\n'
 RESET_NOTIFICATION_CASE = r'''        case "reset-notification-refusal": {
             Stage = "reset-notification-setup";
@@ -55,6 +56,21 @@ RESET_NOTIFICATION_CASE = r'''        case "reset-notification-refusal": {
             if (unexpected is not null) unexpected.GetAwaiter().GetResult();
             if (observed != 1 || notifications != 1)
                 throw new Exception("reset notification was not refused exactly once");
+            break;
+        }
+'''
+EVENT_WAIT_CASE = r'''        case "manual-reset-sibling": {
+            Stage = "event-create";
+            using var signal = new ManualResetEventSlim(false);
+            int callbacks = 0;
+            if (signal.Wait(0)) throw new Exception("new event already signalled");
+            if (!ThreadPool.QueueUserWorkItem(_ => { callbacks++; signal.Set(); }))
+                throw new Exception("event setter rejected");
+            Stage = "event-wait";
+            signal.Wait();
+            if (!signal.IsSet || callbacks != 1) throw new Exception("event signal or setter lost");
+            signal.Reset();
+            if (signal.Wait(0)) throw new Exception("event reset lost");
             break;
         }
 '''
@@ -270,9 +286,10 @@ def selected_fixture(monitor_cancel: bool = False, *, reset_notification: bool =
     source = with_pending_cancel(LIBRARY_SOURCE)
     if reset_notification:
         marker = '        case "context":\n'
-        require(source.count(marker) == 1 and 'case "reset-notification-refusal"' not in source,
+        require(source.count(marker) == 1 and 'case "reset-notification-refusal"' not in source
+                and 'case "manual-reset-sibling"' not in source,
                 'dotnet-task-reset-notification-source')
-        return source.replace(marker, RESET_NOTIFICATION_CASE + marker), QUALIFICATION_CASES
+        return source.replace(marker, EVENT_WAIT_CASE + RESET_NOTIFICATION_CASE + marker), QUALIFICATION_CASES
     return source, CASES
 
 

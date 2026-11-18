@@ -28,7 +28,7 @@ class CurrentAggregateFilesystemChain(unittest.TestCase):
             controlled.update({key: before[key] for key in extras})
             controlled.update(outputDigest=before['outputDigest'], generatedHelperCount=109,
                 finiteWaitObservation=qualification.task_wait.FINITE_OBSERVATION,
-                unchangedOriginalMethods=44708, managedAcceptedWork=copy.deepcopy(INLINE_PRIMARY_REWRITE_RECEIPT),
+                unchangedOriginalMethods=44706, managedAcceptedWork=copy.deepcopy(INLINE_PRIMARY_REWRITE_RECEIPT),
                 aggregateTaskWait=copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED))
             docs['task-wait-port.json'] = controlled
             docs['closed-filesystem-port.json']['unchangedBaseMethods'] = 44853

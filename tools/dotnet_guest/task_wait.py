@@ -133,7 +133,7 @@ def validate_receipt(value: dict, *, finite: bool = False, managed: bool = False
                 or re.fullmatch(r'sha256:[0-9a-f]{64}', value['outputDigest']) is None):
             raise ValueError('task-wait-aggregate-managed-and-output-identities')
         fixed.update(generatedHelperCount=95 + int(prefetched) + 9*int(reset_dispatch) + 2*int(inline_pop) + int(inline_primary),
-            unchangedOriginalMethods=44709 - int(inline_pop),
+            unchangedOriginalMethods=44709 - int(inline_pop) - 2*int(value['aggregateTaskWait']['patch'] == 'latent.dotnet.wait-all.v6'),
             timerDriverScheduledToFire='positive-batch-detachment-before-original-enumerator',
             aggregateTaskWait=value['aggregateTaskWait'])
     if 'finiteWaitObservation' in value:
@@ -172,7 +172,7 @@ def validate_current_receipt(value: dict, *, finite: bool = False,
         raise ValueError('task-wait-current-finite-observation-required')
     if managed and value['managedAcceptedWork']['patch'] != 'latent.dotnet.managed-accepted-work.v15':
         raise ValueError('task-wait-current-managed-readiness-required')
-    if aggregate and value['aggregateTaskWait']['patch'] != 'latent.dotnet.wait-all.v5':
+    if aggregate and value['aggregateTaskWait']['patch'] != 'latent.dotnet.wait-all.v6':
         raise ValueError('task-wait-current-prefetched-poll-required')
 
 

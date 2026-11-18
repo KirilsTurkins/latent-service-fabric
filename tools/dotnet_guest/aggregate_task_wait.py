@@ -163,13 +163,39 @@ COMPLETED_SINGLE_EXPECTED = {
             '20ff54845e18aec14cc97a8e5f97e7af4650fd09cfde36387500c13e2406d0c0'},
 }
 
+# The v6 producer admits ordinary zero-time and noncancellable infinite
+# event waits through the existing bounded aggregate frame.
+EVENT_WAIT_EXPECTED = {
+    **COMPLETED_SINGLE_EXPECTED,
+    'patch': 'latent.dotnet.wait-all.v6',
+    'profile': 'dotnet-aggregate-task-wait-candidate-v6',
+    'eventWait': {
+        'selection': 'zero-or-infinite-noncancellable',
+        'originalSimpleIlSha256': 'sha256:942d520cbb14e20fb5e41a4a04e60dff34f01bdabbfec41f67d986cd29332860',
+        'originalSimpleRemainder': '09f257e048e62349a76a59662386432802af1cc9e1ced172b38cda6afb8483c3',
+        'originalTimedIlSha256': 'sha256:352b3e91a4ef4bbca4d85c64f0d534c3f2606f1ac63e6eb0c7a1af73cc6761fb',
+        'originalTimedBody': '014a0ff31efca3fb1e661cc2407f97f94ec194bd906464893d2433b929572be7',
+        'timedInverseExact': True,
+        'nativeOwners': 0,
+        'custody': 'original-event-and-existing-bounded-wait-frame',
+        'unsupported': 'positive-timeout-or-infinite-cancellable-original-wasi-refusal',
+    },
+    'rewrittenBodies': {**COMPLETED_SINGLE_EXPECTED['rewrittenBodies'],
+        'System.Void System.Threading.ManualResetEventSlim::Wait()':
+            '09f257e048e62349a76a59662386432802af1cc9e1ced172b38cda6afb8483c3',
+        'System.Boolean System.Threading.ManualResetEventSlim::Wait(System.Int32,System.Threading.CancellationToken)':
+            '0a8d0185336e3e00b6e8d59bb47cc87369267e8dd37833ce9d93087baf4d1ac2'},
+}
+
 # Existing consumers of this name select the current prefetched-poll receipt.
-PREFETCH_POLL_EXPECTED = COMPLETED_SINGLE_EXPECTED
+PREFETCH_POLL_EXPECTED = EVENT_WAIT_EXPECTED
 
 
 def validate(value):
     expected = (PREFETCH_POLL_EXPECTED if type(value) is dict
                 and value.get('patch') == PREFETCH_POLL_EXPECTED['patch'] else
+                COMPLETED_SINGLE_EXPECTED if type(value) is dict
+                and value.get('patch') == COMPLETED_SINGLE_EXPECTED['patch'] else
                 FINITE_NESTING_EXPECTED if type(value) is dict
                 and value.get('patch') == FINITE_NESTING_EXPECTED['patch'] else
                 PREFETCH_POLL_V3_EXPECTED if type(value) is dict

@@ -113,7 +113,7 @@ class ManagedWorkContractTests(unittest.TestCase):
         current = copy.deepcopy(old)
         current['managedAcceptedWork'] = copy.deepcopy(work.INLINE_PRIMARY_REWRITE_RECEIPT)
         current['generatedHelperCount'] = 108
-        current['unchangedOriginalMethods'] = 44708
+        current['unchangedOriginalMethods'] = 44706
         current['aggregateTaskWait'] = copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED)
         task_wait.validate_current_receipt(current, finite=True, managed=True, aggregate=True)
         inline_pop = copy.deepcopy(current)
@@ -125,13 +125,13 @@ class ManagedWorkContractTests(unittest.TestCase):
         dispatch_reset = copy.deepcopy(current)
         dispatch_reset['managedAcceptedWork'] = copy.deepcopy(work.DISPATCH_RESET_REWRITE_RECEIPT)
         dispatch_reset['generatedHelperCount'] = 105
-        dispatch_reset['unchangedOriginalMethods'] = 44709
+        dispatch_reset['unchangedOriginalMethods'] = 44707
         task_wait.validate_receipt(dispatch_reset, finite=True, managed=True, aggregate=True)
         with self.assertRaisesRegex(ValueError, 'current-managed-readiness-required'):
             task_wait.validate_current_receipt(dispatch_reset, finite=True, managed=True, aggregate=True)
         previous = copy.deepcopy(current)
         previous['generatedHelperCount'] = 96
-        previous['unchangedOriginalMethods'] = 44709
+        previous['unchangedOriginalMethods'] = 44707
         for previous_receipt in (work.PREFETCH_REWRITE_RECEIPT, work.QUEUE_FENCE_REWRITE_RECEIPT,
                                  work.QUEUE_WITNESS_REWRITE_RECEIPT, work.PROVISIONAL_RESERVATION_REWRITE_RECEIPT,
                                  work.RESULT_TRANSITION_REWRITE_RECEIPT, work.TIMER_RESERVATION_REWRITE_RECEIPT,
@@ -148,6 +148,7 @@ class ManagedWorkContractTests(unittest.TestCase):
         # Historical v2 is valid evidence, but cannot impersonate the new poll guard.
         historical = copy.deepcopy(current)
         historical['aggregateTaskWait'] = copy.deepcopy(aggregate_task_wait.EXPECTED)
+        historical['unchangedOriginalMethods'] = 44708
         task_wait.validate_receipt(historical, finite=True, managed=True, aggregate=True)
         with self.assertRaisesRegex(ValueError, 'current-prefetched-poll-required'):
             task_wait.validate_current_receipt(historical, finite=True, managed=True, aggregate=True)
@@ -192,7 +193,7 @@ class ManagedWorkContractTests(unittest.TestCase):
             value = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-v2-controlled.json').read_text())
             value['managedAcceptedWork'] = copy.deepcopy(work.INLINE_PRIMARY_REWRITE_RECEIPT)
             value['generatedHelperCount'] = 109
-            value['unchangedOriginalMethods'] = 44708
+            value['unchangedOriginalMethods'] = 44706
             value['finiteWaitObservation'] = task_wait.FINITE_OBSERVATION
             value['aggregateTaskWait'] = copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED)
             value['outputDigest'] = digest(b'explicit-managed-tool-control')
