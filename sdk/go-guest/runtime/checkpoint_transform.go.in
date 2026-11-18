@@ -17,10 +17,10 @@ import (
 	"strings"
 )
 
-type input struct { Path string `json:"path"`; Diagnostic string `json:"diagnostic"` }
+type input struct { Path string `json:"path"`; Diagnostic string `json:"diagnostic"`; Mode string `json:"mode,omitempty"` }
 type span struct { first, last token.Pos }
 type edit struct { offset int; text string }
-type site struct { Line int `json:"line"`; Column int `json:"column"`; Suspendable bool `json:"suspendable"` }
+type site struct { Line int `json:"line"`; Column int `json:"column"`; Suspendable bool `json:"suspendable"`; Stride int `json:"stride,omitempty"` }
 type result struct {
 	Path string `json:"path"`
 	Adapted string `json:"adapted"`
@@ -32,12 +32,18 @@ type result struct {
 func digest(raw []byte) string { sum := sha256.Sum256(raw); return "sha256:" + hex.EncodeToString(sum[:]) }
 func fail(err error) { fmt.Fprintln(os.Stderr, err); os.Exit(1) }
 
+const base64EncodeMode = "base64-encode-stride-v1"
+const base64EncodeDigest = "sha256:15e67707bc3f0925f7f56bd4002106681c6b64ba5bf553b4d8cc0bb8eca71aa5"
+
 func transform(row input, destination string) (result, error) {
 	info, err := os.Lstat(row.Path)
 	if err != nil { return result{}, err }
 	if !info.Mode().IsRegular() || info.Size() > 32*1024*1024 { return result{}, fmt.Errorf("checkpoint-source-not-bounded-regular-file") }
 	raw, err := os.ReadFile(row.Path)
 	if err != nil { return result{}, err }
+	if row.Mode != "" && (row.Mode != base64EncodeMode || digest(raw) != base64EncodeDigest) {
+		return result{}, fmt.Errorf("checkpoint-standard-mode-or-source-drift")
+	}
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, row.Diagnostic, raw, parser.ParseComments)
 	if err != nil { return result{}, err }
@@ -98,6 +104,7 @@ func transform(row input, destination string) (result, error) {
 	var positionError error
 	add := func(position token.Pos) {
 		original := fset.Position(position)
+		if row.Mode == base64EncodeMode && (original.Line != 154 || original.Column != 21) { return }
 		reset, err := resetPosition(position)
 		if err != nil { positionError = err; return }
 		suspendable := true
@@ -106,9 +113,17 @@ func transform(row input, destination string) (result, error) {
 		}
 		callee := name
 		if !suspendable { callee = blocked }
-		record.Sites = append(record.Sites, site{original.Line, original.Column, suspendable})
-		edits = append(edits, edit{fset.File(position).Offset(position),
-			"\n" + callee + "();\n" + reset})
+		stride := 0
+		call := "\n" + callee + "();\n"
+		if row.Mode == base64EncodeMode {
+			if !suspendable { positionError = fmt.Errorf("checkpoint-standard-site-not-suspendable"); return }
+			// Encode advances by three bytes, so this local test admits one
+			// checkpoint in every 256 iterations for every starting length.
+			stride = 256
+			call = "\nif len(src)&255 == 0 { " + callee + "() }\n"
+		}
+		record.Sites = append(record.Sites, site{original.Line, original.Column, suspendable, stride})
+		edits = append(edits, edit{fset.File(position).Offset(position), call + reset})
 	}
 	addBody := func(body *ast.BlockStmt) {
 		if body != nil { add(body.Lbrace + 1) }
@@ -133,6 +148,7 @@ func transform(row input, destination string) (result, error) {
 		return true
 	})
 	if positionError != nil { return result{}, positionError }
+	if row.Mode == base64EncodeMode && len(record.Sites) != 1 { return result{}, fmt.Errorf("checkpoint-standard-site-drift") }
 	if len(record.Sites) > 65536 { return result{}, fmt.Errorf("checkpoint-sites-per-file-exhausted") }
 	if len(record.Sites) == 0 { return record, nil }
 	hasUnsafe := false

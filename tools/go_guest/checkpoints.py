@@ -35,6 +35,11 @@ STANDARD_JSON_WIRE_SITES = [(28, 43), (29, 43), (30, 43), (33, 43), (35, 83), (4
                             (390, 69), (391, 25), (413, 56), (426, 45), (433, 52),
                             (465, 50), (472, 125), (479, 64), (513, 63), (534, 63),
                             (556, 63), (568, 52), (572, 20), (593, 47), (596, 57)]
+STANDARD_BASE64 = 'encoding/base64/base64.go'
+STANDARD_BASE64_SHA256 = '15e67707bc3f0925f7f56bd4002106681c6b64ba5bf553b4d8cc0bb8eca71aa5'
+STANDARD_BASE64_SITES = [(154, 21)]
+STANDARD_BASE64_MODE = 'base64-encode-stride-v1'
+STANDARD_BASE64_STRIDE = 256
 
 
 def checkpoint_yield_template(sdk):
@@ -104,12 +109,14 @@ def prepare(compiler):
 def transform(compiler, generated, packages, application_sources, output):
     selected = set()
     standard = {}
+    modes = {}
     standard_iterators = {
         'slices': (STANDARD_ITERATOR, STANDARD_ITERATOR_SHA256, STANDARD_ITERATOR_SITES),
         'maps': (STANDARD_MAP_ITERATOR, STANDARD_MAP_ITERATOR_SHA256, STANDARD_MAP_ITERATOR_SITES),
         'strings': (STANDARD_STRING_ITERATOR, STANDARD_STRING_ITERATOR_SHA256, STANDARD_TEXT_ITERATOR_SITES),
         'bytes': (STANDARD_BYTES_ITERATOR, STANDARD_BYTES_ITERATOR_SHA256, STANDARD_TEXT_ITERATOR_SITES),
         'encoding/json/internal/jsonwire': (STANDARD_JSON_WIRE, STANDARD_JSON_WIRE_SHA256, STANDARD_JSON_WIRE_SITES),
+        'encoding/base64': (STANDARD_BASE64, STANDARD_BASE64_SHA256, STANDARD_BASE64_SITES),
     }
     dispatcher = generated / 'vendor/go.bytecodealliance.org/pkg'
     for package in packages:
@@ -123,6 +130,8 @@ def transform(compiler, generated, packages, application_sources, output):
                 raise ValueError('go-checkpoint-standard-iterator-source-drift')
             selected.add(path)
             standard[path] = (source_name, source_sha256, sites)
+            if source_name == STANDARD_BASE64:
+                modes[path] = STANDARD_BASE64_MODE
             continue
         if package.get('Standard'):
             continue
@@ -133,7 +142,8 @@ def transform(compiler, generated, packages, application_sources, output):
                     raise ValueError('go-checkpoint-source-outside-captured-module')
                 selected.add(path)
     request = output / 'checkpoint-inputs.json'
-    write_json(request, [{'path': str(path), 'diagnostic': str(path)} for path in sorted(selected)])
+    write_json(request, [{'path': str(path), 'diagnostic': str(path),
+                          **({'mode': modes[path]} if path in modes else {})} for path in sorted(selected)])
     rows = json.loads(compiler.run('checkpoint-parser', 'go-checkpoints', request, output / 'checkpoints'))
     expected = {str(path) for path in selected}
     if (not isinstance(rows, list) or len(rows) != len(expected)
@@ -146,9 +156,13 @@ def transform(compiler, generated, packages, application_sources, output):
             source_name, source_sha256, expected_sites = standard[path]
             sites = [{'line': line, 'column': column, 'suspendable': True}
                      for line, column in expected_sites]
+            if source_name == STANDARD_BASE64:
+                sites[0]['stride'] = STANDARD_BASE64_STRIDE
             if (row.get('sites') != sites
                     or any(type(site['line']) is not int or type(site['column']) is not int
                            or site['suspendable'] is not True for site in row['sites'])
+                    or source_name == STANDARD_BASE64 and
+                       type(row['sites'][0].get('stride')) is not int
                     or row.get('upstreamDigest') != 'sha256:' + source_sha256
                     or hashlib.sha256(read_file(path)).hexdigest() != source_sha256):
                 raise ValueError('go-checkpoint-standard-iterator-output-drift')
