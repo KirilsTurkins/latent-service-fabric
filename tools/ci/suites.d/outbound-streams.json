@@ -59,7 +59,10 @@
         "tests::sockets::failed_read_audit_fences_reuse_after_consuming_bytes",
         "tests::sockets::read_cancellation_during_successful_audit_refuses_handoff",
         "tests::sockets::read_deadline_during_successful_eof_audit_refuses_handoff",
-        "tests::sockets::read_revocation_during_successful_audit_refuses_handoff"
+        "tests::sockets::read_revocation_during_successful_audit_refuses_handoff",
+        "tests::sockets::write_cancellation_during_successful_audit_preserves_accepted_prefix",
+        "tests::sockets::write_deadline_during_successful_audit_preserves_accepted_prefix",
+        "tests::sockets::write_revocation_during_successful_audit_preserves_accepted_prefix"
       ],
       "resourceClass": "runtime-bounded",
       "source": "src/lib.rs",
