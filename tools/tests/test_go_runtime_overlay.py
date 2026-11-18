@@ -878,7 +878,7 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                 generated, [{'ImportPath': 'encoding/json', 'Standard': True}], set(), output)
             self.assertEqual((replacements, rows), ({}, []))
 
-    def test_base64_checkpoint_selects_only_pinned_encoder_stride_and_rejects_drift(self):
+    def test_base64_checkpoint_selects_pinned_codec_strides_and_rejects_drift(self):
         from tools.go_guest import checkpoints
         from tools.rust_capsule_project import digest
         from types import SimpleNamespace
@@ -891,7 +891,9 @@ class GoRuntimeOverlayTests(unittest.TestCase):
             original = b'package base64\nfunc Encode(){}\n'
             source.write_bytes(original)
             pin = hashlib.sha256(original).hexdigest()
-            expected = [{'line': 154, 'column': 21, 'suspendable': True, 'stride': 256}]
+            expected = [{'line': line, 'column': column, 'suspendable': True, 'stride': stride}
+                        for (line, column), stride in zip(checkpoints.STANDARD_BASE64_SITES,
+                                                         checkpoints.STANDARD_BASE64_STRIDES, strict=True)]
 
             def run_case(mutation):
                 output = root/mutation
@@ -915,6 +917,10 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                     if mutation == 'nonsuspendable': sites[0]['suspendable'] = False
                     if mutation == 'wrong-stride': sites[0]['stride'] = 257
                     if mutation == 'float-stride': sites[0]['stride'] = 256.0
+                    if mutation == 'wrong-decode-site': sites[-1]['column'] += 1
+                    if mutation == 'wrong-decode-stride': sites[-1]['stride'] += 1
+                    if mutation == 'float-decode-stride': sites[-1]['stride'] = 1024.0
+                    if mutation == 'missing-decode-site': sites.pop()
                     if mutation == 'changed-after-selection': source.write_bytes(original+b'changed')
                     return json.dumps([{'path': str(source), 'adapted': str(adapted), 'sites': sites,
                                         'upstreamDigest': digest(original), 'adaptedDigest': digest(adapted.read_bytes())}])
@@ -934,7 +940,8 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                     source.write_bytes(original)
             for mutation in ('valid', 'nonstandard', 'foreign-directory', 'missing-source', 'duplicate',
                              'changed-source', 'wrong-site', 'nonsuspendable', 'wrong-stride', 'float-stride',
-                             'changed-after-selection'):
+                             'wrong-decode-site', 'wrong-decode-stride', 'float-decode-stride',
+                             'missing-decode-site', 'changed-after-selection'):
                 with self.subTest(mutation=mutation): run_case(mutation)
 
     def test_checkpoint_parser_cannot_omit_selected_application_or_dependency(self):

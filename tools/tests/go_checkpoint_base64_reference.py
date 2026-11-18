@@ -1,4 +1,4 @@
-"""Pinned Go reference and core-Wasm encoder progress; no signed guest claim."""
+"""Pinned Go reference and core-Wasm codec progress; no signed guest claim."""
 import argparse
 import hashlib
 import json
@@ -23,6 +23,10 @@ GO_SHA256 = 'de0ae3e082ce7599eae4fb69fa2ef1e43b8f31ffd3fce62cdf81930aa9005050'
 NODE_SHA256 = 'bc17c508ffeed0ec622934f9b7fa72f8e78da65350e63c3eceb56fa688aa5e12'
 RECORD = re.compile(rb'sibling=(true|false) bytes=33554432 yields=([0-9]+)\n\Z')
 SEMANTICS = re.compile(rb'semantics=ok yields=([0-9]+)\n\Z')
+DECODE = re.compile(rb'mode=(decode(?:-[a-z]+)*) sibling=(true|false) bytes=([0-9]+) yields=([0-9]+)\n\Z')
+DECODE_SIZES = {'decode': 18*1024*1024, 'decode-alone': 18*1024*1024,
+                'decode-newlines': 0, 'decode-pad-middle': 1, 'decode-pad-end': 1,
+                'decode-mixed': 3*1024*1024}
 
 
 def run(command, env, cwd, timeout=300):
@@ -75,9 +79,20 @@ def reference(go, node):
         package = json.loads(run([str(go), 'list', '-json', 'encoding/base64'], discovery, root))
         replacements, rows = checkpoints.transform(SimpleNamespace(run=selected, goroot=goroot),
                                                     generated, [package], set(), output)
-        expected_site = {'line': 154, 'column': 21, 'suspendable': True, 'stride': 256}
-        if (set(replacements) != {str(original)} or len(rows) != 1 or rows[0]['sites'] != [expected_site]):
+        expected_sites = [{'line': line, 'column': column, 'suspendable': True, 'stride': stride}
+                          for (line, column), stride in zip(checkpoints.STANDARD_BASE64_SITES,
+                                                           checkpoints.STANDARD_BASE64_STRIDES, strict=True)]
+        if (set(replacements) != {str(original)} or len(rows) != 1 or rows[0]['sites'] != expected_sites):
             raise ValueError('base64-reference-selection')
+        legacy_input = root/'legacy-checkpoint-input.json'
+        legacy_input.write_text(json.dumps([{'path': str(original), 'diagnostic': str(original),
+                                              'mode': 'base64-encode-stride-v1'}]))
+        legacy_rows = json.loads(run([str(parser), str(legacy_input), str(root/'legacy-selection')], env, root))
+        if (len(legacy_rows) != 1 or legacy_rows[0]['path'] != str(original)
+                or legacy_rows[0]['upstreamDigest'] != 'sha256:' + checkpoints.STANDARD_BASE64_SHA256
+                or legacy_rows[0]['sites'] != [expected_sites[0]]):
+            raise ValueError('base64-reference-legacy-selection')
+        legacy = {str(original): legacy_rows[0]['adapted']}
 
         names = [name for name in runtime.UPSTREAM_PREIMAGES if name.startswith('runtime/lock_') or name in {
             'runtime/proc.go', 'runtime/os_wasm.go', 'runtime/debug.go'}]
@@ -110,6 +125,14 @@ def reference(go, node):
         if not match or int(match[2]) != 0:
             raise ValueError('base64-reference-native-progress:' + repr(native_output))
         native_sibling = match[1] == b'true'
+        native_errors = run([str(native), 'decode-errors'], env, root)
+        native_decode = {}
+        for mode, size in DECODE_SIZES.items():
+            raw = run([str(native), mode], env, root)
+            match = DECODE.fullmatch(raw)
+            if not match or match[1].decode() != mode or int(match[3]) != size or int(match[4]) != 0:
+                raise ValueError('base64-reference-native-decode:' + mode + ':' + repr(raw))
+            native_decode[mode] = {'siblingBeforeReturn': match[2] == b'true'}
 
         dispatch.write_bytes(b'''package dispatch
 import ("runtime"; "sync/atomic"; _ "unsafe")
@@ -138,25 +161,36 @@ wasi.start(instance);
 ''')
         wasm_env = dict(env, GOOS='wasip1', GOARCH='wasm')
         outcomes, binaries = {}, {}
-        for name, additions in [('baseline', {}), ('selected', replacements)]:
+        for name, additions in [('baseline', {}), ('encoderOnly', legacy), ('selected', replacements)]:
             overlay = root/(name+'-overlay.json')
             overlay.write_text(json.dumps({'Replace': {**base, **additions}}))
             wasm = root/(name+'.wasm')
             run([str(go), 'build', '-p=1', '-overlay', str(overlay), '-o', str(wasm), '.'], wasm_env, generated)
             binaries[name] = wasm
             semantics = run([str(node), '--no-warnings', str(runner), str(wasm), 'semantics'], env, root)
-            outcomes[name] = {'semanticYields': semantics_yields(semantics, name == 'selected')}
+            outcomes[name] = {'semanticYields': semantics_yields(semantics, name != 'baseline')}
+            if run([str(node), '--no-warnings', str(runner), str(wasm), 'decode-errors'], env, root) != native_errors:
+                raise ValueError('base64-reference-decoding-errors:' + name)
             for mode in ('sibling', 'alone'):
                 raw = run([str(node), '--no-warnings', str(runner), str(wasm), mode], env, root)
                 match = RECORD.fullmatch(raw)
-                if (not match or (match[1] == b'true') != (name == 'selected' and mode == 'sibling')
-                        or int(match[2]) != (32 if name == 'selected' else 0)):
+                if (not match or (match[1] == b'true') != (name != 'baseline' and mode == 'sibling')
+                        or int(match[2]) != (32 if name != 'baseline' else 0)):
                     raise ValueError('base64-reference-progress:' + name + ':' + mode + ':' + repr(raw))
                 outcomes[name][mode] = {'siblingBeforeReturn': match[1] == b'true',
                                         'checkpointYields': int(match[2])}
+            for mode, size in DECODE_SIZES.items():
+                raw = run([str(node), '--no-warnings', str(runner), str(wasm), mode], env, root)
+                match = DECODE.fullmatch(raw)
+                if (not match or match[1].decode() != mode or int(match[3]) != size
+                        or (match[2] == b'true') != (name == 'selected' and mode != 'decode-alone')
+                        or (int(match[4]) > 0) != (name == 'selected')):
+                    raise ValueError('base64-reference-decode-progress:' + name + ':' + mode + ':' + repr(raw))
+                outcomes[name][mode] = {'siblingBeforeReturn': match[2] == b'true',
+                                        'checkpointYields': int(match[4])}
 
-        elapsed = {name: [] for name in binaries}
-        cpu = {name: [] for name in binaries}
+        elapsed = {name: [] for name in ('baseline', 'selected')}
+        cpu = {name: [] for name in elapsed}
         for index in range(4):
             for name in (('baseline', 'selected') if index % 2 == 0 else ('selected', 'baseline')):
                 before = resource.getrusage(resource.RUSAGE_CHILDREN)
@@ -169,11 +203,28 @@ wasi.start(instance);
                 elapsed[name].append((time.perf_counter_ns()-start)/1_000_000)
                 cpu[name].append(1000*((after.ru_utime+after.ru_stime)-(before.ru_utime+before.ru_stime)))
         cost = {name: {'elapsedMedianMs': round(statistics.median(elapsed[name]), 2),
-                       'childCpuMedianMs': round(statistics.median(cpu[name]), 2)} for name in binaries}
+                       'childCpuMedianMs': round(statistics.median(cpu[name]), 2)} for name in elapsed}
+        decode_elapsed = {name: [] for name in ('encoderOnly', 'selected')}
+        decode_cpu = {name: [] for name in decode_elapsed}
+        for index in range(4):
+            for name in (('encoderOnly', 'selected') if index % 2 == 0 else ('selected', 'encoderOnly')):
+                before = resource.getrusage(resource.RUSAGE_CHILDREN)
+                start = time.perf_counter_ns()
+                raw = run([str(node), '--no-warnings', str(runner), str(binaries[name]), 'decode-alone'], env, root)
+                after = resource.getrusage(resource.RUSAGE_CHILDREN)
+                match = DECODE.fullmatch(raw)
+                if not match or match[1] != b'decode-alone' or match[2] != b'false':
+                    raise ValueError('base64-reference-decode-cost-output')
+                decode_elapsed[name].append((time.perf_counter_ns()-start)/1_000_000)
+                decode_cpu[name].append(1000*((after.ru_utime+after.ru_stime)-(before.ru_utime+before.ru_stime)))
+        decode_cost = {name: {'elapsedMedianMs': round(statistics.median(decode_elapsed[name]), 2),
+                              'childCpuMedianMs': round(statistics.median(decode_cpu[name]), 2)} for name in decode_elapsed}
         return {'scope': 'pinned-core-wasm-with-test-activation-and-queue-pump',
-                'nativeGoReference': {'siblingBeforeReturn': native_sibling}, 'signedGuestExecuted': False,
+                'nativeGoReference': {'siblingBeforeReturn': native_sibling, 'decode': native_decode},
+                'signedGuestExecuted': False,
                 'source': checkpoints.STANDARD_BASE64_SHA256, 'sites': rows[0]['sites'],
-                'outcomes': outcomes, 'noSiblingCost': cost, 'costIncludesProcessStartup': True}
+                'outcomes': outcomes, 'noSiblingCost': cost, 'decodeNoSiblingCost': decode_cost,
+                'costIncludesProcessStartup': True}
 
 
 if __name__ == '__main__':

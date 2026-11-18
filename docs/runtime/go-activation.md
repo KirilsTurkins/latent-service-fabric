@@ -135,8 +135,7 @@ When a checkpoint-enabled profile selects `encoding/base64`, the authenticated
 Go 1.27.4 `Encoding.Encode` loop also reaches the existing checkpoint bridge.
 Its local remaining-length guard calls the bridge once per 256 iterations; with
 the existing 1,024-call quantum, at most 786,432 input bytes pass between
-yields. It does not inspect scheduler, host-waitable or timer state. This is an
-encoder-only selection; other Base64 loops are not qualified by it.
+yields. It does not inspect scheduler, host-waitable or timer state.
 
 The pinned native Go reference ran a synchronized sibling before a 24 MiB
 ordinary encode returned. A core-Wasm control using the maintained scheduler
@@ -151,6 +150,25 @@ and 331.29 ms with the site. These noisy, startup-inclusive observations
 include output validation and do not establish speedup or production cost. The
 core-Wasm reference is not yet wired into CI and does not demonstrate
 host/timer polling or signed qualification.
+
+The authenticated `Encoding.Decode` loops now also reach that bridge. The
+outer loops use a local previous-input index to admit a checkpoint after at
+least 1,024 more source bytes; the newline loops admit one at each 1,024-byte
+index. For uninterrupted valid input, the current quantum yields at intervals
+of 1,048,576 encoded bytes. The local index is not scheduler state, and the
+dispatcher and non-checkpoint profile are unchanged. This selection does not
+qualify every Base64 streaming or wrapper loop.
+
+In the pinned core-Wasm reference, the historical encoder-only selection
+returned from a 24 MiB decode before its ready sibling ran; the new codec
+selection observed that sibling and 23 yields. Long newline, padding and
+mixed-input cases also observed the sibling, and outputs and tested malformed
+input errors matched pinned native Go. Two small no-sibling samples measured
+median child CPU of 229.08 versus 188.01 ms and 274.62 versus 229.10 ms for the
+encoder-only and codec selections. These noisy, startup-inclusive measurements
+include input/output validation and do not establish speedup or production
+cost. The reference uses a test activation and queue pump, remains outside CI,
+and does not qualify a signed guest or real host.
 
 Original source bytes remain unchanged. Derived copies retain original
 diagnostic line/column positions, source and output digests, and suspension

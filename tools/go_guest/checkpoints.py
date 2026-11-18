@@ -37,9 +37,10 @@ STANDARD_JSON_WIRE_SITES = [(28, 43), (29, 43), (30, 43), (33, 43), (35, 83), (4
                             (556, 63), (568, 52), (572, 20), (593, 47), (596, 57)]
 STANDARD_BASE64 = 'encoding/base64/base64.go'
 STANDARD_BASE64_SHA256 = '15e67707bc3f0925f7f56bd4002106681c6b64ba5bf553b4d8cc0bb8eca71aa5'
-STANDARD_BASE64_SITES = [(154, 21)]
-STANDARD_BASE64_MODE = 'base64-encode-stride-v1'
-STANDARD_BASE64_STRIDE = 256
+STANDARD_BASE64_SITES = [(154, 21), (315, 34), (352, 63), (368, 62),
+                         (524, 68), (549, 43), (570, 21)]
+STANDARD_BASE64_MODE = 'base64-codec-stride-v2'
+STANDARD_BASE64_STRIDES = [256, 1024, 1024, 1024, 1024, 1024, 1024]
 
 
 def checkpoint_yield_template(sdk):
@@ -157,12 +158,13 @@ def transform(compiler, generated, packages, application_sources, output):
             sites = [{'line': line, 'column': column, 'suspendable': True}
                      for line, column in expected_sites]
             if source_name == STANDARD_BASE64:
-                sites[0]['stride'] = STANDARD_BASE64_STRIDE
+                for site, stride in zip(sites, STANDARD_BASE64_STRIDES, strict=True):
+                    site['stride'] = stride
             if (row.get('sites') != sites
                     or any(type(site['line']) is not int or type(site['column']) is not int
                            or site['suspendable'] is not True for site in row['sites'])
                     or source_name == STANDARD_BASE64 and
-                       type(row['sites'][0].get('stride')) is not int
+                       any(type(site.get('stride')) is not int for site in row['sites'])
                     or row.get('upstreamDigest') != 'sha256:' + source_sha256
                     or hashlib.sha256(read_file(path)).hexdigest() != source_sha256):
                 raise ValueError('go-checkpoint-standard-iterator-output-drift')
