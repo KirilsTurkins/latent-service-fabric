@@ -228,10 +228,11 @@ toward their worker limit. They release their own pool monitor before calling
 the factory or starting its returned thread, so another thread can submit or
 shut down while the factory runs. A caller that already holds that monitor can
 still block progress. An in-progress factory or managed-worker registration
-fences root retirement. Cached pools reuse idle workers, create workers for
-additional accepted work, and retain their single-attempt null-factory
-rejection. A cached factory returning an already-live thread fails with
-`IllegalThreadStateException` without adopting or interrupting that thread.
+fences root retirement. Cached pools, including the default async facility,
+reuse idle workers, create workers for additional accepted work, and retain
+their single-attempt null-factory rejection. A cached factory returning an
+already-live thread fails with `IllegalThreadStateException` without adopting
+or interrupting that thread.
 This growth remains bounded by the original host owner limits and Java heap;
 it adds no host grant.
 
@@ -253,10 +254,13 @@ worker, root drain remains pending until the accepted work runs or is
 withdrawn. A fallback factory error preserves the queued entries and original
 error. Cached pools reject a first task when their factory returns null.
 
-Cached pools retain their SDK queue for idle-worker handoff. If a caller holds
-the public pool monitor while submitting to an idle worker and immediately
-calls `shutdownNow()`, the SDK can return that queued task without running it;
-the tested JDK synchronous handoff instead runs the task and returns no entry.
+Cached pools hand work to a worker only after it enters its idle wait. The
+original Queue and Result owners stay charged until that worker physically
+claims the task; `shutdownNow()` does not return the committed handoff. A
+caller holding the public pool monitor can still delay the worker's execution.
+Idle-worker links use the existing bounded Java heap and no additional host
+owner; scanning the list and waking waiters scales with the existing worker
+count.
 
 The first-task reservation is an intrusive link on the already charged entry;
 its worker retains only the original Queue lease identity, not the command or
