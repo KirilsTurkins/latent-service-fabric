@@ -12,6 +12,40 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class TypeScriptFetchTests(unittest.TestCase):
+    def test_response_status_text_preserves_valid_reason_phrase_bytes(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+for (const profile of ['lsf-fetch-buffered-v1', 'lsf-fetch-phase-buffered-v2']) {
+  installFetch({}, () => false, target, profile);
+  for (const Response of [globalThis.Response, target.Response]) {
+    for (const input of ['', 'OK', '  OK  ', '\tOK\t', '\u0080\u00ff', null, 42]) {
+      const expected = String(input);
+      const response = new Response('body', {status: 201, statusText: input});
+      assert.equal(response.statusText, expected);
+      assert.equal(response.clone().statusText, expected);
+      assert.equal(await response.text(), 'body');
+      const json = Response.json({value: 1}, {statusText: input});
+      assert.equal(json.statusText, expected);
+      assert.equal(json.clone().statusText, expected);
+    }
+    assert.equal(new Response().statusText, '');
+    for (const value of ['bad\rvalue', 'bad\nvalue', 'bad\u0000value', 'bad\u007fvalue', '\u0100', Symbol('bad')]) {
+      assert.throws(() => new Response(null, {statusText: value}), TypeError);
+    }
+    let conversions = 0;
+    const reason = {toString() {conversions++; return '  Fine  ';}};
+    assert.equal(new Response(null, {statusText: reason}).statusText, '  Fine  ');
+    assert.equal(conversions, 1);
+    let reads = 0;
+    const init = {get statusText() {reads++; return '  Fine  ';}};
+    assert.equal(new Response(null, init).statusText, '  Fine  ');
+    assert.equal(reads, 1);
+  }
+  // Header values have separate normalization rules.
+  assert.equal(new target.Headers({'x-test': '\t value  '}).get('x-test'), 'value');
+}
+""")
+
     def test_urlencoded_bodies_match_reference_bytes_media_type_and_construction_snapshot(self):
         self.run_javascript(r"""
 const target = {TextEncoder, TextDecoder, URL, URLSearchParams, AbortController, AbortSignal};
@@ -247,6 +281,75 @@ for (const Headers of [globalThis.Headers, target.Headers]) {
   assert.equal(headers.get('x-value'), 'original');
   assert.deepEqual([...new Headers()], []);
   assert.deepEqual([...new Headers(undefined)], []);
+}
+""")
+
+    def test_headers_iteration_and_foreach_observe_mutations_like_the_reference(self):
+        self.run_javascript(r"""
+for (const profile of ['lsf-fetch-buffered-v1', 'lsf-fetch-phase-buffered-v2']) {
+const target = {TextEncoder, TextDecoder};
+installFetch({}, () => false, target, profile);
+for (const Headers of [globalThis.Headers, target.Headers]) {
+  for (const kind of ['entries', 'keys', 'values', Symbol.iterator]) {
+    const headers = new Headers([['b', 'first'], ['d', 'old'], ['f', 'removed']]);
+    const iterator = headers[kind]();
+    const first = iterator.next();
+    headers.set('c', 'inserted');
+    headers.set('d', 'updated');
+    headers.delete('f');
+    headers.set('e', 'last');
+    const result = [first.value, ...iterator];
+    const expected = kind === 'keys' ? ['b', 'c', 'd', 'e'] :
+      kind === 'values' ? ['first', 'inserted', 'updated', 'last'] :
+      [['b', 'first'], ['c', 'inserted'], ['d', 'updated'], ['e', 'last']];
+    assert.deepEqual(result, expected);
+    headers.set('g', 'after-completion');
+    const later = kind === 'keys' ? 'g' : kind === 'values' ? 'after-completion' : ['g', 'after-completion'];
+    assert.deepEqual(iterator.next(), {value: later, done: false});
+    assert.deepEqual(iterator.next(), {value: undefined, done: true});
+    assert.equal(iterator[Symbol.iterator](), iterator);
+    assert.throws(() => iterator.next.call({}), TypeError);
+    assert.deepEqual(Object.keys(iterator), []);
+    assert.equal(Object.prototype.toString.call(iterator), '[object Headers Iterator]');
+    assert.equal(Object.getPrototypeOf(Object.getPrototypeOf(iterator)),
+      Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]())));
+  }
+  const helper = new Headers([['a', '1']]).entries();
+  if (typeof helper.map === 'function') assert.deepEqual([...helper.map(([key]) => key)], ['a']);
+  // The cursor is a position in the newly sorted list, not the last key.
+  const shifted = new Headers([['b', '1'], ['d', '2']]), cursor = shifted.entries();
+  assert.deepEqual(cursor.next().value, ['b', '1']);
+  shifted.set('a', '0');
+  assert.deepEqual(cursor.next().value, ['b', '1']);
+  shifted.delete('a');
+  assert.equal(cursor.next().done, true);
+  for (const kind of ['entries', 'keys', 'values']) {
+    assert.throws(() => Headers.prototype[kind].call({}), TypeError);
+  }
+  const headers = new Headers([['a', '1'], ['c', '3']]);
+  const seen = [], receiver = {marker: true};
+  function callback(value, key, owner) {
+    assert.equal(this, receiver);
+    assert.equal(owner, headers);
+    seen.push([key, value]);
+    if (key === 'a') {headers.set('b', '2'); headers.delete('c'); headers.set('d', '4');}
+  }
+  headers.entries = () => {throw new Error('overridden-entries-must-not-run');};
+  headers.forEach(callback, receiver);
+  assert.deepEqual(seen, [['a', '1'], ['b', '2'], ['d', '4']]);
+  assert.deepEqual([...headers], seen);
+  for (const invalid of [null, undefined, {}, 1]) {
+    assert.throws(() => new Headers().forEach(invalid), TypeError);
+  }
+}
+// The selected profile retains its original 64-entry envelope even when the
+// callback continually replaces a later entry while iteration is in progress.
+const bounded = new target.Headers(Array.from({length:64}, (_, i) => ['x-' + String(i).padStart(2, '0'), 'v']));
+let visits = 0;
+bounded.forEach((_value, key) => { visits++; if (key === 'x-00') { bounded.delete('x-63'); bounded.set('x-64', 'new'); } });
+assert.equal(visits, 64);
+assert.equal([...bounded].length, 64);
+assert.throws(() => bounded.set('x-65', 'over-limit'), /fetch-header-limit/);
 }
 """)
 

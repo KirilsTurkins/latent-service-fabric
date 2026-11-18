@@ -66,6 +66,24 @@ def root_drain_witness(value, mode):
         'kernelNativeFinalFreeProved': False}
 
 
+def semaphore_witness(value):
+    require(type(value) is str and len(value) <= 160, 'c-semaphore-bounded-witness')
+    parts = value.split(':')
+    require(len(parts) == 9 and parts[0] == 'sem', 'c-semaphore-witness-shape')
+    numbers = parts[1:]
+    require(all(item.isascii() and item.isdigit() and len(item) <= 20 and str(int(item)) == item
+                for item in numbers), 'c-semaphore-witness-numbers')
+    posted, completed, waits, parked, tasks, results, native, memory = map(int, numbers)
+    require((posted, completed, waits, parked, tasks, results, native) == (1, 1, 2, 2, 3, 2, 6)
+            and 0 < memory <= 32 * 1024**2, 'c-semaphore-exact-live-owners')
+    return {'posts': posted, 'waitersCompleted': completed, 'waits': waits,
+            'parkedTasks': parked, 'tasks': tasks, 'results': results,
+            'nativeOwners': native, 'nativeMemoryBytes': memory,
+            'observedBy': 'ordinary-controller-before-post',
+            'canonicalPollPendingClaimed': False, 'automaticCpuFairnessClaimed': False,
+            'timedOrProcessSharedClaimed': False}
+
+
 def prepare(directory):
     project = c_capsule_project.create(directory, 'greeting', name='c-thread-runtime',
                                         threading_profile=fixture.PROFILE)
@@ -100,7 +118,7 @@ def inputs(capture=None):
 
 
 def invoke(client, probe, target, output, activation, mode='once'):
-    require(mode in ('once', 'pre', 'late'), 'c-once-unreviewed-activation-mode')
+    require(mode in ('once', 'pre', 'late', 'sem'), 'c-once-unreviewed-activation-mode')
     revision = owner.selected_revision(client, target)
     process = owner.start_call(client, target, owner.SERVICE, 'greet', [mode], activation)
     failed = False
@@ -121,6 +139,7 @@ def invoke(client, probe, target, output, activation, mode='once'):
                      'blobWriteBytes', 'logBytes', 'effectCount', 'childCalls')),
                 'c-once-original-envelope-and-no-other-authority')
         checked = (witness(row['decoded'][0]['ok']) if mode == 'once'
+                   else semaphore_witness(row['decoded'][0]['ok']) if mode == 'sem'
                    else root_drain_witness(row['decoded'][0]['ok'], mode))
         observed = owner.retire(client, probe, target, output, activation)
         require(observed['physicalOwnersAfter'] == 0 and observed['activeProviderCountersAfter'] == 0,
@@ -146,7 +165,7 @@ def run_node(artifact, native, output, deadline):
     commands = Commands(ROOT, fresh(output / 'commands'), build_environment(output),
                         deadline_seconds=300, command_seconds=60)
     commands.deadline = min(commands.deadline, deadline)
-    record = {'schemaVersion': 'latent.c.once-and-root-drain.node.v1', 'status': 'incomplete',
+    record = {'schemaVersion': 'latent.c.once-root-drain-semaphore.node.v1', 'status': 'incomplete',
               'component': component, 'native': before, 'full744Qualified': False}
     stage, failed = 'sign', False
     try:
@@ -190,6 +209,9 @@ def run_node(artifact, native, output, deadline):
             stage = 'two-signed-root-drain-activations'
             record['rootDrainCases'] = [invoke(client, probe, target, output, 'c-root-drain-' + mode, mode)
                                         for mode in ('pre', 'late')]
+            stage = 'two-signed-semaphore-activations'
+            record['semaphoreCases'] = [invoke(client, probe, target, output, 'c-semaphore-' + label, 'sem')
+                                        for label in ('initial', 'fresh')]
             delete_all(client, [target['name']])
             record['afterDeletes'] = sample(client, probe, 'c-once-after-deletes', 0)
             stop(client, node)
@@ -230,11 +252,11 @@ def qualify(args):
     commands.deadline = time.monotonic() + 1315 - elapsed
     commands.environment.update(CARGO_TARGET_DIR=os.environ.get('CARGO_TARGET_DIR', str(ROOT / 'target')),
         CARGO_BUILD_JOBS='2', CARGO_INCREMENTAL='0', CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0')
-    result = {'schemaVersion': 'latent.c.once-and-root-drain.qualification.v1', 'status': 'incomplete',
+    result = {'schemaVersion': 'latent.c.once-root-drain-semaphore.qualification.v1', 'status': 'incomplete',
               'full744Qualified': False, 'publisherAuthenticated': False, 'releasePublished': False,
               'limits': {'parentSeconds': 1320, 'commandSeconds': 900, 'cleanupReserveSeconds': 5,
-                         'jobs': 2, 'components': 1, 'activations': 4, 'onceActivations': 2,
-                         'rootDrainActivations': 2, 'clientCalls': 384}}
+                         'jobs': 2, 'components': 1, 'activations': 6, 'onceActivations': 2,
+                         'rootDrainActivations': 2, 'semaphoreActivations': 2, 'clientCalls': 384}}
     stage = 'source'
     try:
         source = source_identity(ROOT)
@@ -264,7 +286,8 @@ def qualify(args):
         stage = 'signed-once-witnesses'
         result['node'] = run_node(artifact, native, output / 'node', commands.deadline)
         require(result['node']['status'] == 'passed' and len(result['node']['cases']) == 2
-                and len(result['node']['rootDrainCases']) == 2, 'c-once-and-root-drain-four-signed-outcomes')
+                and len(result['node']['rootDrainCases']) == 2 and len(result['node']['semaphoreCases']) == 2,
+                'c-once-root-drain-semaphore-six-signed-outcomes')
         require(helpers == inputs() and source_identity(ROOT) == source
                 and sdk == inventory(c_capsule_project.sdk_inputs(ROOT, threading=True))
                 and original == inventory(snapshot(project)) and result['nativeTuple'] == ordinary_tuple(receipt, native)

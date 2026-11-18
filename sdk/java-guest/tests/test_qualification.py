@@ -955,10 +955,10 @@ class CompletableModelIntegrity(unittest.TestCase):
                 if observed == reviewed:
                     report = fibers.completable_model_control(compiler, root / "model")
                     self.assertEqual(report["modelFingerprintVersion"], 6)
-                    self.assertEqual(report["modelMethodBodies"], 191)
+                    self.assertEqual(report["modelMethodBodies"], 205)
                     self.assertEqual(report["coroutineMonitorBodies"], 29)
                     self.assertEqual(report["ownedCallbackBodies"], 33)
-                    self.assertEqual(report["actualGeneratedCallbacks"], 23)
+                    self.assertEqual(report["actualGeneratedCallbacks"], 28)
                     self.assertEqual(report["fieldReferences"], "actual-declared-and-inherited-types-passed")
                     self.assertEqual(compiler.run.call_args.args[-1],
                         "dev.latent.guest.runtime.compiler.CompletableFutureFieldModelControl")

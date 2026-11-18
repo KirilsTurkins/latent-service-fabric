@@ -1,4 +1,8 @@
-use std::sync::{mpsc, Arc, Barrier};
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::{mpsc, Arc, Barrier, Mutex, Weak};
+use std::task::{Context, Poll};
 use std::time::{Duration, Instant};
 
 use crate::test_support::coordination::{with_watchdog, PollProbe, Rendezvous, Stage, WATCHDOG};
@@ -646,12 +650,56 @@ fn dropped_waiter_and_paused_actual_buffer_destructor_cannot_publish_physical_re
     assert!(!late.clean && late.snapshot.physically_retired());
 }
 
+struct CheckingClock {
+    inner: TestClock,
+    owner: Mutex<Weak<Owner>>,
+    locked_calls: AtomicUsize,
+}
+impl ActivationClock for CheckingClock {
+    fn sample(&self) -> crate::ClockSample {
+        self.inner.sample()
+    }
+    fn monotonic_now(&self) -> Instant {
+        if let Some(owner) = self.owner.lock().unwrap().upgrade() {
+            let locked = usize::from(owner.state.try_lock().is_err());
+            self.locked_calls.fetch_add(locked, Ordering::SeqCst);
+        }
+        self.inner.monotonic_now()
+    }
+}
+struct InspectTimerDrop {
+    owner: NativeCapacityOwner,
+    dropped_unlocked: Arc<AtomicBool>,
+}
+impl Future for InspectTimerDrop {
+    type Output = ();
+    fn poll(self: Pin<&mut Self>, _: &mut Context<'_>) -> Poll<()> {
+        panic!("rejected timer must not be polled")
+    }
+}
+impl Drop for InspectTimerDrop {
+    fn drop(&mut self) {
+        self.dropped_unlocked
+            .store(self.owner.0.state.try_lock().is_ok(), Ordering::SeqCst);
+    }
+}
+
 #[test]
 fn single_drain_waiter_detachment_does_not_extend_original_native_buffer_cutoff() {
-    let (owner, clock, original) = fixture();
+    let clock = TestClock::new(100, Instant::now(), 1);
+    let checking_clock = Arc::new(CheckingClock {
+        inner: clock.clone(),
+        owner: Mutex::new(Weak::new()),
+        locked_calls: AtomicUsize::new(0),
+    });
+    let owner = NativeCapacityOwner::with_clock(limits(), checking_clock.clone()).unwrap();
+    *checking_clock.owner.lock().unwrap() = Arc::downgrade(&owner.0);
+    let original = clock.monotonic_now() + Duration::from_secs(10);
     let response = owner
         .reserve(NativeAdmissionClass::Recovery, request(), original)
         .unwrap();
+    checking_clock.locked_calls.store(0, Ordering::SeqCst);
+    assert_eq!(owner.drain_deadline(original).unwrap(), original);
     let cutoff = clock.monotonic_now() + Duration::from_secs(1);
     let drain = owner
         .drain_async(cutoff, clock.sleep_until(cutoff))
@@ -661,12 +709,132 @@ fn single_drain_waiter_detachment_does_not_extend_original_native_buffer_cutoff(
         Err(NativeCapacityError::DrainWaiterBusy)
     ));
     drop(drain);
-    clock.advance(Duration::from_secs(2));
-    let report = wait(owner.drain_async(original, std::future::pending()).unwrap());
+
+    let before = {
+        let state = owner.0.state.lock().unwrap();
+        (state.next_waiter, state.shutdown_deadline, state.snapshot())
+    };
+    let dropped_unlocked = Arc::new(AtomicBool::new(false));
+    assert!(matches!(
+        owner.drain_async(
+            original,
+            InspectTimerDrop {
+                owner: owner.clone(),
+                dropped_unlocked: Arc::clone(&dropped_unlocked),
+            },
+        ),
+        Err(NativeCapacityError::DeadlineTooLong)
+    ));
+    assert!(dropped_unlocked.load(Ordering::SeqCst));
+    {
+        let state = owner.0.state.lock().unwrap();
+        assert_eq!(
+            (state.next_waiter, state.shutdown_deadline, state.snapshot()),
+            before
+        );
+        assert!(state.waiter.is_none());
+    }
+    assert_eq!(owner.drain_deadline(original).unwrap(), cutoff);
+    assert_eq!(clock.pending_waiters(), 0);
+
+    // An intervening waiter can shorten the cutoff after a caller observes it.
+    // Its stale later timer must be rejected, and a retry uses the new cutoff.
+    let observed_cutoff = owner.drain_deadline(original).unwrap();
+    let earlier = clock.monotonic_now() + Duration::from_millis(500);
+    let contender_owner = owner.clone();
+    let contender_clock = clock.clone();
+    let (ready_tx, ready_rx) = mpsc::sync_channel(1);
+    let contender = std::thread::spawn(move || {
+        let intervening = contender_owner
+            .drain_async(earlier, contender_clock.sleep_until(earlier))
+            .unwrap();
+        drop(intervening);
+        ready_tx.send(()).unwrap();
+    });
+    ready_rx.recv_timeout(WATCHDOG).unwrap();
+    contender.join().unwrap();
+    let before_retry = {
+        let state = owner.0.state.lock().unwrap();
+        (state.next_waiter, state.shutdown_deadline, state.snapshot())
+    };
+    assert!(matches!(
+        owner.drain_async(observed_cutoff, clock.sleep_until(observed_cutoff)),
+        Err(NativeCapacityError::DeadlineTooLong)
+    ));
+    {
+        let state = owner.0.state.lock().unwrap();
+        assert_eq!(
+            (state.next_waiter, state.shutdown_deadline, state.snapshot()),
+            before_retry
+        );
+        assert!(state.waiter.is_none());
+    }
+    assert_eq!(owner.drain_deadline(original).unwrap(), earlier);
+    let mut replacement = Box::pin(
+        owner
+            .drain_async(earlier, clock.sleep_until(earlier))
+            .unwrap(),
+    );
+    let wake = PollProbe::default();
+    wake.pending(replacement.as_mut());
+    assert_eq!(clock.pending_waiters(), 1);
+    clock.advance(Duration::from_millis(500));
+    assert!(
+        wake.wakes() > 0,
+        "original drain cutoff did not wake replacement"
+    );
+    let report = wake.ready(replacement.as_mut());
     assert!(!report.clean && report.snapshot.recovery.slots == 1);
+    assert_eq!(checking_clock.locked_calls.load(Ordering::SeqCst), 0);
     drop(response);
     let retired = wait(owner.drain_async(original, std::future::pending()).unwrap());
     assert!(!retired.clean && retired.snapshot.physically_retired());
+
+    check_immediate_drain_observations();
+}
+
+fn check_immediate_drain_observations() {
+    // A later timer is harmless when no physical owner remains: polling can
+    // report immediately without depending on a timer wake.
+    let (empty_owner, empty_clock, empty_original) = fixture();
+    let empty_reservation = empty_owner
+        .reserve(NativeAdmissionClass::Ordinary, request(), empty_original)
+        .unwrap();
+    let empty_cutoff = empty_clock.monotonic_now() + Duration::from_secs(1);
+    drop(
+        empty_owner
+            .drain_async(empty_cutoff, empty_clock.sleep_until(empty_cutoff))
+            .unwrap(),
+    );
+    drop(empty_reservation);
+    let empty = wait(
+        empty_owner
+            .drain_async(empty_original, std::future::pending())
+            .unwrap(),
+    );
+    assert!(empty.clean && empty.snapshot.physically_retired());
+
+    // At an already elapsed cutoff, a live owner produces an immediate
+    // quarantine report even if the replacement timer itself never wakes.
+    let (expired_owner, expired_clock, expired_original) = fixture();
+    let expired_reservation = expired_owner
+        .reserve(NativeAdmissionClass::Recovery, request(), expired_original)
+        .unwrap();
+    let expired_cutoff = expired_clock.monotonic_now() + Duration::from_secs(1);
+    drop(
+        expired_owner
+            .drain_async(expired_cutoff, expired_clock.sleep_until(expired_cutoff))
+            .unwrap(),
+    );
+    expired_clock.advance(Duration::from_secs(1));
+    let expired = wait(
+        expired_owner
+            .drain_async(expired_original, std::future::pending())
+            .unwrap(),
+    );
+    assert!(!expired.clean && expired.snapshot.recovery.slots == 1);
+    assert!(expired.snapshot.quarantined);
+    drop(expired_reservation);
 }
 
 #[test]

@@ -107,6 +107,13 @@ by assumption. The finite Task.Wait/WaitAll and signed mixed-content programmes
 keep separate source identities; none qualifies general CLR threading or every
 combination of the newer owner transitions.
 
+In the selected joined-wait helper, a Task observed complete at entry returns to
+the original Task.Wait exception handling without entering a new wait frame or
+switching execution context. Incomplete Tasks retain the existing dispatch and
+frame-restoration path; a Task completing after the entry check may still enter
+that path. CLR and isolated emitted-helper controls cover this distinction;
+they are not signed-component qualification.
+
 The closed WASI adapter denies ambient files, sockets, wall time and entropy.
 NativeAOT GC monotonic time is routed through
 `latent:clock/monotonic@0.1.0`, declared in WIT and separately granted by

@@ -1,4 +1,5 @@
 """Focused selection, ownership and ordering controls; no signed guest claim."""
+import hashlib
 import json
 from pathlib import Path
 import tempfile
@@ -114,6 +115,18 @@ class ClosedHeadersTests(unittest.TestCase):
             compiler.paths = {'zig': root / 'zig', 'c-threading-transformer': root / 'transformer'}
             compiler.sdk, compiler.platform = sdk, None
             compiler.commands, compiler.isolation = None, isolation
+            compiler.materials = {}
+            compiler.threading_semaphore_inputs = {}
+            compiler.threading_barrier_inputs = {}
+            port_pins = []
+            for source_pins in (threading.SEMAPHORE_LIBC, threading.BARRIER_LIBC):
+                pins = {}
+                for name in source_pins:
+                    content = ('fixture:' + name).encode()
+                    path = root / name; path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(content)
+                    pins[name] = hashlib.sha256(content).hexdigest()
+                port_pins.append(pins)
             compiler.validate_static_libraries = lambda *_args: None
             compiler.select_closed_header_inputs = lambda: None
             compiler.closed_header_stage = SimpleNamespace(directory=staged)
@@ -136,10 +149,15 @@ class ClosedHeadersTests(unittest.TestCase):
                 (destination / 'probe.c').write_text('int generated;\n')
                 (destination / 'probe_component_type.o').write_bytes(b'generated')
                 return destination, {}
-            with patch('tools.c_guest.compiler.generate', generate), self.assertRaises(StopAtLink):
+            with patch.multiple(threading, SEMAPHORE_LIBC=port_pins[0], BARRIER_LIBC=port_pins[1]), \
+                    patch('tools.c_guest.compiler.generate', generate), self.assertRaises(StopAtLink):
                 compiler.compile([app, *deps], root / 'wit', 'service', root / 'output',
                     trap=False, include_directories=(include,), dependency_sources=tuple(deps),
                     threading_profile=threading.PROFILE, header_profile=closed_headers.PROFILE)
+            self.assertEqual(set(compiler.materials), set(port_pins[0]) | set(port_pins[1]))
+            for pins in port_pins:
+                for name, expected_digest in pins.items():
+                    self.assertEqual(compiler.materials[name]['digest'], 'sha256:' + expected_digest)
             command = commands[-1]
             responses = [value for value in command if value.startswith('@')]
             self.assertEqual(len(responses), 1)

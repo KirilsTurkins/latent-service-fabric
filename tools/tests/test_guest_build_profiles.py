@@ -202,6 +202,16 @@ class GeneratorArchive(unittest.TestCase):
         self.assertEqual(fetch.call_args_list[1].args[0].full_url, install.ASSET_URL)
         self.assertTrue(fallback.closed)
 
+    def test_wrapped_connection_timeout_uses_the_pinned_asset(self):
+        failure = urllib.error.URLError(TimeoutError('connect timed out'))
+        fallback = io.BytesIO(b'asset')
+        with patch.object(install.urllib.request, 'urlopen', side_effect=[failure, fallback]) as fetch, \
+             contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(install.download_archive(), b'asset')
+        self.assertEqual(fetch.call_count, 2)
+        self.assertEqual(fetch.call_args_list[1].args[0].full_url, install.ASSET_URL)
+        self.assertTrue(fallback.closed)
+
     def test_partial_read_timeout_closes_and_discards_primary_before_fallback(self):
         class PartialThenTimeout(io.BytesIO):
             def __init__(self):

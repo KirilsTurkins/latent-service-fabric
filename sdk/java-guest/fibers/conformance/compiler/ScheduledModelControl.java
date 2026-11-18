@@ -147,7 +147,7 @@ public final class ScheduledModelControl {
         for (ClassHolder model : models) transform.invoke(plugin, model, context);
         constructedIdentities(models.get(4));
         generatedCallback(models.get(4), "callable", source);
-        generatedCallback(models.get(3), "startWorker", source);
+        generatedCallback(models.get(3), "startReserved", source);
         generatedCallback(managed, "tryStartWorker", source);
         ClassHolder pool = models.get(3);
         require(pool.getField("pendingWork") != null && pool.getField("owner") != null,

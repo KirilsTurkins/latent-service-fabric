@@ -8,7 +8,7 @@ original package; it contains 39 changed upstream files and 24 added
 source/license files. Other Wasmtime packages use the matching 48.0.8 locked
 registry versions. The standalone development lock selects Tokio 1.51.6 for
 RUSTSEC-2026-0386; the immutable upstream inventory retains its original lock
-identity. This dependency-only lock correction changes no Wasmtime runtime source.
+identity. Both standalone development locks select env_logger 0.11.8 to replace its unmaintained humantime dependency with jiff. These dependency-only lock corrections change no Wasmtime runtime source.
 
 The 48.0.8 source includes upstream fixes for GHSA-3982-jqvv-277m,
 GHSA-qw58-7h65-crq2 and GHSA-6fr9-xmw9-5352. The owned v30
