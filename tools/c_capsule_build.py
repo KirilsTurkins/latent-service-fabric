@@ -52,6 +52,18 @@ RECIPE += language.RECIPE + c_resource_inputs.RECIPE + closed_headers.RECIPE
 RECIPE += ('tools/c_guest/feature_detection.py', 'tools/c_guest/feature_loader.cmake')
 
 
+def observed_compiler_materials(compiler: Compiler, *, threaded: bool) -> list[dict]:
+    """Select captured optional source ports before freezing observed materials."""
+    if threaded:
+        from tools.c_guest import threading
+        runtime = compiler.sdk / 'runtime'
+        if threading.captured_semaphore_port(runtime):
+            compiler.select_threading_semaphore_inputs()
+        if threading.captured_barrier_port(runtime):
+            compiler.select_threading_barrier_inputs()
+    return list(compiler.materials.values())
+
+
 def dependency_materials(output: Path, has_closure: bool, runtime_profile: str) -> list[dict]:
     if has_closure:
         names = ('application-dependencies.json', 'c-libraries.json', 'c-resources.json')
@@ -166,7 +178,7 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                 compiler.select_threading_clock_inputs()
             if use_closed_headers:
                 compiler.select_closed_header_inputs()
-            materials = list(compiler.materials.values())
+            materials = observed_compiler_materials(compiler, threaded=threaded)
             paths = {"contracts-tool": checked_path(contracts_tool)}
             if packager is not None:
                 paths["packager"] = checked_path(packager)

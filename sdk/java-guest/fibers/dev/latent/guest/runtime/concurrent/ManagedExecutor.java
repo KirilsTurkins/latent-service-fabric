@@ -24,13 +24,22 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private volatile Activation.Lease owner;
     private final java.util.concurrent.atomic.AtomicBoolean ownerSettlementStarted =
         new java.util.concurrent.atomic.AtomicBoolean();
-    private boolean shutdown;
+    // Status observations must remain available while an application holds
+    // the executor monitor or a worker interrupt hook runs under it.
+    private volatile boolean shutdown;
     private boolean interrupting;
     private volatile boolean retiring;
     private int running;
     private volatile int pendingWork;
     // A reentrant factory must not create a second worker for this slot.
     private volatile int startingWorkers;
+    // A pool worker can be published before its Activation Work is registered.
+    private volatile int enteringWorkers;
+    // Worker-creating first tasks stay out of the public FIFO until startup resolves.
+    private Item reservedFirsts;
+    private static final int RESERVED = 0, TRANSFERRING = 1, CLAIMING = 2,
+        CLAIMED = 3, WITHDRAWING = 4, WITHDRAWN = 5, QUARANTINED = 6,
+        SETTLING = 7, QUEUED = 8;
     // Never reuse a preference: an accepted but unstarted worker can outlive
     // withdrawal of its entry. Zero means there is no preference.
     private long nextPreference;
@@ -38,9 +47,12 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private static final class Item {
         final Runnable command;
         final Activation.Lease queued;
-        final boolean actionAccepted;
-        final boolean futureAccepted;
+        boolean actionAccepted;
+        boolean futureAccepted;
         long preference;
+        Item nextReserved;
+        int transferState;
+        boolean uncertainStart;
         Item(Runnable command, Activation.Lease queued, boolean actionAccepted, boolean futureAccepted) {
             this.command = command; this.queued = queued; this.actionAccepted = actionAccepted; this.futureAccepted = futureAccepted;
         }
@@ -80,7 +92,13 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         }
     }
 
-    @Override public synchronized void execute(Runnable command) {
+    @Override public void execute(Runnable command) {
+        executeManaged(command);
+    }
+
+    // Historical path retained for compatibility with existing source controls;
+    // application dispatch and replacement startup do not call it.
+    private synchronized void executeLegacy(Runnable command) {
         Objects.requireNonNull(command);
         Activation.Lease queued = null;
         FutureTask<?> future = command instanceof FutureTask<?> ? (FutureTask<?>)command : null;
@@ -89,39 +107,305 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         Item item = null;
         boolean installed = false;
         boolean fallbackAccepted = false;
+        boolean withdrawnForShutdown = false;
+        boolean counted = false, linked = false;
         try {
             if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
                 throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
+            if (Activation.admissionPoisoned()) throw new IllegalStateException("activation-runtime-poisoned-store");
+            if (pendingWork == Integer.MAX_VALUE)
+                throw new java.util.concurrent.RejectedExecutionException("activation-executor-pending-capacity");
+            // Admission can reenter shutdown before the Queue lease returns.
+            pendingWork++; counted = true;
             queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
-            if (future != null) acceptedResult = future.acceptQueueCopy();
-            acceptedAction = CompletableFuture.acceptedByQueue(command);
-            item = new Item(command, queued, acceptedAction, acceptedResult);
-            queue.addLast(item);
-            pendingWork++;
+            item = new Item(command, queued, false, false);
+            item.nextReserved = reservedFirsts; reservedFirsts = item; linked = true;
+            if (shutdown || retiring)
+                throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
+            if (future != null) item.futureAccepted = acceptedResult = future.acceptQueueCopy();
+            item.actionAccepted = acceptedAction = CompletableFuture.acceptedByQueue(command);
+            if (shutdown || retiring)
+                throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
+            transferReserved(item);
             installed = true;
             if (workers.size() < parallelism && (!cached || queue.size() > workers.size() - running)) {
                 if (cached) startWorker();
-                else if (tryStartWorker(false, item) && workers.isEmpty() && startingWorkers == 0
-                        && !interrupting && !retiring && !queue.isEmpty()) {
-                    // Fixed pools retry once after the first null factory when
-                    // no worker exists, keeping already-admitted queue owners.
-                    fallbackAccepted = true;
-                    tryStartWorker(true, null);
+                else if (tryStartWorker(false, item)) {
+                    if (soleGracefulShutdown(item)) {
+                        var rejection = new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
+                        queue.removeFirst(); pendingWork--;
+                        withdrawnForShutdown = true;
+                        try {
+                            closeQueued(queued);
+                            if (acceptedResult) future.removeQueueCopy(true);
+                            CompletableFuture.removedFromQueue(command, acceptedAction, true);
+                            CompletableFuture.rejectedBeforeAcceptance(command, this);
+                            // The startup finally saw the entry still queued;
+                            // finish retirement only after its rollback.
+                            settleIfTerminated();
+                        } catch (Throwable uncertain) {
+                            // The original rejection remains primary. A failed
+                            // settlement keeps the activation from succeeding.
+                            Activation.fenceUncertainCompletion();
+                        } finally { notifyAll(); }
+                        throw rejection;
+                    }
+                    deferAfterReentrantSubmissions(item);
+                    if (workers.isEmpty() && startingWorkers == 0
+                            && !interrupting && !retiring && !queue.isEmpty()) {
+                        // Fixed pools retry once after the first null factory when
+                        // no worker exists, keeping already-admitted queue owners.
+                        fallbackAccepted = true;
+                        tryStartWorker(true, null);
+                    }
                 }
             }
             notifyAll();
         } catch (Throwable error) {
             // Any fallback startup failure follows queue acceptance. Keep the
             // exact entry, or its existing physical disposition, owned.
-            if (fallbackAccepted) throw error;
-            if (!installed || queue.remove(item)) {
-                if (installed) pendingWork--;
-                if (queued != null) closeQueued(queued);
-                if (acceptedResult) future.removeQueueCopy(true);
-                CompletableFuture.removedFromQueue(command, acceptedAction, true);
-                CompletableFuture.rejectedBeforeAcceptance(command, this);
+            if (fallbackAccepted || withdrawnForShutdown) throw error;
+            try {
+                if (linked && reserved(item.queued) == item) {
+                    if (item.transferState != QUARANTINED && !item.uncertainStart) rollbackReserved(item);
+                } else if (!linked) {
+                    if (queued != null) closeQueued(queued);
+                    if (acceptedResult) future.removeQueueCopy(true);
+                    CompletableFuture.removedFromQueue(command, acceptedAction, true);
+                    CompletableFuture.rejectedBeforeAcceptance(command, this);
+                    if (counted && !Activation.admissionPoisoned()) pendingWork--;
+                } else if (installed && queue.remove(item)) {
+                    item.transferState = RESERVED; item.nextReserved = reservedFirsts; reservedFirsts = item;
+                    rollbackReserved(item);
+                }
+                settleIfTerminated();
+            } catch (Throwable uncertain) { Activation.fenceUncertainCompletion(); }
+            finally { notifyAll(); }
+            throw error;
+        }
+    }
+
+    // A reserved Item is charged to its original QueuedWork/Result owners.
+    // The prospective Worker keeps only that Queue lease's identity.
+    private Item reserved(Activation.Lease lease) {
+        for (Item item = reservedFirsts; item != null; item = item.nextReserved)
+            if (item.queued == lease) return item;
+        return null;
+    }
+
+    private void unlinkReserved(Item selected) {
+        Item previous = null;
+        for (Item item = reservedFirsts; item != null; item = item.nextReserved) {
+            if (item == selected) {
+                if (previous == null) reservedFirsts = item.nextReserved;
+                else previous.nextReserved = item.nextReserved;
+                item.nextReserved = null;
+                return;
+            }
+            previous = item;
+        }
+    }
+
+    private void rollbackReserved(Item item) {
+        item.transferState = SETTLING;
+        try {
+            closeQueued(item.queued);
+            if (item.futureAccepted) ((FutureTask<?>)item.command).removeQueueCopy(true);
+            CompletableFuture.removedFromQueue(item.command, item.actionAccepted, true);
+            CompletableFuture.rejectedBeforeAcceptance(item.command, this);
+            if (Activation.admissionPoisoned()) { item.transferState = QUARANTINED; return; }
+            pendingWork--;
+            unlinkReserved(item);
+        } catch (Throwable uncertain) {
+            // Keep the same Item and any unsettled owners rooted until teardown.
+            item.transferState = QUARANTINED;
+            Activation.fenceUncertainCompletion();
+            throw uncertain;
+        }
+    }
+
+    // A null factory turns the original first into ordinary queued work. Keep
+    // custody during insertion: a reentrant claim/withdrawal may already own
+    // its disposition when a synthetic insertion failure propagates.
+    private void transferReserved(Item item) {
+        item.transferState = TRANSFERRING;
+        try { queue.addLast(item); }
+        catch (Throwable error) {
+            if (item.transferState == CLAIMED || item.transferState == WITHDRAWN) {
+                unlinkReserved(item);
+            } else if (item.transferState == CLAIMING || item.transferState == WITHDRAWING) {
+                // The physical owner is still settling this exact Item.
+                item.uncertainStart = true;
+            } else if (item.transferState != QUARANTINED) {
+                try {
+                    if (queue.remove(item)) item.transferState = RESERVED;
+                    else {
+                        item.transferState = QUARANTINED;
+                        Activation.fenceUncertainCompletion();
+                    }
+                } catch (Throwable uncertain) {
+                    item.transferState = QUARANTINED;
+                    Activation.fenceUncertainCompletion();
+                }
             }
             throw error;
+        }
+        // An in-flight claim or withdrawal clears its own retained Item only
+        // after its original settlement is acknowledged.
+        if (item.transferState == QUARANTINED) {
+            Activation.fenceUncertainCompletion();
+            throw new IllegalStateException("activation-executor-transfer-uncertain");
+        }
+        if (item.transferState != CLAIMING && item.transferState != WITHDRAWING) {
+            if (item.transferState == TRANSFERRING) item.transferState = QUEUED;
+            unlinkReserved(item);
+        }
+    }
+
+    private void executeManaged(Runnable command) {
+        Objects.requireNonNull(command);
+        Activation.Lease queued = null;
+        FutureTask<?> future = command instanceof FutureTask<?> ? (FutureTask<?>)command : null;
+        boolean acceptedResult = false, acceptedAction = false, linked = false, counted = false;
+        Item item = null;
+        try {
+            synchronized (this) {
+                if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
+                    throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
+                if (Activation.admissionPoisoned()) throw new IllegalStateException("activation-runtime-poisoned-store");
+                if (pendingWork == Integer.MAX_VALUE)
+                    throw new java.util.concurrent.RejectedExecutionException("activation-executor-pending-capacity");
+                // Keep the pool owned across reentrant host admission.
+                pendingWork++; counted = true;
+                queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
+                item = new Item(command, queued, false, false);
+                item.nextReserved = reservedFirsts; reservedFirsts = item; linked = true;
+                if (shutdown || retiring)
+                    throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
+                if (future != null) item.futureAccepted = acceptedResult = future.acceptQueueCopy();
+                item.actionAccepted = acceptedAction = CompletableFuture.acceptedByQueue(command);
+                // A reentrant host call may have closed the pool after the
+                // original pre-admission check.
+                if (shutdown || retiring)
+                    throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
+                // Cached pools reuse an idle worker, but reserve a new one
+                // when accepted work exceeds existing and starting workers.
+                // The sum is bounded by parallelism under this monitor.
+                if (workers.size() >= parallelism - startingWorkers
+                        || cached && pendingWork <= workers.size() + startingWorkers) {
+                    transferReserved(item);
+                    notifyAll();
+                    return;
+                }
+                startingWorkers++;
+                notifyAll();
+            }
+            startReservedWorker(item);
+        } catch (Throwable error) {
+            synchronized (this) {
+                try {
+                    if (linked && reserved(item.queued) == item) {
+                        if (item.transferState != QUARANTINED && !item.uncertainStart) rollbackReserved(item);
+                    } else if (!linked) {
+                        if (queued != null) closeQueued(queued);
+                        if (acceptedResult) future.removeQueueCopy(true);
+                        CompletableFuture.removedFromQueue(command, acceptedAction, true);
+                        CompletableFuture.rejectedBeforeAcceptance(command, this);
+                        if (counted && !Activation.admissionPoisoned()) pendingWork--;
+                    }
+                    settleIfTerminated();
+                } catch (Throwable uncertain) {
+                    Activation.fenceUncertainCompletion();
+                } finally { notifyAll(); }
+            }
+            throw error;
+        }
+    }
+
+    // Each call owns one previously counted startingWorkers slot. Initial
+    // first tasks remain reserved; fallback and replacement workers take FIFO.
+    private void startReservedWorker(Item first) {
+        Worker worker = null;
+        boolean reservation = true, entering = false;
+        Throwable failure = null;
+        try {
+            worker = new Worker(this, first == null ? null : first.queued);
+            Thread thread = factory.newThread(worker::run);
+            if (thread == null) {
+                worker.clear();
+                if (cached) throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
+                boolean fallback = false;
+                synchronized (this) {
+                    if (first != null) {
+                        if (shutdown || retiring)
+                            throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
+                        transferReserved(first);
+                    }
+                    startingWorkers--; reservation = false;
+                    if (first != null && workers.isEmpty() && startingWorkers == 0
+                            && !interrupting && !retiring && !queue.isEmpty()) {
+                        startingWorkers++; fallback = true;
+                    }
+                    notifyAll();
+                }
+                if (fallback) startReservedWorker(null);
+                return;
+            }
+            synchronized (this) {
+                if (first != null && (shutdown || retiring)) {
+                    worker.clear();
+                    throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
+                }
+                if (first == null && (interrupting || retiring)) { worker.clear(); return; }
+                int addedAt = -1;
+                try {
+                    if (thread.isAlive() && (first == null || cached)) throw new IllegalThreadStateException();
+                    if (thread.isAlive())
+                        throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
+                    // A second factory can return the same NEW Thread while
+                    // the first start is still entering Activation. Do not
+                    // confuse that existing Work with this reservation.
+                    for (Thread existing : workers)
+                        if (existing == thread) throw new IllegalThreadStateException();
+                    if (Activation.alive(thread)) throw new IllegalThreadStateException();
+                    addedAt = workers.size(); workers.add(thread); worker.prepare(thread);
+                } catch (Throwable error) {
+                    worker.clear();
+                    try {
+                        if (addedAt >= 0 && addedAt < workers.size() && workers.get(addedAt) == thread)
+                            workers.remove(addedAt);
+                    } catch (Throwable uncertain) { Activation.fenceUncertainCompletion(); }
+                    throw error;
+                }
+                // Root cannot pass between publishing this Thread and the
+                // original Activation Work registration.
+                enteringWorkers++; startingWorkers--; reservation = false; entering = true;
+            }
+            try { Activation.startManaged(thread, this); }
+            catch (Throwable error) {
+                synchronized (this) {
+                    if (!Activation.ownsManaged(thread, this)) {
+                        try { removeWorker(thread); }
+                        catch (Throwable uncertain) { Activation.fenceUncertainCompletion(); }
+                        worker.clear();
+                    } else if (first != null && reserved(first.queued) == first) {
+                        first.uncertainStart = true;
+                    }
+                }
+                throw error;
+            }
+        } catch (Throwable error) {
+            failure = error;
+            if (worker != null && !entering) worker.clear();
+            throw error;
+        } finally {
+            synchronized (this) {
+                if (reservation) startingWorkers--;
+                if (entering) enteringWorkers--;
+                try { settleIfTerminated(); }
+                catch (Throwable uncertain) { if (failure == null) throw uncertain; }
+                finally { notifyAll(); }
+            }
         }
     }
 
@@ -131,7 +415,9 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         private volatile ManagedExecutor pool;
         private volatile Thread thread;
         private volatile long first;
+        private volatile Activation.Lease firstLease;
         Worker(ManagedExecutor pool, long first) { this.pool = pool; this.first = first; }
+        Worker(ManagedExecutor pool, Activation.Lease firstLease) { this.pool = pool; this.firstLease = firstLease; }
         void prepare(Thread thread) { this.thread = thread; }
         void run() {
             ManagedExecutor current = pool;
@@ -140,14 +426,15 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                     || !Activation.runningManaged(expected, current)) return;
             try { current.work(this); } finally { clear(); }
         }
-        void clear() { pool = null; thread = null; first = 0; }
+        void clear() { pool = null; thread = null; first = 0; firstLease = null; }
     }
 
     private void startWorker() {
         if (tryStartWorker(false, null)) throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
     }
 
-    // True means this attempted factory returned null; false also covers a
+    // True means no worker was admitted after a null factory or a graceful
+    // shutdown with only this submission queued. False also covers a
     // reentrant call whose worker slot was already reserved.
     private boolean tryStartWorker(boolean fallback, Item first) {
         // Callers hold the pool monitor, including reentrant admissions.
@@ -172,6 +459,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                     throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
                 }
                 if (Activation.alive(thread)) throw new IllegalThreadStateException();
+                if (soleGracefulShutdown(first)) { worker.clear(); return true; }
                 addedAt = workers.size();
                 workers.add(thread);
                 worker.prepare(thread);
@@ -217,6 +505,34 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         }
     }
 
+    // Do not reject after the entry has run, been withdrawn, or other queued
+    // work has already been accepted. Immediate shutdown has its own custody.
+    private boolean soleGracefulShutdown(Item item) {
+        return item != null && shutdown && !interrupting && queue.size() == 1 && queue.peekFirst() == item;
+    }
+
+    // The JDK enqueues the outer submission after a null factory returns, so
+    // reentrant submissions precede it. All entries here are already owned;
+    // rotate only under the pool monitor, without readmission or a larger deque.
+    private void deferAfterReentrantSubmissions(Item outer) {
+        int count = queue.size();
+        if (count < 2 || queue.peekLast() == outer) return;
+        Item current = null, delayed = null;
+        try {
+            for (int index = 0; index < count; index++) {
+                current = queue.removeFirst();
+                if (current == outer) delayed = current;
+                else queue.addLast(current);
+                current = null;
+            }
+        } finally {
+            // Restore any detached entries before propagating a failure. Each
+            // add replaces an entry removed above, so capacity does not grow.
+            if (current != null && current != delayed) queue.addLast(current);
+            if (delayed != null) queue.addLast(delayed);
+        }
+    }
+
     // Callers hold the pool monitor. A primitive hint has no custody of a
     // withdrawn task; only the still-owned, matching queue entry can be taken.
     private Item removePreferred(long preference) {
@@ -237,22 +553,44 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
             while (true) {
                 Item item;
                 synchronized (this) {
-                    long idleStart = System.nanoTime();
-                    while (queue.isEmpty() && !shutdown && !retiring) {
-                        try {
-                            if (expireIdle) {
-                                long remaining = 60_000_000_000L - (System.nanoTime() - idleStart);
-                                if (remaining <= 0) return;
-                                wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
-                            } else wait();
-                        } catch (InterruptedException wake) { if (interrupting) return; }
+                    Activation.Lease firstLease = worker.firstLease; worker.firstLease = null;
+                    item = firstLease == null ? null : reserved(firstLease);
+                    if (item != null) {
+                        if (retiring) {
+                            item.transferState = QUARANTINED;
+                            Activation.fenceUncertainCompletion();
+                            return;
+                        }
+                        item.transferState = CLAIMED;
+                        running++;
+                        try { closeQueued(item.queued); }
+                        catch (Throwable uncertain) { item.transferState = QUARANTINED; throw uncertain; }
+                        unlinkReserved(item);
+                    } else {
+                        long idleStart = System.nanoTime();
+                        while (queue.isEmpty() && !shutdown && !retiring) {
+                            try {
+                                if (expireIdle) {
+                                    long remaining = 60_000_000_000L - (System.nanoTime() - idleStart);
+                                    if (remaining <= 0) return;
+                                    wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
+                                } else wait();
+                            } catch (InterruptedException wake) { if (interrupting) return; }
+                        }
+                        if (queue.isEmpty()) return;
+                        long first = worker.first; worker.first = 0;
+                        item = removePreferred(first);
+                        if (item == null) item = queue.removeFirst();
+                        boolean transferring = item.transferState == TRANSFERRING;
+                        if (transferring) item.transferState = CLAIMING;
+                        running++;
+                        try { closeQueued(item.queued); }
+                        catch (Throwable uncertain) {
+                            if (transferring) item.transferState = QUARANTINED;
+                            throw uncertain;
+                        }
+                        if (transferring) { item.transferState = CLAIMED; unlinkReserved(item); }
                     }
-                    if (queue.isEmpty()) return;
-                    long first = worker.first; worker.first = 0;
-                    item = removePreferred(first);
-                    if (item == null) item = queue.removeFirst();
-                    running++;
-                    closeQueued(item.queued);
                 }
                 if (!interrupting) Thread.interrupted();
                 try { item.command.run(); }
@@ -267,21 +605,26 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                 Activation.checkpoint();
             }
         } finally {
+            boolean replacement = false;
             synchronized (this) {
                 removeWorker(current);
                 if (!queue.isEmpty() && !interrupting) {
-                    if (cached) startWorker();
-                    else tryStartWorker(false, null);
+                    if (!retiring && workers.size() < parallelism - startingWorkers
+                            && (!cached || pendingWork > workers.size() + startingWorkers)) {
+                        startingWorkers++; replacement = true;
+                    }
                 }
                 settleIfTerminated();
                 notifyAll();
             }
+            if (replacement) startReservedWorker(null);
         }
     }
 
     private void settleIfTerminated() { settleIfTerminated(false); }
     private void settleIfTerminated(boolean root) {
-        if ((shutdown || retiring) && queue.isEmpty() && startingWorkers == 0 && workers.isEmpty()) settleOwner(root);
+        if ((shutdown || retiring) && queue.isEmpty() && pendingWork == 0
+                && startingWorkers == 0 && enteringWorkers == 0 && workers.isEmpty()) settleOwner(root);
     }
     private void settleOwner(boolean rootOrRollback) {
         if (owner != null) {
@@ -308,7 +651,9 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     @Override public boolean isRetired() { return owner == null; }
     // The coordinator is outside any logical Java fiber. Observing this value
     // must not try to suspend on a monitor held by a runnable factory/callback.
-    @Override public boolean hasPendingWork() { return pendingWork != 0 || startingWorkers != 0; }
+    @Override public boolean hasPendingWork() {
+        return pendingWork != 0 || startingWorkers != 0 || enteringWorkers != 0;
+    }
     @Override public void closeAtRoot() {
         // This coordinator hook runs outside a Java Fiber, only after every
         // pool reports no queued/running callback. It must never acquire a
@@ -323,9 +668,24 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         shutdown = interrupting = true;
         List<Runnable> pending = new ArrayList<>(queue.size());
         while (!queue.isEmpty()) {
-            Item item = queue.removeFirst(); pendingWork--; pending.add(item.command); closeQueued(item.queued);
-            if (item.futureAccepted) ((FutureTask<?>)item.command).removeQueueCopy(true);
-            CompletableFuture.removedFromQueue(item.command, item.actionAccepted, true);
+            Item item = queue.removeFirst();
+            if (item.transferState == TRANSFERRING) {
+                item.transferState = WITHDRAWING;
+                try {
+                    pending.add(item.command); closeQueued(item.queued);
+                    if (item.futureAccepted) ((FutureTask<?>)item.command).removeQueueCopy(true);
+                    CompletableFuture.removedFromQueue(item.command, item.actionAccepted, true);
+                    pendingWork--; item.transferState = WITHDRAWN; unlinkReserved(item);
+                } catch (Throwable uncertain) {
+                    item.transferState = QUARANTINED;
+                    Activation.fenceUncertainCompletion();
+                    throw uncertain;
+                }
+            } else {
+                pendingWork--; pending.add(item.command); closeQueued(item.queued);
+                if (item.futureAccepted) ((FutureTask<?>)item.command).removeQueueCopy(true);
+                CompletableFuture.removedFromQueue(item.command, item.actionAccepted, true);
+            }
         }
         // Standard shutdownNow returns queued tasks without cancelling them.
         // They no longer own an accepted pending execution in this activation.
@@ -334,8 +694,8 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         settleIfTerminated();
         return pending;
     }
-    @Override public synchronized boolean isShutdown() { return shutdown || retiring; }
-    @Override public synchronized boolean isTerminated() { return (shutdown || retiring) && owner == null; }
+    @Override public boolean isShutdown() { return shutdown || retiring; }
+    @Override public boolean isTerminated() { return (shutdown || retiring) && owner == null; }
     @Override public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         long nanos = Objects.requireNonNull(unit).toNanos(timeout);
         long started = System.nanoTime();

@@ -11,7 +11,10 @@ public:
   virtual ~ImportAccounting() = default;
   // One original-ledger reservation, before buffers, JS roots or dispatch.
   virtual bool admit(JSContext*, JobOwners&, NativeOwner&, NativeOwner&) = 0;
-  virtual bool rollback(JSContext*, JobOwners&, NativeOwner&, NativeOwner&) = 0;
+  // Failed admission has not published work. Settle its logical work first;
+  // any admitted physical owners remain live until the embedding destroys
+  // its record and invokes physicallyRetired below.
+  virtual bool rollbackWork(JSContext*, JobOwners&) = 0;
   virtual bool park(JSContext*, JobOwners&) = 0;
   virtual bool resume(JSContext*, JobOwners&) = 0;
   virtual bool complete(JSContext*, JobOwners&) = 0;
@@ -34,6 +37,7 @@ private:
   Phase phase_ = Phase::Empty;
   bool cancelled_ = false;
   bool rollback_pending_ = false;
+  bool completion_pending_ = false;
 
   static bool invalid(JSContext* cx) {
     if (!JS_IsExceptionPending(cx))
@@ -53,9 +57,9 @@ public:
     if (!accounting_.admit(cx, work_, native_, result_)) {
       phase_ = Phase::Retiring;
       rollback_pending_ = true;
-      if (!accounting_.rollback(cx, work_, native_, result_)) return false;
+      if (!accounting_.rollbackWork(cx, work_)) return false;
+      if (work_.task_live || work_.queued_live || work_.compiler_snapshot) return invalid(cx);
       rollback_pending_ = false;
-      phase_ = Phase::Retired;
       return false;
     }
     phase_ = Phase::Reserved;
@@ -105,9 +109,13 @@ public:
     // Typed lifting and original borrow/resource reconstruction have returned.
     // Keep the real canonical handle until this point, matching v0.62's own
     // result-lift-before-InProgress-destructor/drop sequence.
-    if (!subtask_.drop(cx) || !accounting_.complete(cx, work_)) return false;
+    if (!subtask_.drop(cx)) return false;
+    // Typed delivery and the actual subtask drop have completed. A refused
+    // logical Task ACK must not leave this record in the active-lift phase:
+    // retain the exact remaining work owner and retry it before destruction.
     phase_ = Phase::Retiring;
-    return true;
+    completion_pending_ = true;
+    return retryRetiringWork(cx);
   }
   bool cancel(JSContext* cx) {
     if (phase_ == Phase::Retired || phase_ == Phase::Retiring) return true;
@@ -138,20 +146,32 @@ public:
     phase_ = Phase::Retiring;
     return true;
   }
+  // Retry only the exact original work owners. Both unpublished rollback and
+  // completed typed delivery retain the physical record until they succeed.
+  bool retryRetiringWork(JSContext* cx) {
+    if (!rollback_pending_ && !completion_pending_) return true;
+    if (phase_ != Phase::Retiring || subtask_.unresolved()) return invalid(cx);
+    if (rollback_pending_ && !accounting_.rollbackWork(cx, work_)) return false;
+    if (completion_pending_ && !accounting_.complete(cx, work_)) return false;
+    if (work_.task_live || work_.queued_live || work_.compiler_snapshot)
+      return invalid(cx);
+    rollback_pending_ = false;
+    completion_pending_ = false;
+    return true;
+  }
   bool physicalRetirementAcknowledged(JSContext* cx) {
     if (phase_ != Phase::Retiring || subtask_.unresolved()) return invalid(cx);
-    if (rollback_pending_) {
-      if (!accounting_.rollback(cx, work_, native_, result_)) return false;
-      rollback_pending_ = false;
-    }
+    if (!retryRetiringWork(cx)) return false;
+    if (work_.task_live || work_.queued_live || work_.compiler_snapshot) return invalid(cx);
     if (!accounting_.physicallyRetired(cx, native_, result_) || native_.live || result_.live)
       return false;
     phase_ = Phase::Retired;
     return true;
   }
   bool releaseAfterPhysicalDestruction(JSContext* cx, Retirement& retirement) {
-    if ((phase_ != Phase::Retiring && phase_ != Phase::Retired) || subtask_.unresolved() || rollback_pending_ ||
-        work_.task_live || work_.queued_live) return invalid(cx);
+    if ((phase_ != Phase::Retiring && phase_ != Phase::Retired) || subtask_.unresolved() ||
+        rollback_pending_ || completion_pending_ || work_.task_live || work_.queued_live ||
+        work_.compiler_snapshot) return invalid(cx);
     retirement = {native_, result_};
     native_ = {}; result_ = {};
     phase_ = Phase::Retired;
@@ -161,6 +181,7 @@ public:
   bool hasPhysicalSubtask() const { return subtask_.physical(); }
   bool hasUncertainSubtask() const { return subtask_.uncertain(); }
   bool hasReturnedResult() const { return subtask_.resultReady(); }
+  bool completionPending() const { return completion_pending_; }
   bool resultMayBeRead() const { return phase_ == Phase::Lifting && !cancelled_; }
 };
 

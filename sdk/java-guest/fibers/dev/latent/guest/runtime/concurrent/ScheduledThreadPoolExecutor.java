@@ -39,6 +39,9 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     // Factories may reenter this pool before their thread is registered.
     // Root retirement observes this without acquiring the pool monitor.
     private volatile int startingWorkers;
+    // Fence the gap between the pool registry and Activation Work ownership
+    // until startManaged returns or preserves an uncertain start.
+    private volatile int enteringWorkers;
 
     public ScheduledThreadPoolExecutor(int corePoolSize) {
         this(corePoolSize, Executors.defaultThreadFactory());
@@ -254,7 +257,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         }
     }
 
-    private synchronized <V> ScheduledFuture<V> add(Callable<V> command, Runnable action, long delay, long period) {
+    private <V> ScheduledFuture<V> add(Callable<V> command, Runnable action, long delay, long period) {
         Objects.requireNonNull(command);
         Activation.Lease queued = null;
         Task<V> task = null;
@@ -262,44 +265,55 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         boolean accepted = false;
         boolean installed = false;
         boolean counted = false;
+        boolean reserved = false;
         try {
-            if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
-                throw new java.util.concurrent.RejectedExecutionException("activation-scheduled-executor-closed");
-            if (sequence == Long.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("scheduled-sequence-overflow");
-            queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
-            Activation.OwnerOrder order = Activation.ownerOrder(queued);
-            long deadline = after(delay);
-            // Reentrant admission may have consumed the last permitted value
-            // while this call held its own QueuedWork lease.
-            if (sequence == Long.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("scheduled-sequence-overflow");
-            sequence++;
-            task = new Task<>(command, action, deadline, period, order);
-            accepted = task.acceptQueueCopy();
-            entry = new Entry(task, queued, accepted);
-            pendingWork++; counted = true;
-            queue.add(entry);
-            installed = true;
-            if (workers.size() < parallelism && workers.size() < queue.size() + running) startWorker(entry);
-            notifyAll();
+            synchronized (this) {
+                if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
+                    throw new java.util.concurrent.RejectedExecutionException("activation-scheduled-executor-closed");
+                if (sequence == Long.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("scheduled-sequence-overflow");
+                queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
+                Activation.OwnerOrder order = Activation.ownerOrder(queued);
+                long deadline = after(delay);
+                // Reentrant admission may have consumed the last permitted value
+                // while this call held its own QueuedWork lease.
+                if (sequence == Long.MAX_VALUE) throw new java.util.concurrent.RejectedExecutionException("scheduled-sequence-overflow");
+                sequence++;
+                task = new Task<>(command, action, deadline, period, order);
+                accepted = task.acceptQueueCopy();
+                entry = new Entry(task, queued, accepted);
+                pendingWork++; counted = true;
+                queue.add(entry);
+                installed = true;
+                if (workers.size() < parallelism && workers.size() < queue.size() + running)
+                    reserved = reserveWorker();
+                notifyAll();
+            }
+            if (reserved) startReserved(entry);
             return task;
         } catch (Throwable error) {
-            // The JDK leaves an already enqueued task in the scheduled queue
-            // when the application factory itself throws. The original entry
-            // remains charged even though the same failure reaches the caller.
-            if (entry != null && entry.factoryFailed) throw error;
-            boolean withdrawn;
-            try { withdrawn = withdrawFailed(entry, installed); }
-            catch (Throwable uncertain) { throw error; }
-            if (withdrawn) {
-                try {
-                    if (queued != null) closeQueued(queued);
-                    if (accepted) task.removeQueueCopy(true);
-                    if (task != null) task.abandon();
-                    // Only the exact SDK implementation witnesses rejection. A
-                    // subclass may already have retained the submitted action.
-                    if (Executors.isManaged(this)) CompletableFuture.rejectedBeforeAcceptance(action, this);
-                    if (counted) pendingWork--;
-                } catch (Throwable uncertain) { throw error; }
+            synchronized (this) {
+                // The JDK leaves an already enqueued task in the scheduled queue
+                // when the application factory itself throws. The original entry
+                // remains charged even though the same failure reaches the caller.
+                if (entry != null && entry.factoryFailed) throw error;
+                boolean withdrawn;
+                try { withdrawn = withdrawFailed(entry, installed); }
+                catch (Throwable uncertain) { throw error; }
+                if (withdrawn) {
+                    try {
+                        if (queued != null) closeQueued(queued);
+                        if (accepted) task.removeQueueCopy(true);
+                        if (task != null) task.abandon();
+                        // Only the exact SDK implementation witnesses rejection. A
+                        // subclass may already have retained the submitted action.
+                        if (Executors.isManaged(this)) CompletableFuture.rejectedBeforeAcceptance(action, this);
+                        if (counted) pendingWork--;
+                    } catch (Throwable uncertain) { throw error; }
+                }
+                // Startup may have seen this entry before rollback. A concurrent
+                // graceful shutdown can now retire the original Executor owner.
+                try { settleIfTerminated(); }
+                catch (Throwable uncertain) { throw error; }
             }
             throw error;
         }
@@ -331,9 +345,7 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     }
 
     /** A manual periodic run creates another independently admitted copy. */
-    private synchronized void requeueManual(Task<?> task) {
-        if (task.isDone()) return;
-        if (!allowed(task)) { task.cancel(false); return; }
+    private void requeueManual(Task<?> task) {
         Activation.Lease queued = null;
         Entry entry = null;
         boolean accepted = false;
@@ -341,42 +353,55 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         boolean counted = false;
         boolean advanced = false;
         boolean settlementAttempted = false;
-        long previous = task.next;
-        long revision = task.scheduleRevision;
+        boolean reserved = false;
+        long previous = 0;
+        long revision = 0;
         try {
-            queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
-            accepted = task.acceptQueueCopy();
-            if (!accepted) { settlementAttempted = true; closeQueued(queued); return; }
-            entry = new Entry(task, queued, true);
-            advance(task); advanced = true; revision = task.scheduleRevision;
-            pendingWork++; counted = true;
-            queue.add(entry); installed = true;
-            if (workers.size() < parallelism && workers.size() < queue.size() + running) startWorker(entry);
-            notifyAll();
+            synchronized (this) {
+                if (task.isDone()) return;
+                if (!allowed(task)) { task.cancel(false); return; }
+                previous = task.next;
+                revision = task.scheduleRevision;
+                queued = Activation.owner(Bindings.LatentRuntimeActivationOwnerKind.QueuedWork);
+                accepted = task.acceptQueueCopy();
+                if (!accepted) { settlementAttempted = true; closeQueued(queued); return; }
+                entry = new Entry(task, queued, true);
+                advance(task); advanced = true; revision = task.scheduleRevision;
+                pendingWork++; counted = true;
+                queue.add(entry); installed = true;
+                if (workers.size() < parallelism && workers.size() < queue.size() + running)
+                    reserved = reserveWorker();
+                notifyAll();
+            }
+            if (reserved) startReserved(entry);
         } catch (Throwable error) {
-            // The no-copy path may have already attempted settlement.
-            if (settlementAttempted) throw error;
-            // A factory throw follows successful insertion. Preserve this
-            // occurrence and its advanced deadline just like initial admission.
-            if (entry != null && entry.factoryFailed) throw error;
-            boolean withdrawn;
-            try { withdrawn = withdrawFailed(entry, installed); }
-            catch (Throwable uncertain) { throw error; }
-            if (withdrawn) {
+            synchronized (this) {
+                // The no-copy path may have already attempted settlement.
+                if (settlementAttempted) throw error;
+                // A factory throw follows successful insertion. Preserve this
+                // occurrence and its advanced deadline just like initial admission.
+                if (entry != null && entry.factoryFailed) throw error;
+                boolean withdrawn;
+                try { withdrawn = withdrawFailed(entry, installed); }
+                catch (Throwable uncertain) { throw error; }
+                if (withdrawn) {
+                    try {
+                        if (queued != null) closeQueued(queued);
+                        if (accepted) task.removeQueueCopy(true);
+                        task.abandon();
+                        if (counted) pendingWork--;
+                        // A reentrant factory may already have advanced this shared
+                        // task again. Never overwrite that later successful change.
+                        if (advanced && task.scheduleRevision == revision) {
+                            task.next = previous; task.scheduleRevision++;
+                        }
+                    } catch (Throwable uncertain) { throw error; }
+                }
                 try {
-                    if (queued != null) closeQueued(queued);
-                    if (accepted) task.removeQueueCopy(true);
-                    task.abandon();
-                    if (counted) pendingWork--;
-                    // A reentrant factory may already have advanced this shared
-                    // task again. Never overwrite that later successful change.
-                    if (advanced && task.scheduleRevision == revision) {
-                        task.next = previous; task.scheduleRevision++;
-                    }
+                    if (!task.hasQueueCopies() && !task.isDone()) task.cancel(false);
+                    settleIfTerminated();
                 } catch (Throwable uncertain) { throw error; }
             }
-            try { if (!task.hasQueueCopies() && !task.isDone()) task.cancel(false); }
-            catch (Throwable uncertain) { throw error; }
             throw error;
         }
     }
@@ -398,68 +423,81 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         void clear() { pool = null; thread = null; }
     }
 
-    private void startWorker() { startWorker(null); }
-
-    private void startWorker(Entry admitted) {
-        // All callers hold the pool monitor, including reentrant admissions.
-        // Reserve capacity before calling the application-supplied factory.
-        if (workers.size() >= parallelism - startingWorkers) return;
+    // Only a caller holding this monitor can reserve an otherwise free slot.
+    private boolean reserveWorker() {
+        if (workers.size() >= parallelism - startingWorkers) return false;
         startingWorkers++;
+        return true;
+    }
+
+    // The reservation keeps root retirement fenced while application factory
+    // code runs without the pool monitor. Each entry retains its own owners.
+    private void startReserved(Entry admitted) {
         boolean transferred = false;
         Throwable failure = null;
+        Worker worker = null;
         try {
-            Worker worker = new Worker(this);
-            Thread thread = null;
-            int addedAt = -1;
-            try {
-                Runnable target = worker::run;
-                try { thread = factory.newThread(target); }
-                catch (Throwable error) {
-                    if (admitted != null) admitted.factoryFailed = true;
+            worker = new Worker(this);
+            Runnable target = worker::run;
+            Thread thread;
+            try { thread = factory.newThread(target); }
+            catch (Throwable error) {
+                if (admitted != null) admitted.factoryFailed = true;
+                throw error;
+            }
+            synchronized (this) {
+                // Immediate/root shutdown can withdraw every occurrence while
+                // the factory runs. Graceful shutdown retains the normal worker
+                // admission, even if its queue was pruned in the meantime.
+                if (thread == null || interrupting || retiring) {
+                    worker.clear();
+                    return;
+                }
+                int addedAt = -1;
+                try {
+                    if (thread.isAlive())
+                        throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
+                    if (Activation.alive(thread)) throw new IllegalThreadStateException();
+                    addedAt = workers.size();
+                    workers.add(thread);
+                    worker.prepare(thread);
+                } catch (Throwable error) {
+                    worker.clear();
+                    if (addedAt >= 0 && addedAt < workers.size() && workers.get(addedAt) == thread)
+                        workers.remove(addedAt);
                     throw error;
                 }
-                // The standard factory contract permits null. Accepted queue
-                // entries remain owned and a later admission can retry startup.
-                if (thread == null) { worker.clear(); return; }
-                if (thread.isAlive())
-                    throw new java.util.concurrent.RejectedExecutionException("activation-thread-factory");
-                if (Activation.alive(thread)) throw new IllegalThreadStateException();
-                addedAt = workers.size();
-                workers.add(thread);
-                worker.prepare(thread);
-            } catch (Throwable error) {
-                // Admission has not started, so the retained target cannot own a
-                // managed worker. Preserve any pre-existing worker identity.
-                worker.clear();
-                if (addedAt >= 0 && addedAt < workers.size() && workers.get(addedAt) == thread)
-                    workers.remove(addedAt);
-                throw error;
-            }
-            // The worker registry now carries this capacity and root custody.
-            startingWorkers--;
-            transferred = true;
-            try { Activation.startManaged(thread, this); }
-            catch (Throwable error) {
-                // Accepted or rollback-uncertain work keeps both its thread and its
-                // target for root interruption and eventual physical settlement.
-                if (!Activation.ownsManaged(thread, this)) {
-                    removeWorker(thread);
-                    worker.clear();
-                }
-                throw error;
+                // Keep root drain fenced across the interval between the pool
+                // registry and Activation's managed Work registration.
+                enteringWorkers++;
+                startingWorkers--;
+                transferred = true;
+                try { Activation.startManaged(thread, this); }
+                catch (Throwable error) {
+                    // Accepted or rollback-uncertain work keeps both its thread and its
+                    // target for root interruption and eventual physical settlement.
+                    if (!Activation.ownsManaged(thread, this)) {
+                        removeWorker(thread);
+                        worker.clear();
+                    }
+                    throw error;
+                } finally { enteringWorkers--; }
             }
         } catch (Throwable error) {
+            if (!transferred && worker != null) worker.clear();
             failure = error;
             throw error;
         } finally {
-            if (!transferred) startingWorkers--;
-            try { settleIfTerminated(); }
-            catch (Throwable uncertain) {
-                // The original admission error takes precedence; settlement
-                // already fenced uncertain ownership before throwing.
-                if (failure == null) throw uncertain;
+            synchronized (this) {
+                if (!transferred) startingWorkers--;
+                try { settleIfTerminated(); }
+                catch (Throwable uncertain) {
+                    // The original admission error takes precedence; settlement
+                    // already fenced uncertain ownership before throwing.
+                    if (failure == null) throw uncertain;
+                }
+                notifyAll();
             }
-            notifyAll();
         }
     }
 
@@ -544,12 +582,14 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
                 Activation.checkpoint();
             }
         } finally {
+            boolean reserved;
             synchronized (this) {
                 removeWorker(current);
-                if (!queue.isEmpty() && !interrupting && !retiring) startWorker();
+                reserved = !queue.isEmpty() && !interrupting && !retiring && reserveWorker();
                 settleIfTerminated();
                 notifyAll();
             }
+            if (reserved) startReserved(null);
         }
     }
 
@@ -621,7 +661,8 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
     }
     private void settleIfTerminated() { settleIfTerminated(false); }
     private void settleIfTerminated(boolean root) {
-        if ((shutdown || retiring) && pendingWork == 0 && startingWorkers == 0 && workers.isEmpty()) settleOwner(root);
+        if ((shutdown || retiring) && pendingWork == 0 && startingWorkers == 0
+                && enteringWorkers == 0 && workers.isEmpty()) settleOwner(root);
     }
     private void settleOwner(boolean rootOrRollback) {
         if (owner != null) {
@@ -646,17 +687,19 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
         }
     }
     @Override public boolean isRetired() { return owner == null; }
-    @Override public synchronized boolean isShutdown() { return shutdown || retiring; }
-    private boolean terminatedUnderLock() { return (shutdown || retiring) && owner == null; }
-    @Override public synchronized boolean isTerminated() { return terminatedUnderLock(); }
+    // These monotonic volatile fields allow status inspection while a caller
+    // holds the public pool monitor or an interrupt hook executes under it.
+    @Override public boolean isShutdown() { return shutdown || retiring; }
+    private boolean terminationConfirmed() { return (shutdown || retiring) && owner == null; }
+    @Override public boolean isTerminated() { return terminationConfirmed(); }
     @Override public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         long nanos = Objects.requireNonNull(unit).toNanos(timeout), started = System.nanoTime();
         synchronized (this) {
-            if (terminatedUnderLock()) return true;
+            if (terminationConfirmed()) return true;
             // No wait occurs for a nonpositive timeout; preserve interruption.
             if (nanos <= 0) return false;
             if (Thread.interrupted()) throw new InterruptedException();
-            while (!terminatedUnderLock()) {
+            while (!terminationConfirmed()) {
                 long remaining = nanos - (System.nanoTime() - started);
                 if (remaining <= 0) return false;
                 wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
@@ -664,7 +707,9 @@ public class ScheduledThreadPoolExecutor extends AbstractExecutorService
             return true;
         }
     }
-    @Override public boolean hasPendingWork() { return pendingWork != 0 || startingWorkers != 0; }
+    @Override public boolean hasPendingWork() {
+        return pendingWork != 0 || startingWorkers != 0 || enteringWorkers != 0;
+    }
     @Override public void closeAtRoot() {
         retiring = true;
         for (Thread worker : workers) worker.interrupt();

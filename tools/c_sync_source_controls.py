@@ -23,6 +23,7 @@ HEADERS = {
     'libc/include/generic-musl/threads.h': {'bytes': 1794, 'sha256': '402b75ff71dd5051ebf8744fe7e09a9e43740b9798e6c02701929c852972a2fc'},
     'libc/include/wasm-wasi-musl/__errno_values.h': {'bytes': 2975, 'sha256': '87dedbaff433fe74c68e17437c0192081401c9cf8f6430fde3449948c9b78598'},
     'libc/include/wasm-wasi-musl/wasi/api.h': {'bytes': 56969, 'sha256': '8cf2859277ea2fc984780a00048686955805fd8a00c7be1d8f916105becf0174'},
+    'libc/include/generic-musl/semaphore.h': {'bytes': 809, 'sha256': '75b08ab57e6dc8d1fd6745404375d3caef99dec66f4bcbd423c77a9078c52912'},
 }
 SOURCES = ('tools/c_sync_source_controls.py', FIXTURE + 'c', FIXTURE + 'cjs',
     'tools/tests/fixtures/c-once-jspi.c', 'tools/tests/fixtures/c-once-jspi.cjs',
@@ -47,26 +48,35 @@ GNU_JOIN_INPUTS = {
     'libc/include/wasm-wasi-musl/__struct_timespec.h': {'bytes': 205, 'sha256': 'b19b09edfe60735c5dd38da0416e722409473ec94885e465aab7c4fd98202840'},
     'libc/include/wasm-wasi-musl/__typedef_time_t.h': {'bytes': 179, 'sha256': 'b1ad083733361f8b5077ff9dc3412bd7d7a5f455fdd1eef5fb66d188fada1e98'},
 }
+BARRIER_INPUTS = {
+    'libc/wasi/thread-stub/pthread_barrier_init.c': {'bytes': 246, 'sha256': '46590fdffa5abc8fcff8ba318eab2531da589cdc235fa59f90269c09fe0c6ae3'},
+    'libc/wasi/thread-stub/pthread_barrier_wait.c': {'bytes': 154, 'sha256': '7efdcdd46d4e03379d3221190c3736a00a4faa85617688d38f440c81b7a62daa'},
+    'libc/musl/src/thread/pthread_barrierattr_init.c': {'bytes': 131, 'sha256': '2ad0a80634ccc89c6c409bdfd54c8b6a46608f2ee359f5746d78b234a151269c'},
+    'libc/musl/src/thread/pthread_barrierattr_setpshared.c': {'bytes': 186, 'sha256': '1b3a109056c2da032f16c38c8ecf764ede5c703dcf4244f97cf403fe0125dad6'},
+}
 
 
 def public_abi(headers):
     """Extract only exact pinned memory32 declarations for explicit test ports."""
-    types, pthread, c11, errors, api = (headers[name].decode() for name in HEADERS)
+    types, pthread, c11, errors, api, semaphore = (headers[name].decode() for name in HEADERS)
     parts = ['/* Exact pinned public declarations; all host operations are doubles. */\n']
     def one(expression, text):
         matches = re.findall(expression, text, re.M)
         require(len(matches) == 1, 'c-sync-one-pinned-public-declaration')
         return matches[0]
-    for name in ('EINVAL', 'EAGAIN', 'ENOTSUP', 'EPERM', 'EBUSY', 'EDEADLK', 'ESRCH'):
+    for name in ('EINVAL', 'EAGAIN', 'ENOTSUP', 'EPERM', 'EBUSY', 'EDEADLK', 'ESRCH', 'EOVERFLOW'):
         wasi = one(r'^#define ' + name + r' (__WASI_ERRNO_\w+)$', errors)
         parts.extend([one(r'^#define ' + wasi + r' .*$', api) + '\n',
             '#define ' + name + ' ' + wasi + '\n'])
-    for name in ('pthread_mutex_t', 'pthread_cond_t', 'pthread_mutexattr_t',
+    for name in ('pthread_mutex_t', 'pthread_cond_t', 'pthread_mutexattr_t', 'pthread_rwlock_t', 'pthread_rwlockattr_t',
+            'pthread_barrier_t', 'pthread_barrierattr_t',
             'pthread_condattr_t', 'mtx_t', 'cnd_t'):
         parts.append(one(r'^typedef struct .* ' + name + r';$', types) + '\n')
     parts.append(one(r'^typedef int pthread_once_t;$', types) + '\n')
     parts.append(one(r'^typedef int once_flag;$', c11) + '\n')
+    parts.append('#define _SEMAPHORE_H\n' + one(r'^(typedef struct \{\s*volatile int __val\[4\*sizeof\(long\)/sizeof\(int\)\];\s*\} sem_t;)$', semaphore) + '\n')
     parts.append(one(r'^#define PTHREAD_ONCE_INIT 0$', pthread) + '\n')
+    parts.append(one(r'^#define PTHREAD_BARRIER_SERIAL_THREAD \(-1\)$', pthread) + '\n')
     parts.append(one(r'^#define ONCE_FLAG_INIT 0$', c11) + '\n')
     # C, not C++, selects the original opaque pointer pthread_t declaration.
     parts.append(one(r'^typedef struct __pthread \* pthread_t;$', types) + '\n')
@@ -122,9 +132,16 @@ def run(output, zig, node):
         gnu_join_inputs = {name: identity(lib / name, 1024 * 1024) for name in GNU_JOIN_INPUTS}
         require(gnu_join_inputs == GNU_JOIN_INPUTS, 'c-sync-pinned-gnu-join-inputs')
         report['gnuJoinInputs'] = gnu_join_inputs
+        barrier_inputs = {name: identity(lib / name, 1024 * 1024) for name in BARRIER_INPUTS}
+        require(barrier_inputs == BARRIER_INPUTS, 'c-sync-pinned-barrier-inputs')
+        report['barrierInputs'] = barrier_inputs
         abi = output / 'c-sync-reference-abi.h'
         abi.write_bytes(public_abi(headers))
         original = (ROOT / 'sdk/c-guest/runtime/threads.c').read_text()
+        creation = original[original.index('static void discard_unstarted('):
+            original.index('/* Retain the complete original creation ABI')]
+        creation_body = output / 'c-create-reference-body.h'
+        creation_body.write_bytes(creation.encode())
         find = original[original.index('static struct lsf_c_thread *find('):
             original.index('static int ensure_root_owners(')]
         join = original[original.index('static int join_claim('):original.index('int pthread_join(')]
@@ -143,9 +160,34 @@ def run(output, zig, node):
         runtime = ROOT / 'sdk/c-guest/runtime'
         wasi = [part for family in ('wasm-wasi-musl', 'generic-musl') for part in
             ('-isystem', str(lib / 'libc/include' / family))]
+        rwlock_symbols = ('pthread_rwlock_init', 'pthread_rwlock_destroy', 'pthread_rwlock_rdlock',
+            'pthread_rwlock_tryrdlock', 'pthread_rwlock_wrlock', 'pthread_rwlock_trywrlock',
+            'pthread_rwlock_unlock', 'pthread_rwlock_timedrdlock', 'pthread_rwlock_timedwrlock')
+        rwlock_flags = ('-DLSF_C_RWLOCKS=1', *('-D' + name + '=__lsf_c_' + name for name in rwlock_symbols))
+        semaphore_symbols = ('sem_init', 'sem_destroy', 'sem_getvalue', 'sem_trywait',
+                             'sem_wait', 'sem_post', 'sem_timedwait')
+        semaphore_flags = ('-DLSF_C_SEMAPHORES=1', *('-D' + name + '=__lsf_c_' + name for name in semaphore_symbols))
+        barrier_symbols = ('pthread_barrier_init', 'pthread_barrier_destroy', 'pthread_barrier_wait')
+        barrier_flags = ('-DLSF_C_BARRIERS=1', *('-D' + name + '=__lsf_c_' + name for name in barrier_symbols))
         # Compile the full actual production TU against original WASI headers.
         command([zig, *flags, '-matomics', '-mbulk-memory', '-pthread', *wasi,
             '-c', runtime / 'threads.c', '-o', output / 'threads.o'])
+        command([zig, *flags, '-matomics', '-mbulk-memory', '-pthread', *wasi, *rwlock_flags, *semaphore_flags, *barrier_flags,
+            '-c', runtime / 'threads.c', '-o', output / 'threads-rwlock.o'])
+        command([zig, *flags, '-matomics', '-mbulk-memory', '-pthread', *wasi, *semaphore_flags,
+            '-DLSF_C_SEMAPHORE_CLIENT=1', '-c', ROOT / 'tools/tests/fixtures/c-root-drain-jspi.c',
+            '-o', output / 'semaphore-client.o'])
+        stdout = command([node, '--max-old-space-size=64', ROOT / 'tools/tests/fixtures/c-root-drain-jspi.cjs',
+            output / 'semaphore-client.o', 'semaphore-imports'])
+        require(stdout == b'PASS captured semaphore caller: seven private SDK imports\n',
+            'c-thread-semaphore-private-caller-imports')
+        command([zig, *flags, '-matomics', '-mbulk-memory', '-pthread', *wasi, *barrier_flags,
+            '-DLSF_C_BARRIER_CLIENT=1', '-c', ROOT / 'tools/tests/fixtures/c-root-drain-jspi.c',
+            '-o', output / 'barrier-client.o'])
+        stdout = command([node, '--max-old-space-size=64', ROOT / 'tools/tests/fixtures/c-root-drain-jspi.cjs',
+            output / 'barrier-client.o', 'barrier-imports'])
+        require(stdout == b'PASS captured barrier caller: three private SDK imports\n',
+            'c-thread-barrier-private-caller-imports')
         # Execute identical source bodies with explicit serialized ports, not
         # canonical Wasmtime intrinsics or the activation broker.
         command([zig, *flags, '-fno-builtin', '-fno-stack-protector', '-nostdlib',
@@ -172,8 +214,18 @@ def run(output, zig, node):
             'start_root', 'start_first', 'start_second', 'read_live', 'read_peak', 'read_admitted',
             'read_settled', 'read_released', 'read_freed', 'read_parked', 'read_woken', 'read_tls',
             'read_first_phase', 'read_second_phase', 'read_second_claimed', 'read_second_joined',
-            'read_root_observer')
+            'read_root_observer', 'rw_setup', 'rw_set_shared', 'rw_set_reader_limit', 'rw_refuse_wait',
+            'rw_pause_admission', 'rw_init_default', 'rw_destroy', 'rw_read', 'rw_write', 'rw_tryread',
+            'rw_trywrite', 'rw_unlock', 'rw_timedread', 'rw_timedwrite', 'rw_errno', 'rw_busy',
+            'rw_again', 'rw_notsup', 'rw_perm', 'rw_deadlock',
+            'ss_setup', 'ss_shared', 'ss_invalid', 'ss_destroy', 'ss_getvalue', 'ss_wait', 'ss_trywait',
+            'ss_post', 'ss_timedwait', 'ss_pause_admission', 'ss_refuse_wait', 'ss_errno',
+            'ss_eagain', 'ss_ebusy', 'ss_einval', 'ss_overflow', 'ss_notsup', 'ss_intmax',
+            'bar_setup', 'bar_shared', 'bar_invalid', 'bar_above', 'bar_destroy', 'bar_wait',
+            'bar_pause_admission', 'bar_refuse_wait', 'bar_errno', 'bar_serial', 'bar_eagain',
+            'bar_ebusy', 'bar_einval', 'bar_notsup')
         command([zig, *flags, '-fno-builtin', '-fno-stack-protector', '-nostdlib',
+            *rwlock_flags, *semaphore_flags, *barrier_flags,
             '-Wl,--no-entry', '-Wl,--import-memory', '-Wl,--initial-memory=4194304',
             '-Wl,--max-memory=4194304', '-Wl,-z,stack-size=65536',
             *('-Wl,--export=' + name for name in drain_exports), '-I', output, '-I', runtime,
@@ -183,11 +235,65 @@ def run(output, zig, node):
         require(stdout == b'PASS root drain: existing and later joins, admission and park races, cancellation custody; JSPI test ports only\n',
             'c-root-drain-jspi-source-control-result')
         report['rootDrainScenarios'] = 5
+        stdout = command([node, '--max-old-space-size=64', '--experimental-wasm-jspi',
+            ROOT / 'tools/tests/fixtures/c-root-drain-jspi.cjs', output / 'root-drain-jspi.wasm', 'rwlock'])
+        require(stdout == b'PASS rwlock source: readers, writers, wakeups, refusals and cancellation; JSPI test ports only\n',
+            'c-thread-rwlock-jspi-source-control-result')
+        report['rwlockScenarios'] = 8
+        stdout = command([node, '--max-old-space-size=64', '--experimental-wasm-jspi',
+            ROOT / 'tools/tests/fixtures/c-root-drain-jspi.cjs', output / 'root-drain-jspi.wasm', 'semaphore'])
+        require(stdout == b'PASS semaphore source: permits, wait ownership, races, refusal and cancellation; JSPI test ports only\n',
+            'c-thread-semaphore-jspi-source-control-result')
+        report['semaphoreScenarios'] = 9
+        stdout = command([node, '--max-old-space-size=64', '--experimental-wasm-jspi',
+            ROOT / 'tools/tests/fixtures/c-root-drain-jspi.cjs', output / 'root-drain-jspi.wasm', 'barrier'])
+        require(stdout == b'PASS barrier source: reusable generations, wait ownership, races, refusal and cancellation; JSPI test ports only\n',
+            'c-thread-barrier-jspi-source-control-result')
+        report['barrierScenarios'] = 8
+        create_exports = ('__stack_pointer', 'setup_create', 'caller_pointer', 'start_create',
+            'close_create_root', 'create_count', 'create_list_count', 'create_live',
+            'create_settled', 'create_admissions', 'create_allocations', 'create_frees',
+            'create_eagain', 'create_enomem')
+        command([zig, *flags, '-fno-builtin', '-fno-stack-protector', '-nostdlib',
+            '-DLSF_C_CREATE_CONTROL=1', *wasi, '-Wl,--no-entry', '-Wl,--import-memory',
+            '-Wl,--initial-memory=4194304', '-Wl,--max-memory=4194304', '-Wl,-z,stack-size=65536',
+            *('-Wl,--export=' + name for name in create_exports), '-I', output, '-I', runtime,
+            ROOT / 'tools/tests/fixtures/c-root-drain-jspi.c', '-o', output / 'create-jspi.wasm'])
+        stdout = command([node, '--max-old-space-size=64', '--experimental-wasm-jspi',
+            ROOT / 'tools/tests/fixtures/c-root-drain-jspi.cjs', output / 'create-jspi.wasm', 'create'])
+        require(stdout == b'PASS create source: concurrent capacity, closing, paid cleanup and refusal paths; JSPI test ports only\n',
+            'c-thread-create-jspi-source-control-result')
+        report['createAdmissionScenarios'] = 19
         libc = lib / 'libc'
         wasi_musl, musl = libc / 'wasi/libc-top-half/musl', libc / 'musl'
         private = (wasi_musl / 'src/internal', musl / 'src/internal', wasi_musl / 'src/include',
             musl / 'src/include', wasi_musl / 'arch/wasm32', musl / 'arch/generic',
             libc / 'wasi/libc-top-half/headers/private', libc / 'wasi/libc-bottom-half/cloudlibc/src')
+        # Run the exact pinned WASI init/wait stubs before selecting the port.
+        # No errno getter, host import or substitute implementation is linked.
+        for part in ('init', 'wait'):
+            command([zig, 'cc', '-target', 'wasm32-wasi', '-std=gnu17', '-D_GNU_SOURCE', '-O2', '-w',
+                '-matomics', '-mbulk-memory', '-pthread', '-fno-lto', *wasi,
+                *(item for path in private for item in ('-I', path)),
+                '-c', libc / ('wasi/thread-stub/pthread_barrier_' + part + '.c'),
+                '-o', output / ('pinned-barrier-' + part + '.o')])
+        for part in ('init', 'setpshared'):
+            command([zig, 'cc', '-target', 'wasm32-wasi', '-std=gnu17', '-D_GNU_SOURCE', '-O2', '-w',
+                '-matomics', '-mbulk-memory', '-pthread', '-fno-lto', *wasi,
+                *(item for path in private for item in ('-I', path)),
+                '-c', libc / ('musl/src/thread/pthread_barrierattr_' + part + '.c'),
+                '-o', output / ('pinned-barrierattr-' + part + '.o')])
+        command([zig, *flags, '-matomics', '-mbulk-memory', '-pthread', '-fno-lto', *wasi,
+            '-DLSF_C_BARRIER_BASELINE=1', '-c', ROOT / 'tools/tests/fixtures/c-root-drain-jspi.c',
+            '-o', output / 'pinned-barrier-probe.o'])
+        command([zig, *flags, '-nostdlib', '-Wl,--no-entry', '-Wl,--export-memory',
+            output / 'pinned-barrier-init.o', output / 'pinned-barrier-wait.o', output / 'pinned-barrier-probe.o',
+            output / 'pinned-barrierattr-init.o', output / 'pinned-barrierattr-setpshared.o',
+            '-o', output / 'pinned-barrier.wasm'])
+        stdout = command([node, '--max-old-space-size=64', ROOT / 'tools/tests/fixtures/c-root-drain-jspi.cjs',
+            output / 'pinned-barrier.wasm', 'barrier-baseline'])
+        require(stdout == b'PASS pinned WASI barrier: one participant returns, two participants trap, attributes match\n',
+            'c-thread-pinned-barrier-baseline')
         # Compile the original weak-stub translation unit, with the same libc
         # warning policy, rather than replacing it with a fabricated double.
         command([zig, 'cc', '-target', 'wasm32-wasi', '-std=gnu17', '-D_GNU_SOURCE', '-O2', '-w',
@@ -204,13 +310,18 @@ def run(output, zig, node):
             'c-sync-pinned-gnu-join-result')
         report['gnuJoinCases'] = 2
         report['outputs'] = {name: identity(output / name, 1024 * 1024) for name in
-            ('threads.o', 'reference.wasm', 'once-jspi.wasm', 'root-drain-jspi.wasm',
+            ('threads.o', 'threads-rwlock.o', 'semaphore-client.o', 'barrier-client.o',
+             'reference.wasm', 'once-jspi.wasm', 'root-drain-jspi.wasm', 'create-jspi.wasm',
+             'pinned-barrier-init.o', 'pinned-barrier-wait.o', 'pinned-barrier-probe.o',
+             'pinned-barrierattr-init.o', 'pinned-barrierattr-setpshared.o', 'pinned-barrier.wasm',
              'pinned-pthread-join.o', 'gnu-join-reference.wasm',
-             abi.name, body.name, drain_body.name, gnu_join_body.name)}
+             abi.name, body.name, drain_body.name, creation_body.name, gnu_join_body.name)}
         require(header_ids == {name: identity(lib / name, 1024 * 1024) for name in HEADERS},
             'c-sync-header-input-changed')
         require(gnu_join_inputs == {name: identity(lib / name, 1024 * 1024) for name in GNU_JOIN_INPUTS},
             'c-sync-gnu-join-input-changed')
+        require(barrier_inputs == {name: identity(lib / name, 1024 * 1024) for name in BARRIER_INPUTS},
+            'c-sync-barrier-input-changed')
         require(before == {name: identity(ROOT / name, 1024 * 1024) for name in SOURCES},
             'c-sync-source-input-changed')
         require(tools == {name: identity(path) for name, path in (('zig', zig), ('node', node))},

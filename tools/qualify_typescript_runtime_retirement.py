@@ -17,7 +17,7 @@ from tools.phase3_resource_identity import file_identity, source_identity
 from tools.qualify_typescript_standard_clocks import engine_inputs
 from tools.replay_typescript_standard_entropy import historical
 from tools.rust_capsule_build import Commands
-from tools.rust_capsule_project import ROOT, fresh, read_json, write_json
+from tools.rust_capsule_project import ROOT, fresh, read_file, read_json, write_json
 
 CASE = 'runtime::typescript::signed_pending_promise_cancellation_deadline_and_timer_failures_retire_before_fresh_state'
 EXPECTED = (
@@ -31,12 +31,19 @@ EXPECTED = (
     ('typescript-fresh-after-promise-deadline', 1, 'Succeeded'),
     ('typescript-root-trap-mode', 2, 'GuestTrap'),
     ('typescript-fresh-after-root-trap', 1, 'Succeeded'),
+    ('typescript-accepted-after-root', 6, 'Succeeded'),
+    ('typescript-fresh-after-accepted-work', 1, 'Succeeded'),
 )
+WITNESS_PREFIX = 'LSF-TYPESCRIPT-ROOT-DRAIN-TIMER-V1'
+WITNESS_EVENTS = ('root-admitted', 'start-accepted', 'next-entered', 'root-close',
+                  'root-settled', 'start-accepted', 'next-entered')
 IDLE = frozenset(('activeInvocations', 'stores', 'hostStates', 'componentInstances',
     'cancellationProbes', 'temporaryBuffers', 'calls', 'sessions', 'handles', 'results',
     'bufferBytes', 'readWaits', 'quotaActivations', 'instanceReservations', 'cancellationRegistrations'))
 MATERIALS = ('tools/qualify_typescript_runtime_retirement.py', 'tools/typescript_runtime_retirement_fixture.py',
     'crates/latent-wasmtime/tests/local_service/runtime/typescript.rs',
+    'crates/latent-wasmtime/src/host/runtime.rs',
+    'crates/latent-wasmtime/src/host/runtime/positive_timer_observer.rs',
     'tools/typescript_guest/build.py', 'tools/typescript_guest/bundle.mjs',
     'tools/typescript_guest/runtime_profile.py', 'tools/typescript_guest/clock_engine.py',
     'tools/typescript_guest/clock_app.mjs')
@@ -57,7 +64,36 @@ def registry_contract():
     return row
 
 
-def observation(raw, filtered):
+def root_drain_witness(raw):
+    require(type(raw) is bytes and len(raw) <= 4*1024**2, 'typescript-root-drain-output-bound')
+    text = raw.decode('utf-8', errors='strict')
+    lines = [line for line in text.splitlines() if line.startswith(WITNESS_PREFIX)]
+    require(len(lines) == len(WITNESS_EVENTS), 'typescript-root-drain-exact-observations')
+    rows = []
+    for line, event, sequence in zip(lines, WITNESS_EVENTS, range(1, 8), strict=True):
+        match = re.fullmatch(re.escape(WITNESS_PREFIX) +
+            r'\|typescript\|([a-z-]+)\|([0-9]+)\|([0-9]+)\|([0-9]+)\|([0-9]+)(?:\|(true|false)\|(true|false))?', line)
+        require(match is not None and match.group(1) == event and int(match.group(2)) == sequence,
+                'typescript-root-drain-original-order')
+        require(match.group(6) == ('true' if event == 'root-settled' else None),
+                'typescript-root-drain-original-root-match')
+        require(match.group(7) == ('true' if event == 'root-settled' else None),
+                'typescript-root-drain-original-task-retired')
+        tasks, waits, timers = (int(match.group(index)) for index in (3, 4, 5))
+        require(tasks <= 16 and waits <= 8 and timers <= 8, 'typescript-root-drain-original-bounds')
+        rows.append({'event': event, 'sequence': sequence, 'tasks': tasks, 'waits': waits, 'timers': timers})
+    require(rows[0]['tasks'] >= 1 and rows[1]['timers'] >= 1 and rows[2]['waits'] >= 1 and
+            rows[3]['tasks'] >= 1 and rows[3]['timers'] >= 1 and
+            rows[5]['timers'] >= 1 and rows[6]['waits'] >= 1,
+            'typescript-root-drain-live-original-owners')
+    return {'sameOriginalRoot': True, 'originalTaskCountReduced': True,
+            'rootSettledBeforeNestedTimer': True, 'events': rows}
+
+
+def witness_output(output, ordinal, stage):
+    return read_file(output/'logs'/f'{ordinal:02d}-{stage}.stderr.txt', 4*1024**2)
+
+def observation(raw, filtered, witness):
     require(type(raw) is bytes and 0 < len(raw) <= 4*1024**2, 'typescript-retirement-output-bound')
     text = raw.decode('utf-8', errors='strict')
     names = re.findall(r'^test (\S+) \.\.\. ([^\r\n]+)\r?$', text, re.MULTILINE)
@@ -74,7 +110,7 @@ def observation(raw, filtered):
             and value.get('status') == 'passed' and value.get('fullTicketQualification') is False
             and value.get('crossTenantQualified') is False, 'typescript-retirement-observation-identity')
     rows = value.get('cases')
-    require(type(rows) is list and len(rows) == len(EXPECTED), 'typescript-retirement-ten-outcomes')
+    require(type(rows) is list and len(rows) == len(EXPECTED), 'typescript-retirement-exact-outcomes')
     for row, (identity, mode, outcome) in zip(rows, EXPECTED, strict=True):
         require(type(row) is dict and row.get('case') == identity and type(row.get('mode')) is int
                 and row['mode'] == mode and row.get('outcome') == outcome, 'typescript-retirement-exact-outcome')
@@ -84,13 +120,14 @@ def observation(raw, filtered):
         if outcome == 'Succeeded':
             require(row.get('decoded') == [42] and all(type(row.get(key)) is int and row[key] > 0
                     for key in ('cpuFuel', 'peakMemoryBytes')), 'typescript-retirement-real-success')
-        if mode in (0, 5):
+        if mode in (0, 5, 6):
             pending = row.get('pending')
             require(type(pending) is dict and set(pending) == {'stores', 'readWaits', 'calls'}
                     and pending['stores'] == 1 and all(type(v) is int and v > 0 for v in pending.values()),
                     'typescript-retirement-real-pending-owners')
         if outcome == 'GuestTrap':
             require(row.get('callbackOriginProven') is False, 'typescript-retirement-no-callback-cause-inference')
+    value['acceptedAfterRootWitness'] = root_drain_witness(witness)
     return value
 
 
@@ -133,7 +170,8 @@ def qualify(acquired, engine, tools, output):
             '--packager', products['examples/package'], '--engine', core, '--envelope', envelope)
         record['builds'] = {name: build_proof(inputs/name)
                            for name in ('typescript-runtime-retirement', 'typescript-service-callee')}
-        commands.environment.update(LSF_GUEST_SDK_LANGUAGE='typescript', LSF_GUEST_CAPSULES=str(inputs))
+        commands.environment.update(LSF_GUEST_SDK_LANGUAGE='typescript', LSF_GUEST_CAPSULES=str(inputs),
+                                    LSF_TYPESCRIPT_ROOT_DRAIN_TIMER_OBSERVER='1')
         stage = 'exact-signed-native-retirement'
         contract = registry_contract()
         list_base = ['cargo', 'test', '--locked', '-p', 'latent-wasmtime', '--test', 'local_service', '--']
@@ -142,7 +180,8 @@ def qualify(acquired, engine, tools, output):
         discovery.validate_cases(contract, available, ignored, {})
         require(CASE in ignored, 'typescript-retirement-required-case-missing')
         raw = commands.run(stage, *test_command())
-        observed = observation(raw, len(available) - 1)
+        witness = witness_output(output, len(commands.records)-1, stage)
+        observed = observation(raw, len(available) - 1, witness)
         write_json(output/'native-observation.json', observed)
         require(source_identity(ROOT) == source
                 and {name: file_identity(ROOT/name) for name in MATERIALS} == material,

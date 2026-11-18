@@ -512,10 +512,10 @@ async fn retained_trust_configuration_refunds_only_after_the_last_physical_owner
     let fixture = Fixture::for_tls_accounting(peer.config());
     let pools = Arc::clone(&fixture.pools);
     let io = Arc::clone(&fixture.io);
-    let retained = Arc::clone(fixture.provider.inner.tls[0].as_ref().unwrap());
+    let retained = fixture.provider.inner.tls[0].as_ref().unwrap().clone();
     fixture.provider.retire();
     drop(fixture);
-    assert_eq!(Arc::strong_count(&retained), 1);
+    assert_eq!(retained.strong_count(), 1);
     assert_eq!(Arc::strong_count(&retained.config), 1);
     assert!(
         tokio::time::timeout(Duration::from_millis(20), peer.listener.accept())

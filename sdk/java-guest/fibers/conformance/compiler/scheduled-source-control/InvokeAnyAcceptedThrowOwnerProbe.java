@@ -52,14 +52,14 @@ public final class InvokeAnyAcceptedThrowOwnerProbe {
                 if (!"after-accept".equals(expected.getMessage())) throw expected;
             }
             if (!workerReady.await(5, TimeUnit.SECONDS) || executor.calls != 1 || callbacks.get() != 0
-                    || !"1:1:0".equals(counts()) || !((Activation.ManagedPool)pool).hasPendingWork())
+                    || !"1:1:1".equals(counts()) || !((Activation.ManagedPool)pool).hasPendingWork())
                 throw new AssertionError("accepted-custody-" + counts());
             release.countDown();
             pool.shutdown();
             if (!pool.awaitTermination(5, TimeUnit.SECONDS)) throw new AssertionError("termination");
             Activation.idle();
             if (callbacks.get() != 0 || !"0:0:0".equals(counts())) throw new AssertionError("retirement-" + counts());
-            System.out.println("accepted-throw:held=1:1:0:pending=true:callbacks=0:after=0:0:0");
+            System.out.println("accepted-throw:held=1:1:1:pending=true:callbacks=0:after=0:0:0");
         } finally {
             release.countDown();
             pool.shutdownNow();

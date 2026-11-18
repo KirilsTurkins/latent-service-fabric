@@ -1,6 +1,7 @@
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,8 +50,29 @@ public final class ManagedReentrantFactoryReferenceControl {
         }
         require(callbackError.get() == null);
     }
+    private static void gracefulSole(String kind, boolean returnsNull) throws Exception {
+        AtomicReference<ExecutorService> selected = new AtomicReference<>();
+        AtomicReference<Thread> offered = new AtomicReference<>();
+        AtomicInteger attempts = new AtomicInteger(), calls = new AtomicInteger();
+        var pool = create(kind, target -> {
+            attempts.incrementAndGet(); selected.get().shutdown();
+            if (returnsNull) return null;
+            var thread = new Thread(target); offered.set(thread); return thread;
+        });
+        selected.set(pool);
+        try {
+            try { pool.submit(calls::incrementAndGet); throw new AssertionError("accepted-after-graceful-shutdown"); }
+            catch (RejectedExecutionException expected) { }
+            require(attempts.get() == 1 && calls.get() == 0 && pool.isShutdown()
+                && pool.awaitTermination(5, TimeUnit.SECONDS)
+                && (offered.get() == null || offered.get().getState() == Thread.State.NEW));
+        } finally { pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS)); }
+    }
     public static void main(String[] args) throws Exception {
         control("fixed-one", false); control("single", false); control("fixed-two", true); control("cached", true);
-        System.out.println("MANAGED_REENTRANT_FACTORY PASS fixed-one;single;fixed-two;cached");
+        for (String kind : new String[]{"fixed-one", "single"}) {
+            gracefulSole(kind, true); gracefulSole(kind, false);
+        }
+        System.out.println("MANAGED_REENTRANT_FACTORY PASS fixed-one;single;fixed-two;cached;graceful-sole");
     }
 }

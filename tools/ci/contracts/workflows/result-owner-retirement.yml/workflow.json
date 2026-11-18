@@ -11,6 +11,8 @@
 "paths":[
 "crates/vendor/bytes/**",
 "crates/latent-core/src/result_payload.rs",
+"crates/latent-core/src/native_capacity.rs",
+"crates/latent-core/src/native_capacity/**",
 "crates/latent-http/src/protocol.rs",
 "crates/latent-http/src/protocol/**",
 "crates/latent-http/src/deferred/request.rs",
@@ -24,6 +26,13 @@
 "crates/latent-core/src/budget.rs",
 "crates/latent-core/src/budget/**",
 "crates/latent-streams/src/connection.rs",
+"crates/latent-streams/src/lib.rs",
+"crates/latent-streams/src/provider.rs",
+"crates/latent-streams/src/tls.rs",
+"crates/latent-streams/src/strong_owner.rs",
+"crates/latent-streams/src/maintenance.rs",
+"crates/latent-streams/src/tests/maintenance.rs",
+"crates/latent-streams/src/transport.rs",
 "crates/latent-manifest/tests/fixtures/valid-capsule-v1alpha1.json",
 "tools/stream_scope_retirement_witness.py",
 "tools/stream_scope_retirement_witness.rs",
@@ -34,6 +43,7 @@
 "crates/latent-blobs/src/s3/provider/seal.rs",
 "tools/protocol_page_retirement_witness.py",
 "tools/protocol_page_retirement_witness.rs",
+"tools/native_capacity_retirement_witness.rs",
 ".github/workflows/result-owner-retirement.yml"
 ]
 },
@@ -45,6 +55,8 @@
 "paths":[
 "crates/vendor/bytes/**",
 "crates/latent-core/src/result_payload.rs",
+"crates/latent-core/src/native_capacity.rs",
+"crates/latent-core/src/native_capacity/**",
 "crates/latent-http/src/protocol.rs",
 "crates/latent-http/src/protocol/**",
 "crates/latent-http/src/deferred/request.rs",
@@ -58,6 +70,13 @@
 "crates/latent-core/src/budget.rs",
 "crates/latent-core/src/budget/**",
 "crates/latent-streams/src/connection.rs",
+"crates/latent-streams/src/lib.rs",
+"crates/latent-streams/src/provider.rs",
+"crates/latent-streams/src/tls.rs",
+"crates/latent-streams/src/strong_owner.rs",
+"crates/latent-streams/src/maintenance.rs",
+"crates/latent-streams/src/tests/maintenance.rs",
+"crates/latent-streams/src/transport.rs",
 "crates/latent-manifest/tests/fixtures/valid-capsule-v1alpha1.json",
 "tools/stream_scope_retirement_witness.py",
 "tools/stream_scope_retirement_witness.rs",
@@ -68,6 +87,7 @@
 "crates/latent-blobs/src/s3/provider/seal.rs",
 "tools/protocol_page_retirement_witness.py",
 "tools/protocol_page_retirement_witness.rs",
+"tools/native_capacity_retirement_witness.rs",
 ".github/workflows/result-owner-retirement.yml"
 ]
 },
@@ -82,7 +102,7 @@
 "protocol-page-owner",
 "stream-scope-owner"
 ],
-"reviewReason":"Keep physical page and result owner checks while adding the actual stream scope allocator control on pull requests and development.",
+"reviewReason":"Keep all physical result, page, stream scope and native-capacity controls, and run the TLS configuration backing-owner witness on its source changes.",
 "schemaVersion":"latent.ci.contracts.v1",
 "workflow":".github/workflows/result-owner-retirement.yml"
 }

@@ -12,8 +12,8 @@ use latent_core::{
     ActivationClock,
 };
 use latent_state::entity_lanes::{
-    EntityCallKind, EntityDispatch, EntityLaneError, EntityLaneLimits, EntityLaneRequest,
-    EntityLanes, EntityPhysicalOwner, EntityRejection, EntityScope,
+    EntityCallKind, EntityDispatch, EntityLaneError, EntityLaneLimit, EntityLaneLimits,
+    EntityLaneRequest, EntityLanes, EntityPhysicalOwner, EntityRejection, EntityScope,
 };
 use tokio::sync::{oneshot, watch};
 
@@ -34,14 +34,52 @@ pub(super) enum QueueError {
     Expired,
     Unavailable,
     DuplicateConflict,
-    DuplicateNeedsAuthorization { source: [u8; 32], owner: u64 },
+    DuplicateNeedsAuthorization {
+        source: [u8; 32],
+        owner: u64,
+        wait_until: Instant,
+    },
     DuplicateCapacity,
     OriginalOwnerEnded,
 }
 
 type CommandIdentity = latent_commit::atomic::Identity;
+type CommandSelection = (
+    CommandIdentity,
+    CommandIdentity,
+    [u8; 32],
+    Option<Arc<super::SharedCommandOwner>>,
+);
 type Commands = Arc<Mutex<BTreeMap<CommandIdentity, Arc<CommandEntry>>>>;
 type DuplicateWaiters = Arc<Mutex<BTreeMap<EntityScope, usize>>>;
+type Waiting = Arc<Mutex<BTreeMap<EntityScope, WaitingUsage>>>;
+#[derive(Clone, Copy, Default)]
+struct WaitingUsage {
+    count: usize,
+    bytes: u64,
+}
+
+// Count both ordinary queued work and duplicate observers under the same
+// configured limits. A slot is held until selection or cancellation, and
+// never keeps a physical lane owner alive.
+pub(super) struct WaitingSlot {
+    waiters: Waiting,
+    scope: EntityScope,
+    bytes: u64,
+}
+impl Drop for WaitingSlot {
+    fn drop(&mut self) {
+        if let Ok(mut waiters) = self.waiters.lock() {
+            if let Some(usage) = waiters.get_mut(&self.scope) {
+                usage.count -= 1;
+                usage.bytes -= self.bytes;
+                if usage.count == 0 {
+                    waiters.remove(&self.scope);
+                }
+            }
+        }
+    }
+}
 
 struct CommandEntry {
     fingerprint: CommandIdentity,
@@ -68,6 +106,12 @@ impl Drop for DuplicateWaiter {
     }
 }
 
+// A duplicate still consumes queue capacity while its original result-read
+// authority is being checked, before it may sponsor the active owner.
+pub(super) struct AuthorizingWaiter {
+    _waiting: WaitingSlot,
+}
+
 struct CommandRegistration {
     commands: Commands,
     identity: CommandIdentity,
@@ -91,6 +135,8 @@ impl Drop for CommandRegistration {
 
 struct Pending {
     current: Arc<dyn Fn() -> bool + Send + Sync>,
+    deadline: Instant,
+    wait_until: Instant,
     result: Mutex<Option<oneshot::Sender<Result<Physical, QueueError>>>>,
     permit: Mutex<Option<NativeBufferPermit>>,
     command: Option<Arc<CommandRegistration>>,
@@ -115,7 +161,14 @@ pub(super) struct EntityQueue {
     maximum_commands: usize,
     next_command_generation: AtomicU64,
     duplicate_waiters: DuplicateWaiters,
+    waiting: Waiting,
+    maximum_global_wait_bytes: u64,
+    maximum_tenant_wait_bytes: u64,
+    maximum_entity_wait_bytes: u64,
+    maximum_global_waiters: usize,
+    maximum_tenant_waiters: usize,
     maximum_entity_waiters: usize,
+    maximum_wait_age: Duration,
 }
 
 impl EntityQueue {
@@ -142,7 +195,12 @@ impl EntityQueue {
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, QueueError> {
         let maximum_turn = limits.global_queued;
+        let maximum_tenant_waiters = limits.tenant_queued;
         let maximum_entity_waiters = limits.entity_queued;
+        let maximum_wait_age = limits.maximum_wait_age;
+        let maximum_global_wait_bytes = limits.global_bytes;
+        let maximum_tenant_wait_bytes = limits.tenant_bytes;
+        let maximum_entity_wait_bytes = limits.entity_bytes;
         let lanes = EntityLanes::new(limits).map_err(QueueError::Lane)?;
         let (signal, _) = watch::channel(0);
         let (claims, _) = watch::channel(0);
@@ -158,8 +216,94 @@ impl EntityQueue {
             maximum_commands: maximum_turn.saturating_mul(2),
             next_command_generation: AtomicU64::new(1),
             duplicate_waiters: Arc::new(Mutex::new(BTreeMap::new())),
+            waiting: Arc::new(Mutex::new(BTreeMap::new())),
+            maximum_global_wait_bytes,
+            maximum_tenant_wait_bytes,
+            maximum_entity_wait_bytes,
+            maximum_global_waiters: maximum_turn,
+            maximum_tenant_waiters,
             maximum_entity_waiters,
+            maximum_wait_age,
         })
+    }
+
+    fn reserve_waiting(&self, scope: &EntityScope, bytes: u64) -> Result<WaitingSlot, QueueError> {
+        let mut waiters = self.waiting.lock().map_err(|_| QueueError::Unavailable)?;
+        let mut global = WaitingUsage::default();
+        let mut tenant = WaitingUsage::default();
+        for (key, usage) in waiters.iter() {
+            global.count = global.count.saturating_add(usage.count);
+            global.bytes = global.bytes.saturating_add(usage.bytes);
+            if key.tenant() == scope.tenant() {
+                tenant.count = tenant.count.saturating_add(usage.count);
+                tenant.bytes = tenant.bytes.saturating_add(usage.bytes);
+            }
+        }
+        let entity = waiters.get(scope).copied().unwrap_or_default();
+        let limit = if global.count >= self.maximum_global_waiters {
+            Some(EntityLaneLimit::GlobalQueue)
+        } else if tenant.count >= self.maximum_tenant_waiters {
+            Some(EntityLaneLimit::TenantQueue)
+        } else if entity.count >= self.maximum_entity_waiters {
+            Some(EntityLaneLimit::EntityQueue)
+        } else if global
+            .bytes
+            .checked_add(bytes)
+            .is_none_or(|value| value > self.maximum_global_wait_bytes)
+        {
+            Some(EntityLaneLimit::GlobalBytes)
+        } else if tenant
+            .bytes
+            .checked_add(bytes)
+            .is_none_or(|value| value > self.maximum_tenant_wait_bytes)
+        {
+            Some(EntityLaneLimit::TenantBytes)
+        } else if entity
+            .bytes
+            .checked_add(bytes)
+            .is_none_or(|value| value > self.maximum_entity_wait_bytes)
+        {
+            Some(EntityLaneLimit::EntityBytes)
+        } else {
+            None
+        };
+        if let Some(limit) = limit {
+            return Err(QueueError::Lane(EntityLaneError::Backpressure(limit)));
+        }
+        let usage = waiters.entry(scope.clone()).or_default();
+        usage.count += 1;
+        usage.bytes += bytes;
+        Ok(WaitingSlot {
+            waiters: Arc::clone(&self.waiting),
+            scope: scope.clone(),
+            bytes,
+        })
+    }
+
+    pub(super) fn reserve_authorizing_duplicate(
+        &self,
+        scope: &EntityScope,
+        retained_bytes: u64,
+        identity_bytes: usize,
+    ) -> Result<AuthorizingWaiter, QueueError> {
+        let metadata = waiting_metadata(scope, identity_bytes)?;
+        let bytes = retained_bytes
+            .checked_add(metadata)
+            .ok_or(QueueError::Unavailable)?;
+        let waiting = self.reserve_waiting(scope, bytes)?;
+        Ok(AuthorizingWaiter { _waiting: waiting })
+    }
+
+    pub(super) fn waiter_deadline(&self, deadline: Instant) -> Result<Instant, QueueError> {
+        self.clock
+            .monotonic_now()
+            .checked_add(self.maximum_wait_age)
+            .map(|limit| limit.min(deadline))
+            .ok_or(QueueError::Unavailable)
+    }
+
+    pub(super) async fn wait_for_waiter_expiry(&self, deadline: Instant) {
+        wait_until(deadline, self.clock.as_ref()).await;
     }
 
     pub(super) fn claim_changes(&self) -> watch::Receiver<u64> {
@@ -208,44 +352,48 @@ impl EntityQueue {
         deadline: Instant,
         current: Arc<dyn Fn() -> bool + Send + Sync>,
         permit: NativeBufferPermit,
-        command: Option<(
-            CommandIdentity,
-            CommandIdentity,
-            [u8; 32],
-            Option<Arc<super::SharedCommandOwner>>,
-        )>,
+        command: Option<CommandSelection>,
         duplicate_authorized: bool,
-        mut first_owner: Option<(u64, [u8; 32])>,
+        mut first_owner: Option<(u64, [u8; 32], Instant)>,
     ) -> Result<Physical, QueueError> {
         // Cover the queue's own objects and the lane's bounded copies before
         // building the channel or inserting the request. The trusted caller
         // obtains this permit from the original ingress reservation first.
-        let scope_bytes = scope
-            .tenant()
-            .0
-            .len()
-            .checked_add(scope.namespace().0.len())
-            .and_then(|n| n.checked_add(scope.entity().0.len()))
-            .ok_or(QueueError::Unavailable)?;
-        let charge = scope_bytes
-            .checked_mul(6)
-            .and_then(|n| {
-                identity
-                    .len()
-                    .checked_mul(2)
-                    .and_then(|ids| n.checked_add(ids))
-            })
-            .and_then(|n| n.checked_add(4096))
-            .and_then(|n| u64::try_from(n).ok())
+        let charge = waiting_metadata(&scope, identity.len())?;
+        let wait_bytes = retained_bytes
+            .checked_add(charge)
             .ok_or(QueueError::Unavailable)?;
         // `retained_bytes` is separately held by the permit's original global
         // reservation; the subpermit covers these additional lane objects.
         if permit.buffer_class() != NativeBufferClass::Request || permit.bytes() < charge {
             return Err(QueueError::Unavailable);
         }
+        let duplicate_deadline = self
+            .clock
+            .monotonic_now()
+            .checked_add(self.maximum_wait_age)
+            .ok_or(QueueError::Unavailable)?
+            .min(deadline);
+        let duplicate_deadline = first_owner.map_or(duplicate_deadline, |(_, _, original)| {
+            duplicate_deadline.min(original)
+        });
         let mut changes = self.signal.subscribe();
         let mut duplicate_waiter = None;
+        let mut waiting_slot = None;
         let registration = loop {
+            if first_owner.is_some() {
+                if self.clock.monotonic_now() >= duplicate_deadline {
+                    return Err(QueueError::Expired);
+                }
+                // Recheck original ingress authority after authorization and
+                // whenever the shared owner changes, before any recovery.
+                if !(current)() {
+                    return Err(QueueError::Rejected(EntityRejection::AuthorityChanged));
+                }
+                if self.clock.monotonic_now() >= duplicate_deadline {
+                    return Err(QueueError::Expired);
+                }
+            }
             let Some((identity, fingerprint, source, owner)) = &command else {
                 break None;
             };
@@ -256,17 +404,18 @@ impl EntityQueue {
                         return Err(QueueError::DuplicateNeedsAuthorization {
                             source: existing.source,
                             owner: existing.generation,
+                            wait_until: duplicate_deadline,
                         });
                     }
-                    if first_owner
-                        .is_some_and(|first| first != (existing.generation, existing.source))
-                    {
+                    if first_owner.is_some_and(|(generation, source, _)| {
+                        (generation, source) != (existing.generation, existing.source)
+                    }) {
                         return Err(QueueError::OriginalOwnerEnded);
                     }
                     if existing.fingerprint != *fingerprint {
                         return Err(QueueError::DuplicateConflict);
                     }
-                    first_owner = Some((existing.generation, existing.source));
+                    first_owner = Some((existing.generation, existing.source, duplicate_deadline));
                     (None, existing.owner.clone())
                 } else {
                     if first_owner.is_some() {
@@ -304,11 +453,29 @@ impl EntityQueue {
                 break Some(next);
             }
             if duplicate_waiter.is_none() {
+                waiting_slot = Some(self.reserve_waiting(&scope, wait_bytes).map_err(|error| {
+                    if matches!(error, QueueError::Lane(EntityLaneError::Backpressure(_))) {
+                        QueueError::DuplicateCapacity
+                    } else {
+                        error
+                    }
+                })?);
                 let mut waiters = self
                     .duplicate_waiters
                     .lock()
                     .map_err(|_| QueueError::Unavailable)?;
-                if waiters.get(&scope).copied().unwrap_or(0) >= self.maximum_entity_waiters {
+                let mut global = 0_usize;
+                let mut tenant = 0_usize;
+                for (key, count) in waiters.iter() {
+                    global = global.saturating_add(*count);
+                    if key.tenant() == scope.tenant() {
+                        tenant = tenant.saturating_add(*count);
+                    }
+                }
+                if global >= self.maximum_global_waiters
+                    || tenant >= self.maximum_tenant_waiters
+                    || waiters.get(&scope).copied().unwrap_or(0) >= self.maximum_entity_waiters
+                {
                     return Err(QueueError::DuplicateCapacity);
                 }
                 let sponsor = match sponsor {
@@ -328,12 +495,25 @@ impl EntityQueue {
             }
             tokio::select! {
                 result = changes.changed() => if result.is_err() { return Err(QueueError::Unavailable); },
-                () = wait_until(deadline, self.clock.as_ref()) => return Err(QueueError::Expired),
+                () = wait_until(duplicate_deadline, self.clock.as_ref()) => return Err(QueueError::Expired),
             }
         };
+        // Ordinary requests and duplicate observers share these limits. Keep
+        // the slot across enqueue and release it on selection or cancellation.
+        let _waiting_slot = match waiting_slot {
+            Some(slot) => slot,
+            None => self.reserve_waiting(&scope, wait_bytes)?,
+        };
+        let enqueued_at = self.clock.monotonic_now();
+        let queue_wait_until = enqueued_at
+            .checked_add(self.maximum_wait_age)
+            .ok_or(QueueError::Unavailable)?
+            .min(deadline);
         let (send, mut receive) = oneshot::channel();
         let pending = Arc::new(Pending {
             current,
+            deadline,
+            wait_until: queue_wait_until,
             result: Mutex::new(Some(send)),
             permit: Mutex::new(Some(permit)),
             command: registration,
@@ -348,7 +528,7 @@ impl EntityQueue {
         );
         let _waiter = self
             .lanes
-            .enqueue(request, self.clock.monotonic_now())
+            .enqueue(request, enqueued_at)
             .map_err(|error| QueueError::Lane(error.reason))?;
         loop {
             let now = self.clock.monotonic_now();
@@ -388,20 +568,38 @@ impl EntityQueue {
             };
             let (pending, outcome) = match next {
                 EntityDispatch::Ready(execution) => {
+                    let now = self.clock.monotonic_now();
+                    let cancelled = execution.cancellation_requested(now);
                     let (request, owner) = execution.into_owned_work();
                     let pending = request.into_payload();
-                    let permit = pending
-                        .permit
-                        .lock()
-                        .map_err(|_| QueueError::Unavailable)?
-                        .take()
-                        .ok_or(QueueError::Unavailable)?;
-                    let lease = Arc::new(PhysicalLease {
-                        _lane: owner,
-                        _permit: permit,
-                        _command: pending.command.clone(),
-                    });
-                    (pending, Ok(lease))
+                    let failure = if now >= pending.deadline {
+                        Some(QueueError::Expired)
+                    } else if cancelled {
+                        Some(QueueError::Rejected(
+                            EntityRejection::CancelledBeforeExecution,
+                        ))
+                    } else if now >= pending.wait_until {
+                        Some(QueueError::Rejected(EntityRejection::WaitExpired))
+                    } else {
+                        None
+                    };
+                    if let Some(failure) = failure {
+                        drop(owner);
+                        (pending, Err(failure))
+                    } else {
+                        let permit = pending
+                            .permit
+                            .lock()
+                            .map_err(|_| QueueError::Unavailable)?
+                            .take()
+                            .ok_or(QueueError::Unavailable)?;
+                        let lease = Arc::new(PhysicalLease {
+                            _lane: owner,
+                            _permit: permit,
+                            _command: pending.command.clone(),
+                        });
+                        (pending, Ok(lease))
+                    }
                 }
                 EntityDispatch::Rejected(rejected) => (
                     rejected.request.into_payload(),
@@ -421,6 +619,26 @@ impl EntityQueue {
             .send_modify(|version| *version = version.wrapping_add(1));
         Ok(())
     }
+}
+
+fn waiting_metadata(scope: &EntityScope, identity_bytes: usize) -> Result<u64, QueueError> {
+    let scope_bytes = scope
+        .tenant()
+        .0
+        .len()
+        .checked_add(scope.namespace().0.len())
+        .and_then(|n| n.checked_add(scope.entity().0.len()))
+        .ok_or(QueueError::Unavailable)?;
+    scope_bytes
+        .checked_mul(8)
+        .and_then(|n| {
+            identity_bytes
+                .checked_mul(2)
+                .and_then(|ids| n.checked_add(ids))
+        })
+        .and_then(|n| n.checked_add(4096))
+        .and_then(|n| u64::try_from(n).ok())
+        .ok_or(QueueError::Unavailable)
 }
 
 async fn wait_until(deadline: Instant, clock: &dyn ActivationClock) {

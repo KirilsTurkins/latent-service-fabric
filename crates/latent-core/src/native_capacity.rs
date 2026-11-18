@@ -170,7 +170,31 @@ impl NativeCapacityOwner {
             .map_err(|_| NativeCapacityError::Poisoned)
     }
 
-    /// One bounded node drain waiter, using its existing original-deadline timer.
+    /// Return the earliest established drain cutoff or the proposed cutoff.
+    ///
+    /// Use this value to construct the caller-owned timer for a replacement
+    /// waiter. Another waiter can establish an earlier cutoff before the next
+    /// `drain_async` call; that call rejects a stale later cutoff so the caller
+    /// can query again. This observation does not verify a timer's behavior.
+    pub fn drain_deadline(&self, proposed: Instant) -> Result<Instant, NativeCapacityError> {
+        let state = self
+            .0
+            .state
+            .lock()
+            .map_err(|_| NativeCapacityError::Poisoned)?;
+        Ok(state
+            .shutdown_deadline
+            .map_or(proposed, |old| old.min(proposed)))
+    }
+
+    /// One bounded node drain waiter, using a caller-owned deadline timer.
+    ///
+    /// The timer must become ready at `original_deadline`, in this owner's
+    /// monotonic clock domain; early readiness is treated as a timeout. While
+    /// live owners remain before an established earlier cutoff, a later
+    /// deadline is rejected with `DeadlineTooLong`;
+    /// use `drain_deadline` to select a suitable deadline and timer. This method
+    /// cannot inspect or verify the supplied future's actual wake time.
     pub fn drain_async<F: std::future::Future<Output = ()>>(
         &self,
         original_deadline: Instant,
@@ -215,8 +239,8 @@ impl Owner {
         let waker = self
             .lock_physical()
             .waiter
-            .as_ref()
-            .and_then(|(_, waiter)| waiter.clone());
+            .as_mut()
+            .and_then(|(_, waiter)| waiter.take());
         if let Some(waker) = waker {
             waker.wake();
         }

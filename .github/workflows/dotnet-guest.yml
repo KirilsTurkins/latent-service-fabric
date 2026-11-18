@@ -550,6 +550,26 @@ jobs:
           printf '%s\n' "$RUNNER_TEMP/dotnet-authoring-bindgen" >> "$GITHUB_PATH"
           python3 tools/dotnet_capsule.py install-tools "$RUNNER_TEMP/dotnet-authoring-tools" \
             --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux"
+      - name: Check nested finite waits against the emitted aggregate helper
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B -m unittest tools.tests.test_dotnet_aggregate_task_wait -v
+          tools="$RUNNER_TEMP/dotnet-authoring-tools"
+          work="$RUNNER_TEMP/dotnet-nested-finite-control"
+          mkdir "$work"
+          corelib="$tools/packages/runtime.wasi-wasm.microsoft.dotnet.ilcompiler.llvm/10.0.0-rc.1.26306.1/runtimes/wasi-wasm/native-hidden/System.Private.CoreLib.dll"
+          rewriter="$tools/http-errors/HttpErrors.dll"
+          cecil="$tools/http-errors/Mono.Cecil.dll"
+          dotnet "$rewriter" --task-wait "$corelib" "$work/infinite.dll" "$work/infinite.json" > /dev/null
+          dotnet "$rewriter" --finite-task-wait "$corelib" "$work/finite.dll" "$work/finite.json" > /dev/null
+          dotnet "$rewriter" --aggregate-task-wait "$corelib" "$work/aggregate.dll" "$work/aggregate.json" > /dev/null
+          cd "$work"
+          dotnet build "$GITHUB_WORKSPACE/sdk/dotnet-guest/tests/fixtures/task-wait-finite-il-control/FiniteIlControl.csproj" \
+            -c Release --output "$work/control" -p:NuGetAudit=false -p:ImportDirectoryBuildProps=false \
+            -p:ImportDirectoryBuildTargets=false "-p:BaseIntermediateOutputPath=$work/obj/" "-p:LsfCecilPath=$cecil"
+          dotnet "$work/control/FiniteIlControl.dll" "$work/infinite.dll" "$work/finite.dll" \
+            "$rewriter" "$work/projection.dll" "$work/aggregate.dll"
       - name: Authenticate normal products before restoring exact executable modes
         shell: bash
         run: |

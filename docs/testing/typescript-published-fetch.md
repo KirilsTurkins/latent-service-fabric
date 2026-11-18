@@ -10,6 +10,21 @@ executed independently:16 total probe/client observations,12 exact real contacts
 prior failed results remain unchanged. This finite success does not qualify
 Ky's unavailable statusText/error helper or close the full #691 matrix.
 
+## Current-source rerun
+
+After the current-source selector is merged into `development`, run:
+
+```sh
+gh workflow run typescript-guest.yml --ref development -f qualify-current-published-fetch=true
+```
+
+The opt-in job uses the same workflow run's source splicer, import engine and
+native-node products. It preserves the historical programme and records the
+current attempt separately in `PUBLISHED-FETCH-CURRENT.json` or `FAILED.json`.
+Ky's 404 status-text path remains unsupported and is listed separately from
+successful client cases. No current signed result is claimed until the new
+programme has actually run and its results have been reviewed.
+
 This finite experiment for [#691](https://github.com/KirilsTurkins/latent-service-fabric/issues/691)
 captures unchanged Ky2.2.0 and Wretch3.0.9 through normal npm add, lock,
 resolve and review. A local package imports Wretch transitively. The two

@@ -86,6 +86,13 @@ class Imports final {
       if (!observerLink(cx, item->id, item->record_owner.token, observer_link)) return false;
       if (*observer_link && (*observer_link)->quarantined) return invalid(cx, "borrow-quarantined");
       ImportLifecycle::Retirement retirement;
+      if (!item->lifecycle.retryRetiringWork(cx)) {
+        if (*observer_link && !item->lifecycle.completionPending()) {
+          (*observer_link)->quarantined = true;
+          failed_observer_completion_ = stopped_ = true;
+        }
+        return false;
+      }
       if (!item->lifecycle.releaseAfterPhysicalDestruction(cx, retirement)) {
         if (*observer_link) {
           (*observer_link)->quarantined = true;
@@ -162,6 +169,11 @@ class Imports final {
     return false;
   }
   bool quarantineBorrow(JSContext* cx, Record& item) {
+    // A failed cleanup is a manager-wide fence even when this import has
+    // no optional borrow observer. Retrying only through cancelAll prevents a
+    // caught exception from admitting or dispatching unrelated new work while
+    // this record's original disposition is still unresolved.
+    stopped_ = true;
     std::unique_ptr<ImportBorrowObserver>* link = nullptr;
     if (!observerLink(cx, item.id, item.record_owner.token, link)) return false;
     if (*link) {
@@ -197,6 +209,13 @@ class Imports final {
     item.disposition = Disposition::Disposed;
     stopped_ = was_stopped;
     return item.lifecycle.discardCompleted(cx);
+  }
+  bool discardUnstarted(JSContext* cx, Record& item) {
+    // The import has not been published or dispatched. Preserve the original
+    // exception and its exact owners if logical or physical retirement fails.
+    if (!item.lifecycle.cancel(cx)) { stopped_ = true; return false; }
+    if (!collect(cx)) { stopped_ = true; return false; }
+    return false;
   }
 public:
   Imports(BrokerAccounting& jobs, BrokerPromiseAccounting& native, ReadinessSet& readiness)
@@ -236,22 +255,21 @@ public:
       if (accepted.parameters) std::memset(accepted.parameters, 0, parameter_size);
     }
     if (parameter_size && !accepted.parameters) {
-      JS_ReportOutOfMemory(cx); (void)accepted.lifecycle.cancel(cx); (void)collect(cx); return false;
+      JS_ReportOutOfMemory(cx); return discardUnstarted(cx, accepted);
     }
     if (result_size) {
       accepted.result = JS_malloc(cx, result_size);
       if (accepted.result) std::memset(accepted.result, 0, result_size);
       if (!accepted.result) {
         JS_ReportOutOfMemory(cx);
-        (void)accepted.lifecycle.cancel(cx);
-        return false;
+        return discardUnstarted(cx, accepted);
       }
     }
     JS::RootedObject roots(cx,JS::NewArrayObject(cx,captures));
-    if (!roots) { (void)accepted.lifecycle.cancel(cx); (void)collect(cx); return false; }
+    if (!roots) return discardUnstarted(cx, accepted);
     accepted.captures = JS::ObjectValue(*roots);
     accepted.promise = JS::NewPromiseObject(cx, nullptr);
-    if (!accepted.promise) { (void)accepted.lifecycle.cancel(cx); return false; }
+    if (!accepted.promise) return discardUnstarted(cx, accepted);
     id = accepted.id;
     return true;
   }
@@ -361,7 +379,14 @@ public:
       (void)invalid(cx,"partial-typed-lift");
       return quarantineBorrow(cx,*item);
     }
-    if (!item->lifecycle.liftCompleted(cx)) return quarantineBorrow(cx, *item);
+    if (!item->lifecycle.liftCompleted(cx)) {
+      if (!item->lifecycle.completionPending()) return quarantineBorrow(cx, *item);
+      // Typed lifting and the canonical subtask have already ended. The exact
+      // refused work owner can be retried without quarantining the observer;
+      // its release still waits for the entire original physical retirement.
+      stopped_ = true;
+      return false;
+    }
     return collect(cx);
   }
   bool delivered(JSContext* cx,uint32_t id) {
@@ -375,7 +400,10 @@ public:
   bool cancel(JSContext* cx, uint32_t id) {
     auto* item = find(id);
     if (!item) return invalid(cx, "cancel-record");
-    return rejectCancelled(cx, *item) && cancelRecord(cx, *item) && collect(cx);
+    if (!rejectCancelled(cx, *item) || !cancelRecord(cx, *item))
+      return quarantineBorrow(cx, *item);
+    if (!collect(cx)) { stopped_ = true; return false; }
+    return true;
   }
   bool watchBorrow(JSContext* cx, uint32_t id, JS::MutableHandleObject handle) {
     auto* item = find(id);
@@ -406,8 +434,10 @@ public:
     // uses the already installed before_promise/PromiseRecords hooks.
     auto observer = std::unique_ptr<ImportBorrowObserver>(new (std::nothrow) ImportBorrowObserver(cx, id, item->record_owner.token));
     if (!observer) {
+      // No observer storage, JS handle or release promise was published. Its
+      // original Native owner can use the existing pre-physical retry slot;
+      // the stopped import manager still fences all new work until cleanup.
       failed_record_owner_ = observer_owner;
-      failed_observer_completion_ = true;
       stopped_ = true;
       JS_ReportOutOfMemory(cx);
       return false;

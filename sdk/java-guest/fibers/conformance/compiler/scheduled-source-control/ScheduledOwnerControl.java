@@ -116,6 +116,10 @@ public final class ScheduledOwnerControl {
     }
     private static void failedStartOwnership() throws Exception {
         for (boolean scheduled : new boolean[]{false, true}) for (boolean accepted : new boolean[]{false, true}) {
+            if (!scheduled) {
+                failedFixedStartOwnership(accepted);
+                continue;
+            }
             AtomicReference<Runnable> target = new AtomicReference<>();
             AtomicReference<Thread> worker = new AtomicReference<>();
             AtomicInteger interrupts = new AtomicInteger();
@@ -149,6 +153,41 @@ public final class ScheduledOwnerControl {
             }
             finish(pool);
         }
+    }
+    private static void failedFixedStartOwnership(boolean accepted) throws Exception {
+        AtomicReference<Runnable> target = new AtomicReference<>();
+        AtomicReference<Thread> worker = new AtomicReference<>();
+        AtomicInteger starts = new AtomicInteger(), calls = new AtomicInteger();
+        CountDownLatch release = new CountDownLatch(1);
+        var original = new IllegalThreadStateException("source-start-failure");
+        var pool = executor(false, task -> {
+            target.set(task);
+            Thread thread = new Thread(() -> {
+                while (true) try { release.await(); break; } catch (InterruptedException ignored) { }
+                task.run();
+            }) {
+                @Override public void start() {
+                    if (starts.incrementAndGet() == 1) {
+                        if (accepted) super.start();
+                        throw original;
+                    }
+                    super.start();
+                }
+            };
+            worker.set(thread); return thread;
+        });
+        Activation.retainFailedStart = true;
+        try {
+            try { pool.execute(calls::incrementAndGet); throw new AssertionError("expected-start-failure"); }
+            catch (IllegalThreadStateException error) { require(error == original); }
+            require(workers(pool).contains(worker.get()) && capturedPool(target.get()) == pool
+                && ((Activation.ManagedPool)pool).hasPendingWork()); held(1, 0);
+            require(pool.shutdownNow().isEmpty() && !pool.isTerminated());
+            if (!accepted) worker.get().start();
+            release.countDown(); worker.get().join(5000);
+            require(!worker.get().isAlive() && calls.get() == 1 && capturedPool(target.get()) == null);
+            require(pool.awaitTermination(5, TimeUnit.SECONDS)); held(0, 0); Activation.idle();
+        } finally { release.countDown(); Activation.retainFailedStart = false; pool.shutdownNow(); }
     }
     private static void retirementIteration() throws Exception {
         // Simulate a worker leaving the registry during interrupt. The host
@@ -208,6 +247,19 @@ public final class ScheduledOwnerControl {
             }
         }
     }
+    // Exercise the same private identity check after the scheduler reserves a
+    // startup slot. The fixed executor retains its original startWorker path.
+    private static void startWorker(java.util.concurrent.ExecutorService pool, boolean scheduled) throws Exception {
+        if (!scheduled) {
+            var start = pool.getClass().getDeclaredMethod("startWorker"); start.setAccessible(true); start.invoke(pool);
+            return;
+        }
+        var reserve = pool.getClass().getDeclaredMethod("reserveWorker"); reserve.setAccessible(true);
+        require((boolean)reserve.invoke(pool));
+        var entry = Class.forName(pool.getClass().getName() + "$Entry");
+        var start = pool.getClass().getDeclaredMethod("startReserved", entry); start.setAccessible(true);
+        start.invoke(pool, (Object)null);
+    }
     private static void duplicateRetainedWorker() throws Exception {
         for (boolean scheduled : new boolean[]{false, true}) {
             AtomicReference<Runnable> first = new AtomicReference<>(), second = new AtomicReference<>();
@@ -219,13 +271,12 @@ public final class ScheduledOwnerControl {
                 if (first.get() == null) first.set(task); else second.set(task);
                 return shared;
             });
-            var start = pool.getClass().getDeclaredMethod("startWorker"); start.setAccessible(true);
             Activation.retainFailedStart = true;
             try {
                 synchronized (pool) {
-                    try { start.invoke(pool); throw new AssertionError("first-start-succeeded"); }
+                    try { startWorker(pool, scheduled); throw new AssertionError("first-start-succeeded"); }
                     catch (java.lang.reflect.InvocationTargetException error) { require(error.getCause() == failure); }
-                    try { start.invoke(pool); throw new AssertionError("duplicate-start-succeeded"); }
+                    try { startWorker(pool, scheduled); throw new AssertionError("duplicate-start-succeeded"); }
                     catch (java.lang.reflect.InvocationTargetException error) { require(error.getCause() instanceof IllegalThreadStateException); }
                 }
                 require(workers(pool).size() == 1 && workers(pool).get(0) == shared
@@ -255,9 +306,8 @@ public final class ScheduledOwnerControl {
                 release.countDown(); pool.shutdown(); require(pool.awaitTermination(5, TimeUnit.SECONDS));
                 original.get().join(5000); require(!original.get().isAlive());
             }
-            var start = pool.getClass().getDeclaredMethod("startWorker"); start.setAccessible(true);
             synchronized (pool) {
-                try { start.invoke(pool); throw new AssertionError("duplicate-start-succeeded"); }
+                try { startWorker(pool, scheduled); throw new AssertionError("duplicate-start-succeeded"); }
                 catch (java.lang.reflect.InvocationTargetException error) {
                     if (completed) require(error.getCause() instanceof IllegalThreadStateException);
                     else require(error.getCause() instanceof java.util.concurrent.RejectedExecutionException);

@@ -163,3 +163,26 @@ fn concurrent_duplicates_have_one_lane_owner() {
     drop(execution);
     assert_empty(&lanes);
 }
+
+#[test]
+fn expired_hot_waiter_is_rejected_before_newly_eligible_cold_work() {
+    let now = Instant::now();
+    let lanes = EntityLanes::new(limits()).unwrap();
+    let first = enqueue(&lanes, "tenant-A", "hot", 1, now);
+    let hot = start(&lanes, now);
+    let waiting = enqueue(&lanes, "tenant-A", "hot", 2, now);
+    let cold = enqueue(&lanes, "tenant-A", "cold", 3, now + Duration::from_secs(9));
+    let after_expiry = now + Duration::from_secs(11);
+    let Some(EntityDispatch::Rejected(rejected)) =
+        lanes.try_start_next(after_expiry, |_, _| true).unwrap()
+    else {
+        panic!("expired queued owner must be reclaimed before admitting more work");
+    };
+    assert_eq!(rejected.reason, EntityRejection::WaitExpired);
+    assert_eq!(rejected.request.payload().attempt, 2);
+    assert_eq!(waiting.status().unwrap(), EntityWaitStatus::Retired);
+    let next = start(&lanes, after_expiry);
+    assert_eq!(next.request().scope().entity().0, "cold");
+    drop((next, cold, waiting, hot, first));
+    assert_empty(&lanes);
+}

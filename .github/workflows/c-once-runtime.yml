@@ -3,7 +3,7 @@ name: Signed current-source C once interleaving
 on:
   workflow_dispatch:
   push:
-    branches: [development, feat/c-root-drain-signed-20261108]
+    branches: [development, feat/c-root-drain-signed-20261108, feat/sdk-c-semaphore-signed-20261117]
     paths:
       - '.cargo/config.toml'
       - '.github/workflows/c-once-runtime.yml'
@@ -157,7 +157,7 @@ env:
 
 jobs:
   once:
-    if: github.repository == 'KirilsTurkins/latent-service-fabric' && (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/feat/c-root-drain-signed-20261108') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && (github.ref == 'refs/heads/development' || github.ref == 'refs/heads/feat/c-root-drain-signed-20261108' || github.ref == 'refs/heads/feat/sdk-c-semaphore-signed-20261117') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     name: Current-source signed ordinary C once interleaving
     runs-on: ubuntu-24.04
     timeout-minutes: 25

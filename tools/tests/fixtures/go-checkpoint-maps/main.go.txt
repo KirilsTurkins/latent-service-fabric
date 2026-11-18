@@ -1,0 +1,64 @@
+package main
+
+import (
+    "fmt"
+    "maps"
+    "os"
+    "slices"
+    "sync/atomic"
+    "example.invalid/iteratorbridge/dispatch"
+)
+
+func semantics() {
+    var empty map[int]string
+    collected := maps.Collect(maps.All(empty))
+    if collected == nil || len(collected) != 0 { panic("empty map collection changed") }
+    source := map[int]string{1: "one", 2: "two", 3: "three"}
+    collected = maps.Collect(maps.All(source))
+    if !maps.Equal(collected, source) { panic("map collection changed") }
+    target := map[int]string{1: "old", 4: "four"}
+    maps.Insert(target, maps.All(source))
+    if !maps.Equal(target, map[int]string{1: "one", 2: "two", 3: "three", 4: "four"}) {
+        panic("map insertion or overwrite changed")
+    }
+    count := 0
+    for key, value := range maps.All(source) {
+        if source[key] != value { panic("map pair changed") }
+        count++
+        break
+    }
+    if count != 1 { panic("map iterator early stop changed") }
+    keys := map[int]bool{}
+    for key := range maps.Keys(source) { keys[key] = true }
+    values := map[string]bool{}
+    for value := range maps.Values(source) { values[value] = true }
+    if !maps.Equal(keys, map[int]bool{1: true, 2: true, 3: true}) ||
+        !maps.Equal(values, map[string]bool{"one": true, "two": true, "three": true}) {
+        panic("map keys or values changed")
+    }
+    if !slices.Equal(slices.Collect(slices.Values([]int{3, 1, 4})), []int{3, 1, 4}) {
+        panic("simultaneous slices selection changed")
+    }
+    fmt.Println("semantics=ok")
+}
+
+func main() {
+    if len(os.Args) > 1 && os.Args[1] == "semantics" { semantics(); return }
+    src := make(map[int]int, 1000000)
+    for i := 0; i < 1000000; i++ { src[i] = i * 3 }
+    var ran atomic.Bool
+    if len(os.Args) == 1 || os.Args[1] != "alone" {
+        start, ready := make(chan struct{}), make(chan struct{})
+        go func() { close(ready); <-start; ran.Store(true) }()
+        <-ready
+        close(start)
+    }
+    dst := make(map[int]int, len(src))
+    maps.Insert(dst, maps.All(src))
+    siblingBeforeReturn := ran.Load()
+    yieldsBeforeReturn := dispatch.Count()
+    if !maps.Equal(dst, src) {
+        panic("map iterator results changed")
+    }
+    fmt.Printf("sibling-before-return=%t len=%d checkpoint-yields=%d\n", siblingBeforeReturn, len(dst), yieldsBeforeReturn)
+}

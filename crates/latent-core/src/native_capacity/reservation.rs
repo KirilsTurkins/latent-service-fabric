@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
@@ -21,6 +22,40 @@ pub(super) struct Lease {
     pub buffers: Mutex<Buffers>,
 }
 
+// All strong owners use this wrapper; no raw Arc or Weak escapes. into_inner
+// guarantees exactly one concurrent final owner receives Lease, only after the
+// Arc backing allocation has been freed. Lease::drop then refunds the original
+// node slot/bytes and wakes its waiter outside that physical allocation.
+pub(super) struct LeaseHandle(Option<Arc<Lease>>);
+
+impl LeaseHandle {
+    fn new(lease: Lease) -> Self {
+        Self(Some(Arc::new(lease)))
+    }
+}
+
+impl Clone for LeaseHandle {
+    fn clone(&self) -> Self {
+        Self(Some(Arc::clone(self.0.as_ref().expect("live lease"))))
+    }
+}
+
+impl Deref for LeaseHandle {
+    type Target = Lease;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.as_deref().expect("live lease")
+    }
+}
+
+impl Drop for LeaseHandle {
+    fn drop(&mut self) {
+        if let Some(lease) = self.0.take() {
+            drop(Arc::into_inner(lease));
+        }
+    }
+}
+
 impl Drop for Lease {
     fn drop(&mut self) {
         let mut state = self.owner.lock_physical();
@@ -38,7 +73,7 @@ impl Drop for Lease {
 /// Non-clone admission. Wrap it in Arc only in the original worker/response
 /// owners. Its prepaid global slot/bytes survive until its last real owner drops.
 pub struct NativeReservation {
-    pub(super) lease: Arc<Lease>,
+    pub(super) lease: LeaseHandle,
 }
 
 impl NativeReservation {
@@ -50,7 +85,7 @@ impl NativeReservation {
         deadline: Instant,
     ) -> Self {
         Self {
-            lease: Arc::new(Lease {
+            lease: LeaseHandle::new(Lease {
                 owner,
                 class,
                 request,
@@ -175,11 +210,7 @@ impl NativeReservation {
             }
             buffers.used[class.index()] = used;
             buffers.guards += 1;
-            Ok(NativeBufferPermit::new(
-                Arc::clone(&self.lease),
-                class,
-                bytes,
-            ))
+            Ok(NativeBufferPermit::new(self.lease.clone(), class, bytes))
         })?
     }
 

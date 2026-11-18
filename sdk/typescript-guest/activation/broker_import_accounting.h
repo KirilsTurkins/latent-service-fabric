@@ -42,9 +42,8 @@ public:
     result.live = true;
     return true;
   }
-  bool rollback(JSContext* cx, JobOwners& work, NativeOwner& native, NativeOwner& result) override {
-    return resultRetired(cx, result) && native_.acknowledgeRetirement(cx, native) &&
-           jobs_.retireAcceptedImport(cx, work);
+  bool rollbackWork(JSContext* cx, JobOwners& work) override {
+    return jobs_.retireAcceptedImport(cx, work);
   }
   bool park(JSContext* cx, JobOwners& work) override { return jobs_.parkAccepted(cx, work); }
   bool resume(JSContext* cx, JobOwners& work) override {

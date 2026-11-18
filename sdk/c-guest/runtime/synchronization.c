@@ -6,6 +6,9 @@
  * Robust and process-shared synchronization remain unsupported.
  */
 #include <limits.h>
+#if defined(LSF_C_SEMAPHORES) && LSF_C_SEMAPHORES && !defined(_SEMAPHORE_H)
+#include <semaphore.h>
+#endif
 
 __attribute__((import_module("$root"),import_name("[thread-suspend]")))
 uint32_t __lsf_c_sync_suspend(void);
@@ -363,6 +366,322 @@ int cnd_timedwait(cnd_t *restrict object,mtx_t *restrict mutex,const struct time
     (void)object;(void)mutex;(void)deadline;return thrd_error;
 #endif
 }
+
+#if defined(LSF_C_RWLOCKS) && LSF_C_RWLOCKS
+/* Selected-source, invocation-local pthread rwlocks. The public memory32
+ * object carries only bounded state; each parked caller owns its original
+ * admitted Wait and stack node. New readers have priority over queued writers,
+ * so a sustained stream of readers may delay a writer indefinitely. */
+struct sync_rwlock {
+    uint32_t writer,readers,waiters;
+    struct sync_wait *head,*tail;
+    uint32_t reserved[3];
+};
+struct sync_rw_wait { struct sync_wait wait; unsigned writer; };
+_Static_assert(sizeof(struct sync_rwlock)==sizeof(pthread_rwlock_t),"pinned pthread rwlock layout");
+_Static_assert(sizeof(pthread_rwlockattr_t)==2*sizeof(uint32_t),"pinned pthread rwlock attribute layout");
+
+static struct sync_rwlock sync_rw_read(const void *object) {
+    struct sync_rwlock value;memcpy(&value,object,sizeof(value));return value;
+}
+static void sync_rw_write(void *object,struct sync_rwlock value) { memcpy(object,&value,sizeof(value)); }
+static int sync_rw_valid(struct sync_rwlock value) {
+    return !(value.writer && value.readers) && value.waiters<=RECORD_LIMIT+1u &&
+        ((value.head==NULL)==(value.tail==NULL)) && ((value.waiters==0)==(value.head==NULL)) &&
+        (!value.waiters || value.writer || value.readers) &&
+        !value.reserved[0] && !value.reserved[1] && !value.reserved[2];
+}
+static int sync_rw_try(void *object,int writer,int blocking) {
+    if (!object) return EINVAL;
+    struct sync_rwlock value=sync_rw_read(object);
+    if (!sync_rw_valid(value)) return EINVAL;
+    uint32_t identity=sync_identity();
+    if (value.writer==identity) return blocking?EDEADLK:EBUSY;
+    if (value.writer || (writer && value.readers)) return EBUSY;
+    if (writer) {
+        require(!value.waiters);value.writer=identity;
+    } else {
+        if (value.readers==UINT32_MAX) return EAGAIN;
+        ++value.readers;
+    }
+    sync_rw_write(object,value);__atomic_signal_fence(__ATOMIC_ACQUIRE);return 0;
+}
+static int sync_rw_lock(void *object,int writer) {
+    int error=sync_rw_try(object,writer,1);
+    if (error!=EBUSY) return error;
+    struct sync_rw_wait node={.writer=(unsigned)writer};
+    error=sync_begin(&node.wait);
+    if (error) return error;
+    /* Admission can suspend: recheck the actual lock before publishing. */
+    error=sync_rw_try(object,writer,1);
+    if (error==EBUSY) {
+        struct sync_rwlock value=sync_rw_read(object);
+        if (!sync_rw_valid(value)) error=EINVAL;
+        else if (value.waiters>=RECORD_LIMIT+1u) error=EAGAIN;
+        else {
+            node.wait.next=NULL;node.wait.linked=1;node.wait.notified=0;
+            if (value.tail) value.tail->next=&node.wait;else value.head=&node.wait;
+            value.tail=&node.wait;++value.waiters;sync_rw_write(object,value);
+            sync_await(&node.wait);
+            value=sync_rw_read(object);
+            require(!node.wait.linked && sync_rw_valid(value) &&
+                (writer ? value.writer==sync_identity() : value.readers!=0));
+            __atomic_signal_fence(__ATOMIC_ACQUIRE);error=0;
+        }
+    }
+    sync_end(&node.wait);return error;
+}
+static int sync_rw_unlock(void *object) {
+    if (!object) return EINVAL;
+    struct sync_rwlock value=sync_rw_read(object);
+    if (!sync_rw_valid(value)) return EINVAL;
+    if (value.writer) {
+        if (value.writer!=sync_identity()) return EPERM;
+        value.writer=0;
+    } else if (value.readers) --value.readers;
+    else return EPERM;
+    __atomic_signal_fence(__ATOMIC_RELEASE);
+    struct sync_wait *ready=NULL,*last=NULL;
+    if (!value.writer && !value.readers && value.head) {
+        unsigned writer=((struct sync_rw_wait *)value.head)->writer;
+        do {
+            struct sync_wait *next=value.head;
+            if (!next || ((struct sync_rw_wait *)next)->writer!=writer) break;
+            value.head=next->next;require(value.waiters);--value.waiters;
+            next->next=NULL;next->linked=0;
+            if (last) last->next=next;else ready=next;
+            last=next;
+            if (writer) { value.writer=(uint32_t)(uintptr_t)next->thread;break; }
+            ++value.readers;
+        } while (value.head);
+        if (!value.head) value.tail=NULL;
+    }
+    sync_rw_write(object,value);
+    while (ready) {
+        struct sync_wait *next=ready->next;ready->next=NULL;
+#if LSF_C_TIMED_CLOCK
+        /* This port admits untimed rwlock waiters only. */
+        require(!token_live(ready->timer));
+#endif
+        sync_notify(ready);ready=next;
+    }
+    return 0;
+}
+int pthread_rwlock_init(pthread_rwlock_t *restrict object,const pthread_rwlockattr_t *restrict attr) {
+    int saved=errno,error=0;
+    if (!object) error=EINVAL;
+    else if (attr) { uint32_t flags[2];memcpy(flags,attr,sizeof(flags));if (flags[0] || flags[1]) error=ENOTSUP; }
+    if (!error) sync_rw_write(object,(struct sync_rwlock){0});
+    errno=saved;return error;
+}
+int pthread_rwlock_destroy(pthread_rwlock_t *object) {
+    int saved=errno,error=0;
+    if (!object) error=EINVAL;
+    else { struct sync_rwlock value=sync_rw_read(object);
+        if (!sync_rw_valid(value)) error=EINVAL;
+        else if (value.writer || value.readers || value.waiters) error=EBUSY;
+        else sync_rw_write(object,(struct sync_rwlock){0}); }
+    errno=saved;return error;
+}
+int pthread_rwlock_rdlock(pthread_rwlock_t *object) { int saved=errno,error=sync_rw_lock(object,0);errno=saved;return error; }
+int pthread_rwlock_wrlock(pthread_rwlock_t *object) { int saved=errno,error=sync_rw_lock(object,1);errno=saved;return error; }
+int pthread_rwlock_tryrdlock(pthread_rwlock_t *object) { int saved=errno,error=sync_rw_try(object,0,0);errno=saved;return error; }
+int pthread_rwlock_trywrlock(pthread_rwlock_t *object) { int saved=errno,error=sync_rw_try(object,1,0);errno=saved;return error; }
+int pthread_rwlock_unlock(pthread_rwlock_t *object) { int saved=errno,error=sync_rw_unlock(object);errno=saved;return error; }
+int pthread_rwlock_timedrdlock(pthread_rwlock_t *restrict object,const struct timespec *restrict deadline) {
+    (void)object;(void)deadline;return ENOTSUP;
+}
+int pthread_rwlock_timedwrlock(pthread_rwlock_t *restrict object,const struct timespec *restrict deadline) {
+    (void)object;(void)deadline;return ENOTSUP;
+}
+#endif
+
+#if defined(LSF_C_BARRIERS) && LSF_C_BARRIERS
+/* A generation keeps each admitted waiter on its original charged stack. The
+ * last participant detaches that generation before exposing any continuation,
+ * so a fast caller can enter the next generation without borrowing old nodes. */
+#define SYNC_BARRIER_MARKER UINT32_C(0x4c534642)
+struct sync_barrier {
+    uint32_t threshold,arrived;
+    struct sync_wait *head,*tail;
+    uint32_t marker;
+};
+_Static_assert(sizeof(struct sync_barrier)==sizeof(pthread_barrier_t),"pinned barrier layout");
+_Static_assert(sizeof(pthread_barrierattr_t)==sizeof(uint32_t),"pinned barrier attribute layout");
+static struct sync_barrier sync_barrier_read(const pthread_barrier_t *object) {
+    struct sync_barrier value;memcpy(&value,object,sizeof(value));return value;
+}
+static void sync_barrier_write(pthread_barrier_t *object,struct sync_barrier value) {
+    memcpy(object,&value,sizeof(value));
+}
+static int sync_barrier_valid(struct sync_barrier value) {
+    return value.marker==SYNC_BARRIER_MARKER && value.threshold>0 && value.threshold<=RECORD_LIMIT+1u &&
+        value.arrived<value.threshold && ((value.head==NULL)==(value.tail==NULL)) &&
+        ((value.arrived==0)==(value.head==NULL));
+}
+int pthread_barrier_init(pthread_barrier_t *restrict object,const pthread_barrierattr_t *restrict attr,
+                         unsigned count) {
+    int saved=errno,error=0;uint32_t flags=0;
+    if (!object || !count) error=EINVAL;
+    else if (count>RECORD_LIMIT+1u) error=EAGAIN;
+    else {
+        if (attr) memcpy(&flags,attr,sizeof(flags));
+        if (flags) error=ENOTSUP;
+        else sync_barrier_write(object,(struct sync_barrier){.threshold=count,.marker=SYNC_BARRIER_MARKER});
+    }
+    errno=saved;return error;
+}
+int pthread_barrier_destroy(pthread_barrier_t *object) {
+    int saved=errno,error=0;
+    if (!object) error=EINVAL;
+    else {
+        struct sync_barrier value=sync_barrier_read(object);
+        if (!sync_barrier_valid(value)) error=EINVAL;
+        else if (value.arrived) error=EBUSY;
+        else sync_barrier_write(object,(struct sync_barrier){0});
+    }
+    errno=saved;return error;
+}
+static void sync_barrier_release(pthread_barrier_t *object,struct sync_barrier value) {
+    struct sync_wait *node=value.head;
+    __atomic_signal_fence(__ATOMIC_RELEASE);
+    value.arrived=0;value.head=value.tail=NULL;sync_barrier_write(object,value);
+    while (node) {
+        struct sync_wait *next=node->next;
+        node->next=NULL;node->linked=0;
+#if LSF_C_TIMED_CLOCK
+        /* Barrier waits have no timer; notification therefore cannot await. */
+        require(!token_live(node->timer));
+#endif
+        sync_notify(node);node=next;
+    }
+    __atomic_signal_fence(__ATOMIC_ACQUIRE);
+}
+int pthread_barrier_wait(pthread_barrier_t *object) {
+    int saved=errno,error;
+    if (!object) { errno=saved;return EINVAL; }
+    struct sync_barrier value=sync_barrier_read(object);
+    if (!sync_barrier_valid(value)) { errno=saved;return EINVAL; }
+    if (value.arrived+1u==value.threshold) {
+        sync_barrier_release(object,value);errno=saved;return PTHREAD_BARRIER_SERIAL_THREAD;
+    }
+    struct sync_wait node;error=sync_begin(&node);
+    if (error) { errno=saved;return error; }
+    /* Admission can suspend. Re-read the active generation before arrival. */
+    value=sync_barrier_read(object);
+    if (!sync_barrier_valid(value)) error=EINVAL;
+    else if (value.arrived+1u==value.threshold) {
+        sync_barrier_release(object,value);error=PTHREAD_BARRIER_SERIAL_THREAD;
+    } else {
+        node.next=NULL;node.linked=1;node.notified=0;
+        if (value.tail) value.tail->next=&node;else value.head=&node;
+        value.tail=&node;++value.arrived;
+        __atomic_signal_fence(__ATOMIC_RELEASE);sync_barrier_write(object,value);
+        sync_await(&node);require(!node.linked && node.notified);
+        __atomic_signal_fence(__ATOMIC_ACQUIRE);error=0;
+    }
+    sync_end(&node);errno=saved;return error;
+}
+#endif
+
+#if defined(LSF_C_SEMAPHORES) && LSF_C_SEMAPHORES
+/* Unnamed, process-local semaphores in the pinned memory32 sem_t. A posted
+ * permit is handed to one original admitted Wait before it can resume; it is
+ * never recreated if the activation is cancelled while that waiter owns it. */
+#define SYNC_SEM_INITIALIZED UINT32_C(0x80000000)
+struct sync_sem {
+    uint32_t tagged_value;
+    struct sync_wait *head,*tail;
+    uint32_t waiters;
+};
+_Static_assert(sizeof(struct sync_sem)==sizeof(sem_t),"pinned semaphore layout");
+_Static_assert(INT_MAX==2147483647,"pinned semaphore value bound");
+#ifdef SEM_VALUE_MAX
+_Static_assert(SEM_VALUE_MAX==INT_MAX,"pinned public semaphore maximum");
+#endif
+static struct sync_sem sync_sem_read(const sem_t *object) {
+    struct sync_sem value;memcpy(&value,object,sizeof(value));return value;
+}
+static void sync_sem_write(sem_t *object,struct sync_sem value) { memcpy(object,&value,sizeof(value)); }
+static int sync_sem_valid(struct sync_sem value) {
+    return (value.tagged_value&SYNC_SEM_INITIALIZED) && value.waiters<=RECORD_LIMIT+1u &&
+        ((value.head==NULL)==(value.tail==NULL)) && ((value.waiters==0)==(value.head==NULL)) &&
+        (!value.waiters || value.tagged_value==SYNC_SEM_INITIALIZED);
+}
+static int sync_sem_error(int error) { errno=error;return -1; }
+int sem_init(sem_t *object,int shared,unsigned initial) {
+    if (!object || initial>(unsigned)INT_MAX) return sync_sem_error(EINVAL);
+    if (shared) return sync_sem_error(ENOTSUP);
+    sync_sem_write(object,(struct sync_sem){.tagged_value=SYNC_SEM_INITIALIZED|initial});return 0;
+}
+int sem_destroy(sem_t *object) {
+    if (!object) return sync_sem_error(EINVAL);
+    struct sync_sem value=sync_sem_read(object);
+    if (!sync_sem_valid(value)) return sync_sem_error(EINVAL);
+    if (value.waiters) return sync_sem_error(EBUSY);
+    sync_sem_write(object,(struct sync_sem){0});return 0;
+}
+int sem_getvalue(sem_t *restrict object,int *restrict result) {
+    if (!object || !result) return sync_sem_error(EINVAL);
+    struct sync_sem value=sync_sem_read(object);
+    if (!sync_sem_valid(value)) return sync_sem_error(EINVAL);
+    *result=(int)(value.tagged_value&~SYNC_SEM_INITIALIZED);return 0;
+}
+static int sync_sem_take(sem_t *object) {
+    if (!object) return EINVAL;
+    struct sync_sem value=sync_sem_read(object);
+    if (!sync_sem_valid(value)) return EINVAL;
+    if (value.tagged_value==SYNC_SEM_INITIALIZED) return EAGAIN;
+    --value.tagged_value;sync_sem_write(object,value);
+    __atomic_signal_fence(__ATOMIC_ACQUIRE);return 0;
+}
+int sem_trywait(sem_t *object) {
+    int error=sync_sem_take(object);return error?sync_sem_error(error):0;
+}
+int sem_wait(sem_t *object) {
+    int saved=errno,error=sync_sem_take(object);
+    if (!error) { errno=saved;return 0; }
+    if (error!=EAGAIN) return sync_sem_error(error);
+    struct sync_wait node;error=sync_begin(&node);
+    if (error) return sync_sem_error(error);
+    /* Owner admission can suspend; consume a newly posted permit first. */
+    error=sync_sem_take(object);
+    if (error==EAGAIN) {
+        struct sync_sem value=sync_sem_read(object);
+        if (value.waiters>=RECORD_LIMIT+1u) error=EAGAIN;
+        else {
+            node.next=NULL;node.linked=1;node.notified=0;
+            if (value.tail) value.tail->next=&node;else value.head=&node;
+            value.tail=&node;++value.waiters;sync_sem_write(object,value);
+            sync_await(&node);require(!node.linked && node.notified);
+            __atomic_signal_fence(__ATOMIC_ACQUIRE);error=0;
+        }
+    }
+    sync_end(&node);
+    if (error) return sync_sem_error(error);
+    errno=saved;return 0;
+}
+int sem_post(sem_t *object) {
+    if (!object) return sync_sem_error(EINVAL);
+    int saved=errno;struct sync_sem value=sync_sem_read(object);
+    if (!sync_sem_valid(value)) return sync_sem_error(EINVAL);
+    struct sync_wait *next=value.head;
+    __atomic_signal_fence(__ATOMIC_RELEASE);
+    if (next) {
+        value.head=next->next;if (!value.head) value.tail=NULL;
+        require(value.waiters);--value.waiters;next->next=NULL;next->linked=0;
+        sync_sem_write(object,value);
+        sync_notify(next); /* no access to its stack node after notification */
+    } else {
+        if ((value.tagged_value&~SYNC_SEM_INITIALIZED)==(uint32_t)INT_MAX) return sync_sem_error(EOVERFLOW);
+        ++value.tagged_value;sync_sem_write(object,value);
+    }
+    errno=saved;return 0;
+}
+int sem_timedwait(sem_t *restrict object,const struct timespec *restrict deadline) {
+    (void)object;(void)deadline;return sync_sem_error(ENOTSUP);
+}
+#endif
 
 /* The pinned pthread_once_t and once_flag are the same memory32 int. A
  * running initializer publishes a record on its already-admitted C stack;

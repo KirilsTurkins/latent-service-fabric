@@ -180,7 +180,9 @@ allocations and settles their logical owners. A trap or uncertain creation
 cannot be treated as successful retirement.
 
 The32-record registry is an implementation bound, not a new runtime Task or
-native-stack quota. The original broker and Wasm-memory limits can refuse
+native-stack quota. Pending creations reserve a registry slot before broker
+admission; an unstarted refusal returns it only after its owners and
+allocations retire. The original broker and Wasm-memory limits can refuse
 earlier. Handles are registry-owned context identities; tombstones are not
 reused during an activation. A join has one joiner and an original Wait
 owner, parks only its caller and switches the actual child. Unknown, self,

@@ -125,8 +125,8 @@ jobs:
           observer=commands.run('positive-timer-observer-controls','cargo','--config',root/'.cargo/managed-guest.toml',
               'test','--locked','-p','latent-wasmtime','--lib','host::runtime::positive_timer_observer::tests::',
               '--','--test-threads=1')
-          require(b'test result: ok. 8 passed; 0 failed; 0 ignored;' in observer,
-              'native-products-positive-timer-eight-controls')
+          require(b'test result: ok. 10 passed; 0 failed; 0 ignored;' in observer,
+              'native-products-positive-timer-ten-controls')
           nominal=commands.run('phase-nominal-type-owner-controls','cargo','--config',root/'.cargo/managed-guest.toml',
               'test','--locked','-p','latent-packaging','--lib','phase_nominal_owner_',
               '--','--test-threads=1')

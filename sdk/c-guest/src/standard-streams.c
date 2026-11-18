@@ -20,7 +20,8 @@
 
 #include <lsf/standard-streams.h>
 
-enum { FIRST_FD = 3, SLOT_COUNT = 8, MAX_TRANSFER = 16384, MAX_INACTIVE_POLL_FDS = 64 };
+enum { FIRST_FD = 3, SLOT_COUNT = 8, MAX_TRANSFER = 16384, MAX_INACTIVE_POLL_FDS = 64,
+       MAX_VECTOR_IOVECS = 16, MAX_VECTOR_TRANSFER = 4096 };
 
 /* Static storage belongs to this component instance's charged linear memory.
  * A busy slot cannot be closed or reused across a suspended canonical call.
@@ -114,6 +115,16 @@ int __lsf_c_net_fcntl(int fd, int command, ...) {
     if (!slot) return fail(EBADF);
     if (command == F_GETFL) return O_RDWR;
     if (command == F_GETFD) return slot->close_on_exec ? FD_CLOEXEC : 0;
+    if (command == F_SETFL) {
+        va_list arguments;
+        va_start(arguments, command);
+        int flags = va_arg(arguments, int);
+        va_end(arguments);
+        /* Every admitted descriptor is blocking and read/write. These two
+         * requests leave that state unchanged; all other flags are refused. */
+        if (flags != 0 && flags != O_RDWR) return fail(ENOTSUP);
+        return 0;
+    }
     if (command == F_SETFD) {
         va_list arguments;
         va_start(arguments, command);
@@ -123,7 +134,7 @@ int __lsf_c_net_fcntl(int fd, int command, ...) {
         slot->close_on_exec = (flags & FD_CLOEXEC) != 0;
         return 0;
     }
-    /* Nonblocking mode, descriptor duplication and unknown flags are unavailable. */
+    /* Descriptor duplication and other commands are unavailable. */
     return fail(ENOTSUP);
 }
 
@@ -265,6 +276,84 @@ ssize_t __lsf_c_net_write(int fd, const void *buffer, size_t length) {
     if (fd == 1 || fd == 2) return net_stdio_write(fd, buffer, length);
 #endif
     return __lsf_c_net_send(fd, buffer, length, 0);
+}
+
+/* Validate and snapshot all vectors before any provider operation. The
+ * temporary bytes and descriptors stay on the original charged C stack. */
+static int vector_range(const void *pointer,size_t length) {
+    if (!length) return 1;
+    uint64_t memory=(uint64_t)__builtin_wasm_memory_size(0)*65536u;
+    uint64_t address=(uintptr_t)pointer;
+    return address!=0 && address<=memory && length<=memory-address;
+}
+static int vector_descriptor(int fd,int writing) {
+#if defined(LSF_C_STREAM_STDIO) && LSF_C_STREAM_STDIO
+    if (writing && (fd==1 || fd==2)) return 0;
+#else
+    (void)writing;
+#endif
+    struct descriptor *slot=find_descriptor(fd);
+    if (!slot) return fail(EBADF);
+    if (slot->busy) return fail(EBUSY);
+    if (slot->failed) return fail(EIO);
+    return 0;
+}
+struct vector_state {
+    struct iovec snapshot[MAX_VECTOR_IOVECS];
+    uint8_t bytes[MAX_VECTOR_TRANSFER];
+};
+static int vector_overlaps_state(const void *pointer,size_t length,const struct vector_state *state) {
+    if (!length) return 0;
+    uint64_t start=(uintptr_t)pointer,end=start+length;
+    uint64_t state_start=(uintptr_t)state,state_end=state_start+sizeof(*state);
+    return start<state_end && state_start<end;
+}
+static int vector_snapshot(const struct iovec *vectors,int count,struct vector_state *state,size_t *total) {
+    if (count<0 || count>MAX_VECTOR_IOVECS) return fail(EINVAL);
+    size_t vector_bytes=(size_t)count*sizeof(*vectors);
+    if (!vector_range(vectors,vector_bytes) || vector_overlaps_state(vectors,vector_bytes,state))
+        return fail(EFAULT);
+    size_t used=0;
+    for (int index=0;index<count;++index) {
+        struct iovec *entry=&state->snapshot[index];
+        memcpy(entry,(const uint8_t *)vectors+(size_t)index*sizeof(*vectors),sizeof(*vectors));
+        if (entry->iov_len>(size_t)SSIZE_MAX-used) return fail(EINVAL);
+        if (!vector_range(entry->iov_base,entry->iov_len) ||
+            vector_overlaps_state(entry->iov_base,entry->iov_len,state)) return fail(EFAULT);
+        used+=entry->iov_len;
+    }
+    *total=used;return 0;
+}
+ssize_t __lsf_c_net_writev(int fd,const struct iovec *vectors,int count) {
+    if (vector_descriptor(fd,1)) return -1;
+    struct vector_state state;size_t total;
+    if (vector_snapshot(vectors,count,&state,&total)) return -1;
+    if (!total) return 0;
+    size_t used=0;
+    for (int index=0;index<count && used<sizeof(state.bytes);++index) {
+        size_t available=sizeof(state.bytes)-used;
+        size_t copied=state.snapshot[index].iov_len<available?state.snapshot[index].iov_len:available;
+        if (copied) memcpy(state.bytes+used,state.snapshot[index].iov_base,copied);
+        used+=copied;
+    }
+    return __lsf_c_net_write(fd,state.bytes,used);
+}
+ssize_t __lsf_c_net_readv(int fd,const struct iovec *vectors,int count) {
+    if (vector_descriptor(fd,0)) return -1;
+    struct vector_state state;size_t total;
+    if (vector_snapshot(vectors,count,&state,&total)) return -1;
+    if (!total) return 0;
+    size_t limit=total<sizeof(state.bytes)?total:sizeof(state.bytes);
+    ssize_t received=__lsf_c_net_read(fd,state.bytes,limit);
+    if (received<=0) return received;
+    size_t used=0;
+    for (int index=0;index<count && used<(size_t)received;++index) {
+        size_t available=(size_t)received-used;
+        size_t copied=state.snapshot[index].iov_len<available?state.snapshot[index].iov_len:available;
+        if (copied) memcpy(state.snapshot[index].iov_base,state.bytes+used,copied);
+        used+=copied;
+    }
+    return received;
 }
 
 int __lsf_c_net_shutdown(int fd, int how) {

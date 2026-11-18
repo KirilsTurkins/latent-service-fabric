@@ -397,6 +397,9 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
             let owner = table.runtime.register(kind, parent)?;
             let value = owner.token();
             table.owners.push(owner);
+            if let Some(observer) = &mut table.timer_observer {
+                observer.root_admitted(kind, parent, value, table.runtime.snapshot().owners);
+            }
             #[cfg(feature = "development-go-timer-overlap")]
             if let Some(observer) = &table.overlap {
                 observer.task(kind, value, parent);
@@ -436,7 +439,14 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
             .iter()
             .position(|owner| owner.token() == token)
             .ok_or_else(|| failure(PlatformErrorCode::InvalidArgument, "runtime-token"))?;
+        let before = table
+            .timer_observer
+            .as_ref()
+            .map(|_| table.runtime.snapshot().owners[0]);
         drop(table.owners.swap_remove(index));
+        if let Some(observer) = &table.timer_observer {
+            observer.root_settled(token, before, table.runtime.snapshot().owners);
+        }
         Ok(())
     });
     sync!("close", (), (), |table| {

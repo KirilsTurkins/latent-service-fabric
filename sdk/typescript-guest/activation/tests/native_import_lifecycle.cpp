@@ -29,10 +29,8 @@ struct Broker final : PromiseAccounting, ImportAccounting {
     result = {{1, ++reservations}, true}; ++result_live;
     return true;
   }
-  bool rollback(JSContext* cx, JobOwners& work, NativeOwner& native, NativeOwner& result) override {
+  bool rollbackWork(JSContext* cx, JobOwners& work) override {
     if (ack_refused) return false;
-    if (result.live) { result.live = false; --result_live; }
-    if (!acknowledgeRetirement(cx, native)) return false;
     return complete(cx, work);
   }
   bool park(JSContext*, JobOwners& work) override {
@@ -84,8 +82,12 @@ int main(int argc, char** argv) {
   const char* name = argv[1];
   if (!std::strcmp(name, "partial-admission-exact-rollback")) {
     broker.deny_result = true;
-    ok = !import.reserve(&cx) && broker.tasks == 0 && broker.native_live == 0 &&
-         import.phase() == ImportLifecycle::Phase::Retired;
+    ok = !import.reserve(&cx) && broker.tasks == 0 && broker.native_live == 1 &&
+         import.phase() == ImportLifecycle::Phase::Retiring;
+    ImportLifecycle::Retirement retired;
+    // The embedding destroys the original record before this physical ACK.
+    ok = ok && import.releaseAfterPhysicalDestruction(&cx, retired) && retired.native.live &&
+         broker.physicallyRetired(&cx, retired.native, retired.result) && broker.native_live == 0;
   } else if (!std::strcmp(name, "failed-rollback-retains-owners")) {
     broker.deny_result = ack_refused = true;
     ok = !import.reserve(&cx) && broker.tasks == 1 && broker.native_live == 1 &&

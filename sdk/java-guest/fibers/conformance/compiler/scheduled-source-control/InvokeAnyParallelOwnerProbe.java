@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-/** A completed winner must not settle a still-running loser's original Result owner. */
+/** A completed winner must not settle a still-running loser's task or delivery Result. */
 public final class InvokeAnyParallelOwnerProbe {
     private static String counts() {
         return Activation.count(Bindings.LatentRuntimeActivationOwnerKind.Executor) + ":"
@@ -53,7 +53,7 @@ public final class InvokeAnyParallelOwnerProbe {
             if (caller.isAlive() || !Integer.valueOf(42).equals(outcome.get()) || !physical.get())
                 throw new AssertionError("result-or-physical-" + outcome.get());
             long deadline = System.nanoTime() + 5_000_000_000L;
-            while (!counts().equals("1:0:1") || interrupts.get() == 0) {
+            while (!counts().equals("1:0:2") || interrupts.get() == 0) {
                 if (System.nanoTime() - deadline >= 0) throw new AssertionError("original-owners-" + counts() + ":" + interrupts.get());
                 Thread.sleep(1);
             }

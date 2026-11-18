@@ -78,19 +78,58 @@ class FutureCancellationControl(unittest.TestCase):
         sdk = subject.ROOT / 'sdk/java-guest'
         control = sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskInterruptFailureControl.java'
         managed_factory_modes = ('capacity', 'nested-throw', 'nested-null', 'shutdown-thread', 'shutdown-null',
-                                 'shutdown-throw', 'uncertain-denied', 'uncertain-lost')
+                                 'shutdown-throw', 'graceful-null', 'graceful-thread', 'graceful-queue-denied',
+                                 'graceful-queue-lost', 'graceful-result-denied', 'graceful-result-lost',
+                                 'graceful-executor-denied', 'graceful-executor-lost', 'graceful-nested',
+                                 'graceful-nested-thread', 'graceful-shared-result', 'graceful-completable', 'graceful-running-null',
+                                 'graceful-running-thread', 'uncertain-denied', 'uncertain-lost')
         managed_null_modes = ('unavailable', 'immediate-recovery', 'later-recovery', 'fallback-throw',
                               'nested-fallback-throw', 'fallback-completable', 'fallback-start-failure',
                               'fallback-start-uncertain', 'fallback-live-thread', 'cached-null', 'existing-worker',
                               'preferred-running-shutdown', 'preferred-withdrawn', 'preference-exhaustion',
+                              'nested-initial-withdrawal', 'nested-initial-fallback-throw', 'nested-initial-shutdown',
+                              'nested-initial-rotation-failure', 'nested-outer-already-running',
                               'fallback-shutdown', 'fallback-denied', 'fallback-lost')
+        obtrude_modes = ('queued', 'queued-queue-denied', 'queued-queue-lost', 'queued-result-denied',
+                         'queued-result-lost', 'running-value', 'running-error', 'waiting-value', 'waiting-error')
+        default_async_modes = ('accept', 'run', 'accept-both', 'run-both', 'accept-either', 'early', 'run-throw', 'both-throw',
+                               'null-default', 'invalid-null', 'invalid-default-throw')
+        minimal_modes = ('copies', 'queue', 'result', 'rollback-denied', 'rollback-lost', 'copy-denied', 'running')
+        interrupt_monitor_modes = ('run', 'reset', 'denied', 'lost')
+        managed_status_modes = ('denied', 'lost', 'inflight', 'running')
+        scheduled_status_modes = ('denied', 'lost', 'inflight', 'running')
+        factory_concurrency_modes = ('shutdown', 'denied', 'claim', 'replacement', 'uncertain-start', 'graceful-failure', 'graceful-denied', 'graceful-lost', 'manual')
+        managed_first_modes = ('immediate', 'graceful', 'denied', 'lost', 'committed', 'null', 'throw',
+            'definite-start', 'uncertain-start', 'transfer-before', 'transfer-after', 'transfer-withdraw',
+            'transfer-withdraw-denied', 'transfer-withdraw-lost', 'transfer-withdraw-swallow', 'transfer-claim',
+            'duplicate-unstarted')
+        managed_first_modes += tuple(pool + '-' + mode for pool in ('fixed', 'cached') for mode in (
+            'queue-admission', 'result-admission', 'admission-denied', 'admission-lost', 'result-denied', 'result-lost',
+            'admission-capacity', 'queue-refused', 'result-refused', 'queue-unknown', 'result-unknown', 'queue-now', 'result-now', 'prepoisoned'))
+        managed_first_modes += tuple('cached-transfer-' + mode for mode in
+            ('before', 'after', 'withdraw', 'withdraw-denied', 'withdraw-lost', 'withdraw-swallow'))
+        cached_factory_modes = ('graceful', 'immediate', 'denied', 'lost', 'null', 'throw', 'definite-start',
+                                'uncertain-start', 'duplicate', 'live-thread', 'replacement', 'replacement-null', 'replacement-throw')
         new_reference_stages = ('scheduled-periodic-validation-reference-jdk', 'scheduled-null-factory-reference-jdk',
             'scheduled-throw-factory-reference-jdk', 'manual-periodic-throw-reference-jdk',
-            'managed-reentrant-factory-reference-jdk', 'managed-null-factory-reference-jdk')
-        new_source_stages = ('scheduled-periodic-validation-source', 'scheduled-null-factory-source',
+            'managed-reentrant-factory-reference-jdk', 'completable-obtrude-reference-jdk',
+            'completable-default-async-reference-jdk', 'completable-minimal-reference-jdk',
+            'future-task-interrupt-monitor-reference-jdk', 'managed-null-factory-reference-jdk',
+            'managed-executor-status-reference-jdk', 'scheduled-executor-status-reference-jdk',
+            'scheduled-factory-concurrency-reference-jdk', 'managed-first-admission-reference-jdk', 'managed-cached-factory-reference-jdk')
+        new_source_stages = ('completable-obtrude-source', *('completable-obtrude-owner-' + mode for mode in obtrude_modes),
+            'completable-default-async-source', *('completable-default-async-owner-' + mode for mode in default_async_modes),
+            'completable-minimal-source', *('completable-minimal-owner-' + mode for mode in minimal_modes),
+            'future-task-interrupt-monitor-source', *('future-task-interrupt-monitor-owner-' + mode for mode in interrupt_monitor_modes),
+            'scheduled-periodic-validation-source', 'scheduled-null-factory-source',
             'scheduled-throw-factory-source', 'manual-periodic-throw-source', 'managed-reentrant-factory-source',
             *('managed-reentrant-factory-owner-' + mode for mode in managed_factory_modes),
-            'managed-null-factory-source', *('managed-null-factory-owner-' + mode for mode in managed_null_modes))
+            'managed-first-admission-source', *('managed-first-admission-owner-' + mode for mode in managed_first_modes),
+            'managed-cached-factory-source', *('managed-cached-factory-owner-' + mode for mode in cached_factory_modes),
+            'managed-null-factory-source', *('managed-null-factory-owner-' + mode for mode in managed_null_modes),
+            'managed-executor-status-source', *('managed-executor-status-owner-' + mode for mode in managed_status_modes),
+            'scheduled-executor-status-source', *('scheduled-executor-status-owner-' + mode for mode in scheduled_status_modes),
+            'scheduled-factory-concurrency-source', *('scheduled-factory-concurrency-owner-' + mode for mode in factory_concurrency_modes))
 
         def run(stage, *argv):
             calls.append((stage, argv))
@@ -110,19 +149,60 @@ class FutureCancellationControl(unittest.TestCase):
             if stage in ('manual-periodic-throw-reference-jdk', 'manual-periodic-throw-source'):
                 return 'MANUAL_PERIODIC_THROW PASS fixed-rate;fixed-delay;error;copies;reentrant'
             if stage in ('managed-reentrant-factory-reference-jdk', 'managed-reentrant-factory-source'):
-                return 'MANAGED_REENTRANT_FACTORY PASS fixed-one;single;fixed-two;cached'
+                return 'MANAGED_REENTRANT_FACTORY PASS fixed-one;single;fixed-two;cached;graceful-sole'
+            if stage in ('managed-first-admission-reference-jdk', 'managed-first-admission-source'):
+                return ('MANAGED_FIRST_ADMISSION PASS nested;graceful;immediate;committed;null;throw;'
+                        'fallback-shutdown;older;two-firsts;active-worker')
+            if stage.startswith('managed-first-admission-owner-'):
+                return 'MANAGED_FIRST_ADMISSION_OWNER PASS ' + argv[-1]
+            if stage in ('managed-cached-factory-reference-jdk', 'managed-cached-factory-source'):
+                return ('MANAGED_CACHED_FACTORY PASS nested;shutdown-thread-null-throw;refusal;committed;'
+                        'idle-reuse;growth;concurrent-reservations;idle-shutdown-difference;live-thread')
+            if stage.startswith('managed-cached-factory-owner-'):
+                return 'MANAGED_CACHED_FACTORY_OWNER PASS ' + argv[-1]
+            if stage in ('completable-obtrude-reference-jdk', 'completable-obtrude-source'):
+                return ('COMPLETABLE_OBTRUDE_REFERENCE PASS observers;overwrite;exception-identity;'
+                        'cancellation;overrides;deferred;waiting-destination;running')
+            if stage.startswith('completable-obtrude-owner-'):
+                return 'COMPLETABLE_OBTRUDE_OWNER PASS ' + argv[-1]
+            if stage in ('completable-default-async-reference-jdk', 'completable-default-async-source'):
+                return ('COMPLETABLE_DEFAULT_ASYNC_REFERENCE PASS pending;ready;five-overloads;'
+                        'default-executor;null-default;invalid-order;factory;explicit-virtual')
+            if stage.startswith('completable-default-async-owner-'):
+                return 'COMPLETABLE_DEFAULT_ASYNC_OWNER PASS ' + argv[-1]
+            if stage in ('completable-minimal-reference-jdk', 'completable-minimal-source'):
+                return 'COMPLETABLE_MINIMAL_STAGE PASS restriction;factories;copies;composition;failure;cancel'
+            if stage.startswith('completable-minimal-owner-'):
+                return 'COMPLETABLE_MINIMAL_STAGE_OWNER PASS ' + argv[-1]
+            if stage in ('future-task-interrupt-monitor-reference-jdk', 'future-task-interrupt-monitor-source'):
+                return 'FUTURE_TASK_INTERRUPT_MONITOR PASS visible;run-handoff;reset-handoff'
+            if stage.startswith('future-task-interrupt-monitor-owner-'):
+                return 'FUTURE_TASK_INTERRUPT_MONITOR_OWNER PASS ' + argv[-1]
             if stage.startswith('managed-reentrant-factory-owner-'):
                 return 'MANAGED_REENTRANT_FACTORY_OWNER PASS ' + argv[-1]
             if stage in ('managed-null-factory-reference-jdk', 'managed-null-factory-source'):
                 return ('MANAGED_NULL_FACTORY PASS fixed;single;two-attempts;recovery;fallback-throw;'
-                        'existing-worker;nested;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order')
+                        'existing-worker;nested;nested-initial-order;nested-fallback-throw;cached-rejection;completable;live-thread;recovery-order;reentrant-recovery-order')
             if stage.startswith('managed-null-factory-owner-'):
                 return 'MANAGED_NULL_FACTORY_OWNER PASS ' + argv[-1]
+            if stage in ('managed-executor-status-reference-jdk', 'managed-executor-status-source'):
+                return 'MANAGED_EXECUTOR_STATUS PASS open;shutdown;terminated;interrupt-hook'
+            if stage.startswith('managed-executor-status-owner-'):
+                return 'MANAGED_EXECUTOR_STATUS_OWNER PASS ' + argv[-1]
+            if stage in ('scheduled-executor-status-reference-jdk', 'scheduled-executor-status-source'):
+                return 'SCHEDULED_EXECUTOR_STATUS PASS open;shutdown;terminated;interrupt-hook'
+            if stage.startswith('scheduled-executor-status-owner-'):
+                return 'SCHEDULED_EXECUTOR_STATUS_OWNER PASS ' + argv[-1]
+            if stage in ('scheduled-factory-concurrency-reference-jdk', 'scheduled-factory-concurrency-source'):
+                return ('SCHEDULED_FACTORY_CONCURRENCY PASS nested;shutdown;shutdown-throw;'
+                        'graceful-pruned;null-recovery;throw-recovery')
+            if stage.startswith('scheduled-factory-concurrency-owner-'):
+                return 'SCHEDULED_FACTORY_CONCURRENCY_OWNER PASS ' + argv[-1]
             if stage in ('executor-invoke-interrupt-reference-jdk', 'executor-invoke-interrupt-source'):
                 return ('EXECUTOR_INVOKE_INTERRUPT PASS preinterrupted-ready;empty;zero;pending-cancel;'
                     'blocked-interrupt')
             if stage == 'executor-invoke-interrupt-owner':
-                return 'EXECUTOR_INVOKE_INTERRUPT_OWNER PASS all;any;queued-until-drain;result-settled'
+                return 'EXECUTOR_INVOKE_INTERRUPT_OWNER PASS all;any;queued-until-drain;delivery-held'
             if stage in ('executor-await-termination-reference-jdk', 'executor-await-termination-source'):
                 return 'EXECUTOR_AWAIT_TERMINATION PASS zero;negative;positive;terminated;blocked-interrupt;override'
             if stage == 'executor-await-termination-owner':
@@ -176,10 +256,37 @@ class FutureCancellationControl(unittest.TestCase):
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskMonitorOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/DefaultExecutorOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ExecutorInvokeAllOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/CompletableObtrudeOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/CompletableDefaultAsyncOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/CompletableMinimalStageOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskInterruptMonitorOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedExecutorStatusOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ScheduledExecutorStatusOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ScheduledFactoryConcurrencyOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedFirstAdmissionOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedCachedFactoryOwnerControl.java', argv)
         for stage in new_reference_stages:
             self.assertIn(stage, [name for name, _ in calls])
         reference_argv = next(args for stage, args in calls if stage == 'scheduled-stopped-reference-compile')
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ExecutorInvokeAllWaitReferenceControl.java',
+                      reference_argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/CompletableObtrudeReferenceControl.java',
+                      reference_argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/CompletableDefaultAsyncReferenceControl.java',
+                      reference_argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/CompletableMinimalStageReferenceControl.java',
+                      reference_argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/FutureTaskInterruptMonitorReferenceControl.java',
+                      reference_argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedExecutorStatusReferenceControl.java',
+                      reference_argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ScheduledExecutorStatusReferenceControl.java',
+                      reference_argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ScheduledFactoryConcurrencyReferenceControl.java',
+                      reference_argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedFirstAdmissionReferenceControl.java',
+                      reference_argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedCachedFactoryReferenceControl.java',
                       reference_argv)
         for missing in ('executor-invoke-interrupt-reference-jdk', 'executor-invoke-interrupt-source',
                         'executor-invoke-interrupt-owner', 'executor-await-termination-reference-jdk',
@@ -205,7 +312,7 @@ class FutureCancellationControl(unittest.TestCase):
                 def incomplete(stage, *arguments):
                     return 'SKIPPED' if stage == missing else run(stage, *arguments)
                 incomplete_compiler = SimpleNamespace(sdk=sdk, run=incomplete)
-                with self.assertRaisesRegex(ValueError, 'Java (periodic validation|null-factory|throwing-factory|manual periodic|managed).* (did not complete|differs from reference)'):
+                with self.assertRaisesRegex(ValueError, 'Java (periodic validation|null-factory|throwing-factory|manual periodic|managed|scheduled executor status|scheduled factory concurrency|completable obtrude|completable default async|completable minimal|future task interrupt monitor).* (did not complete|differs from reference)'):
                     subject.scheduled_source_control(incomplete_compiler, Path(temporary) / 'source')
                 matrix.assert_not_called()
 
@@ -452,13 +559,21 @@ class ExecutorInvokeAnyReadyControl(unittest.TestCase):
     def receipt(stage):
         if stage in ('executor-invoke-any-ready-jdk', 'executor-invoke-any-ready-source'):
             return ('EXECUTOR_INVOKE_ANY_READY PASS one;zero;failure;rejection;all-failed;'
-                    'null-rule;iterator-observed')
+                    'null-rule;iterator-observed;task-factories')
         owners = {
-            'parallel': 'parallel:result=42:held=1:0:1:pending=true:cancelInterrupt=true:after=0:0:0',
-            'timeout': 'timeout:outcome=timeout:held=1:2:0:pending=true:after=0:0:0',
-            'interrupt': 'interrupt:outcome=interrupted:held=1:2:0:pending=true:after=0:0:0',
-            'accepted-throw': 'accepted-throw:held=1:1:0:pending=true:callbacks=0:after=0:0:0',
+            'parallel': 'parallel:result=42:held=1:0:2:pending=true:cancelInterrupt=true:after=0:0:0',
+            'timeout': 'timeout:outcome=timeout:held=1:2:2:pending=true:after=0:0:0',
+            'interrupt': 'interrupt:outcome=interrupted:held=1:2:2:pending=true:after=0:0:0',
+            'accepted-throw': 'accepted-throw:held=1:1:1:pending=true:callbacks=0:after=0:0:0',
         }
+        owners.update({
+            'factory-' + mode: 'INVOKE_ANY_FACTORY_OWNER PASS ' + mode
+            for mode in ('timeout', 'accepted-throw', 'delivery-denied', 'inner-denied',
+                         'default-delivery-denied', 'default-inner-denied', 'running', 'withdraw', 'default-withdraw',
+                         'scheduled-timeout', 'scheduled-accepted-throw', 'scheduled-delivery-denied',
+                         'scheduled-inner-denied', 'scheduled-default-inner-denied', 'scheduled-running',
+                         'settlement-denied', 'settlement-lost')
+        })
         if stage.startswith('executor-invoke-any-owner-'):
             return owners[stage.removeprefix('executor-invoke-any-owner-')]
         raise AssertionError(stage)
@@ -473,13 +588,26 @@ class ExecutorInvokeAnyReadyControl(unittest.TestCase):
         self.assertEqual([stage for stage, _ in calls], ['executor-invoke-any-ready-jdk',
             'executor-invoke-any-ready-source', 'executor-invoke-any-owner-parallel',
             'executor-invoke-any-owner-timeout', 'executor-invoke-any-owner-interrupt',
-            'executor-invoke-any-owner-accepted-throw'])
+            'executor-invoke-any-owner-accepted-throw',
+            *('executor-invoke-any-owner-factory-' + mode for mode in
+              ('timeout', 'accepted-throw', 'delivery-denied', 'inner-denied',
+               'default-delivery-denied', 'default-inner-denied', 'running', 'withdraw', 'default-withdraw',
+               'scheduled-timeout', 'scheduled-accepted-throw', 'scheduled-delivery-denied',
+               'scheduled-inner-denied', 'scheduled-default-inner-denied', 'scheduled-running',
+               'settlement-denied', 'settlement-lost'))])
         self.assertEqual(calls[0][1], ('java', '-Xmx256m', '-cp', reference,
                                        'ExecutorInvokeAnyReadyReferenceControl', 'jdk'))
         self.assertEqual(calls[1][1], ('java', '-Xmx256m', '-cp', source,
                                        'ExecutorInvokeAnyReadyReferenceControl', 'source'))
         self.assertEqual(calls[3][1][-2:], ('InvokeAnyPendingOwnerProbe', 'timeout'))
         self.assertEqual(calls[4][1][-2:], ('InvokeAnyPendingOwnerProbe', 'interrupt'))
+        for (_, args), mode in zip(calls[6:],
+                ('timeout', 'accepted-throw', 'delivery-denied', 'inner-denied',
+                 'default-delivery-denied', 'default-inner-denied', 'running', 'withdraw', 'default-withdraw',
+                 'scheduled-timeout', 'scheduled-accepted-throw', 'scheduled-delivery-denied',
+                 'scheduled-inner-denied', 'scheduled-default-inner-denied', 'scheduled-running',
+                 'settlement-denied', 'settlement-lost'), strict=True):
+            self.assertEqual(args, ('java', '-Xmx256m', '-cp', source, 'InvokeAnyFactoryOwnerControl', mode))
         self.assertEqual(report, {'status': 'JDK-and-SDK-source-controls-passed',
             'iterator': 'SDK-validates-after-ready-JDK-returns-early', 'ownership': 'synthetic-host-ledger-only',
             'componentExecutionPerformed': False, 'actualGuestBindingsUsed': False})
@@ -487,7 +615,13 @@ class ExecutorInvokeAnyReadyControl(unittest.TestCase):
     def test_every_missing_wrong_or_duplicate_receipt_fails_closed(self):
         stages = ('executor-invoke-any-ready-jdk', 'executor-invoke-any-ready-source',
                   'executor-invoke-any-owner-parallel', 'executor-invoke-any-owner-timeout',
-                  'executor-invoke-any-owner-interrupt', 'executor-invoke-any-owner-accepted-throw')
+                  'executor-invoke-any-owner-interrupt', 'executor-invoke-any-owner-accepted-throw',
+                  *('executor-invoke-any-owner-factory-' + mode for mode in
+                    ('timeout', 'accepted-throw', 'delivery-denied', 'inner-denied',
+                     'default-delivery-denied', 'default-inner-denied', 'running', 'withdraw', 'default-withdraw',
+                     'scheduled-timeout', 'scheduled-accepted-throw', 'scheduled-delivery-denied',
+                     'scheduled-inner-denied', 'scheduled-default-inner-denied', 'scheduled-running',
+                     'settlement-denied', 'settlement-lost')))
         for missing in stages:
             for bad in ('', 'SKIPPED', self.receipt(missing) + '\n' + self.receipt(missing)):
                 with self.subTest(stage=missing, bad=bad):

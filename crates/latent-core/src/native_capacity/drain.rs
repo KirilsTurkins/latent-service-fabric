@@ -22,6 +22,10 @@ impl<F: Future<Output = ()>> NativeCapacityDrain<F> {
         original: Instant,
         deadline_wait: F,
     ) -> Result<Self, NativeCapacityError> {
+        // ActivationClock is an injected host implementation. Sample it before
+        // taking the capacity mutex, so this new check cannot run host code
+        // under the lock. A stale earlier sample may only reject conservatively.
+        let now = owner.clock.monotonic_now();
         let (generation, deadline) = {
             let mut state = owner
                 .state
@@ -29,6 +33,18 @@ impl<F: Future<Output = ()>> NativeCapacityDrain<F> {
                 .map_err(|_| NativeCapacityError::Poisoned)?;
             if state.waiter.is_some() {
                 return Err(NativeCapacityError::DrainWaiterBusy);
+            }
+            if state
+                .shutdown_deadline
+                .is_some_and(|old| original > old && now < old)
+                && !state.snapshot().physically_retired()
+            {
+                // The requested deadline is later than the retained cutoff. The
+                // caller's timer is not guaranteed to wake by that earlier time.
+                // Future destruction can call host code, so release the lock first.
+                drop(state);
+                drop(deadline_wait);
+                return Err(NativeCapacityError::DeadlineTooLong);
             }
             let generation = state
                 .next_waiter
@@ -55,14 +71,18 @@ impl<F: Future<Output = ()>> NativeCapacityDrain<F> {
     fn finish(&mut self, timeout: bool) -> NativeCapacityShutdown {
         let mut state = self.owner.lock_physical();
         let report = state.report(timeout);
-        if state
+        let waiter = if state
             .waiter
             .as_ref()
             .is_some_and(|(generation, _)| *generation == self.generation)
         {
-            state.waiter = None;
-        }
+            state.waiter.take()
+        } else {
+            None
+        };
         self.delivered = true;
+        drop(state);
+        drop(waiter);
         report
     }
 }
@@ -72,17 +92,30 @@ impl<F: Future<Output = ()>> Future for NativeCapacityDrain<F> {
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
         let this = self.get_mut();
-        {
+        // Cloning and dropping a waker can invoke executor-owned code. Never
+        // run those operations while the capacity state mutex is held.
+        let mut incoming = Some(cx.waker().clone());
+        let (retired, previous) = {
             let mut state = this.owner.lock_physical();
             if state.snapshot().physically_retired() {
-                drop(state);
-                return Poll::Ready(this.finish(false));
-            }
-            if let Some((generation, waiter)) = state.waiter.as_mut() {
+                (true, None)
+            } else if let Some((generation, waiter)) = state.waiter.as_mut() {
                 if *generation == this.generation {
-                    *waiter = Some(cx.waker().clone());
+                    (
+                        false,
+                        waiter.replace(incoming.take().expect("incoming waker")),
+                    )
+                } else {
+                    (false, None)
                 }
+            } else {
+                (false, None)
             }
+        };
+        drop(previous);
+        drop(incoming);
+        if retired {
+            return Poll::Ready(this.finish(false));
         }
         if this.owner.clock.monotonic_now() >= this.deadline
             || this.deadline_wait.as_mut().poll(cx).is_ready()
@@ -98,13 +131,17 @@ impl<F> Drop for NativeCapacityDrain<F> {
     fn drop(&mut self) {
         if !self.delivered {
             let mut state = self.owner.lock_physical();
-            if state
+            let waiter = if state
                 .waiter
                 .as_ref()
                 .is_some_and(|(generation, _)| *generation == self.generation)
             {
-                state.waiter = None;
-            }
+                state.waiter.take()
+            } else {
+                None
+            };
+            drop(state);
+            drop(waiter);
         }
     }
 }

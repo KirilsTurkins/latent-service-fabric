@@ -27,7 +27,7 @@ void *memset(void *out,int value,size_t size) {
     unsigned char *dst=out;for(size_t i=0;i<size;++i) dst[i]=(unsigned char)value;return out;
 }
 
-static int current_fd,mode,host_calls,close_calls,drop_calls,free_calls,reentry_ok;
+static int current_fd,mode,host_calls,close_calls,drop_calls,free_calls,reentry_ok,vector_reentry,vector_reentry_ok;
 static int last_timeout,interest_seen,allow_host,timer_polls,timer_fail,inspect_calls,send_shut,shutdown_calls;
 static uint8_t message[]={'a','b','c'};
 static bool host_equals(probe_string_t host,const char *text,size_t size) {
@@ -46,6 +46,8 @@ bool latent_network_streams_connect(latent_network_streams_connect_request_t *re
         latent_network_streams_own_connection_t *out,latent_network_streams_stream_error_t *error) {
     ++host_calls;
     reentry_ok=(__lsf_c_net_close(current_fd)==-1 && lsf_test_errno==EBUSY);
+    reentry_ok=reentry_ok && fcntl(current_fd,F_SETFL,fcntl(current_fd,F_GETFL) & ~O_NONBLOCK)==0 &&
+        fcntl(current_fd,F_GETFL)==O_RDWR && lsf_test_errno==EBUSY;
     if(!host_equals(request->host,"127.0.0.1",9) || request->port!=8080 ||
        request->transport!=LATENT_NETWORK_STREAMS_TRANSPORT_TCP || request->timeout_millis.is_some)
         __builtin_trap();
@@ -54,17 +56,24 @@ bool latent_network_streams_connect(latent_network_streams_connect_request_t *re
 }
 bool latent_network_streams_write(latent_network_streams_borrow_connection_t connection,
         probe_list_u8_t *bytes,uint32_t *timeout,uint32_t *out,latent_network_streams_stream_error_t *error) {
-    ++host_calls;if(connection.__handle!=71 || timeout || !bytes->ptr || bytes->len!=3)__builtin_trap();
+    ++host_calls;if(connection.__handle!=71 || timeout || !bytes->ptr)__builtin_trap();
+    if (mode==6) {
+        if(bytes->len!=4096)__builtin_trap();
+        for(size_t i=0;i<bytes->len;++i)if(bytes->ptr[i]!='q')__builtin_trap();
+    } else if(bytes->len!=3 || bytes->ptr[0]!='x' || bytes->ptr[1]!='y' || bytes->ptr[2]!='z') __builtin_trap();
     reentry_ok=(__lsf_c_net_close(current_fd)==-1 && lsf_test_errno==EBUSY);
+    if(vector_reentry) vector_reentry_ok=(writev(current_fd,NULL,0)==-1 && lsf_test_errno==EBUSY);
     if(send_shut){*error=(latent_network_streams_stream_error_t){.code=LATENT_NETWORK_STREAMS_ERROR_CODE_INVALID_STATE};return false;}
     if(mode==1){*error=(latent_network_streams_stream_error_t){.code=LATENT_NETWORK_STREAMS_ERROR_CODE_UNCERTAIN,
         .accepted_prefix_bytes=1,.may_have_applied=true};return false;}
-    *out=2;return true;
+    *out=mode==6?3072:2;return true;
 }
 bool latent_network_streams_read(latent_network_streams_borrow_connection_t connection,
         uint32_t maximum,uint32_t *timeout,latent_network_streams_option_own_chunk_t *out,
         latent_network_streams_stream_error_t *error) {
-    (void)error;++host_calls;if(connection.__handle!=71 || timeout || maximum!=3)__builtin_trap();
+    ++host_calls;if(connection.__handle!=71 || timeout || maximum!=(mode==6?4096u:3u))__builtin_trap();
+    if(vector_reentry) vector_reentry_ok=(readv(current_fd,NULL,0)==-1 && lsf_test_errno==EBUSY);
+    if(mode==7) { *error=(latent_network_streams_stream_error_t){.code=LATENT_NETWORK_STREAMS_ERROR_CODE_DENIED};return false; }
     *out=(latent_network_streams_option_own_chunk_t){.is_some=mode!=2,.val={31}};return true;
 }
 bool latent_network_streams_chunk_bytes(latent_network_streams_borrow_chunk_t chunk,
@@ -119,6 +128,8 @@ int original_poll(struct pollfd *fds,nfds_t count,int timeout) {
 
 #define CHECK(value) do { if(!(value))return __LINE__; } while(0)
 _Static_assert(MSG_NOSIGNAL == 0x4000, "unexpected stream profile flag");
+_Static_assert(SO_RCVTIMEO == 66, "unexpected WASI receive-timeout option");
+_Static_assert(SO_RCVTIMEO != SO_TYPE, "timeout must not alias the supported socket option");
 static struct sockaddr_in address(void) {
     struct sockaddr_in result={.sin_family=AF_INET};
     unsigned char octets[]={127,0,0,1},port[]={0x1f,0x90};
@@ -155,6 +166,14 @@ __attribute__((export_name("descriptor_controls"))) int descriptor_controls(void
     CHECK(__lsf_c_net_fcntl(current_fd,F_GETFL)==O_RDWR);
     CHECK(__lsf_c_net_fcntl(current_fd,F_SETFL,O_NONBLOCK)==-1 && lsf_test_errno==ENOTSUP);
     CHECK(__lsf_c_net_setsockopt(current_fd,SOL_SOCKET,SO_TYPE,&socket_type,sizeof(socket_type))==-1 && lsf_test_errno==ENOTSUP);
+    struct timeval timeout={0};
+    CHECK(setsockopt(current_fd,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout))==-1 && lsf_test_errno==ENOTSUP);
+    timeout.tv_usec=1000;
+    CHECK(setsockopt(current_fd,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout))==-1 && lsf_test_errno==ENOTSUP);
+    socket_type_len=sizeof(socket_type);
+    CHECK(getsockopt(current_fd,SOL_SOCKET,SO_RCVTIMEO,&socket_type,&socket_type_len)==-1 && lsf_test_errno==ENOTSUP);
+    CHECK(host_calls==calls_before);
+    CHECK(setsockopt(-1,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout))==-1 && lsf_test_errno==EBADF);
     allow_host=0;CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==-1);
     CHECK(lsf_test_errno==EACCES && reentry_ok && host_calls==1);
     CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==-1 && lsf_test_errno==EIO);
@@ -162,6 +181,11 @@ __attribute__((export_name("descriptor_controls"))) int descriptor_controls(void
     CHECK(__lsf_c_net_close(current_fd)==0 && close_calls==0);
     current_fd=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);allow_host=1;
     CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==0 && reentry_ok);
+    calls_before=host_calls;
+    CHECK(fcntl(current_fd,F_SETFL,fcntl(current_fd,F_GETFL) & ~O_NONBLOCK)==0);
+    CHECK(fcntl(current_fd,F_GETFL)==O_RDWR);
+    CHECK(setsockopt(current_fd,SOL_SOCKET,SO_RCVTIMEO,&timeout,sizeof(timeout))==-1 && lsf_test_errno==ENOTSUP);
+    CHECK(host_calls==calls_before);
     CHECK(__lsf_c_net_send(current_fd,"xyz",3,0)==2 && reentry_ok);
     char input[3];CHECK(__lsf_c_net_recv(current_fd,input,3,0)==3 && reentry_ok);
     CHECK(input[0]=='a' && input[1]=='b' && input[2]=='c' && drop_calls==1 && free_calls==1);
@@ -219,6 +243,15 @@ __attribute__((export_name("descriptor_flags_controls"))) int descriptor_flags_c
     int marked=__lsf_c_net_socket(AF_INET,SOCK_STREAM|SOCK_CLOEXEC,0);CHECK(marked==3);
     CHECK(__lsf_c_net_fcntl(marked,F_GETFL)==O_RDWR);
     CHECK(__lsf_c_net_fcntl(marked,F_GETFD)==FD_CLOEXEC);
+    /* This is the ordinary blocking selection used by unchanged clients. */
+    int flags=fcntl(marked,F_GETFL);
+    lsf_test_errno=ERANGE;
+    CHECK(fcntl(marked,F_SETFL,flags & ~O_NONBLOCK)==0 && lsf_test_errno==ERANGE);
+    CHECK(fcntl(marked,F_SETFL,0)==0 && lsf_test_errno==ERANGE);
+    CHECK(fcntl(marked,F_GETFL)==O_RDWR && fcntl(marked,F_GETFD)==FD_CLOEXEC);
+    CHECK(fcntl(marked,F_SETFL,O_RDWR|O_NONBLOCK)==-1 && lsf_test_errno==ENOTSUP);
+    CHECK(fcntl(marked,F_SETFL,O_APPEND)==-1 && lsf_test_errno==ENOTSUP);
+    CHECK(fcntl(marked,F_GETFL)==O_RDWR && fcntl(marked,F_GETFD)==FD_CLOEXEC);
     int second=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);CHECK(second==4);
     CHECK(__lsf_c_net_fcntl(second,F_GETFD)==0);
     CHECK(__lsf_c_net_fcntl(marked,F_SETFD,0)==0);
@@ -237,7 +270,94 @@ __attribute__((export_name("descriptor_flags_controls"))) int descriptor_flags_c
     CHECK(__lsf_c_net_fcntl(reused,F_SETFL,O_NONBLOCK)==-1 && lsf_test_errno==ENOTSUP);
     CHECK(__lsf_c_net_close(reused)==0);
     CHECK(__lsf_c_net_fcntl(reused,F_GETFD)==-1 && lsf_test_errno==EBADF);
+    CHECK(fcntl(reused,F_SETFL,0)==-1 && lsf_test_errno==EBADF);
+    CHECK(fcntl(-1,F_SETFL,0)==-1 && lsf_test_errno==EBADF);
     CHECK(host_calls==before);
+    return 0;
+}
+
+__attribute__((export_name("vector_controls"))) int vector_controls(void) {
+    mode=0;vector_reentry=1;allow_host=1;host_calls=0;
+    current_fd=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);CHECK(current_fd==3);
+    struct iovec empty={.iov_base=NULL,.iov_len=0};
+    char safe='!';struct iovec one={.iov_base=&safe,.iov_len=1};
+    CHECK(readv(current_fd,NULL,0)==0);
+    CHECK(readv(current_fd,&one,1)==-1 && lsf_test_errno==ENOTCONN);
+    CHECK(writev(current_fd,&empty,1)==0);
+    CHECK(writev(current_fd,&one,1)==-1 && lsf_test_errno==ENOTCONN);
+    CHECK(__lsf_c_net_read(current_fd,NULL,0)==-1 && lsf_test_errno==ENOTCONN);
+    CHECK(__lsf_c_net_write(current_fd,NULL,0)==-1 && lsf_test_errno==ENOTCONN);
+    CHECK(readv(-1,NULL,0)==-1 && lsf_test_errno==EBADF);
+    CHECK(host_calls==0);
+    struct sockaddr_in peer=address();CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==0);
+    host_calls=0;
+    CHECK(readv(current_fd,NULL,0)==0 && writev(current_fd,&empty,1)==0);
+    CHECK(writev(current_fd,NULL,-1)==-1 && lsf_test_errno==EINVAL);
+    CHECK(readv(current_fd,NULL,1)==-1 && lsf_test_errno==EFAULT);
+    CHECK(writev(current_fd,&empty,17)==-1 && lsf_test_errno==EINVAL);
+    struct iovec bad={.iov_base=NULL,.iov_len=1};
+    CHECK(writev(current_fd,&bad,1)==-1 && lsf_test_errno==EFAULT);
+    bad=(struct iovec){.iov_base=(void *)(uintptr_t)1,.iov_len=SIZE_MAX};
+    CHECK(readv(current_fd,&bad,1)==-1 && lsf_test_errno==EINVAL);
+    CHECK(readv(current_fd,(const struct iovec *)(uintptr_t)(UINT32_MAX-3u),1)==-1 && lsf_test_errno==EFAULT);
+    struct iovec invalid_later[2]={{.iov_base=&safe,.iov_len=1},{.iov_base=NULL,.iov_len=1}};
+    CHECK(readv(current_fd,invalid_later,2)==-1 && lsf_test_errno==EFAULT && safe=='!');
+    CHECK(writev(current_fd,invalid_later,2)==-1 && lsf_test_errno==EFAULT && safe=='!');
+    CHECK(host_calls==0);
+    char first='x';char rest[2]={'y','z'};
+    struct iovec sent[3]={{.iov_base=&first,.iov_len=1},{.iov_base=NULL,.iov_len=0},{.iov_base=rest,.iov_len=2}};
+    int before=host_calls;CHECK(writev(current_fd,sent,3)==2 && reentry_ok && vector_reentry_ok && host_calls==before+1);
+    char a=0,b[2]={0};struct iovec received[2]={{.iov_base=&a,.iov_len=1},{.iov_base=b,.iov_len=2}};
+    before=host_calls;int dropped=drop_calls,freed=free_calls;
+    CHECK(readv(current_fd,received,2)==3 && reentry_ok && vector_reentry_ok && host_calls==before+1);
+    CHECK(a=='a' && b[0]=='b' && b[1]=='c' && drop_calls==dropped+1 && free_calls==freed+1);
+    char tail[2]={0};struct iovec aliased[2];
+    aliased[0]=(struct iovec){.iov_base=&aliased[1],.iov_len=1};
+    aliased[1]=(struct iovec){.iov_base=tail,.iov_len=2};before=host_calls;
+    CHECK(readv(current_fd,aliased,2)==3 && host_calls==before+1);
+    CHECK(*(unsigned char *)&aliased[1]=='a' && tail[0]=='b' && tail[1]=='c');
+    static char large[5000];memset(large,'q',sizeof(large));
+    struct iovec big[2]={{.iov_base=large,.iov_len=3000},{.iov_base=large+3000,.iov_len=2000}};
+    mode=6;before=host_calls;CHECK(writev(current_fd,big,2)==3072 && host_calls==before+1);
+    a=0;b[0]=b[1]=0;received[0].iov_base=large;received[0].iov_len=4998;
+    received[1].iov_base=b;received[1].iov_len=2;before=host_calls;
+    CHECK(readv(current_fd,received,2)==3 && host_calls==before+1 && large[0]=='a' && large[1]=='b' && large[2]=='c');
+    mode=0;CHECK(__lsf_c_net_shutdown(current_fd,SHUT_WR)==0);
+    before=host_calls;CHECK(writev(current_fd,NULL,0)==0 && host_calls==before);
+    CHECK(writev(current_fd,&empty,1)==0 && host_calls==before);
+    CHECK(__lsf_c_net_write(current_fd,NULL,0)==-1 && lsf_test_errno==EPIPE && host_calls==before);
+    CHECK(writev(current_fd,sent,3)==-1 && lsf_test_errno==EPIPE && host_calls==before);
+    CHECK(__lsf_c_net_close(current_fd)==0);
+    mode=1;current_fd=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);
+    CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==0);
+    CHECK(writev(current_fd,sent,3)==1);
+    struct lsf_stream_error detail;CHECK(lsf_stream_last_error(current_fd,&detail)==0 &&
+        detail.accepted_prefix_bytes==1 && detail.may_have_applied);
+    before=host_calls;
+    CHECK(writev(current_fd,NULL,0)==-1 && lsf_test_errno==EIO && host_calls==before);
+    CHECK(writev(current_fd,&empty,1)==-1 && lsf_test_errno==EIO && host_calls==before);
+    CHECK(readv(current_fd,NULL,0)==-1 && lsf_test_errno==EIO && host_calls==before);
+    CHECK(readv(current_fd,&empty,1)==-1 && lsf_test_errno==EIO && host_calls==before);
+    CHECK(writev(current_fd,sent,3)==-1 && lsf_test_errno==EIO && host_calls==before);
+    CHECK(readv(current_fd,&one,1)==-1 && lsf_test_errno==EIO && host_calls==before);
+    CHECK(__lsf_c_net_write(current_fd,NULL,0)==-1 && lsf_test_errno==EIO && host_calls==before);
+    CHECK(__lsf_c_net_read(current_fd,NULL,0)==-1 && lsf_test_errno==EIO && host_calls==before);
+    CHECK(__lsf_c_net_close(current_fd)==0);
+    mode=7;current_fd=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);
+    CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==0);
+    received[0].iov_base=&a;received[0].iov_len=1;a='!';b[0]=b[1]='!';
+    CHECK(readv(current_fd,received,2)==-1 && lsf_test_errno==EACCES && a=='!' && b[0]=='!' && b[1]=='!');
+    before=host_calls;
+    CHECK(readv(current_fd,NULL,0)==-1 && lsf_test_errno==EIO && host_calls==before);
+    CHECK(writev(current_fd,&empty,1)==-1 && lsf_test_errno==EIO && host_calls==before);
+    CHECK(__lsf_c_net_close(current_fd)==0);
+    mode=0;allow_host=0;current_fd=__lsf_c_net_socket(AF_INET,SOCK_STREAM,0);
+    CHECK(__lsf_c_net_connect(current_fd,(struct sockaddr *)&peer,sizeof(peer))==-1 && lsf_test_errno==EACCES);
+    before=host_calls;
+    CHECK(readv(current_fd,NULL,0)==-1 && lsf_test_errno==EIO && host_calls==before);
+    CHECK(writev(current_fd,&empty,1)==-1 && lsf_test_errno==EIO && host_calls==before);
+    CHECK(readv(current_fd,&one,1)==-1 && lsf_test_errno==EIO && host_calls==before);
+    CHECK(__lsf_c_net_close(current_fd)==0);vector_reentry=0;allow_host=1;
     return 0;
 }
 

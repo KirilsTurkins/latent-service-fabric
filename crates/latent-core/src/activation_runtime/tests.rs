@@ -1661,6 +1661,158 @@ fn park_phase_accounts_for_tasks_and_non_task_owners() {
     drop((task_wake_again, worker_wake, task_wake, non_task_wake));
     drop((wait, worker, task));
     runtime.retire().unwrap();
+
+    // Keep phase-transition variants in this existing exact-inventory case.
+    settling_last_runnable_sibling_reports_parked_work_without_reopening_closure();
+    final_task_settlement_preserves_the_existing_phase_with_only_a_wait();
+    settling_task_distinguishes_parked_and_runnable_managed_workers();
+    concurrent_resume_winning_the_lock_is_not_overwritten_by_sibling_settlement();
+}
+
+fn settling_last_runnable_sibling_reports_parked_work_without_reopening_closure() {
+    for initial in [
+        RuntimePhase::Running,
+        RuntimePhase::Closing,
+        RuntimePhase::Draining,
+        RuntimePhase::Cancelling,
+    ] {
+        let runtime = runtime();
+        let parked = runtime.register(OwnerKind::Task, None).unwrap();
+        let runnable = runtime
+            .register(OwnerKind::Task, Some(parked.token()))
+            .unwrap();
+        let wake = runtime.park(parked.token()).unwrap();
+        assert_eq!(runtime.snapshot().phase, RuntimePhase::Running);
+        match initial {
+            RuntimePhase::Closing => runtime.close(),
+            RuntimePhase::Draining => runtime.begin_drain(),
+            RuntimePhase::Cancelling => runtime.cancel(),
+            _ => {}
+        }
+        runnable.settle();
+        let after = runtime.snapshot();
+        assert_eq!(after.owners[0], 1);
+        assert_eq!(after.parked_tasks, 1);
+        assert_eq!(
+            after.phase,
+            if initial == RuntimePhase::Running {
+                RuntimePhase::Waiting
+            } else {
+                initial
+            }
+        );
+        if initial == RuntimePhase::Running {
+            assert!(wake.wake());
+            assert_eq!(runtime.snapshot().phase, RuntimePhase::Running);
+        }
+        drop(wake);
+        drop(parked);
+        runtime.retire().unwrap();
+    }
+}
+
+fn final_task_settlement_preserves_the_existing_phase_with_only_a_wait() {
+    for parked in [false, true] {
+        let runtime = runtime();
+        let task = runtime.register(OwnerKind::Task, None).unwrap();
+        let wait = runtime
+            .register(OwnerKind::Wait, Some(task.token()))
+            .unwrap();
+        let wake = parked.then(|| runtime.park(task.token()).unwrap());
+        let before = runtime.snapshot();
+        assert_eq!(
+            before.phase,
+            if parked {
+                RuntimePhase::Waiting
+            } else {
+                RuntimePhase::Running
+            }
+        );
+        task.settle();
+        let after = runtime.snapshot();
+        assert_eq!(after.phase, before.phase);
+        assert_eq!(after.owners[0], 0);
+        assert_eq!(after.owners[3], 1);
+        if let Some(wake) = wake {
+            assert!(!wake.wake());
+        }
+        drop(wait);
+        runtime.retire().unwrap();
+    }
+}
+
+fn settling_task_distinguishes_parked_and_runnable_managed_workers() {
+    for worker_parked in [false, true] {
+        let runtime = runtime();
+        let task = runtime.register(OwnerKind::Task, None).unwrap();
+        let worker = runtime
+            .register(OwnerKind::ManagedIdleWorker, Some(task.token()))
+            .unwrap();
+        let wait = runtime
+            .register(OwnerKind::Wait, Some(task.token()))
+            .unwrap();
+        let wake = worker_parked.then(|| runtime.park(worker.token()).unwrap());
+        assert_eq!(runtime.snapshot().phase, RuntimePhase::Running);
+        task.settle();
+        let after = runtime.snapshot();
+        assert_eq!(
+            after.phase,
+            if worker_parked {
+                RuntimePhase::Waiting
+            } else {
+                RuntimePhase::Running
+            }
+        );
+        assert_eq!(after.managed_idle_workers, 1);
+        assert_eq!(after.owners[3], 1);
+        if let Some(wake) = wake {
+            assert!(wake.wake());
+            assert_eq!(runtime.snapshot().phase, RuntimePhase::Running);
+        }
+        drop((worker, wait));
+        runtime.retire().unwrap();
+    }
+}
+
+fn concurrent_resume_winning_the_lock_is_not_overwritten_by_sibling_settlement() {
+    use std::sync::mpsc;
+    use std::time::Duration;
+
+    let runtime = runtime();
+    let parked = runtime.register(OwnerKind::Task, None).unwrap();
+    let runnable = runtime
+        .register(OwnerKind::Task, Some(parked.token()))
+        .unwrap();
+    let wake = runtime.park(parked.token()).unwrap();
+    let (guarded_tx, guarded_rx) = mpsc::sync_channel(0);
+    let (resume_tx, resume_rx) = mpsc::sync_channel(0);
+    let waking = std::thread::spawn(move || {
+        wake.wake_with_hooks(
+            || {},
+            |step| {
+                if step == ReadinessStep::Guarded {
+                    guarded_tx.send(()).unwrap();
+                    resume_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+                }
+            },
+        )
+    });
+    guarded_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+    let (started_tx, started_rx) = mpsc::sync_channel(0);
+    let settling = std::thread::spawn(move || {
+        started_tx.send(()).unwrap();
+        runnable.settle();
+    });
+    started_rx.recv_timeout(Duration::from_secs(3)).unwrap();
+    resume_tx.send(()).unwrap();
+    assert!(waking.join().unwrap());
+    settling.join().unwrap();
+    let after = runtime.snapshot();
+    assert_eq!(after.phase, RuntimePhase::Running);
+    assert_eq!(after.owners[0], 1);
+    assert_eq!(after.parked_tasks, 0);
+    drop(parked);
+    runtime.retire().unwrap();
 }
 
 // Pause immediately after the same successful liveness check used by the
