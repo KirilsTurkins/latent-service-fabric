@@ -13,15 +13,15 @@ PROVIDER = "crates/vendor/wasmtime"
 NAME = "wasmtime"
 VERSION = "48.0.8"
 COHORT = "wasmtime-48.0.8-latent-value-table-store-registry-funcrefs-resource-types-linear-notification-retained-context-host-future-owned-reply-join-state-call-future-pending-continuation-worker-function-queue-nodes-unordered-futures-outer-sync-result-stream-outers-consumer-producer-factories-http-ingress-memory-v30-authenticated-bounded-root-suspension-upstream-security-v31-consumer-poll-factory-v32-host-accept-factory-v33-consumer-inner-future-v34-producer-inner-future-v35-sync-ready-callback-v36-inline-runtime-futures-v37-store-custody-panic-v38-retained-pool-decommit-v39-borrowed-accept-future-v40-producer-future-unwind-v41"
-RECORD_SHA256 = "07fc967d1ca0c1a950f29bdb29c82eeb214373309233776cedb0be1baaf60b99"
+RECORD_SHA256 = "440b40d219c04f7c76b27ce427b97937c21812137b2cd4ff68a25806fe4538d9"
 # Explicit reviewed postimages; the remaining original files use the immutable
 # registry inventory. Changing a claimed record or patch cannot authorize bytes.
-POSTIMAGES = {'Cargo.lock': {'bytes': 60137, 'sha256': '4428e6f8002d4cfeb7eb6b841ebde47f9241b77fdd18c0265ca57f6fddce40c2'},
+POSTIMAGES = {'Cargo.lock': {'bytes': 61171, 'sha256': '6e6019dd78a8862078ee41eee2fd29dcaf637b01a29d7b56d46bf136cd592ea9'},
  'Cargo.toml': {'sha256': '0dcb5c72f573de3cda491e285e0262c7b3771bda0881afae93b3132c7e62001f', 'bytes': 11138},
  'latent-dynamic-memory.patch': {'bytes': 812392,
                                  'sha256': 'a8fa5a2d686c48d227a088762756c8c1e80e9f7853cf4aa6650405b8c3f2d98d'},
- 'README.latent.md': {'sha256': 'd2357be202461c248bac32dde382e5146efb4e618aa6ac5c1f83416852d34432',
-                      'bytes': 61942},
+ 'README.latent.md': {'sha256': '9d6e72a6257a33967bd669dec1ef6d11d06e433b0e8ea343edee76d9baca443f',
+                      'bytes': 62062},
  'src/runtime/component/concurrent/abort.rs': {'sha256': '3e15b4c7493da1e268efdc3979cda4d8db628a7a1bfef308f8d04250d53600ef',
                                                'bytes': 27109},
  'src/runtime/component/concurrent/call_future.rs': {'sha256': '555032577499fb6827ff9e79c44aed89d98edb94f6a5a4772caa4cb369be15b0',
