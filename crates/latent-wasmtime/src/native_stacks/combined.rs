@@ -11,7 +11,7 @@ impl StackContext {
         maximum_native: usize,
         proof: &Authentication,
         descriptor: &PreparedComponent,
-    ) -> Result<Arc<Self>, PlatformError> {
+    ) -> Result<StackContextHandle, PlatformError> {
         // A configuration name or an inspector result is insufficient. The
         // immutable final-byte proof must match this exact prepared component.
         proof.check_before_instantiation(descriptor)?;

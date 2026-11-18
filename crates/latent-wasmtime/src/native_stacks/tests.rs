@@ -7,6 +7,12 @@ use wasmtime::{Engine, Linker, Module, StackCreator, Store};
 #[cfg(feature = "development-rust-http-combined")]
 mod combined;
 
+#[cfg(all(
+    feature = "development-stack-custody-witness",
+    not(feature = "development-go-timer-overlap")
+))]
+mod stack_custody_allocation;
+
 struct Signal;
 impl latent_core::BudgetCancellationProbe for Signal {
     fn is_cancelled(&self) -> bool {
@@ -197,7 +203,7 @@ async fn pending_stack(cancel: bool) {
             .await
             .unwrap()
     };
-    let mut call = Box::pin(scoped(Arc::clone(&context), call).unwrap());
+    let mut call = Box::pin(scoped(context.clone(), call).unwrap());
     std::future::poll_fn(|cx| {
         assert!(call.as_mut().poll(cx).is_pending());
         Poll::Ready(())
@@ -482,7 +488,7 @@ async fn actual_nested_async_import_needs_an_engine_worker_without_a_c_thread_st
                 .call_async(&mut store, ())
                 .await
         };
-        let result = scoped(Arc::clone(&context), call).unwrap().await;
+        let result = scoped(context.clone(), call).unwrap().await;
         if workers {
             assert_eq!(result.unwrap(), 42);
         } else {
