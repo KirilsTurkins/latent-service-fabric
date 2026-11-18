@@ -1595,8 +1595,8 @@ impl ConnectionOwner {
             .await
             .map_err(Into::into)
     }
-    // An observation or send shutdown must retain the exact original connect
-    // and operation authorities through audit and the original deadlines.
+    // A read, observation or send shutdown must retain the exact original
+    // connect and operation authorities through audit and their deadlines.
     fn original_call_current(
         &self,
         pending: &Pending,
@@ -1609,9 +1609,9 @@ impl ConnectionOwner {
             return Err(error(StreamErrorCode::Timeout));
         }
         io.recheck_authority().map_err(StreamError::from)?;
-        // `ready` is authorized independently of the original connect call.
-        // Both exact accepted owners must remain current for a nonterminal
-        // observation; neither check mints or replaces authority.
+        // The operation is authorized independently of the original connect
+        // call. Both accepted owners must remain current for a nonterminal
+        // handoff; neither check mints or replaces authority.
         call.recheck_authority().map_err(StreamError::from)?;
         io.checkpoint().map_err(StreamError::from)?;
         let state = self
@@ -1782,6 +1782,16 @@ impl OutboundStream for Handle {
                         flight.consumed = false;
                     }
                     return Err(failure);
+                }
+                // Audit can suspend after bytes or EOF have already been
+                // observed. Do not hand that result to the caller if either
+                // original authority or deadline changed in the meantime.
+                if let Err(failure) =
+                    connection.original_call_current(&flight.pending, &mut flight.call)
+                {
+                    connection.abort(failure.code);
+                    flight.consumed = false;
+                    return Err(connection.terminal_error(failure));
                 }
                 flight.consumed = false;
                 Ok(flight.output.take())

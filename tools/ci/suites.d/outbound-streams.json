@@ -56,7 +56,10 @@
         "tests::sockets::dropped_read_after_consumption_fences_reuse_and_retains_pending_owner",
         "tests::sockets::dropped_read_after_socket_consumption_fences_before_currentness_return",
         "tests::sockets::dropped_read_before_consumption_keeps_connection_usable",
-        "tests::sockets::failed_read_audit_fences_reuse_after_consuming_bytes"
+        "tests::sockets::failed_read_audit_fences_reuse_after_consuming_bytes",
+        "tests::sockets::read_cancellation_during_successful_audit_refuses_handoff",
+        "tests::sockets::read_deadline_during_successful_eof_audit_refuses_handoff",
+        "tests::sockets::read_revocation_during_successful_audit_refuses_handoff"
       ],
       "resourceClass": "runtime-bounded",
       "source": "src/lib.rs",

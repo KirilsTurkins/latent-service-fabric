@@ -25,10 +25,10 @@ Neither profile gives Fetch a separate connect/read-timeout option.
 | Surface | Finite contract |
 | --- | --- |
 | Request construction | Absolute HTTP(S) URL; GET, HEAD, POST, PUT, PATCH, DELETE and OPTIONS. Embedded URL credentials and unsupported options refuse. GET/HEAD reject a non-null body. |
-| Headers and credentials | Validated ordinary header APIs; reserved authentication/framing fields refuse. Operator credentials stay in the selected provider's protected scope. No ambient browser origin, cookie jar, proxy or Node configuration is inherited. |
+| Headers and credentials | Validated ordinary header APIs; iteration and `forEach` observe mutations to the bounded, sorted header list. Reserved authentication/framing fields refuse. Operator credentials stay in the selected provider's protected scope. No ambient browser origin, cookie jar, proxy or Node configuration is inherited. |
 | Request bodies | Copied UTF-8 strings, ArrayBuffer/views and supported URLSearchParams. Non-null bodies are one-shot. Unsupported streaming uploads, Blob and FormData refuse. |
 | Response bodies | Complete bounded buffering before Fetch resolves; `text`, `json`, `arrayBuffer`, independent buffered clones and the selected buffered reader/cancel interface. A buffered reader supplies no network backpressure or header-first resolution. |
-| HTTP status | HTTP 4xx/5xx resolve to responses. Parsing failure remains a parsing error; transport failure retains its typed cause and possible-dispatch uncertainty. |
+| HTTP status | HTTP 4xx/5xx resolve to responses. Locally constructed `Response` status text preserves valid reason-phrase bytes, including whitespace. Parsing failure remains a parsing error; transport failure retains its typed cause and possible-dispatch uncertainty. |
 | Redirects and retries | Finite authorized GET/HEAD follow-ups; cross-origin forwarding removes guest headers. Every call needs its own authority and budget. LSF does not replay failed connections or mutations. |
 | Cancellation | Already-aborted signals make no contact. Public rejection preserves the original reason. Accepted I/O, chunks and body owners retain charges until actual retirement; rejection alone is no refund or rollback proof. |
 | Timers and root lifecycle | Invocation-local timers, microtasks and accepted work use the selected runtime and original deadline. Root cancellation/deadline and requested timer completion remain distinct. |
@@ -37,8 +37,10 @@ Neither profile gives Fetch a separate connect/read-timeout option.
 The source profile caps a buffered body at 1 MiB, transfer chunks at 64 KiB,
 headers at 64 entries/32 KiB, URLs at 2048 characters and outstanding operations
 at sixteen per activation. Provider policy, guest memory and the original
-deadline impose additional limits. These API constants are not measurements of
-native or kernel memory. The explicit published-client execution profile uses
+deadline impose additional limits. Each header-iterator step re-sorts at most 64
+entries and allocates temporary arrays within the original guest memory limit.
+These API constants are not measurements of native or kernel memory. The
+explicit published-client execution profile uses
 64 task slots, 64 queued work slots and 256 native-owner slots; this is no claim
 that every compatible package requires that profile or that these are minima.
 The phase-client programme additionally declares the uniform initial
