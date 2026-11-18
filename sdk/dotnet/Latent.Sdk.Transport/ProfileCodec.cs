@@ -96,6 +96,8 @@ internal static class ProfileCodec
     private static object ToScalar(object value, FieldDescriptor field, GraphBudget budget)
     {
         if (value is null) throw new FormatException("null protobuf value");
+        if (field.FieldType == FieldType.Message)
+            return ToWire(value, (IMessage)Activator.CreateInstance(field.MessageType.ClrType)!, budget);
         budget.Spend(value switch
         {
             string text => 4L * GraphBudget.Utf8.GetByteCount(text),
@@ -104,7 +106,6 @@ internal static class ProfileCodec
         });
         return field.FieldType switch
         {
-            FieldType.Message => ToWire(value, (IMessage)Activator.CreateInstance(field.MessageType.ClrType)!, budget),
             FieldType.Bytes => ByteString.CopyFrom(((ReadOnlyMemory<byte>)value).Span),
             FieldType.Enum => Enum.ToObject(field.EnumType.ClrType, value.GetType().GetProperty("Value")!.GetValue(value)!),
             _ => value
