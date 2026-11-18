@@ -53,3 +53,26 @@ fn forced_cleanup_gets_one_bounded_phase_after_natural_drain() {
     );
     assert!(forced_cleanup_deadline(forced_start, Duration::MAX).is_err());
 }
+
+#[test]
+fn admission_stop_walk_keeps_first_panic_and_visits_later_owners() {
+    let mut steps = Vec::new();
+    let mut first = None;
+    super::attempt_stop(&mut first, || {
+        steps.push(1);
+        std::panic::panic_any("first-stop-panic");
+    });
+    super::attempt_stop(&mut first, || {
+        steps.push(2);
+        std::panic::panic_any("later-stop-panic");
+    });
+    super::attempt_stop(&mut first, || steps.push(3));
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        std::panic::resume_unwind(first.expect("first stop panicked"));
+    }));
+    assert_eq!(steps, [1, 2, 3]);
+    assert_eq!(
+        result.unwrap_err().downcast_ref::<&str>().copied(),
+        Some("first-stop-panic")
+    );
+}
