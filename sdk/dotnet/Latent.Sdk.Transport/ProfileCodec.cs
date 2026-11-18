@@ -29,6 +29,12 @@ internal sealed class GraphBudget
         if (--nodes < 0 || bytes < 0) throw new GraphLimitException();
     }
 
+    internal void Text(string value)
+    {
+        if (value.Length > bytes) throw new GraphLimitException();
+        Spend(4L * Utf8.GetByteCount(value));
+    }
+
     internal void Scan(object? value, int depth = 0)
     {
         Spend();
@@ -36,7 +42,7 @@ internal sealed class GraphBudget
         switch (value)
         {
             case null: return;
-            case string text: Spend(4L * Utf8.GetByteCount(text)); return;
+            case string text: Text(text); return;
             case ReadOnlyMemory<byte> memory: Spend(3L * memory.Length); return;
             case IEnumerable sequence:
                 foreach (object? item in sequence) Scan(item, depth + 1);
@@ -101,12 +107,8 @@ internal static class ProfileCodec
         if (value is null) throw new FormatException("null protobuf value");
         if (field.FieldType == FieldType.Message)
             return ToWire(value, (IMessage)Activator.CreateInstance(field.MessageType.ClrType)!, budget, depth + 1);
-        budget.Spend(value switch
-        {
-            string text => 4L * GraphBudget.Utf8.GetByteCount(text),
-            ReadOnlyMemory<byte> memory => 3L * memory.Length,
-            _ => 256
-        });
+        if (value is string text) budget.Text(text);
+        else budget.Spend(value is ReadOnlyMemory<byte> memory ? 3L * memory.Length : 256);
         return field.FieldType switch
         {
             FieldType.Bytes => ByteString.CopyFrom(((ReadOnlyMemory<byte>)value).Span),

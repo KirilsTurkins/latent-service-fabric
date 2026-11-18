@@ -24,7 +24,7 @@ internal static partial class TransactionRules
     private static T Present<T>(T? value) where T : class => value ?? throw new FormatException("missing transaction value");
     private static void Text(string? value, int maximum = 256, bool required = true, bool controls = true)
     {
-        Require(value is not null && (!required || value.Length != 0) && GraphBudget.Utf8.GetByteCount(value) <= maximum &&
+        Require(value is not null && value.Length <= maximum && (!required || value.Length != 0) && GraphBudget.Utf8.GetByteCount(value) <= maximum &&
             (!controls || !value.Any(char.IsControl)));
     }
     private static void Identity(string value) { Text(value, controls: false); Require(!value.Contains('\0')); }
@@ -112,7 +112,7 @@ internal static partial class TransactionRules
         switch (value)
         {
             case null: return;
-            case string text: budget.Spend(4L * GraphBudget.Utf8.GetByteCount(text)); return;
+            case string text: budget.Text(text); return;
             case ReadOnlyMemory<byte> bytes: budget.Spend(3L * bytes.Length); return;
             case IReadOnlyDictionary<string, string> map:
                 if (map.Count > 32) throw new GraphLimitException();
