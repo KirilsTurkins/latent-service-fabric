@@ -1123,6 +1123,141 @@ async fn failed_read_audit_fences_reuse_after_consuming_bytes() {
     control.assert_native_settled();
 }
 
+#[derive(Clone, Copy)]
+enum ReadAuditInterruption {
+    Revoked,
+    Cancelled,
+    ExpiredEof,
+}
+
+#[expect(
+    clippy::too_many_lines,
+    reason = "One original TCP connection and audit boundary through retirement."
+)]
+async fn read_audit_interrupted(interruption: ReadAuditInterruption) {
+    use crate::connection::TestWritePoint;
+
+    let (fixture, listener) = fixture().await;
+    let (session, control) = fixture.session(5000);
+    let baseline = control.native_session_bytes();
+    let stream = fixture
+        .provider
+        .start(&session, request(&fixture))
+        .unwrap()
+        .await
+        .unwrap();
+    let (mut peer, _) = listener.accept().await.unwrap();
+    let prior_write = matches!(interruption, ReadAuditInterruption::Revoked);
+    if prior_write {
+        assert_eq!(stream.write(b"P".to_vec(), None).unwrap().await.unwrap(), 1);
+        let mut sent = [0];
+        peer.read_exact(&mut sent).await.unwrap();
+        assert_eq!(&sent, b"P");
+    }
+    let held_write = stream.write(b"held".to_vec(), None).unwrap();
+    let owner = fixture
+        .provider
+        .inner
+        .connections
+        .snapshot(0)
+        .unwrap()
+        .unwrap();
+    let (entered, release) = owner.test_write_gate(TestWritePoint::AuditPending);
+    let eof = matches!(interruption, ReadAuditInterruption::ExpiredEof);
+    if eof {
+        peer.shutdown().await.unwrap();
+    } else {
+        peer.write_all(b"X").await.unwrap();
+    }
+    let mut read = stream.read(1, if eof { Some(1000) } else { None }).unwrap();
+    tokio::select! {
+        _ = &mut read => panic!("read completed before the audit gate"),
+        reached = tokio::time::timeout(Duration::from_secs(1), entered) => reached.unwrap().unwrap(),
+    }
+    assert_eq!(stream.inspect().delivered_read_bytes, u64::from(!eof));
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 2);
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    let expected = match interruption {
+        ReadAuditInterruption::Revoked => {
+            fixture
+                .policies
+                .mutate(
+                    MutationRequest {
+                        tenant: "a",
+                        actor: "operator",
+                        id: "p",
+                        kind: RecordKind::Policy,
+                        operation_id: "revoke-read-during-audit",
+                        expected_revision: 2,
+                        document: None,
+                    },
+                    Instant::now() + Duration::from_secs(1),
+                    |_| Ok(()),
+                )
+                .unwrap();
+            StreamErrorCode::Denied
+        }
+        ReadAuditInterruption::Cancelled => {
+            control
+                .probe
+                .0
+                .store(true, std::sync::atomic::Ordering::Release);
+            StreamErrorCode::Cancelled
+        }
+        ReadAuditInterruption::ExpiredEof => {
+            tokio::time::sleep(Duration::from_millis(1100)).await;
+            StreamErrorCode::Timeout
+        }
+    };
+    release.send(()).unwrap();
+    let failure = tokio::time::timeout(Duration::from_secs(1), read)
+        .await
+        .unwrap()
+        .err()
+        .expect("interrupted read returned bytes or EOF");
+    assert_eq!(failure.code, expected);
+    assert_eq!(failure.may_have_applied, prior_write);
+    assert_eq!(failure.accepted_prefix_bytes, 0);
+    assert_eq!(
+        stream.inspect().accepted_write_bytes,
+        u64::from(prior_write)
+    );
+    assert_eq!(stream.inspect().state, StreamState::Stopping);
+    assert_eq!(fixture.provider.usage().unwrap().pending_operations, 1);
+    assert_eq!(fixture.pools.snapshot().unwrap().connections, 1);
+    assert!(control.budget.host_memory_bytes() > baseline);
+    assert!(stream.read(1, None).is_err());
+    drop(held_write);
+    let mut byte = [0];
+    assert_eq!(
+        tokio::time::timeout(Duration::from_secs(1), peer.read(&mut byte))
+            .await
+            .unwrap()
+            .unwrap(),
+        0
+    );
+    drop((owner, peer, stream, session));
+    fixture.clean().await;
+    drop(fixture);
+    control.assert_native_settled();
+}
+
+#[tokio::test]
+async fn read_revocation_during_successful_audit_refuses_handoff() {
+    read_audit_interrupted(ReadAuditInterruption::Revoked).await;
+}
+
+#[tokio::test]
+async fn read_cancellation_during_successful_audit_refuses_handoff() {
+    read_audit_interrupted(ReadAuditInterruption::Cancelled).await;
+}
+
+#[tokio::test]
+async fn read_deadline_during_successful_eof_audit_refuses_handoff() {
+    read_audit_interrupted(ReadAuditInterruption::ExpiredEof).await;
+}
+
 #[tokio::test]
 async fn dropped_read_before_consumption_keeps_connection_usable() {
     use std::{
