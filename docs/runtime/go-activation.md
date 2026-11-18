@@ -148,8 +148,8 @@ variant measured 215.70 ms and 128 yields, with a 196,608-byte bound. A later
 sample of the selected 256-step implementation measured 310.04 ms without
 and 331.29 ms with the site. These noisy, startup-inclusive observations
 include output validation and do not establish speedup or production cost. The
-core-Wasm reference is not yet wired into CI and does not demonstrate
-host/timer polling or signed qualification.
+Go qualification is configured to run the core-Wasm reference; it does not
+demonstrate host/timer polling or signed qualification.
 
 The authenticated `Encoding.Decode` loops now also reach that bridge. The
 outer loops use a local previous-input index to admit a checkpoint after at
@@ -167,8 +167,8 @@ input errors matched pinned native Go. Two small no-sibling samples measured
 median child CPU of 229.08 versus 188.01 ms and 274.62 versus 229.10 ms for the
 encoder-only and codec selections. These noisy, startup-inclusive measurements
 include input/output validation and do not establish speedup or production
-cost. The reference uses a test activation and queue pump, remains outside CI,
-and does not qualify a signed guest or real host.
+cost. The configured Go qualification runs the reference with a test
+activation and queue pump; it does not qualify a signed guest or real host.
 
 Original source bytes remain unchanged. Derived copies retain original
 diagnostic line/column positions, source and output digests, and suspension

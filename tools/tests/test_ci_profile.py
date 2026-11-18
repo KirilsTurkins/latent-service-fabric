@@ -59,6 +59,35 @@ class TypeScriptQualificationTriggerTests(unittest.TestCase):
 
 
 class GoQualificationTriggerTests(unittest.TestCase):
+    def test_base64_reference_is_triggered_bounded_and_retained(self) -> None:
+        from tools.ci_lane_inventory import workflow_model
+
+        root = Path(__file__).resolve().parents[2]
+        workflow = workflow_model((root / ".github/workflows/go-guest.yml").read_text(encoding="utf-8"))
+        for event in ("pull_request", "push"):
+            paths = workflow["on"][event]["paths"]
+            self.assertIn("tools/tests/go_checkpoint_base64_reference.py", paths)
+            self.assertIn("tools/tests/fixtures/go-checkpoint-base64/**", paths)
+
+        steps = workflow["jobs"]["upstream-probe"]["steps"]
+        ownership = next(step for step in steps
+                         if step.get("name") == "Qualify standard Go activation ownership and result drain")
+        self.assertIn("python3 -m unittest tools.tests.test_go_runtime_overlay", ownership["run"].splitlines())
+        checkpoints = next(step for step in steps
+                           if step.get("name") == "Qualify compiler checkpoints against unchanged CPU source and native Go")
+        lines = checkpoints["run"].splitlines()
+        command = ('GOCACHE="$("$RUNNER_TEMP/go-guest-tools/go/bin/go" env GOCACHE)" '
+                   'timeout --signal=TERM --kill-after=10s 300s python3 -B '
+                   'tools/tests/go_checkpoint_base64_reference.py '
+                   '--go "$RUNNER_TEMP/go-guest-tools/go/bin/go" --node "$(command -v node)" '
+                   '| tee "$RUNNER_TEMP/go-base64-reference.json"')
+        self.assertEqual(lines.count(command), 1)
+        self.assertLess(lines.index("set -o pipefail"), lines.index(command))
+        self.assertNotIn("if", checkpoints)
+        artifact = next(step for step in steps if step.get("name") == "Retain successful and failed upstream observations")
+        self.assertEqual(artifact.get("if"), "always()")
+        self.assertIn("${{ runner.temp }}/go-base64-reference.json", artifact["with"]["path"].splitlines())
+
     def test_recipe_and_direct_toolchain_inputs_select_both_events_and_are_archived(self) -> None:
         from fnmatch import fnmatchcase
         import shlex
