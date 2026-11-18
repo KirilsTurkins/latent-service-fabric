@@ -399,6 +399,496 @@ assert.throws(()=>limited.write('',()=>{}),/RESOURCE_EXHAUSTED/);assert.equal(ca
 await turn();assert.equal(callbacks,16);limited.resume();limited.end();await closed.promise;g.transport.assertEmpty();
 """)
 
+        self.javascript(r"""
+const real=await import('node:net');
+async function reference(mode) {
+ let peer,peerBytes=0;const marker=Error('caller-destroy'),events=[],done=deferred();
+ const server=real.createServer(socket=>{
+  peer=socket;peer.on('error',()=>{});peer.on('data',value=>{peerBytes+=value.length});peer.on('end',()=>peer.end());
+ });
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const socket=real.connect(server.address().port,'127.0.0.1');
+ const cb=label=>function(value){assert.equal(arguments.length,1);events.push(label+':'+
+  (value===null?'ok':value===marker?'marker':value?.code||'missing'))};
+ socket.on('error',value=>events.push('error:'+(value===marker?'marker':value.code)));
+ socket.on('finish',()=>events.push('finish'));
+ socket.on('close',had=>{events.push('close:'+had);done.resolve()});
+ socket.once('connect',()=>{
+  if(mode==='null') {
+   socket.end(null,cb('first'));
+  } else if(mode==='null-encoding') {
+   socket.end(null,'utf8',cb('first'));
+  } else if(mode==='nested') {
+   socket.end('x',function(value){cb('first').call(undefined,value);socket.end(cb('nested'))});
+   socket.end(cb('second'));
+  } else if(mode==='nested-data') {
+   socket.end('x',function(value){cb('first').call(undefined,value);socket.end('y',cb('second'))});
+  } else if(mode==='nested-data-destroy'||mode==='nested-data-destroy-error') {
+   socket.end('x',function(value){cb('first').call(undefined,value);socket.end('y',cb('second'));
+    socket.destroy(mode==='nested-data-destroy-error'?marker:undefined)});
+  } else if(mode==='before-data') {
+   socket.end('x',cb('first'));socket.end('y',cb('second'));
+  } else {
+   socket.end('x',cb('first'));
+   if(mode==='repeat')socket.end(cb('second'));
+   if(mode==='remove-finish')socket.removeAllListeners('finish');
+   if(mode==='destroy'||mode==='destroy-error')socket.destroy(mode==='destroy-error'?marker:undefined);
+  }
+ });
+ socket.resume();await done.promise;peer?.destroy();await new Promise(resolve=>server.close(resolve));
+ if(mode==='null'||mode==='null-encoding')assert.equal(peerBytes,0);
+ return events;
+}
+async function guest(mode) {
+ const marker=Error('caller-destroy'),events=[],done=deferred(),writes=[];
+ const f=fixture({write(_,bytes){writes.push(...bytes);return settled(bytes.length)}});
+ const socket=f.net.connect(12345,'127.0.0.1');
+ const cb=label=>function(value){assert.equal(arguments.length,1);events.push(label+':'+
+  (value===null?'ok':value===marker?'marker':value?.code||'missing'))};
+ socket.on('error',value=>events.push('error:'+(value===marker?'marker':value.code)));
+ socket.on('finish',()=>events.push('finish'));
+ socket.on('close',had=>{events.push('close:'+had);done.resolve()});
+ socket.once('connect',()=>{
+  if(mode==='null') {
+   socket.end(null,cb('first'));
+  } else if(mode==='null-encoding') {
+   socket.end(null,'utf8',cb('first'));
+  } else if(mode==='nested') {
+   socket.end('x',function(value){cb('first').call(undefined,value);socket.end(cb('nested'))});
+   socket.end(cb('second'));
+  } else if(mode==='nested-data') {
+   socket.end('x',function(value){cb('first').call(undefined,value);socket.end('y',cb('second'))});
+  } else if(mode==='nested-data-destroy'||mode==='nested-data-destroy-error') {
+   socket.end('x',function(value){cb('first').call(undefined,value);socket.end('y',cb('second'));
+    socket.destroy(mode==='nested-data-destroy-error'?marker:undefined)});
+  } else if(mode==='before-data') {
+   socket.end('x',cb('first'));socket.end('y',cb('second'));
+  } else {
+   socket.end('x',cb('first'));
+   if(mode==='repeat')socket.end(cb('second'));
+   if(mode==='remove-finish')socket.removeAllListeners('finish');
+   if(mode==='destroy'||mode==='destroy-error')socket.destroy(mode==='destroy-error'?marker:undefined);
+  }
+ });
+ socket.resume();await done.promise;f.transport.assertEmpty();
+ assert(!writes.includes('y'.charCodeAt(0)),'no write after end');
+ if(mode==='null'||mode==='null-encoding')assert.equal(writes.length,0);return events;
+}
+for(const mode of ['plain','null','null-encoding','repeat','remove-finish','nested','nested-data','nested-data-destroy',
+ 'nested-data-destroy-error','before-data','destroy','destroy-error'])
+ assert.deepEqual(await guest(mode),await reference(mode),mode);
+
+// Logical shutdown is not sufficient: the original borrow must also be
+// acknowledged, and reentrant destroy cannot overtake any completion tail.
+const logical=deferred(),ack=deferred(),started=deferred(),closed=deferred(),events=[];
+const f=fixture({shutdown(){started.resolve();return {promise:logical.promise,
+ borrowReleased:ack.promise,cancel(){return ack.promise}}}});
+const socket=f.net.connect(12345,'127.0.0.1');socket.on('error',closed.reject);
+socket.on('finish',()=>events.push('finish')).on('close',()=>{events.push('close');closed.resolve()});
+socket.once('connect',()=>{
+ socket.end('x',value=>{assert.equal(value,null);events.push('first');socket.destroy()});
+ socket.end(value=>{assert.equal(value,null);events.push('second')});
+});
+await started.promise;logical.resolve({});await turn();assert.deepEqual(events,[]);
+assert(!f.calls.includes('close'));assert.throws(f.transport.assertEmpty,/unclosed/);
+ack.resolve();await closed.promise;
+assert.deepEqual(events,['first','second','finish','close']);
+assert.equal(f.calls.filter(value=>value==='close').length,1);f.transport.assertEmpty();
+// Destroy during an accepted write cannot deliver the end callback or close
+// until that original write's cancellation and borrow acknowledgement settle.
+{
+ const logical=deferred(),ack=deferred(),started=deferred(),done=deferred(),trace=[];let cancels=0;
+ const g=fixture({write(){started.resolve();return {promise:logical.promise,borrowReleased:ack.promise,
+  cancel(){++cancels;logical.reject(Error('cancelled-write'));return ack.promise}}}});
+ const s=g.net.connect(12345,'127.0.0.1');s.on('error',done.reject);
+ s.once('close',had=>{assert.equal(had,false);trace.push('close');done.resolve()});
+ s.once('connect',()=>s.end('x',value=>{assert.equal(value.code,'ERR_STREAM_DESTROYED');trace.push('callback')}));
+ await started.promise;s.destroy();await turn();assert.deepEqual(trace,[]);
+ assert.equal(cancels,1);assert(!g.calls.includes('close'));assert.throws(g.transport.assertEmpty,/unclosed/);
+ ack.resolve();await done.promise;assert.deepEqual(trace,['callback','close']);
+ assert.equal(g.calls.filter(value=>value==='close').length,1);g.transport.assertEmpty();
+}
+// A failed logical shutdown with a successful original borrow acknowledgement
+// delivers the same translated error to the callback and error listener.
+{
+ const nativeFault=Error('shutdown-failed'),g=fixture({shutdown(){return {
+  promise:Promise.reject(nativeFault),borrowReleased:Promise.resolve(),cancel(){return Promise.resolve()}}}});
+ const trace=[],done=deferred(),s=g.net.connect(12345,'127.0.0.1');let callbackError,eventError;
+ s.on('error',value=>{eventError=value;trace.push('error')}).once('close',()=>{trace.push('close');done.resolve()});
+ s.once('connect',()=>s.end('x',value=>{callbackError=value;trace.push('callback')}));
+ await done.promise;assert.deepEqual(trace,['callback','error','close']);
+ assert.equal(callbackError,eventError);assert.equal(callbackError.code,'EIO');
+ assert.equal(callbackError.cause,nativeFault);g.transport.assertEmpty();
+}
+// A thrown end callback remains the original user failure. Later callbacks
+// and the socket owner are not certified complete through an exceptional tail.
+{
+ const fault=Object.freeze({endCallbackFault:true}),g=fixture();let observed=false,original,second=0;
+ const capture=value=>{observed=true;original=value};process.on('unhandledRejection',capture);
+ const s=g.net.connect(12345,'127.0.0.1');s.on('error',()=>assert.fail('user throw cannot become EIO'));
+ s.once('connect',()=>{s.end(()=>{throw fault});for(let i=0;i<15;++i)s.end(()=>++second)});
+ for(let i=0;i<32&&!observed;++i)await turn();
+ assert.equal(observed,true);assert.equal(original,fault);assert.equal(second,0);
+ assert(!g.calls.includes('close'));assert.throws(g.transport.assertEmpty,/unclosed/);
+ const other=g.net.connect(12345,'127.0.0.1');
+ assert.throws(()=>other.write(''),/RESOURCE_EXHAUSTED/,'thrown callback retains its shared slot');
+ process.removeListener('unhandledRejection',capture);
+}
+// A synchronous stop throw cannot prove whether the original stop/cancel was
+// accepted. Keep the write and end records, fence later settlements, expose
+// the exact fault to root, and emit neither a callback nor a false close.
+for(const mode of ['before','after'])for(const fault of [undefined,Object.freeze({stopFault:mode})]) {
+ const t=target(),logical=deferred(),ack=deferred(),started=deferred(),events=[];let cancels=0,closes=0;
+ const native={connect:()=>settled({}),write(){started.resolve();return {
+  promise:logical.promise,borrowReleased:ack.promise,cancel(){++cancels;return ack.promise}}},
+  shutdown:()=>settled({}),read:()=>settled(undefined),close(){++closes;return settled({})}};
+ const original=createNodeNetTransport(native,t,()=>({}));
+ const shim={...original,stop(...args){if(mode==='after')original.stop(...args);throw fault}};
+ const net=createNodeNetModule(shim,Buffer,()=>false,t),s=net.connect(12345,'127.0.0.1');
+ s.on('error',()=>events.push('error')).once('close',()=>events.push('close'));
+ s.once('connect',()=>s.end('x',()=>events.push('end-callback')));
+ await started.promise;assert.equal(s.destroy(),s);assert.equal(s.destroyed,true);await turn();
+ assert.deepEqual(events,[]);assert.equal(cancels,mode==='after'?1:0);assert.equal(closes,0);
+ let refused=false;try{original.beginAcceptedClose()}catch(value){refused=true;assert.equal(value,fault)}
+ assert.equal(refused,true);assert.throws(original.assertEmpty,/unclosed/);
+ logical.resolve(1);ack.resolve();await turn();await turn();
+ assert.deepEqual(events,[]);assert.equal(closes,0);assert.throws(original.assertEmpty,/unclosed/);
+ const other=net.connect(12345,'127.0.0.1');for(let i=0;i<14;++i)other.write('');
+ assert.throws(()=>other.write(''),/RESOURCE_EXHAUSTED/,'original write and callback remain charged');
+}
+// Stop can throw after a close has started, or after an earlier close failure
+// has queued notification. Neither queued nor late close can retire the slot.
+for(const closeThrows of [false,true]) {
+ const t=target(),stopFault=Object.freeze({stopFault:true}),closeFault=Object.freeze({closeFault:true}),events=[];
+ let closes=0;const native={connect:()=>settled({}),close(){++closes;if(closeThrows)throw closeFault;return settled({})}};
+ const original=createNodeNetTransport(native,t,()=>({}));
+ const shim={...original,stop(...args){original.stop(...args);throw stopFault}};
+ const net=createNodeNetModule(shim,Buffer,()=>false,t),s=net.connect(12345,'127.0.0.1'),connected=deferred();
+ s.on('error',()=>events.push('error')).once('close',()=>events.push('close')).once('connect',connected.resolve);
+ await connected.promise;await turn();assert.equal(s.destroy(),s);await turn();await turn();
+ assert.equal(closes,1);assert.deepEqual(events,[]);assert.throws(original.assertEmpty,/unclosed/);
+ let refused=false;try{original.beginAcceptedClose()}catch(value){refused=true;assert.equal(value,closeThrows?closeFault:stopFault)}
+ assert.equal(refused,true);
+}
+// Even if the quarantine operation itself faults, the original stop exception
+// is surfaced and no cleanup/retirement is inferred.
+{
+ const t=target(),fault=Object.freeze({originalStop:true}),secondary=Error('quarantine-failure');
+ const logical=deferred(),ack=deferred(),started=deferred();let closes=0,called=0,observed;
+ const native={connect:()=>settled({}),write(){started.resolve();return {
+  promise:logical.promise,borrowReleased:ack.promise,cancel(){return ack.promise}}},
+  shutdown:()=>settled({}),read:()=>settled(undefined),close(){++closes;return settled({})}};
+ const original=createNodeNetTransport(native,t,()=>({}));
+ const shim={...original,stop(){throw fault},poison(){throw secondary}};
+ const net=createNodeNetModule(shim,Buffer,()=>false,t),s=net.connect(12345,'127.0.0.1');
+ s.on('error',()=>{}).once('connect',()=>s.end('x',()=>++called));await started.promise;
+ try{s.destroy()}catch(value){observed=value}assert.equal(observed,fault);
+ assert.equal(called,0);assert.equal(closes,0);assert.throws(original.assertEmpty,/unclosed/);
+}
+""")
+
+        self.javascript(r"""
+// Definite built-in validation failures never admit the supplied callback.
+// Node runs against a real peer; the selected facade uses the actual source
+// and host doubles, then verifies an unrelated successful end and retirement.
+const real=await import('node:net');
+async function invalidReference() {
+ let peer,refused=0,accepted=0;const errors=[],done=deferred();
+ const server=real.createServer(socket=>{peer=socket;peer.on('error',()=>{});peer.on('data',()=>{});peer.on('end',()=>peer.end())});
+ await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+ const s=real.connect(server.address().port,'127.0.0.1');s.on('error',done.reject).once('close',done.resolve);
+ await new Promise(resolve=>s.once('connect',resolve));
+ for(let i=0;i<20;++i)for(const args of [[{},()=>++refused],['x','not-an-encoding',()=>++refused]]) {
+  try{s.end(...args);assert.fail('reference must refuse')}catch(value){errors.push(value.code)}
+ }
+ s.resume();s.end('ok',value=>{assert.equal(value,null);++accepted});await done.promise;
+ peer?.destroy();await new Promise(resolve=>server.close(resolve));assert.equal(refused,0);assert.equal(accepted,1);
+ return errors;
+}
+async function invalidGuest() {
+ const f=fixture(),done=deferred(),errors=[];let refused=0,accepted=0;
+ const s=f.net.connect(12345,'127.0.0.1');s.on('error',done.reject).once('close',done.resolve);
+ s.once('connect',()=>{
+  for(let i=0;i<20;++i)for(const args of [[{},()=>++refused],['x','not-an-encoding',()=>++refused]]) {
+   try{s.end(...args);assert.fail('facade must refuse')}catch(value){errors.push(value.code)}
+  }
+  for(let i=0;i<20;++i) {
+   assert.throws(()=>s.end('x'.repeat(16385),()=>++refused),/OUT_OF_RANGE/);
+   assert.throws(()=>s.end(new Uint8Array(65537),()=>++refused),/INVALID_ARG_TYPE/);
+  }
+  s.resume();s.end('ok',value=>{assert.equal(value,null);++accepted});
+ });
+ await done.promise;assert.equal(refused,0);assert.equal(accepted,1);f.transport.assertEmpty();return errors;
+}
+assert.deepEqual(await invalidGuest(),await invalidReference());
+// A full byte allowance is another definite pre-insertion refusal. Earlier
+// accepted bytes and their original write owner survive, then drain normally.
+{
+ const logical=deferred(),ack=deferred(),started=deferred(),done=deferred();let writes=0,refused=0,accepted=0,total=0;
+ const f=fixture({write(_,bytes){total+=bytes.length;if(++writes===1){started.resolve();return {
+  promise:logical.promise,borrowReleased:ack.promise,cancel(){return ack.promise}}}return settled(bytes.length)}});
+ const s=f.net.connect(12345,'127.0.0.1');s.on('error',done.reject).once('close',done.resolve);
+ s.once('connect',()=>{s.write(new Uint8Array(65536));
+  assert.throws(()=>s.end('x',()=>++refused),/RESOURCE_EXHAUSTED/);
+  assert.equal(s.writableEnded,false);s.end(value=>{assert.equal(value,null);++accepted});
+ });
+ await started.promise;logical.resolve(16384);ack.resolve();await done.promise;
+ assert.equal(refused,0);assert.equal(accepted,1);assert.equal(writes,4);assert.equal(total,65536);
+ f.transport.assertEmpty();
+}
+// A write-list insertion that may have mutated, or an overridden writer, has
+// no proof of non-admission. Preserve the exact callback slot, any write slot,
+// the original error and the quarantined socket instead of rolling them back.
+for(const mode of ['insert-before','insert-after','override','override-after-write']) {
+ const fault=Object.freeze({writeFault:mode}),f=fixture();let observed,called=0;
+ const s=f.net.connect(12345,'127.0.0.1');s.on('error',()=>{}).once('connect',()=>{
+  const push=Array.prototype.push;
+  try {
+   if(mode==='override')s.write=()=>{throw fault};
+   else if(mode==='override-after-write') {
+    const original=s.write;s.write=function(...args){Reflect.apply(original,this,args);throw fault};
+   }
+   else Array.prototype.push=function(value) {
+    if(value?.bytes instanceof Uint8Array){if(mode==='insert-after')Reflect.apply(push,this,[value]);throw fault}
+    return Reflect.apply(push,this,[value]);
+   };
+   s.end('x',()=>++called);
+  } catch(value) { observed=value; }
+  finally {Array.prototype.push=push;}
+ });
+ await turn();await turn();assert.equal(observed,fault);assert.equal(called,0);
+ assert.throws(f.transport.assertEmpty,/unclosed/);
+ const other=f.net.connect(12345,'127.0.0.1');
+ for(let i=0;i<(mode==='override'?15:14);++i)other.write('');
+ assert.throws(()=>other.write(''),/RESOURCE_EXHAUSTED/);
+}
+// If the exact rollback cannot be proved, preserve the original validation
+// error, callback reservation and original socket in quarantine.
+{
+ const f=fixture();let observed,called=0;const callback=()=>++called;
+ const s=f.net.connect(12345,'127.0.0.1');s.on('error',()=>{}).once('connect',()=>{
+  const push=Array.prototype.push;
+  try {
+   Array.prototype.push=function(value) {
+    const result=Reflect.apply(push,this,[value]);
+    if(value?.callback===callback && !value?.bytes)Object.freeze(this);
+    return result;
+   };
+   s.end({},callback);
+  } catch(value) { observed=value; }
+  finally {Array.prototype.push=push;}
+ });
+ await turn();await turn();assert.equal(observed.code,'ERR_INVALID_ARG_TYPE');assert.equal(called,0);
+ assert.throws(f.transport.assertEmpty,/unclosed/);
+ const other=f.net.connect(12345,'127.0.0.1');for(let i=0;i<15;++i)other.write('');
+ assert.throws(()=>other.write(''),/RESOURCE_EXHAUSTED/);
+}
+""")
+
+        self.javascript(r"""
+// Pending end callbacks consume the same finite records as writes. The first
+// callback still owns its slot while it runs; only its successful return lets
+// a later callback admit a late end callback.
+{
+ const logical=deferred(),ack=deferred(),started=deferred(),done=deferred(),trace=[];
+ const f=fixture({shutdown(){started.resolve();return {promise:logical.promise,
+  borrowReleased:ack.promise,cancel(){return ack.promise}}}});
+ const s=f.net.connect(12345,'127.0.0.1');s.on('error',done.reject).on('finish',()=>trace.push('finish'));
+ s.once('close',()=>{trace.push('close');done.resolve()});
+ s.once('connect',()=>{
+  s.end(null,value=>{assert.equal(value,null);trace.push('first');
+   assert.throws(()=>s.end(()=>{}),/RESOURCE_EXHAUSTED/)});
+  s.end(null,value=>{assert.equal(value,null);trace.push('second');
+   s.end(late=>{assert.equal(late.code,'ERR_STREAM_ALREADY_FINISHED');trace.push('late')})});
+  for(let i=0;i<14;++i)s.end(value=>{assert.equal(value,null);trace.push('normal')});
+  assert.throws(()=>s.end(()=>{}),/RESOURCE_EXHAUSTED/);
+ });
+ await started.promise;logical.resolve({});await turn();assert.deepEqual(trace,[]);ack.resolve();
+ await done.promise;assert.equal(trace.filter(value=>value==='normal').length,14);
+ assert.deepEqual(trace.slice(0,2),['first','second']);
+ assert(trace.indexOf('late')>trace.indexOf('finish'));assert.equal(trace.at(-1),'close');
+ f.transport.assertEmpty();
+}
+// A data-bearing end requires both a callback record and a write record; it
+// cannot consume the final slot and then leave an unpublished callback behind.
+{
+ const f=fixture(),done=deferred(),s=f.net.connect(12345,'127.0.0.1');let callbacks=0;
+ s.on('error',done.reject).once('close',done.resolve);
+ s.once('connect',()=>{
+  for(let i=0;i<15;++i)s.write('',()=>++callbacks);
+  assert.throws(()=>s.end('x',()=>assert.fail('refused callback')),/RESOURCE_EXHAUSTED/);
+  assert.equal(s.writableEnded,false);s.end();
+ });
+ await done.promise;assert.equal(callbacks,15);f.transport.assertEmpty();
+}
+// Destroy and write-after-end each retain all 16 accepted callbacks. A separate
+// socket cannot use a slot until an actual earlier callback returns.
+for(const mode of ['destroy','invalid']) {
+ const f=fixture(),otherConnected=deferred(),otherClosed=deferred(),done=deferred(),trace=[];
+ const other=f.net.connect(12345,'127.0.0.1');other.on('error',otherClosed.reject);
+ other.once('connect',otherConnected.resolve).once('close',otherClosed.resolve);await otherConnected.promise;
+ const s=f.net.connect(12345,'127.0.0.1');s.on('error',value=>{
+  assert.equal(mode,'invalid');assert.equal(value.code,'ERR_STREAM_WRITE_AFTER_END');trace.push('error');
+ }).once('close',()=>{trace.push('close');done.resolve()});
+ s.once('connect',()=>{
+  s.end();
+  for(let i=0;i<16;++i) {
+   const callback=value=>{
+    assert.equal(value.code,mode==='invalid'?'ERR_STREAM_WRITE_AFTER_END':'ERR_STREAM_DESTROYED');
+    trace.push('callback');
+    if(i===0)assert.throws(()=>other.write(''),/RESOURCE_EXHAUSTED/);
+    if(i===1)other.write('',()=>other.destroy());
+   };
+   if(mode==='invalid')s.end('y',callback);else s.end(callback);
+  }
+  assert.throws(()=>mode==='invalid'?s.end('y',()=>{}):s.end(()=>{}),/RESOURCE_EXHAUSTED/);
+  if(mode==='destroy')s.destroy();
+ });
+ await done.promise;await otherClosed.promise;
+ assert.equal(trace.filter(value=>value==='callback').length,16);
+ if(mode==='invalid')assert(trace.indexOf('error')<trace.indexOf('callback'));
+ assert.equal(trace.at(-1),'close');f.transport.assertEmpty();
+}
+// Normal and invalid-end callbacks share one allowance, rather than each
+// receiving a separate 16-record table.
+{
+ const f=fixture(),done=deferred(),s=f.net.connect(12345,'127.0.0.1'),trace=[];
+ s.on('error',value=>{assert.equal(value.code,'ERR_STREAM_WRITE_AFTER_END');trace.push('error')})
+  .once('close',()=>{trace.push('close');done.resolve()});
+ s.once('connect',()=>{
+  s.end();for(let i=0;i<8;++i)s.end(value=>{assert.equal(value.code,'ERR_STREAM_WRITE_AFTER_END');trace.push('normal')});
+  for(let i=0;i<8;++i)s.end('y',value=>{assert.equal(value.code,'ERR_STREAM_WRITE_AFTER_END');trace.push('invalid')});
+  assert.throws(()=>s.end(()=>{}),/RESOURCE_EXHAUSTED/);
+  assert.throws(()=>s.end('y',()=>{}),/RESOURCE_EXHAUSTED/);
+ });
+ await done.promise;assert.deepEqual(trace,[...Array(8).fill('normal'),'error',...Array(8).fill('invalid'),'close']);
+ f.transport.assertEmpty();
+}
+// A callback throw retains its own reservation and all uncalled siblings on
+// both destroy and write-after-end notification paths.
+for(const mode of ['destroy','invalid']) {
+ const fault=Object.freeze({callbackFault:mode}),f=fixture();let observed,called=0,closes=0;
+ const capture=value=>{observed=value};process.on('uncaughtException',capture);
+ const s=f.net.connect(12345,'127.0.0.1');s.on('error',()=>{}).once('close',()=>++closes);
+ s.once('connect',()=>{
+  s.end();for(let i=0;i<16;++i) {
+   const callback=()=>{++called;if(i===0)throw fault};
+   if(mode==='invalid')s.end('y',callback);else s.end(callback);
+  }
+  if(mode==='destroy')s.destroy();
+ });
+ for(let i=0;i<16&&!observed;++i)await turn();await turn();
+ assert.equal(observed,fault);assert.equal(called,1);assert.equal(closes,0);
+ assert.throws(f.transport.assertEmpty,/unclosed/);
+ const other=f.net.connect(12345,'127.0.0.1');assert.throws(()=>other.write(''),/RESOURCE_EXHAUSTED/);
+ process.removeListener('uncaughtException',capture);
+}
+// A refused single job for accepted destroy callbacks leaves all 16 records
+// reserved, whether the scheduler retained the job or refused it first.
+for(const retained of [false,true]) {
+ const marker=Error('queue-refused'),t=target();let armed=false,called=0,observed,closes=0;
+ t.queueMicrotask=callback=>{if(armed){armed=false;if(retained)queueMicrotask(callback);throw marker}queueMicrotask(callback)};
+ const capture=value=>{observed=value};process.on('unhandledRejection',capture);
+ const native={connect:()=>settled({}),shutdown:()=>settled({}),read:()=>settled(undefined),
+  close:()=>{++closes;return settled({})}};
+ const transport=createNodeNetTransport(native,t,()=>({}));
+ const net=createNodeNetModule(transport,Buffer,()=>false,t),socket=net.connect(12345,'127.0.0.1');
+ socket.on('error',()=>{}).once('connect',()=>{
+  socket.end();for(let i=0;i<16;++i)socket.end(()=>++called);
+  armed=true;socket.destroy();
+ });
+ for(let i=0;i<16&&!observed;++i)await turn();await turn();
+ assert.equal(observed,marker);assert.equal(called,0);assert.equal(closes,0);
+ assert.throws(transport.assertEmpty,/unclosed/);
+ const other=net.connect(12345,'127.0.0.1');assert.throws(()=>other.write(''),/RESOURCE_EXHAUSTED/);
+ process.removeListener('unhandledRejection',capture);
+}
+// If inserting a callback throws before or after mutating the list, its slot
+// remains charged and the socket is fenced rather than publishing a callback
+// on the strength of an uncertain insertion.
+for(const invalid of [false,true])for(const inserted of [false,true]) {
+ const fault=Object.freeze({callbackInsertFault:true}),f=fixture();let observed,called=0;
+ const s=f.net.connect(12345,'127.0.0.1');s.on('error',()=>{}).once('connect',()=>{
+  if(invalid)s.end();
+  const push=Array.prototype.push;
+  try {
+   Array.prototype.push=function(...args){if(inserted)Reflect.apply(push,this,args);throw fault};
+   if(invalid)s.end('x',()=>++called);else s.end(()=>++called);
+  } catch(value) { observed=value; }
+  finally { Array.prototype.push=push; }
+ });
+ await turn();await turn();assert.equal(observed,fault);assert.equal(called,0);
+ assert.throws(f.transport.assertEmpty,/unclosed/);
+ const other=f.net.connect(12345,'127.0.0.1');for(let i=0;i<15;++i)other.write('');
+ assert.throws(()=>other.write(''),/RESOURCE_EXHAUSTED/,'uncertain insertion retains its shared slot');
+}
+// Late callbacks use the existing finite queued-record allowance and retain
+// their original socket tail until each admitted job actually returns.
+{
+ const f=fixture(),done=deferred(),socket=f.net.connect(12345,'127.0.0.1');let callbacks=0;
+ socket.on('error',done.reject).once('close',done.resolve);
+ socket.once('finish',()=>{
+  for(let i=0;i<16;++i)socket.end(i%2?null:undefined,value=>{
+   assert.equal(value.code,'ERR_STREAM_ALREADY_FINISHED');
+   assert.throws(f.transport.assertEmpty,/unclosed/);
+   if(++callbacks===16)socket.destroy();
+  });
+  assert.throws(()=>socket.end(()=>{}),/RESOURCE_EXHAUSTED/);
+  assert.equal(callbacks,0);
+ });
+ socket.once('connect',()=>socket.end('x'));await done.promise;
+ assert.equal(callbacks,16);f.transport.assertEmpty();
+}
+{
+ const fault=Object.freeze({lateCallbackFault:true}),f=fixture();let observed,called=0;
+ const capture=value=>{observed=value};process.on('uncaughtException',capture);
+ const s=f.net.connect(12345,'127.0.0.1');s.on('error',()=>{}).once('finish',()=>
+  s.end(()=>{++called;throw fault}));s.once('connect',()=>s.end());
+ for(let i=0;i<16&&!observed;++i)await turn();await turn();
+ assert.equal(observed,fault);assert.equal(called,1);assert.throws(f.transport.assertEmpty,/unclosed/);
+ const other=f.net.connect(12345,'127.0.0.1');for(let i=0;i<15;++i)other.write('');
+ assert.throws(()=>other.write(''),/RESOURCE_EXHAUSTED/,'throwing late callback keeps its slot');
+ process.removeListener('uncaughtException',capture);
+}
+// The built-in queue can refuse before or after retaining a callback. Neither
+// case may invoke an unadmitted user callback or certify the socket retired.
+for(const retained of [false,true]) {
+ const marker=Error('queue-refused'),t=target();let armed=false,called=0,observed;
+ t.queueMicrotask=callback=>{if(armed){armed=false;if(retained)queueMicrotask(callback);throw marker}queueMicrotask(callback)};
+ const native={connect:()=>settled({}),write:(_,bytes)=>settled(bytes.length),
+  shutdown:()=>settled({}),read:()=>settled(undefined),close:()=>settled({})};
+ const transport=createNodeNetTransport(native,t,()=>({}));
+ const net=createNodeNetModule(transport,Buffer,()=>false,t),socket=net.connect(12345,'127.0.0.1');
+ socket.on('error',()=>{}).on('finish',()=>{
+  armed=true;try{socket.end(()=>++called)}catch(value){observed=value}
+ });
+ socket.once('connect',()=>socket.end('x'));await turn();await turn();
+ assert.equal(observed,marker);assert.equal(called,0);assert.throws(transport.assertEmpty,/unclosed/);
+ const other=net.connect(12345,'127.0.0.1');
+ for(let i=0;i<15;++i)other.write('');
+ assert.throws(()=>other.write(''),/RESOURCE_EXHAUSTED/,'uncertain queue retains its shared slot');
+}
+// A refused write-after-end job cannot send data, fire either callback or
+// convert the original socket owner into a successful close.
+for(const retained of [false,true]) {
+ const marker=Error('queue-refused'),t=target();let armed=false,called=0,observed,writes=0,closes=0;
+ t.queueMicrotask=callback=>{if(armed){armed=false;if(retained)queueMicrotask(callback);throw marker}queueMicrotask(callback)};
+ const native={connect:()=>settled({}),write:(_,bytes)=>{++writes;return settled(bytes.length)},
+  shutdown:()=>settled({}),read:()=>settled(undefined),close:()=>{++closes;return settled({})}};
+ const transport=createNodeNetTransport(native,t,()=>({}));
+ const net=createNodeNetModule(transport,Buffer,()=>false,t),socket=net.connect(12345,'127.0.0.1');
+ socket.on('error',()=>{}).once('connect',()=>{
+  socket.end('x',()=>++called);armed=true;
+  try{socket.end('y',()=>++called)}catch(value){observed=value}
+ });
+ await turn();await turn();assert.equal(observed,marker);assert.equal(called,0);
+ assert.equal(writes,0);assert.equal(closes,0);assert.throws(transport.assertEmpty,/unclosed/);
+ const other=net.connect(12345,'127.0.0.1');
+ for(let i=0;i<13;++i)other.write('');
+ assert.throws(()=>other.write(''),/RESOURCE_EXHAUSTED/,'uncertain error job retains both callbacks');
+}
+""")
+
     def test_held_read_allows_sibling_partial_write_copy_then_normal_close(self):
         self.javascript(r"""
 const held=deferred(),ack=deferred(),started=deferred(),bytes=new Uint8Array([65,66]);
