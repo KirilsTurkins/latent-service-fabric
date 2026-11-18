@@ -1595,8 +1595,8 @@ impl ConnectionOwner {
             .await
             .map_err(Into::into)
     }
-    // A read, observation or send shutdown must retain the exact original
-    // connect and operation authorities through audit and their deadlines.
+    // A read, write, observation or send shutdown must retain the exact
+    // original connect and operation authorities through audit and deadlines.
     fn original_call_current(
         &self,
         pending: &Pending,
@@ -1960,6 +1960,17 @@ impl OutboundStream for Handle {
                     failure.accepted_prefix_bytes = u32::try_from(count).expect("bounded chunk");
                     connection.abort(failure.code);
                     return Err(failure.uncertain(true));
+                }
+                // Audit may suspend after this prefix has reached the original
+                // transport. A stale completion keeps the accepted count and
+                // uncertainty while fencing that same connection.
+                if let Err(mut failure) =
+                    connection.original_call_current(&flight.pending, &mut flight.call)
+                {
+                    failure.accepted_prefix_bytes = u32::try_from(count).expect("bounded chunk");
+                    connection.abort(failure.code);
+                    flight.possible = false;
+                    return Err(connection.terminal_error(failure).uncertain(true));
                 }
                 flight.possible = false;
                 Ok(u32::try_from(count).expect("bounded chunk"))
