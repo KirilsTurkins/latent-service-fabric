@@ -42,6 +42,18 @@ final class RecoverySnapshotTest {
         };
         try { TransactionProtocol.list(misleading, 128); throw new AssertionError("accepted misleading list"); }
         catch (Protocol.Invalid expected) { /* iteration stays within the declared bound */ }
+        var expectedVersion = new Transactions.ExpectedVersion(ByteBuffer.wrap(new byte[] { 1 }), Optional.empty(), Optional.of(ByteBuffer.wrap(new byte[] { 2 })));
+        var misleadingVersions = new AbstractList<Transactions.ExpectedVersion>() {
+            @Override public int size() { return 1; }
+            @Override public Transactions.ExpectedVersion get(int index) { return expectedVersion; }
+            @Override public java.util.Iterator<Transactions.ExpectedVersion> iterator() {
+                return java.util.Collections.nCopies(129, expectedVersion).iterator();
+            }
+        };
+        try {
+            TransactionWire.toWire(new Transactions.InvokeCommandRequest(Optional.empty(), Optional.empty(), Optional.empty(), "format", misleadingVersions, Optional.empty()));
+            throw new AssertionError("unbounded generated encoder");
+        } catch (Protocol.Invalid expected) { /* the encoder enforces its own list bound */ }
         var misleadingMap = new java.util.AbstractMap<String, String>() {
             @Override public java.util.Set<Entry<String, String>> entrySet() {
                 return new java.util.AbstractSet<>() {

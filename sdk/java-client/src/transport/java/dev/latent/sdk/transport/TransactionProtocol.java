@@ -60,12 +60,32 @@ final class TransactionProtocol {
     }
     static List<?> list(Object value, int maximum) {
         Protocol.require(value instanceof List<?> && ((List<?>) value).size() <= maximum);
-        var bounded = new java.util.ArrayList<>();
-        for (Object item : (List<?>) value) {
+        return boundedList((List<?>) value, maximum);
+    }
+    static <T> List<T> boundedList(List<T> value, int maximum) {
+        Protocol.require(value != null && value.size() <= maximum);
+        var bounded = new java.util.ArrayList<T>();
+        for (T item : value) {
             Protocol.require(bounded.size() < maximum);
             bounded.add(item);
         }
         return bounded;
+    }
+    static <K, V> Map<K, V> boundedMap(Map<K, V> value) {
+        Protocol.require(value != null && value.size() <= 32);
+        var bounded = new java.util.LinkedHashMap<K, V>();
+        int count = 0;
+        for (var entry : value.entrySet()) {
+            Protocol.require(++count <= 32);
+            bounded.put(entry.getKey(), entry.getValue());
+        }
+        return bounded;
+    }
+    static com.google.protobuf.ByteString wireBytes(ByteBuffer value) {
+        Protocol.require(value != null);
+        var selected = value.asReadOnlyBuffer();
+        Protocol.require(selected.remaining() <= WIRE_BYTES);
+        return com.google.protobuf.ByteString.copyFrom(selected);
     }
     private static void same(Object left, Object right) { Protocol.require(java.util.Objects.equals(left, right)); }
     private static void digest(Object value) { Protocol.require(id(value).matches("sha256:[0-9a-f]{64}")); }

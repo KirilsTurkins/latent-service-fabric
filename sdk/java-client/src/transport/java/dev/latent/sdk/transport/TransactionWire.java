@@ -14,7 +14,7 @@ final class TransactionWire {
         result.setCommandId(value.commandId());
         result.setAttemptId(value.attemptId());
         result.setTransactionId(value.transactionId());
-        result.setOwnerFence(ByteString.copyFrom(value.ownerFence().asReadOnlyBuffer()));
+        result.setOwnerFence(TransactionProtocol.wireBytes(value.ownerFence()));
         return result.build();
     }
 
@@ -156,9 +156,9 @@ final class TransactionWire {
         result.setCommandId(value.commandId());
         result.setAttemptId(value.attemptId());
         result.setTransactionId(value.transactionId());
-        result.setCommittedVersion(ByteString.copyFrom(value.committedVersion().asReadOnlyBuffer()));
+        result.setCommittedVersion(TransactionProtocol.wireBytes(value.committedVersion()));
         result.setCommittedAtUnixMillis(value.committedAtUnixMillis());
-        for (var item : value.effectIds()) result.addEffectIds(item);
+        for (var item : TransactionProtocol.boundedList(value.effectIds(), 128)) result.addEffectIds(item);
         result.setReceiptId(value.receiptId());
         if (value.source().isPresent()) result.setSource(toWire(value.source().get()));
         return result.build();
@@ -183,7 +183,7 @@ final class TransactionWire {
         if (value.payloadExpiresAtUnixMillis().isPresent()) result.setPayloadExpiresAtUnixMillis(value.payloadExpiresAtUnixMillis().get());
         if (value.identityExpiresAtUnixMillis().isPresent()) result.setIdentityExpiresAtUnixMillis(value.identityExpiresAtUnixMillis().get());
         if (value.remainingRecoveryMillis().isPresent()) result.setRemainingRecoveryMillis(value.remainingRecoveryMillis().get());
-        for (var item : value.requiredRecordIds()) result.addRequiredRecordIds(item);
+        for (var item : TransactionProtocol.boundedList(value.requiredRecordIds(), 256)) result.addRequiredRecordIds(item);
         result.setPayloadAvailable(value.payloadAvailable());
         return result.build();
     }
@@ -205,7 +205,7 @@ final class TransactionWire {
         if (value.key().isPresent()) result.setKey(toWire(value.key().get()));
         result.setCommandId(value.commandId());
         result.setAttemptId(value.attemptId());
-        result.setFingerprintSha256(ByteString.copyFrom(value.fingerprintSha256().asReadOnlyBuffer()));
+        result.setFingerprintSha256(TransactionProtocol.wireBytes(value.fingerprintSha256()));
         result.setOutcomeValue(value.outcome().value());
         result.setMetadataDurable(value.metadataDurable());
         result.setApplicationStateCommitted(value.applicationStateCommitted());
@@ -409,7 +409,7 @@ final class TransactionWire {
         if (value.effect().isPresent()) result.setEffect(toWire(value.effect().get()));
         result.setOperationId(value.operationId());
         result.setMutationValue(value.mutation().value());
-        result.setExpectedVersion(ByteString.copyFrom(value.expectedVersion().asReadOnlyBuffer()));
+        result.setExpectedVersion(TransactionProtocol.wireBytes(value.expectedVersion()));
         result.setExpectedPolicyDigest(value.expectedPolicyDigest());
         result.setReason(value.reason());
         result.setRetryDelayMillis(value.retryDelayMillis());
@@ -430,7 +430,7 @@ final class TransactionWire {
     static latent.control.v1.State.EffectManagementPlan toWire(Transactions.EffectManagementPlan value) {
         var result = latent.control.v1.State.EffectManagementPlan.newBuilder();
         if (value.original().isPresent()) result.setOriginal(toWire(value.original().get()));
-        result.setPlanDigest(ByteString.copyFrom(value.planDigest().asReadOnlyBuffer()));
+        result.setPlanDigest(TransactionProtocol.wireBytes(value.planDigest()));
         result.setManagementSequence(value.managementSequence());
         result.setOwnerEpoch(value.ownerEpoch());
         result.setClaimGeneration(value.claimGeneration());
@@ -492,7 +492,7 @@ final class TransactionWire {
         if (value.retention().isPresent()) result.setRetention(toWire(value.retention().get()));
         if (value.managementOperationReceiptId().isPresent()) result.setManagementOperationReceiptId(value.managementOperationReceiptId().get());
         result.setProviderProfile(value.providerProfile());
-        result.setRecordVersion(ByteString.copyFrom(value.recordVersion().asReadOnlyBuffer()));
+        result.setRecordVersion(TransactionProtocol.wireBytes(value.recordVersion()));
         if (value.ownerEpoch().isPresent()) result.setOwnerEpoch(value.ownerEpoch().get());
         if (value.claimGeneration().isPresent()) result.setClaimGeneration(value.claimGeneration().get());
         return result.build();
@@ -519,7 +519,7 @@ final class TransactionWire {
     static latent.control.v1.State.EntityInspection toWire(Transactions.EntityInspection value) {
         var result = latent.control.v1.State.EntityInspection.newBuilder();
         result.setEntity(value.entity());
-        result.setVersion(ByteString.copyFrom(value.version().asReadOnlyBuffer()));
+        result.setVersion(TransactionProtocol.wireBytes(value.version()));
         return result.build();
     }
 
@@ -532,9 +532,9 @@ final class TransactionWire {
     static latent.transaction.v1.Transaction.ExpectedVersion toWire(Transactions.ExpectedVersion value) {
         var result = latent.transaction.v1.Transaction.ExpectedVersion.newBuilder();
         if ((value.absent().isPresent() ? 1 : 0) + (value.version().isPresent() ? 1 : 0) > 1) throw new IllegalArgumentException("contradictory oneof");
-        result.setKey(ByteString.copyFrom(value.key().asReadOnlyBuffer()));
+        result.setKey(TransactionProtocol.wireBytes(value.key()));
         if (value.absent().isPresent()) result.setAbsent(value.absent().get());
-        if (value.version().isPresent()) result.setVersion(ByteString.copyFrom(value.version().get().asReadOnlyBuffer()));
+        if (value.version().isPresent()) result.setVersion(TransactionProtocol.wireBytes(value.version().get()));
         return result.build();
     }
 
@@ -617,8 +617,8 @@ final class TransactionWire {
         result.setMutationValue(value.mutation().value());
         if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
         result.setAuthenticatedOperator(value.authenticatedOperator());
-        result.setBeforeVersion(ByteString.copyFrom(value.beforeVersion().asReadOnlyBuffer()));
-        result.setAfterVersion(ByteString.copyFrom(value.afterVersion().asReadOnlyBuffer()));
+        result.setBeforeVersion(TransactionProtocol.wireBytes(value.beforeVersion()));
+        result.setAfterVersion(TransactionProtocol.wireBytes(value.afterVersion()));
         result.setCompletedAtUnixMillis(value.completedAtUnixMillis());
         if (value.recordId().isPresent()) result.setRecordId(value.recordId().get());
         result.setPolicyDigest(value.policyDigest());
@@ -716,7 +716,7 @@ final class TransactionWire {
     static latent.transaction.v1.Transaction.ViewIdentity toWire(Transactions.ViewIdentity value) {
         var result = latent.transaction.v1.Transaction.ViewIdentity.newBuilder();
         if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
-        result.setVersion(ByteString.copyFrom(value.version().asReadOnlyBuffer()));
+        result.setVersion(TransactionProtocol.wireBytes(value.version()));
         result.setStateSchema(value.stateSchema());
         return result.build();
     }
@@ -759,7 +759,7 @@ final class TransactionWire {
         result.setEncodedStateBytes(value.encodedStateBytes());
         result.setCommandCount(value.commandCount());
         result.setPendingEffectCount(value.pendingEffectCount());
-        for (var item : value.retainedFormats()) result.addRetainedFormats(toWire(item));
+        for (var item : TransactionProtocol.boundedList(value.retainedFormats(), 128)) result.addRetainedFormats(toWire(item));
         result.setEngineProfile(value.engineProfile());
         result.setEngineProfileDigest(value.engineProfileDigest());
         result.setStatusValue(value.status().value());
@@ -816,7 +816,7 @@ final class TransactionWire {
         if (value.invocation().isPresent()) result.setInvocation(Wire.toWire(value.invocation().get()));
         if (value.command().isPresent()) result.setCommand(toWire(value.command().get()));
         result.setInputFormat(value.inputFormat());
-        for (var item : value.expectedVersions()) result.addExpectedVersions(toWire(item));
+        for (var item : TransactionProtocol.boundedList(value.expectedVersions(), 128)) result.addExpectedVersions(toWire(item));
         if (value.retryAttempt().isPresent()) result.setRetryAttempt(toWire(value.retryAttempt().get()));
         return result.build();
     }
@@ -849,7 +849,7 @@ final class TransactionWire {
     static latent.transaction.v1.Transaction.PageRequest toWire(Transactions.PageRequest value) {
         var result = latent.transaction.v1.Transaction.PageRequest.newBuilder();
         result.setLimit(value.limit());
-        if (value.cursor().isPresent()) result.setCursor(ByteString.copyFrom(value.cursor().get().asReadOnlyBuffer()));
+        if (value.cursor().isPresent()) result.setCursor(TransactionProtocol.wireBytes(value.cursor().get()));
         return result.build();
     }
 
@@ -874,7 +874,7 @@ final class TransactionWire {
 
     static latent.transaction.v1.Transaction.PageResponse toWire(Transactions.PageResponse value) {
         var result = latent.transaction.v1.Transaction.PageResponse.newBuilder();
-        if (value.nextCursor().isPresent()) result.setNextCursor(ByteString.copyFrom(value.nextCursor().get().asReadOnlyBuffer()));
+        if (value.nextCursor().isPresent()) result.setNextCursor(TransactionProtocol.wireBytes(value.nextCursor().get()));
         result.setReturnedCount(value.returnedCount());
         result.setEncodedBytes(value.encodedBytes());
         return result.build();
@@ -889,7 +889,7 @@ final class TransactionWire {
 
     static latent.transaction.v1.Transaction.ListEffectHistoryResponse toWire(Transactions.ListEffectHistoryResponse value) {
         var result = latent.transaction.v1.Transaction.ListEffectHistoryResponse.newBuilder();
-        for (var item : value.receipts()) result.addReceipts(toWire(item));
+        for (var item : TransactionProtocol.boundedList(value.receipts(), 128)) result.addReceipts(toWire(item));
         if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
         return result.build();
     }
@@ -992,7 +992,7 @@ final class TransactionWire {
         result.setOperationId(value.operationId());
         result.setMutationValue(value.mutation().value());
         if (value.recordId().isPresent()) result.setRecordId(value.recordId().get());
-        result.setExpectedVersion(ByteString.copyFrom(value.expectedVersion().asReadOnlyBuffer()));
+        result.setExpectedVersion(TransactionProtocol.wireBytes(value.expectedVersion()));
         result.setExpectedPolicyDigest(value.expectedPolicyDigest());
         result.setReason(value.reason());
         if (value.effectPlan().isPresent()) result.setEffectPlan(toWire(value.effectPlan().get()));
@@ -1047,7 +1047,7 @@ final class TransactionWire {
         if (value.invocation().isPresent()) result.setInvocation(Wire.toWire(value.invocation().get()));
         if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
         if (value.entity().isPresent()) result.setEntity(value.entity().get());
-        if (value.minimumViewVersion().isPresent()) result.setMinimumViewVersion(ByteString.copyFrom(value.minimumViewVersion().get().asReadOnlyBuffer()));
+        if (value.minimumViewVersion().isPresent()) result.setMinimumViewVersion(TransactionProtocol.wireBytes(value.minimumViewVersion().get()));
         return result.build();
     }
 
@@ -1080,7 +1080,7 @@ final class TransactionWire {
     static latent.control.v1.State.SelectEntityRequest toWire(Transactions.SelectEntityRequest value) {
         var result = latent.control.v1.State.SelectEntityRequest.newBuilder();
         if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
-        if (value.prefix().isPresent()) result.setPrefix(ByteString.copyFrom(value.prefix().get().asReadOnlyBuffer()));
+        if (value.prefix().isPresent()) result.setPrefix(TransactionProtocol.wireBytes(value.prefix().get()));
         if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
         return result.build();
     }
@@ -1094,7 +1094,7 @@ final class TransactionWire {
 
     static latent.control.v1.State.SelectEntityResponse toWire(Transactions.SelectEntityResponse value) {
         var result = latent.control.v1.State.SelectEntityResponse.newBuilder();
-        for (var item : value.entities()) result.addEntities(toWire(item));
+        for (var item : TransactionProtocol.boundedList(value.entities(), 128)) result.addEntities(toWire(item));
         if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
         return result.build();
     }

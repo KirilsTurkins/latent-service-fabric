@@ -44,7 +44,7 @@ def generate() -> str:
 
     def convert(kind: str, value: str, outbound: bool, wire_type: str = "") -> str:
         if kind == "bytes":
-            return f"ByteString.copyFrom({value}.asReadOnlyBuffer())" if outbound else f"{value}.asReadOnlyByteBuffer()"
+            return f"TransactionProtocol.wireBytes({value})" if outbound else f"{value}.asReadOnlyByteBuffer()"
         if kind in enums:
             return f"{value}.value()" if outbound else f"new Transactions.{kind}({value})"
         if kind in messages or kind in external:
@@ -70,9 +70,10 @@ def generate() -> str:
             kind, accessor, setter = field["type"], f"value.{lower(field['name'])}()", upper(field["name"])
             suffix = "Value" if kind in enums else ""
             if field.get("map"):
-                lines.append(f"        result.putAll{setter}({accessor});")
+                lines.append(f"        result.putAll{setter}(TransactionProtocol.boundedMap({accessor}));")
             elif field.get("repeated"):
-                lines.append(f"        for (var item : {accessor}) result.add{setter}{suffix}({convert(kind, 'item', True, field.get('wireType', ''))});")
+                limit = 256 if name == 'LinkedRetention' and field['name'] == 'required_record_ids' else 128
+                lines.append(f"        for (var item : TransactionProtocol.boundedList({accessor}, {limit})) result.add{setter}{suffix}({convert(kind, 'item', True, field.get('wireType', ''))});")
             elif field.get("optional"):
                 lines.append(f"        if ({accessor}.isPresent()) result.set{setter}{suffix}({convert(kind, accessor + '.get()', True, field.get('wireType', ''))});")
             else:
