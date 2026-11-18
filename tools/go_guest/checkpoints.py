@@ -37,10 +37,10 @@ STANDARD_JSON_WIRE_SITES = [(28, 43), (29, 43), (30, 43), (33, 43), (35, 83), (4
                             (556, 63), (568, 52), (572, 20), (593, 47), (596, 57)]
 STANDARD_BASE64 = 'encoding/base64/base64.go'
 STANDARD_BASE64_SHA256 = '15e67707bc3f0925f7f56bd4002106681c6b64ba5bf553b4d8cc0bb8eca71aa5'
-STANDARD_BASE64_SITES = [(154, 21), (315, 34), (352, 63), (368, 62),
+STANDARD_BASE64_SITES = [(154, 21), (315, 34), (352, 63), (368, 62), (411, 46),
                          (524, 68), (549, 43), (570, 21)]
-STANDARD_BASE64_MODE = 'base64-codec-stride-v2'
-STANDARD_BASE64_STRIDES = [256, 1024, 1024, 1024, 1024, 1024, 1024]
+STANDARD_BASE64_MODE = 'base64-append-stride-v3'
+STANDARD_BASE64_STRIDES = [256, 1024, 1024, 1024, 1024, 1024, 1024, 1024]
 
 
 def checkpoint_yield_template(sdk):

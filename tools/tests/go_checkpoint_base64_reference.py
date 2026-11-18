@@ -27,6 +27,9 @@ DECODE = re.compile(rb'mode=(decode(?:-[a-z]+)*) sibling=(true|false) bytes=([0-
 DECODE_SIZES = {'decode': 18*1024*1024, 'decode-alone': 18*1024*1024,
                 'decode-newlines': 0, 'decode-pad-middle': 1, 'decode-pad-end': 1,
                 'decode-mixed': 3*1024*1024}
+APPEND = re.compile(rb'mode=(append(?:-[a-z]+)*) sibling=(true|false) bytes=([0-9]+) error=([0-9]+) yields=([0-9]+)\n\Z')
+APPEND_RESULTS = {'append': (4, 0), 'append-alone': (4, 0), 'append-offset': (4, 0),
+                  'append-prefix': (7, 4), 'append-custom': (7, 4)}
 
 
 def run(command, env, cwd, timeout=300):
@@ -93,6 +96,15 @@ def reference(go, node):
                 or legacy_rows[0]['sites'] != [expected_sites[0]]):
             raise ValueError('base64-reference-legacy-selection')
         legacy = {str(original): legacy_rows[0]['adapted']}
+        codec_input = root/'codec-checkpoint-input.json'
+        codec_input.write_text(json.dumps([{'path': str(original), 'diagnostic': str(original),
+                                            'mode': 'base64-codec-stride-v2'}]))
+        codec_rows = json.loads(run([str(parser), str(codec_input), str(root/'codec-selection')], env, root))
+        if (len(codec_rows) != 1 or codec_rows[0]['path'] != str(original)
+                or codec_rows[0]['upstreamDigest'] != 'sha256:' + checkpoints.STANDARD_BASE64_SHA256
+                or codec_rows[0]['sites'] != [site for site in expected_sites if site['line'] != 411]):
+            raise ValueError('base64-reference-codec-selection')
+        codec = {str(original): codec_rows[0]['adapted']}
 
         names = [name for name in runtime.UPSTREAM_PREIMAGES if name.startswith('runtime/lock_') or name in {
             'runtime/proc.go', 'runtime/os_wasm.go', 'runtime/debug.go'}]
@@ -126,6 +138,7 @@ def reference(go, node):
             raise ValueError('base64-reference-native-progress:' + repr(native_output))
         native_sibling = match[1] == b'true'
         native_errors = run([str(native), 'decode-errors'], env, root)
+        native_append_errors = run([str(native), 'append-errors'], env, root)
         native_decode = {}
         for mode, size in DECODE_SIZES.items():
             raw = run([str(native), mode], env, root)
@@ -133,6 +146,14 @@ def reference(go, node):
             if not match or match[1].decode() != mode or int(match[3]) != size or int(match[4]) != 0:
                 raise ValueError('base64-reference-native-decode:' + mode + ':' + repr(raw))
             native_decode[mode] = {'siblingBeforeReturn': match[2] == b'true'}
+        native_append = {}
+        for mode, expected in APPEND_RESULTS.items():
+            raw = run([str(native), mode], env, root)
+            match = APPEND.fullmatch(raw)
+            if (not match or match[1].decode() != mode or (int(match[3]), int(match[4])) != expected
+                    or int(match[5]) != 0):
+                raise ValueError('base64-reference-native-append:' + mode + ':' + repr(raw))
+            native_append[mode] = {'siblingBeforeReturn': match[2] == b'true'}
 
         dispatch.write_bytes(b'''package dispatch
 import ("runtime"; "sync/atomic"; _ "unsafe")
@@ -161,33 +182,47 @@ wasi.start(instance);
 ''')
         wasm_env = dict(env, GOOS='wasip1', GOARCH='wasm')
         outcomes, binaries = {}, {}
-        for name, additions in [('baseline', {}), ('encoderOnly', legacy), ('selected', replacements)]:
+        for name, additions in [('baseline', {}), ('encoderOnly', legacy), ('selected', replacements), ('codecOnly', codec)]:
             overlay = root/(name+'-overlay.json')
             overlay.write_text(json.dumps({'Replace': {**base, **additions}}))
             wasm = root/(name+'.wasm')
             run([str(go), 'build', '-p=1', '-overlay', str(overlay), '-o', str(wasm), '.'], wasm_env, generated)
             binaries[name] = wasm
-            semantics = run([str(node), '--no-warnings', str(runner), str(wasm), 'semantics'], env, root)
-            outcomes[name] = {'semanticYields': semantics_yields(semantics, name != 'baseline')}
-            if run([str(node), '--no-warnings', str(runner), str(wasm), 'decode-errors'], env, root) != native_errors:
-                raise ValueError('base64-reference-decoding-errors:' + name)
-            for mode in ('sibling', 'alone'):
-                raw = run([str(node), '--no-warnings', str(runner), str(wasm), mode], env, root)
-                match = RECORD.fullmatch(raw)
-                if (not match or (match[1] == b'true') != (name != 'baseline' and mode == 'sibling')
-                        or int(match[2]) != (32 if name != 'baseline' else 0)):
-                    raise ValueError('base64-reference-progress:' + name + ':' + mode + ':' + repr(raw))
-                outcomes[name][mode] = {'siblingBeforeReturn': match[1] == b'true',
-                                        'checkpointYields': int(match[2])}
-            for mode, size in DECODE_SIZES.items():
-                raw = run([str(node), '--no-warnings', str(runner), str(wasm), mode], env, root)
-                match = DECODE.fullmatch(raw)
-                if (not match or match[1].decode() != mode or int(match[3]) != size
-                        or (match[2] == b'true') != (name == 'selected' and mode != 'decode-alone')
-                        or (int(match[4]) > 0) != (name == 'selected')):
-                    raise ValueError('base64-reference-decode-progress:' + name + ':' + mode + ':' + repr(raw))
-                outcomes[name][mode] = {'siblingBeforeReturn': match[2] == b'true',
-                                        'checkpointYields': int(match[4])}
+            outcomes[name] = {}
+            if name != 'codecOnly':
+                semantics = run([str(node), '--no-warnings', str(runner), str(wasm), 'semantics'], env, root)
+                outcomes[name]['semanticYields'] = semantics_yields(semantics, name != 'baseline')
+                if run([str(node), '--no-warnings', str(runner), str(wasm), 'decode-errors'], env, root) != native_errors:
+                    raise ValueError('base64-reference-decoding-errors:' + name)
+                for mode in ('sibling', 'alone'):
+                    raw = run([str(node), '--no-warnings', str(runner), str(wasm), mode], env, root)
+                    match = RECORD.fullmatch(raw)
+                    if (not match or (match[1] == b'true') != (name != 'baseline' and mode == 'sibling')
+                            or int(match[2]) != (32 if name != 'baseline' else 0)):
+                        raise ValueError('base64-reference-progress:' + name + ':' + mode + ':' + repr(raw))
+                    outcomes[name][mode] = {'siblingBeforeReturn': match[1] == b'true',
+                                            'checkpointYields': int(match[2])}
+                for mode, size in DECODE_SIZES.items():
+                    raw = run([str(node), '--no-warnings', str(runner), str(wasm), mode], env, root)
+                    match = DECODE.fullmatch(raw)
+                    if (not match or match[1].decode() != mode or int(match[3]) != size
+                            or (match[2] == b'true') != (name == 'selected' and mode != 'decode-alone')
+                            or (int(match[4]) > 0) != (name == 'selected')):
+                        raise ValueError('base64-reference-decode-progress:' + name + ':' + mode + ':' + repr(raw))
+                    outcomes[name][mode] = {'siblingBeforeReturn': match[2] == b'true',
+                                            'checkpointYields': int(match[4])}
+            if name in ('codecOnly', 'selected'):
+                if run([str(node), '--no-warnings', str(runner), str(wasm), 'append-errors'], env, root) != native_append_errors:
+                    raise ValueError('base64-reference-append-errors:' + name)
+                for mode, expected in APPEND_RESULTS.items():
+                    raw = run([str(node), '--no-warnings', str(runner), str(wasm), mode], env, root)
+                    match = APPEND.fullmatch(raw)
+                    if (not match or match[1].decode() != mode or (int(match[3]), int(match[4])) != expected
+                            or (match[2] == b'true') != (name == 'selected' and mode != 'append-alone')
+                            or (int(match[5]) > 0) != (name == 'selected')):
+                        raise ValueError('base64-reference-append-progress:' + name + ':' + mode + ':' + repr(raw))
+                    outcomes[name][mode] = {'siblingBeforeReturn': match[2] == b'true',
+                                            'checkpointYields': int(match[5])}
 
         elapsed = {name: [] for name in ('baseline', 'selected')}
         cpu = {name: [] for name in elapsed}
@@ -219,11 +254,28 @@ wasi.start(instance);
                 decode_cpu[name].append(1000*((after.ru_utime+after.ru_stime)-(before.ru_utime+before.ru_stime)))
         decode_cost = {name: {'elapsedMedianMs': round(statistics.median(decode_elapsed[name]), 2),
                               'childCpuMedianMs': round(statistics.median(decode_cpu[name]), 2)} for name in decode_elapsed}
+        append_elapsed = {name: [] for name in ('codecOnly', 'selected')}
+        append_cpu = {name: [] for name in append_elapsed}
+        for index in range(4):
+            for name in (('codecOnly', 'selected') if index % 2 == 0 else ('selected', 'codecOnly')):
+                before = resource.getrusage(resource.RUSAGE_CHILDREN)
+                start = time.perf_counter_ns()
+                raw = run([str(node), '--no-warnings', str(runner), str(binaries[name]), 'append-alone'], env, root)
+                after = resource.getrusage(resource.RUSAGE_CHILDREN)
+                match = APPEND.fullmatch(raw)
+                if not match or match[1] != b'append-alone' or match[2] != b'false':
+                    raise ValueError('base64-reference-append-cost-output')
+                append_elapsed[name].append((time.perf_counter_ns()-start)/1_000_000)
+                append_cpu[name].append(1000*((after.ru_utime+after.ru_stime)-(before.ru_utime+before.ru_stime)))
+        append_cost = {name: {'elapsedMedianMs': round(statistics.median(append_elapsed[name]), 2),
+                              'childCpuMedianMs': round(statistics.median(append_cpu[name]), 2)} for name in append_elapsed}
         return {'scope': 'pinned-core-wasm-with-test-activation-and-queue-pump',
-                'nativeGoReference': {'siblingBeforeReturn': native_sibling, 'decode': native_decode},
+                'nativeGoReference': {'siblingBeforeReturn': native_sibling, 'decode': native_decode,
+                                      'append': native_append},
                 'signedGuestExecuted': False,
                 'source': checkpoints.STANDARD_BASE64_SHA256, 'sites': rows[0]['sites'],
                 'outcomes': outcomes, 'noSiblingCost': cost, 'decodeNoSiblingCost': decode_cost,
+                'appendNoSiblingCost': append_cost,
                 'costIncludesProcessStartup': True}
 
 

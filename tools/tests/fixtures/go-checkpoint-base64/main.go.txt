@@ -10,6 +10,66 @@ import (
 	"example.invalid/base64checkpoint/dispatch"
 )
 
+func appendErrors() {
+	long := make([]byte, 2*1024*1024+4)
+	copy(long, "QUJD")
+	for i := 4; i < len(long); i++ { long[i] = '=' }
+	for _, row := range []struct { encoding *base64.Encoding; input []byte }{
+		{base64.StdEncoding, []byte("")},
+		{base64.StdEncoding, []byte("TQ==")},
+		{base64.StdEncoding, []byte("TWE=")},
+		{base64.StdEncoding, []byte("TWFu")},
+		{base64.RawStdEncoding, []byte("TQ")},
+		{base64.StdEncoding.Strict(), []byte("TR==")},
+		{base64.StdEncoding, []byte("QUJD====")},
+		{base64.StdEncoding, []byte("TQ=\n=")},
+		{base64.StdEncoding.WithPadding('#'), []byte("TQ##")},
+		{base64.StdEncoding, long},
+	} {
+		dst := make([]byte, 4, 32)
+		copy(dst, "seed")
+		output, err := row.encoding.AppendDecode(dst, row.input)
+		fmt.Printf("output=%x err=%v shared=%t\n", output, err, &output[0] == &dst[0])
+	}
+	shared := []byte("seedTQ==")
+	output, err := base64.StdEncoding.AppendDecode(shared[:4], shared[4:])
+	fmt.Printf("overlap=%x err=%v\n", output, err)
+}
+
+func appendProgress(mode string) {
+	const size = 24*1024*1024
+	count := size
+	if mode == "append-offset" { count += 17 }
+	if mode == "append-custom" { count = 2*1024*1024 }
+	prefix := mode == "append-prefix" || mode == "append-custom"
+	input := make([]byte, count)
+	padding := byte('=')
+	encoding := base64.StdEncoding
+	if mode == "append-custom" { padding = '#'; encoding = base64.StdEncoding.WithPadding('#') }
+	for i := range input { input[i] = padding }
+	if prefix { input = append([]byte("QUJD"), input...) }
+	dst := make([]byte, 4, 32)
+	copy(dst, "seed")
+	dispatch.Enable()
+	var ran atomic.Bool
+	if mode != "append-alone" {
+		ready, start := make(chan struct{}), make(chan struct{})
+		go func() { close(ready); <-start; ran.Store(true) }()
+		<-ready
+		close(start)
+	}
+	output, err := encoding.AppendDecode(dst, input)
+	siblingBeforeReturn := ran.Load()
+	yieldsBeforeReturn := dispatch.Count()
+	expected, offset := "seed", int64(0)
+	if prefix { expected, offset = "seedABC", 4 }
+	cause, ok := err.(base64.CorruptInputError)
+	if !ok || int64(cause) != offset || string(output) != expected || &output[0] != &dst[0] {
+		panic("append output, error or backing mismatch")
+	}
+	fmt.Printf("mode=%s sibling=%t bytes=%d error=%d yields=%d\n", mode, siblingBeforeReturn, len(output), offset, yieldsBeforeReturn)
+}
+
 func decodeErrors() {
 	long := make([]byte, 2*1024*1024+1)
 	for i := range long { long[i] = 'A' }
@@ -95,6 +155,8 @@ func semantics() {
 
 func main() {
 	if len(os.Args) > 1 && os.Args[1] == "semantics" { dispatch.Enable(); semantics(); return }
+	if len(os.Args) > 1 && os.Args[1] == "append-errors" { dispatch.Enable(); appendErrors(); return }
+	if len(os.Args) > 1 && len(os.Args[1]) >= 6 && os.Args[1][:6] == "append" { appendProgress(os.Args[1]); return }
 	if len(os.Args) > 1 && os.Args[1] == "decode-errors" { dispatch.Enable(); decodeErrors(); return }
 	if len(os.Args) > 1 && len(os.Args[1]) >= 6 && os.Args[1][:6] == "decode" { decodeProgress(os.Args[1]); return }
 	input := make([]byte, 24*1024*1024)

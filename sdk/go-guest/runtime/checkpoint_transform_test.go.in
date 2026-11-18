@@ -47,10 +47,11 @@ func TestBase64StridesArePinnedToTheCodecLoops(t *testing.T) {
     if err != nil { t.Fatal(err) }
     if digest(original) != base64CodecDigest { t.Fatal("pinned base64 source drift") }
     if err := os.WriteFile(source, original, 0600); err != nil { t.Fatal(err) }
-    row, err := transform(input{Path:source, Diagnostic:source, Mode:base64CodecMode}, root)
+    row, err := transform(input{Path:source, Diagnostic:source, Mode:base64AppendMode}, root)
     if err != nil { t.Fatal(err) }
     expected := []site{{154, 21, true, 256}, {315, 34, true, 1024}, {352, 63, true, 1024},
-        {368, 62, true, 1024}, {524, 68, true, 1024}, {549, 43, true, 1024}, {570, 21, true, 1024}}
+        {368, 62, true, 1024}, {411, 46, true, 1024}, {524, 68, true, 1024},
+        {549, 43, true, 1024}, {570, 21, true, 1024}}
     if len(row.Sites) != len(expected) { t.Fatalf("sites: %+v", row.Sites) }
     for i, value := range expected { if row.Sites[i] != value { t.Fatalf("sites: %+v", row.Sites) } }
     adapted, err := os.ReadFile(row.Adapted)
@@ -63,8 +64,18 @@ func TestBase64StridesArePinnedToTheCodecLoops(t *testing.T) {
         strings.Count(string(adapted), "if si&1023 == 0 { __lsf_checkpoint_") != 3 {
         t.Fatal("missing bounded decoder checkpoints")
     }
+    if strings.Count(string(adapted), "if n&1023 == 0 { __lsf_checkpoint_") != 1 {
+        t.Fatal("missing bounded AppendDecode checkpoint")
+    }
     if strings.Contains(string(adapted), "_non_suspendable();") { t.Fatal("unexpected rejected checkpoint") }
     if _, err := parser.ParseFile(token.NewFileSet(), source, adapted, parser.ParseComments); err != nil { t.Fatal(err) }
+    codec, err := transform(input{Path:source, Diagnostic:source, Mode:base64CodecMode}, root)
+    if err != nil || len(codec.Sites) != 7 { t.Fatalf("codec selection: %+v %v", codec.Sites, err) }
+    codecSource, err := os.ReadFile(codec.Adapted)
+    if err != nil { t.Fatal(err) }
+    if strings.Contains(string(codecSource), "if n&1023 == 0 { __lsf_checkpoint_") {
+        t.Fatal("old codec selection includes AppendDecode")
+    }
     legacy, err := transform(input{Path:source, Diagnostic:source, Mode:base64EncodeMode}, root)
     if err != nil || len(legacy.Sites) != 1 || legacy.Sites[0] != (site{154, 21, true, 256}) {
         t.Fatalf("encoder-only selection: %+v %v", legacy.Sites, err)
@@ -79,7 +90,7 @@ func TestBase64StridesArePinnedToTheCodecLoops(t *testing.T) {
         t.Fatal("unknown mode accepted")
     }
     if err := os.WriteFile(source, append(original, '\n'), 0600); err != nil { t.Fatal(err) }
-    if _, err := transform(input{Path:source, Diagnostic:source, Mode:base64CodecMode}, root); err == nil {
+    if _, err := transform(input{Path:source, Diagnostic:source, Mode:base64AppendMode}, root); err == nil {
         t.Fatal("changed standard source accepted")
     }
 }
