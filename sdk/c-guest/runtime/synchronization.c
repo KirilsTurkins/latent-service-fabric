@@ -679,7 +679,12 @@ int sem_post(sem_t *object) {
     errno=saved;return 0;
 }
 int sem_timedwait(sem_t *restrict object,const struct timespec *restrict deadline) {
-    (void)object;(void)deadline;return sync_sem_error(ENOTSUP);
+    /* A permit immediately available does not require a clock or Wait owner.
+     * The blocking timed path remains unsupported by this source profile. */
+    int saved=errno,error=sync_sem_take(object);
+    if (!error) { errno=saved;return 0; }
+    if (error!=EAGAIN) return sync_sem_error(error);
+    (void)deadline;return sync_sem_error(ENOTSUP);
 }
 #endif
 

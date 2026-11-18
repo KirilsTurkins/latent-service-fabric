@@ -245,7 +245,9 @@ async function semaphoreControls(module){
   assert.equal(e.ss_setup(e.ss_intmax()),0);assert.equal(e.ss_post(),-1);assert.equal(e.ss_errno(),e.ss_overflow());
   assert.equal(e.ss_getvalue(),e.ss_intmax());assert.equal(e.ss_shared(),-1);assert.equal(e.ss_errno(),e.ss_notsup());
   assert.equal(e.ss_invalid(),-1);assert.equal(e.ss_errno(),e.ss_einval());
-  assert.equal(e.ss_getvalue(),e.ss_intmax());assert.equal(e.ss_timedwait(),-1);assert.equal(e.ss_errno(),e.ss_notsup());
+  assert.equal(e.ss_getvalue(),e.ss_intmax());assert.equal(e.ss_timedwait(),0);assert.equal(e.ss_errno(),e.ss_einval());
+  assert.equal(e.ss_getvalue(),e.ss_intmax()-1);assert.equal(e.read_admitted(),0);assert.equal(e.ss_destroy(),0);
+  assert.equal(e.ss_setup(0),0);assert.equal(e.ss_timedwait(),-1);assert.equal(e.ss_errno(),e.ss_notsup());
   assert.equal(e.read_admitted(),0);assert.equal(e.ss_destroy(),0);
  }
  console.log('PASS semaphore source: permits, wait ownership, races, refusal and cancellation; JSPI test ports only');
