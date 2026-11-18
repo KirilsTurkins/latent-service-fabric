@@ -54,6 +54,12 @@ final class RecoverySnapshotTest {
             TransactionWire.toWire(new Transactions.InvokeCommandRequest(Optional.empty(), Optional.empty(), Optional.empty(), "format", misleadingVersions, Optional.empty()));
             throw new AssertionError("unbounded generated encoder");
         } catch (Protocol.Invalid expected) { /* the encoder enforces its own list bound */ }
+        var budget = new TransactionProtocol.EncodeBudget();
+        budget.charge(8 * 1024 * 1024 - 4);
+        try { budget.bytes(ByteBuffer.wrap(new byte[8])); throw new AssertionError("unbounded aggregate bytes"); }
+        catch (Protocol.Invalid expected) { /* reject before allocating the protobuf bytes */ }
+        try { Wire.toWire(Wire.fromWire(TransactionTransportTest.invocation()), budget, 1); throw new AssertionError("unbounded external bridge"); }
+        catch (Protocol.Invalid expected) { /* external nested messages share the same budget */ }
         var misleadingMap = new java.util.AbstractMap<String, String>() {
             @Override public java.util.Set<Entry<String, String>> entrySet() {
                 return new java.util.AbstractSet<>() {

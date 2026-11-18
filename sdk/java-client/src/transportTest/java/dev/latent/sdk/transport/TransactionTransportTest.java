@@ -436,6 +436,17 @@ public final class TransactionTransportTest {
             var expansion = invoke().toBuilder().clearExpectedVersions().addAllExpectedVersions(java.util.Collections.nCopies(129,
                     Transaction.ExpectedVersion.newBuilder().setAbsent(true).build())).build();
             check(!failure(client.invokeCommand(TransactionWire.fromWire(expansion), OPTIONS)).transport().dispatched(), "preconversion collection expansion denied");
+            var original = TransactionWire.fromWire(invoke());
+            var changing = new java.util.AbstractList<Transactions.ExpectedVersion>() {
+                int visits;
+                @Override public int size() { return 1; }
+                @Override public Transactions.ExpectedVersion get(int index) { return original.expectedVersions().getFirst(); }
+                @Override public java.util.Iterator<Transactions.ExpectedVersion> iterator() {
+                    return java.util.Collections.nCopies(++visits <= 3 ? 1 : 129, get(0)).iterator();
+                }
+            };
+            var altered = new Transactions.InvokeCommandRequest(original.profile(), original.invocation(), original.command(), original.inputFormat(), changing, original.retryAttempt());
+            check(!failure(client.invokeCommand(altered, OPTIONS)).transport().dispatched(), "changing collection rejected during encoding before dispatch");
             var zero = failure(client.invokeCommand(TransactionWire.fromWire(invoke()), new Management.CallOptions(Optional.of(0L))));
             check(zero.transport().category().equals(Management.FailureCategory.DEADLINE) && zero.identity().activationId().equals(Optional.of("activation-a"))
                     && zero.identity().expectedVersions().getFirst().version().orElseThrow().get(0) == 1, "zero deadline keeps original recovery without dispatch");

@@ -81,11 +81,36 @@ final class TransactionProtocol {
         }
         return bounded;
     }
-    static com.google.protobuf.ByteString wireBytes(ByteBuffer value) {
-        Protocol.require(value != null);
-        var selected = value.asReadOnlyBuffer();
-        Protocol.require(selected.remaining() <= WIRE_BYTES);
-        return com.google.protobuf.ByteString.copyFrom(selected);
+    static final class EncodeBudget {
+        private long bytes = GRAPH_BYTES;
+        private int nodes = 4096;
+        void charge(long amount) {
+            Protocol.require(amount >= 0 && --nodes >= 0 && amount <= bytes);
+            bytes -= amount;
+        }
+        void enter(int depth) { Protocol.require(depth <= 32); charge(32); }
+        String text(String value) {
+            Protocol.require(value != null && value.length() <= bytes);
+            charge(4L * value.length());
+            return value;
+        }
+        com.google.protobuf.ByteString bytes(ByteBuffer value) {
+            Protocol.require(value != null);
+            var selected = value.asReadOnlyBuffer();
+            Protocol.require(selected.remaining() <= 4 * 1024 * 1024);
+            charge(selected.remaining());
+            return com.google.protobuf.ByteString.copyFrom(selected);
+        }
+        <T> T scalar(T value) { Protocol.require(value != null); charge(32); return value; }
+        <T> List<T> list(List<T> value, int maximum) { return boundedList(value, maximum); }
+        <K, V> Map<K, V> map(Map<K, V> value) {
+            Map<K, V> bounded = boundedMap(value);
+            for (var entry : bounded.entrySet()) {
+                if (entry.getKey() instanceof String key) text(key); else scalar(entry.getKey());
+                if (entry.getValue() instanceof String member) text(member); else scalar(entry.getValue());
+            }
+            return bounded;
+        }
     }
     private static void same(Object left, Object right) { Protocol.require(java.util.Objects.equals(left, right)); }
     private static void digest(Object value) { Protocol.require(id(value).matches("sha256:[0-9a-f]{64}")); }
