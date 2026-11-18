@@ -49,6 +49,24 @@ export function installFetch(http, snapshotActive, target = globalThis, profile 
     if (/[^\t\x20-\x7e\x80-\xff]/.test(result)) throw new TypeError('invalid-header-value');
     return result;
   }
+  class HeadersIterator {
+    #entries;
+    #index = 0;
+    #kind;
+    constructor(entries, kind) { this.#entries = entries; this.#kind = kind; }
+    next() {
+      // Re-read the bounded list for each step. Mutations between calls must
+      // affect the same sorted position as ordinary Fetch Headers.
+      const entries = this.#entries();
+      if (this.#index >= entries.length) return {value: undefined, done: true};
+      const entry = entries[this.#index++];
+      return {value: this.#kind === 'keys' ? entry[0] : this.#kind === 'values' ? entry[1] : entry, done: false};
+    }
+  }
+  // Preserve the realm's ordinary iterator prototype and helpers. A plain
+  // generator would stay closed after done, hiding later appended headers.
+  Object.setPrototypeOf(HeadersIterator.prototype, Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]())));
+  Object.defineProperty(HeadersIterator.prototype, Symbol.toStringTag, {value: 'Headers Iterator', configurable: true});
   class Headers {
     #entries = new Map();
     constructor(init = undefined) {
@@ -94,11 +112,18 @@ export function installFetch(http, snapshotActive, target = globalThis, profile 
       if (immutableHeaders.has(this)) throw new TypeError('immutable-response-headers');
       this.#entries.delete(name(key));
     }
-    *entries() { yield* [...this.#entries].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0); }
-    *keys() { for (const [key] of this.entries()) yield key; }
-    *values() { for (const [, value] of this.entries()) yield value; }
-    [Symbol.iterator]() { return this.entries(); }
-    forEach(callback, thisArg) { for (const [key, value] of this.entries()) callback.call(thisArg, value, key, this); }
+    #iterator(kind) {
+      const owner = this;
+      return new HeadersIterator(() => [...owner.#entries].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0), kind);
+    }
+    entries() { return this.#iterator('entries'); }
+    keys() { return this.#iterator('keys'); }
+    values() { return this.#iterator('values'); }
+    [Symbol.iterator]() { return this.#iterator('entries'); }
+    forEach(callback, thisArg) {
+      if (typeof callback !== 'function') throw new TypeError('invalid-headers-callback');
+      for (const [key, value] of this.#iterator('entries')) callback.call(thisArg, value, key, this);
+    }
     getSetCookie() { throw unsupported('Headers.getSetCookie'); }
   }
   function bodyRecord(owner, content) { records.set(owner, {content, used: false, stream: null, controller: null}); }
