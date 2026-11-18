@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer";
 import { create, fromBinary, toBinary, ScalarType, type DescField, type DescMessage, type Message } from "@bufbuild/protobuf";
 import { preflight, ShapeError } from "./preflight.js";
+import { byteLength } from "../bytes.js";
 
 interface Budget { bytes: number; fields: number; messages: number; transaction: boolean }
 type RecordValue = Record<string, unknown>;
@@ -86,8 +87,8 @@ function scalarInput(kind: ScalarType | undefined, enumeration: boolean, value: 
     debit(budget, Buffer.byteLength(value, "utf8"));
   } else if (kind === ScalarType.BYTES) {
     if (!(value instanceof Uint8Array)) throw new ShapeError();
-    debit(budget, value.byteLength);
-    return Uint8Array.from(value);
+    debit(budget, byteLength(value));
+    return new Uint8Array(value);
   } else if (kind === ScalarType.UINT64) {
     if (typeof value !== "bigint" || value < 0n || value > 18446744073709551615n) throw new ShapeError();
   } else if (enumeration || kind === ScalarType.INT32 || kind === ScalarType.UINT32) {

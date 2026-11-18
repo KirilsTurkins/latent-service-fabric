@@ -5,6 +5,7 @@ import type { ObservedOutcome, RecoveryIdentity } from "../transaction-client.js
 import type { Operation } from "./protocol/schema.js";
 import { ShapeError } from "./protocol/preflight.js";
 import { validateResponse as validateInvocation } from "./validation.js";
+import { byteLength } from "./bytes.js";
 
 type RecordValue = Record<string, unknown>;
 const controls = /[\p{Cc}]/u;
@@ -462,7 +463,7 @@ function boundedRecoveryClone(source: unknown, budget: { bytes: number; nodes: n
     if (typeof value !== "object") throw new ShapeError();
     if (seen.has(value)) return seen.get(value);
     if (value instanceof Uint8Array) {
-      if ((budget.bytes -= value.byteLength) < 0) throw new ShapeError();
+      if ((budget.bytes -= byteLength(value)) < 0) throw new ShapeError();
       const result = new Uint8Array(value);
       seen.set(value, result);
       return result;

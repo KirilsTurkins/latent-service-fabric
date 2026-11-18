@@ -298,6 +298,47 @@ test("pre-cancelled commands retain selected bytes without copying their large b
   } finally { await fixture.stop(); }
 });
 
+test("typed-array overrides cannot hide an oversized recovery or wire copy", async () => {
+  class MisreportedView extends Uint8Array {
+    get byteLength() { return 1; }
+    *[Symbol.iterator]() { throw new Error("caller iterator must not run"); }
+  }
+  const key = new MisreportedView(9 * 1024 * 1024);
+  const request = { ...command, expectedVersions: [{ key, version: Uint8Array.of(2) }] };
+  assert.throws(() => encode(method("invokeCommand").input, request, 2 * 1024 * 1024, true), ShapeError);
+  const small = new MisreportedView(1); small[0] = 7;
+  const wire = encode(method("invokeCommand").input, { ...command, expectedVersions: [{ key: small, version: Uint8Array.of(2) }] }, 2 * 1024 * 1024, true);
+  assert.equal(decode(method("invokeCommand").input, wire, 2 * 1024 * 1024, true).expectedVersions[0].key[0], 7);
+  const fixture = await peer(), abort = new AbortController();
+  abort.abort();
+  try {
+    await assert.rejects(fixture.client.invokeCommand(request, { signal: abort.signal }), error => {
+      assert.equal(error.failure.category, FailureCategory.LocalCancelled);
+      assert.equal(error.failure.transactionIdentity.expectedVersions, undefined);
+      return true;
+    });
+    assert.equal(fixture.state.calls.length, 0);
+  } finally { await fixture.stop(); }
+});
+
+test("a collection changed after validation cannot dispatch an invalid wire request", async () => {
+  const fixture = await peer();
+  const versions = [];
+  let reads = 0;
+  Object.defineProperty(versions, 0, { enumerable: true, configurable: true, get() {
+    return ++reads === 1 ? { key: Uint8Array.of(1), version: Uint8Array.of(2) }
+      : { key: Uint8Array.of(1), absent: true, version: Uint8Array.of(2) };
+  } });
+  try {
+    await assert.rejects(fixture.client.invokeCommand({ ...command, expectedVersions: versions }), error => {
+      assert.equal(error.failure.category, FailureCategory.InvalidRequest);
+      assert.equal(error.failure.dispatched, false);
+      return true;
+    });
+    assert.equal(fixture.state.calls.length, 0);
+  } finally { await fixture.stop(); }
+});
+
 test("grpc ABORTED never proves a new attempt or resubmits a command", async () => {
   const fixture = await peer("aborted");
   try {
