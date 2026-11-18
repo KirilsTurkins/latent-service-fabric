@@ -32,7 +32,7 @@ int clock_gettime(clockid_t clock,struct timespec *out) {
 #define RECORD_LIMIT 32u
 struct token_result { uint8_t tag,pad[7];union { struct lsf_c_token token;uint8_t error; } value; };
 struct unit_result { uint8_t tag,error; };
-static struct lsf_c_thread root,child,*active;
+static struct lsf_c_thread root,child,sibling,*active;
 static unsigned admissions,settlements,parks,wakes,suspends,resumes,timers,stops;
 static unsigned next_error,global_cancel,next_calls,wake_attempts,refuse_wait,refuse_timer;
 static uint64_t admitted_nanos;
@@ -98,6 +98,7 @@ static struct sync_wait queued;
 static void reset(void) {
     root=(struct lsf_c_thread){.canonical_id=11,.phase=LSF_C_RUNNING};root.root=&root;
     child=(struct lsf_c_thread){.canonical_id=12,.phase=LSF_C_RUNNING,.root=&root,.task={1,9}};
+    sibling=(struct lsf_c_thread){.canonical_id=13,.phase=LSF_C_RUNNING,.root=&root,.task={1,10}};
     active=&root;sample=(struct timespec){2000000000,500000000};
     admissions=settlements=parks=wakes=suspends=resumes=timers=stops=0;
     admitted_nanos=0;clock_calls=clock_failure=0;source_errno=37;
@@ -322,6 +323,43 @@ __attribute__((export_name("condition_refusal_before_wake"))) int condition_refu
     CHECK(pthread_cond_timedwait(&cond,&mutex,&future)==EAGAIN);
     struct sync_cond value=sync_cond_read(&cond);
     CHECK(!value.head && !value.tail && !value.mutex && !value.waiters);
+    CHECK(sync_mutex_read(&mutex).owner==(uint32_t)(uintptr_t)&root);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    CHECK(pthread_mutex_unlock(&mutex)==0);return 0;
+}
+/* Model an unrelated waiter arriving while timer-next is suspended.
+ * Removing this expired node must preserve the live queue and its handoff. */
+static void queue_mutex_sibling(void) {
+    struct sync_mutex value=sync_mutex_read(&mutex);
+    require(value.head && value.tail && value.waiters==1);
+    queued=(struct sync_wait){.thread=&sibling,.owner={1,12},.linked=1};
+    value.tail->next=&queued;value.tail=&queued;++value.waiters;sync_mutex_write(&mutex,value);
+}
+static void queue_condition_sibling(void) {
+    struct sync_cond value=sync_cond_read(&cond);
+    require(value.head && value.tail && value.waiters==1 && value.mutex==&mutex);
+    queued=(struct sync_wait){.thread=&sibling,.owner={1,12},.linked=1};
+    require(sync_cond_publish_sequence(&value,&queued)==0);
+    value.tail->next=&queued;value.tail=&queued;++value.waiters;sync_cond_write(&cond,value);
+}
+__attribute__((export_name("mutex_timeout_with_later_waiter"))) int mutex_timeout_with_later_waiter(void) {
+    reset();active=&child;CHECK(pthread_mutex_lock(&mutex)==0);active=&root;
+    on_timer_next=queue_mutex_sibling;on_wake=child_unlock;
+    const struct timespec future={2000000001,500000000};
+    CHECK(pthread_mutex_timedlock(&mutex,&future)==ETIMEDOUT);
+    struct sync_mutex value=sync_mutex_read(&mutex);
+    CHECK(queued.notified && !queued.linked && value.owner==(uint32_t)(uintptr_t)&sibling);
+    CHECK(!value.head && !value.tail && !value.waiters);
+    CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
+    return 0;
+}
+__attribute__((export_name("condition_timeout_with_later_waiter"))) int condition_timeout_with_later_waiter(void) {
+    reset();CHECK(pthread_mutex_lock(&mutex)==0);
+    on_timer_next=queue_condition_sibling;on_wake=child_signal;
+    const struct timespec future={2000000001,500000000};
+    CHECK(pthread_cond_timedwait(&cond,&mutex,&future)==ETIMEDOUT);
+    struct sync_cond value=sync_cond_read(&cond);
+    CHECK(queued.notified && !queued.linked && !value.head && !value.tail && !value.waiters && !value.mutex);
     CHECK(sync_mutex_read(&mutex).owner==(uint32_t)(uintptr_t)&root);
     CHECK(admissions==1 && settlements==1 && timers==1 && stops==1 && parks==1 && wakes==1);
     CHECK(pthread_mutex_unlock(&mutex)==0);return 0;
