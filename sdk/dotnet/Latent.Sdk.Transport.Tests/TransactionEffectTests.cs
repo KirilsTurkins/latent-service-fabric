@@ -8,6 +8,16 @@ namespace Latent.Sdk.Transport.Tests;
 
 internal static partial class Program
 {
+    private sealed class MisreportedVersions(Tx.ExpectedVersion item) : IReadOnlyList<Tx.ExpectedVersion>
+    {
+        public int Count => 1;
+        public Tx.ExpectedVersion this[int index] => item;
+        public IEnumerator<Tx.ExpectedVersion> GetEnumerator()
+        {
+            for (int i = 0; i < 129; i++) yield return item with { Key = new byte[] { (byte)i } };
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
     private static async Task<Tx.TransactionFailure> TransactionFailure(Task operation, Profile.FailureCategory category, bool dispatched)
     {
         var failure = await TxFailure(operation, category); Check(failure.Transport.Dispatched == dispatched, "effect dispatch evidence changed"); return failure;
@@ -31,6 +41,11 @@ internal static partial class Program
         var rejected = TransactionRules.IdentitySnapshot(mutation with { ExpectedVersion = oversized });
         long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
         Check(rejected.EffectMutation is null && allocated < 1024 * 1024, "oversized precondition was copied before refusal");
+        var versions = new MisreportedVersions(new Tx.ExpectedVersion(new byte[] { 1 }, null, new byte[] { 2 }));
+        var malformed = TxInvoke() with { ExpectedVersions = versions };
+        Check(TransactionRules.IdentitySnapshot(malformed).ExpectedVersions is null, "misreported recovery list escaped bounded copying");
+        try { TransactionRules.Request(malformed); throw new InvalidOperationException("misreported request list accepted"); }
+        catch (FormatException) { Check(true, "misreported request list rejected"); }
         return Task.CompletedTask;
     }
 
