@@ -305,6 +305,12 @@ internal static class TaskWait
             var body = il.Create(OpCodes.Ldarg_0);
             var cleanup = il.Create(OpCodes.Ldloc, previous);
             var done = il.Create(OpCodes.Ldc_I4_1);
+            // A completed faulted or cancelled Task still reaches InternalWait
+            // through the original public Wait path. Avoid changing contexts or
+            // consuming a wait frame when there is no work to dispatch.
+            il.Emit(OpCodes.Ldarg_0);
+            il.Emit(OpCodes.Callvirt, completed);
+            il.Emit(OpCodes.Brtrue, done);
             il.Emit(OpCodes.Ldsfld, depth);
             il.Emit(OpCodes.Ldc_I4, 32);
             il.Emit(OpCodes.Blt, admitted);
