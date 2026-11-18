@@ -933,18 +933,21 @@ class CompletableModelIntegrity(unittest.TestCase):
     def test_reviewed_executor_model_requires_exact_body_and_original_closure_fingerprints(self):
         reviewed = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;"
             "canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;"
-            "result-settlement-fence;queued-settlement-fence;actual-coroutine-monitors=29;owned-callback-bodies=33;bodies=191;"
-            "actual-generated-callbacks=23;application-identity")
+            "result-settlement-fence;queued-settlement-fence;actual-coroutine-monitors=29;owned-callback-bodies=33;bodies=205;"
+            "actual-generated-callbacks=28;application-identity")
         fields = ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
             "closed-read-write-references;absent-no-fallback;models=6")
-        variants = [reviewed, reviewed.replace("bodies=191;", "bodies=190;"),
-            reviewed.replace("bodies=191;", "bodies=192;"),
+        variants = [reviewed, reviewed.replace("bodies=205;", "bodies=204;"),
+            reviewed.replace("bodies=205;", "bodies=206;"),
+            reviewed.replace("bodies=205;", "bodies=191;"),
             reviewed.replace("actual-coroutine-monitors=29;", "actual-coroutine-monitors=28;"),
             reviewed.replace("owned-callback-bodies=33;", "owned-callback-bodies=32;"),
             reviewed.replace("result-settlement-fence;", ""),
             reviewed.replace("queued-settlement-fence;", ""),
-            reviewed.replace("actual-generated-callbacks=23;", "actual-generated-callbacks=24;"),
-            reviewed.replace("actual-generated-callbacks=23;", ""),
+            reviewed.replace("actual-generated-callbacks=28;", "actual-generated-callbacks=27;"),
+            reviewed.replace("actual-generated-callbacks=28;", "actual-generated-callbacks=29;"),
+            reviewed.replace("actual-generated-callbacks=28;", "actual-generated-callbacks=23;"),
+            reviewed.replace("actual-generated-callbacks=28;", ""),
             reviewed.replace("resolved-reference-closure;", ""),
             reviewed.replace("unsupported-no-fallback;", "")]
         for observed in variants:
@@ -955,10 +958,10 @@ class CompletableModelIntegrity(unittest.TestCase):
                 if observed == reviewed:
                     report = fibers.completable_model_control(compiler, root / "model")
                     self.assertEqual(report["modelFingerprintVersion"], 6)
-                    self.assertEqual(report["modelMethodBodies"], 191)
+                    self.assertEqual(report["modelMethodBodies"], 205)
                     self.assertEqual(report["coroutineMonitorBodies"], 29)
                     self.assertEqual(report["ownedCallbackBodies"], 33)
-                    self.assertEqual(report["actualGeneratedCallbacks"], 23)
+                    self.assertEqual(report["actualGeneratedCallbacks"], 28)
                     self.assertEqual(report["fieldReferences"], "actual-declared-and-inherited-types-passed")
                     self.assertEqual(compiler.run.call_args.args[-1],
                         "dev.latent.guest.runtime.compiler.CompletableFutureFieldModelControl")
@@ -970,8 +973,8 @@ class CompletableModelIntegrity(unittest.TestCase):
     def test_valid_original_model_cannot_qualify_partial_or_changed_field_closure(self):
         reviewed = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;"
             "canonical-api-and-helper-identities;resolved-reference-closure;unsupported-no-fallback;"
-            "result-settlement-fence;queued-settlement-fence;actual-coroutine-monitors=29;owned-callback-bodies=33;bodies=191;"
-            "actual-generated-callbacks=23;application-identity")
+            "result-settlement-fence;queued-settlement-fence;actual-coroutine-monitors=29;owned-callback-bodies=33;bodies=205;"
+            "actual-generated-callbacks=28;application-identity")
         fields = ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
             "closed-read-write-references;absent-no-fallback;models=6")
         for observed in ("", reviewed, fields.replace("models=6", "models=5"),
