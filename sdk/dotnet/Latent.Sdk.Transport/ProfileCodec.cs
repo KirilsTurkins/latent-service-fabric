@@ -53,8 +53,12 @@ internal static class ProfileCodec
 {
     internal static string PropertyName(FieldDescriptor field) => char.ToUpperInvariant(field.JsonName[0]) + field.JsonName[1..];
 
-    internal static IMessage ToWire(object value, IMessage message)
+    internal static IMessage ToWire(object value, IMessage message) =>
+        ToWire(value, message, new GraphBudget(8 * 1024 * 1024, 4096, CancellationToken.None));
+
+    internal static IMessage ToWire(object value, IMessage message, GraphBudget budget)
     {
+        budget.Spend();
         var selected = new HashSet<OneofDescriptor>();
         foreach (FieldDescriptor field in message.Descriptor.Fields.InFieldNumberOrder())
         {
@@ -75,27 +79,37 @@ internal static class ProfileCodec
                 foreach (object entry in (IEnumerable)source)
                 {
                     Type pair = entry.GetType();
-                    destination.Add(ToScalar(pair.GetProperty("Key")!.GetValue(entry)!, key),
-                        ToScalar(pair.GetProperty("Value")!.GetValue(entry)!, item));
+                    destination.Add(ToScalar(pair.GetProperty("Key")!.GetValue(entry)!, key, budget),
+                        ToScalar(pair.GetProperty("Value")!.GetValue(entry)!, item, budget));
                 }
             }
             else if (field.IsRepeated)
             {
                 var destination = (IList)field.Accessor.GetValue(message);
-                foreach (object item in (IEnumerable)source) destination.Add(ToScalar(item, field));
+                foreach (object item in (IEnumerable)source) destination.Add(ToScalar(item, field, budget));
             }
-            else field.Accessor.SetValue(message, ToScalar(source, field));
+            else field.Accessor.SetValue(message, ToScalar(source, field, budget));
         }
         return message;
     }
 
-    private static object ToScalar(object value, FieldDescriptor field) => value is null ? throw new FormatException("null protobuf value") : field.FieldType switch
+    private static object ToScalar(object value, FieldDescriptor field, GraphBudget budget)
     {
-        FieldType.Message => ToWire(value, (IMessage)Activator.CreateInstance(field.MessageType.ClrType)!),
-        FieldType.Bytes => ByteString.CopyFrom(((ReadOnlyMemory<byte>)value).Span),
-        FieldType.Enum => Enum.ToObject(field.EnumType.ClrType, value.GetType().GetProperty("Value")!.GetValue(value)!),
-        _ => value
-    };
+        if (value is null) throw new FormatException("null protobuf value");
+        budget.Spend(value switch
+        {
+            string text => 4L * GraphBudget.Utf8.GetByteCount(text),
+            ReadOnlyMemory<byte> memory => 3L * memory.Length,
+            _ => 256
+        });
+        return field.FieldType switch
+        {
+            FieldType.Message => ToWire(value, (IMessage)Activator.CreateInstance(field.MessageType.ClrType)!, budget),
+            FieldType.Bytes => ByteString.CopyFrom(((ReadOnlyMemory<byte>)value).Span),
+            FieldType.Enum => Enum.ToObject(field.EnumType.ClrType, value.GetType().GetProperty("Value")!.GetValue(value)!),
+            _ => value
+        };
+    }
 
     internal static object FromWire(IMessage message, Type type)
     {

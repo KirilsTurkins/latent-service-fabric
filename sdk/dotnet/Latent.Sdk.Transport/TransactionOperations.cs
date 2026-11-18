@@ -90,7 +90,9 @@ public sealed partial class BoundedClient : Tx.ITransactionClient
             TransactionRules.Collections(request, new GraphBudget(Math.Min(config.MaxGraphBytes, 8 * 1024 * 1024),
                 Math.Min(config.MaxGraphNodes, 4096), deadline.Token));
             TransactionRules.Request(request);
-            var wireRequest = (WireRequest)ProfileCodec.ToWire(request, new WireRequest());
+            var wireRequest = (WireRequest)ProfileCodec.ToWire(request, new WireRequest(),
+                new GraphBudget(Math.Min(config.MaxGraphBytes, 8 * 1024 * 1024),
+                    Math.Min(config.MaxGraphNodes, 4096), deadline.Token));
             if (wireRequest.CalculateSize() > state.RequestLimit) throw new GraphLimitException();
             // Snapshot before the first await. Caller mutations cannot refresh preconditions or keys.
             object original = ProfileCodec.FromWire(wireRequest, request.GetType());

@@ -46,6 +46,13 @@ internal static partial class Program
         Check(TransactionRules.IdentitySnapshot(malformed).ExpectedVersions is null, "misreported recovery list escaped bounded copying");
         try { TransactionRules.Request(malformed); throw new InvalidOperationException("misreported request list accepted"); }
         catch (FormatException) { Check(true, "misreported request list rejected"); }
+        ProfileCodec.ToWire(TxInvoke(), new global::Latent.Transaction.V1.InvokeCommandRequest(), new GraphBudget(1024 * 1024, 256, CancellationToken.None));
+        try
+        {
+            ProfileCodec.ToWire(malformed, new global::Latent.Transaction.V1.InvokeCommandRequest(), new GraphBudget(1024 * 1024, 256, CancellationToken.None));
+            throw new InvalidOperationException("misreported list escaped the encoding budget");
+        }
+        catch (GraphLimitException) { Check(true, "wire encoding bounds a changing collection independently"); }
         return Task.CompletedTask;
     }
 
