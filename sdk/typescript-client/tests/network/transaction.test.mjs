@@ -339,6 +339,28 @@ test("a collection changed after validation cannot dispatch an invalid wire requ
   } finally { await fixture.stop(); }
 });
 
+test("wire encoding refuses proxies and ignores caller array methods", () => {
+  const proxy = new Proxy(command, { ownKeys() { throw new Error("proxy trap must not run"); } });
+  assert.throws(() => encode(method("invokeCommand").input, proxy, 2 * 1024 * 1024, true), ShapeError);
+  const versions = [{ key: Uint8Array.of(1), version: Uint8Array.of(2) }];
+  versions.map = () => { throw new Error("caller map must not run"); };
+  const wire = encode(method("invokeCommand").input, { ...command, expectedVersions: versions }, 2 * 1024 * 1024, true);
+  assert.equal(decode(method("invokeCommand").input, wire, 2 * 1024 * 1024, true).expectedVersions.length, 1);
+});
+
+test("transaction validation ignores caller-supplied array iterators", async () => {
+  const fixture = await peer();
+  class SelectedView extends Uint8Array { *[Symbol.iterator]() { throw new Error("caller byte iterator must not run"); } }
+  const key = new SelectedView(1); key[0] = 1;
+  const versions = [{ key, version: Uint8Array.of(2) }];
+  versions[Symbol.iterator] = () => { throw new Error("caller iterator must not run"); };
+  try {
+    const response = await fixture.client.invokeCommand({ ...command, expectedVersions: versions });
+    assert.equal(response.metadata.transactionIdentity.expectedVersions[0].version[0], 2);
+    assert.equal(fixture.state.calls.length, 1);
+  } finally { await fixture.stop(); }
+});
+
 test("grpc ABORTED never proves a new attempt or resubmits a command", async () => {
   const fixture = await peer("aborted");
   try {

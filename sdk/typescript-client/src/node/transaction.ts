@@ -1,4 +1,4 @@
-import { isDeepStrictEqual } from "node:util";
+import { isDeepStrictEqual, types } from "node:util";
 import * as model from "../transactions.js";
 import * as profile from "../management.js";
 import type { ObservedOutcome, RecoveryIdentity } from "../transaction-client.js";
@@ -16,11 +16,18 @@ const platformCodes = new Set(["unavailable", "deadline-exceeded", "cancelled", 
   "route-unavailable", "admission-rejected", "internal"]);
 
 function object(value: unknown): RecordValue {
-  if (!value || typeof value !== "object" || Array.isArray(value)
+  if (!value || typeof value !== "object" || Array.isArray(value) || types.isProxy(value)
     || ![Object.prototype, null].includes(Object.getPrototypeOf(value))) throw new ShapeError();
-  const descriptors = Object.getOwnPropertyDescriptors(value);
-  if (Object.values(descriptors).some((item) => !("value" in item))) throw new ShapeError();
-  return value as RecordValue;
+  const result: RecordValue = Object.create(Object.getPrototypeOf(value));
+  let count = 0;
+  for (const key in value) {
+    if (!Object.hasOwn(value, key)) continue;
+    if (++count > 256) throw new ShapeError();
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (!descriptor || !("value" in descriptor)) throw new ShapeError();
+    Object.defineProperty(result, key, { value: descriptor.value, enumerable: true, writable: true, configurable: true });
+  }
+  return result;
 }
 function text(value: unknown, maximum = 256, required = true): asserts value is string {
   if (typeof value !== "string" || Buffer.byteLength(value) > maximum
@@ -32,7 +39,9 @@ function identityValue(value: unknown): asserts value is string {
   if (value.length === 0 || value.includes("\0")) throw new ShapeError();
 }
 function bytes(value: unknown, maximum = 256, required = true): asserts value is Uint8Array {
-  if (!(value instanceof Uint8Array) || value.length > maximum || (required && value.length === 0)) throw new ShapeError();
+  if (!(value instanceof Uint8Array) || types.isProxy(value)) throw new ShapeError();
+  const length = byteLength(value);
+  if (length > maximum || (required && length === 0)) throw new ShapeError();
 }
 function integer(value: unknown, maximum: bigint, positive = false): asserts value is bigint {
   if (typeof value !== "bigint" || value < (positive ? 1n : 0n) || value > maximum) throw new ShapeError();
@@ -44,9 +53,14 @@ function enumeration(value: unknown, maximum: number, field: string): number {
 }
 function digest(value: unknown): void { if (typeof value !== "string" || !/^sha256:[0-9a-f]{64}$/.test(value)) throw new ShapeError(); }
 function array(value: unknown, maximum = 128): unknown[] {
-  if (!Array.isArray(value) || value.length > maximum) throw new ShapeError();
-  for (let index = 0; index < value.length; index++) if (!Object.hasOwn(value, index)) throw new ShapeError();
-  return value;
+  if (!Array.isArray(value) || types.isProxy(value) || value.length > maximum) throw new ShapeError();
+  const result: unknown[] = [];
+  for (let index = 0; index < value.length; index++) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, index);
+    if (!descriptor || !("value" in descriptor)) throw new ShapeError();
+    result.push(descriptor.value);
+  }
+  return result;
 }
 function same(left: unknown, right: unknown): void { if (!isDeepStrictEqual(left, right)) throw new ShapeError(); }
 function namespace(raw: unknown, tenant: string): RecordValue {
@@ -461,6 +475,7 @@ function boundedRecoveryClone(source: unknown, budget: { bytes: number; nodes: n
     if (value === null || value === undefined || typeof value === "boolean"
       || typeof value === "number" || typeof value === "bigint") return value;
     if (typeof value !== "object") throw new ShapeError();
+    if (types.isProxy(value)) throw new ShapeError();
     if (seen.has(value)) return seen.get(value);
     if (value instanceof Uint8Array) {
       if ((budget.bytes -= byteLength(value)) < 0) throw new ShapeError();

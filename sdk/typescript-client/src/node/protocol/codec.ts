@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import { types } from "node:util";
 import { create, fromBinary, toBinary, ScalarType, type DescField, type DescMessage, type Message } from "@bufbuild/protobuf";
 import { preflight, ShapeError } from "./preflight.js";
 import { byteLength } from "../bytes.js";
@@ -25,21 +26,29 @@ function debit(budget: Budget, bytes: number): void {
   if (budget.bytes < 0 || --budget.fields < 0) throw new ShapeError();
 }
 
-function record(value: unknown): RecordValue {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) throw new ShapeError();
+function record(value: unknown, maximum: number): RecordValue {
+  if (value === null || typeof value !== "object" || Array.isArray(value) || types.isProxy(value)) throw new ShapeError();
   const prototype = Object.getPrototypeOf(value);
   if (prototype !== Object.prototype && prototype !== null) throw new ShapeError();
-  if (Object.values(Object.getOwnPropertyDescriptors(value)).some((entry) => !("value" in entry))) throw new ShapeError();
+  let count = 0;
+  for (const key in value) {
+    if (!Object.hasOwn(value, key)) continue;
+    if (++count > maximum) throw new ShapeError();
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (!descriptor || !("value" in descriptor)) throw new ShapeError();
+  }
   return value as RecordValue;
 }
 
 function input(schema: DescMessage, raw: unknown, budget: Budget, depth: number): Message {
   if (depth > 12 || --budget.messages < 0) throw new ShapeError();
-  const value = record(raw);
+  const value = record(raw, schema.fields.length);
   if (Object.keys(value).some((key) => !Object.hasOwn(schema.field, key))) throw new ShapeError();
   const result: RecordValue = {};
   for (const field of schema.fields) {
-    const source = value[field.localName];
+    const descriptor = Object.getOwnPropertyDescriptor(value, field.localName);
+    if (descriptor && !("value" in descriptor)) throw new ShapeError();
+    const source = descriptor?.value;
     if (source === undefined) continue;
     debit(budget, 10);
     const converted = fieldInput(field, source, budget, depth);
@@ -53,7 +62,7 @@ function input(schema: DescMessage, raw: unknown, budget: Budget, depth: number)
 
 function fieldInput(field: DescField, value: unknown, budget: Budget, depth: number): unknown {
   if (field.fieldKind === "map") {
-    const entries = Object.entries(record(value));
+    const entries = Object.entries(record(value, 32));
     if (entries.length > 32 || field.mapKey !== ScalarType.STRING
       || (field.scalar !== ScalarType.STRING && field.scalar !== ScalarType.UINT64)) throw new ShapeError();
     const result: RecordValue = Object.create(null);
@@ -66,11 +75,15 @@ function fieldInput(field: DescField, value: unknown, budget: Budget, depth: num
     return result;
   }
   if (field.fieldKind === "list") {
-    if (!Array.isArray(value) || value.length > (field.name === "required_record_ids" ? 256 : 128)) throw new ShapeError();
-    for (let index = 0; index < value.length; index++) if (!Object.hasOwn(value, index)) throw new ShapeError();
-    return value.map((item: unknown) => field.message
-      ? input(field.message, item, budget, depth + 1)
-      : scalarInput(field.scalar, field.enum !== undefined, item, budget));
+    if (!Array.isArray(value) || types.isProxy(value) || value.length > (field.name === "required_record_ids" ? 256 : 128)) throw new ShapeError();
+    const result: unknown[] = [];
+    for (let index = 0; index < value.length; index++) {
+      const descriptor = Object.getOwnPropertyDescriptor(value, index);
+      if (!descriptor || !("value" in descriptor)) throw new ShapeError();
+      result.push(field.message ? input(field.message, descriptor.value, budget, depth + 1)
+        : scalarInput(field.scalar, field.enum !== undefined, descriptor.value, budget));
+    }
+    return result;
   }
   return field.message ? input(field.message, value, budget, depth + 1)
     : scalarInput(field.scalar, field.enum !== undefined, value, budget);
