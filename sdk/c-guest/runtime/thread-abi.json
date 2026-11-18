@@ -92,7 +92,7 @@
     "exitAndCancellationUnwind": "not implemented; no ordinary exit/cancel mapping advertised",
     "mutexConditionTimedWait": "source implementation only when the selected standard clock PAL is composed; actual timed component execution remains unqualified",
     "mutexConditionVariables": "source implementation: normal/recursive/errorcheck pthread mutexes, plain/recursive C11 mutexes, untimed condition waits, signal and broadcast; signed execution remains required",
-    "rwlock": "selected source only: default attributes, recursive shared readers and exclusive writers with admitted Wait owners; reader priority can starve writers; timed operations explicitly return ENOTSUP",
+    "rwlock": "selected source only: default attributes, recursive shared readers and exclusive writers with admitted Wait owners; reader priority can starve writers; timed operations acquire immediately available locks but return ENOTSUP if they would wait",
     "semaphore": "selected source only: unnamed process-local counting semaphores with admitted Wait owners; sem_timedwait consumes an immediately available permit without a clock but returns ENOTSUP if it would wait; process-shared and named semaphores are not supported",
     "barrier": "selected source only: reusable process-local pthread barriers with 1..33 participants and admitted Wait owners; process sharing returns ENOTSUP",
     "cpuCheckpointsAndAtomics": "not implemented; current transform rejects actual atomics",
