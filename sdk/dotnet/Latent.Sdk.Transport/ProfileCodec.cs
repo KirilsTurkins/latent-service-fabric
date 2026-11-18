@@ -56,8 +56,11 @@ internal static class ProfileCodec
     internal static IMessage ToWire(object value, IMessage message) =>
         ToWire(value, message, new GraphBudget(8 * 1024 * 1024, 4096, CancellationToken.None));
 
-    internal static IMessage ToWire(object value, IMessage message, GraphBudget budget)
+    internal static IMessage ToWire(object value, IMessage message, GraphBudget budget) => ToWire(value, message, budget, 0);
+
+    private static IMessage ToWire(object value, IMessage message, GraphBudget budget, int depth)
     {
+        if (depth > 16) throw new GraphLimitException();
         budget.Spend();
         var selected = new HashSet<OneofDescriptor>();
         foreach (FieldDescriptor field in message.Descriptor.Fields.InFieldNumberOrder())
@@ -79,25 +82,25 @@ internal static class ProfileCodec
                 foreach (object entry in (IEnumerable)source)
                 {
                     Type pair = entry.GetType();
-                    destination.Add(ToScalar(pair.GetProperty("Key")!.GetValue(entry)!, key, budget),
-                        ToScalar(pair.GetProperty("Value")!.GetValue(entry)!, item, budget));
+                    destination.Add(ToScalar(pair.GetProperty("Key")!.GetValue(entry)!, key, budget, depth),
+                        ToScalar(pair.GetProperty("Value")!.GetValue(entry)!, item, budget, depth));
                 }
             }
             else if (field.IsRepeated)
             {
                 var destination = (IList)field.Accessor.GetValue(message);
-                foreach (object item in (IEnumerable)source) destination.Add(ToScalar(item, field, budget));
+                foreach (object item in (IEnumerable)source) destination.Add(ToScalar(item, field, budget, depth));
             }
-            else field.Accessor.SetValue(message, ToScalar(source, field, budget));
+            else field.Accessor.SetValue(message, ToScalar(source, field, budget, depth));
         }
         return message;
     }
 
-    private static object ToScalar(object value, FieldDescriptor field, GraphBudget budget)
+    private static object ToScalar(object value, FieldDescriptor field, GraphBudget budget, int depth)
     {
         if (value is null) throw new FormatException("null protobuf value");
         if (field.FieldType == FieldType.Message)
-            return ToWire(value, (IMessage)Activator.CreateInstance(field.MessageType.ClrType)!, budget);
+            return ToWire(value, (IMessage)Activator.CreateInstance(field.MessageType.ClrType)!, budget, depth + 1);
         budget.Spend(value switch
         {
             string text => 4L * GraphBudget.Utf8.GetByteCount(text),
