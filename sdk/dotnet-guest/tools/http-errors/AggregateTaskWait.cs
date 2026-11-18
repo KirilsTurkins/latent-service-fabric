@@ -461,7 +461,7 @@ internal static class AggregateTaskWait
         var timerPump = DetachTimerPumpBatch(module, reader);
 
         var receipt = new {
-            patch = "latent.dotnet.wait-all.v4", profile = "dotnet-aggregate-task-wait-candidate-v4",
+            patch = "latent.dotnet.wait-all.v5", profile = "dotnet-aggregate-task-wait-candidate-v5",
             prefetchedPollReadiness = "original-dispatch-slot-before-blocking-poll",
             originalMethods = Originals.Select((row, index) => new {
                 method = members[index].FullName, token = row.Token, ilBytes = row.Bytes, ilSha256 = "sha256:" + row.Sha256 }).ToArray(),
