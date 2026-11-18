@@ -878,6 +878,65 @@ class GoRuntimeOverlayTests(unittest.TestCase):
                 generated, [{'ImportPath': 'encoding/json', 'Standard': True}], set(), output)
             self.assertEqual((replacements, rows), ({}, []))
 
+    def test_base64_checkpoint_selects_only_pinned_encoder_stride_and_rejects_drift(self):
+        from tools.go_guest import checkpoints
+        from tools.rust_capsule_project import digest
+        from types import SimpleNamespace
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            generated, goroot = root/'module', root/'goroot'
+            generated.mkdir()
+            source = goroot/'src/encoding/base64/base64.go'
+            source.parent.mkdir(parents=True)
+            original = b'package base64\nfunc Encode(){}\n'
+            source.write_bytes(original)
+            pin = hashlib.sha256(original).hexdigest()
+            expected = [{'line': 154, 'column': 21, 'suspendable': True, 'stride': 256}]
+
+            def run_case(mutation):
+                output = root/mutation
+                output.mkdir()
+                package = {'ImportPath': 'encoding/base64', 'Standard': True,
+                           'Dir': str(source.parent), 'GoFiles': ['base64.go']}
+                packages = [package]
+                if mutation == 'nonstandard': package['Standard'] = False
+                if mutation == 'foreign-directory': package['Dir'] = str(generated)
+                if mutation == 'missing-source': package['GoFiles'] = []
+                if mutation == 'duplicate': packages.append(dict(package))
+                if mutation == 'changed-source': source.write_bytes(original+b'changed')
+                def execute(_label, _tool, request, destination):
+                    self.assertEqual(json.loads(request.read_bytes()), [
+                        {'path': str(source), 'diagnostic': str(source), 'mode': checkpoints.STANDARD_BASE64_MODE}])
+                    destination.mkdir()
+                    adapted = destination/'selected.go'
+                    adapted.write_bytes(original+b'// bounded encoder checkpoint\n')
+                    sites = [dict(site) for site in expected]
+                    if mutation == 'wrong-site': sites[0]['column'] += 1
+                    if mutation == 'nonsuspendable': sites[0]['suspendable'] = False
+                    if mutation == 'wrong-stride': sites[0]['stride'] = 257
+                    if mutation == 'float-stride': sites[0]['stride'] = 256.0
+                    if mutation == 'changed-after-selection': source.write_bytes(original+b'changed')
+                    return json.dumps([{'path': str(source), 'adapted': str(adapted), 'sites': sites,
+                                        'upstreamDigest': digest(original), 'adaptedDigest': digest(adapted.read_bytes())}])
+                try:
+                    with patch.object(checkpoints, 'STANDARD_BASE64_SHA256', pin):
+                        if mutation != 'valid':
+                            with self.assertRaisesRegex(ValueError, 'standard-iterator-(source|output)-drift'):
+                                checkpoints.transform(SimpleNamespace(run=execute, goroot=goroot), generated,
+                                                      packages, set(), output)
+                            return
+                        replacements, rows = checkpoints.transform(SimpleNamespace(run=execute, goroot=goroot),
+                                                                    generated, packages, set(), output)
+                    self.assertEqual(set(replacements), {str(source)})
+                    self.assertEqual(rows[0]['name'], 'go-compiler-checkpoints/standard/encoding/base64/base64.go')
+                    self.assertEqual(rows[0]['sites'], expected)
+                finally:
+                    source.write_bytes(original)
+            for mutation in ('valid', 'nonstandard', 'foreign-directory', 'missing-source', 'duplicate',
+                             'changed-source', 'wrong-site', 'nonsuspendable', 'wrong-stride', 'float-stride',
+                             'changed-after-selection'):
+                with self.subTest(mutation=mutation): run_case(mutation)
+
     def test_checkpoint_parser_cannot_omit_selected_application_or_dependency(self):
         from tools.go_guest import checkpoints
         from types import SimpleNamespace
