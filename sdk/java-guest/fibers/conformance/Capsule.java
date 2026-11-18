@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 public final class Capsule {
     private static volatile boolean ready;
+    private static int diagnosticStage;
     private static final ThreadLocal<String> local = new ThreadLocal<>();
     public static volatile boolean lateFlush;
     public static final List<ExecutorService> referencePools = new ArrayList<>();
@@ -41,7 +42,10 @@ public final class Capsule {
         boolean again() { return runAndReset(); }
     }
     public Long run(Long mode) {
-        if (mode == 1) return pools();
+        if (mode == 1) {
+            try { return pools(); }
+            catch (Throwable error) { return 1000L + diagnosticStage; }
+        }
         if (mode == 2) return rootReturns();
         if (mode == 3) return cachedAndStandardWaits();
         local.set("root");
@@ -61,6 +65,7 @@ public final class Capsule {
 
     private static void require(boolean value) { if (!value) throw new IllegalStateException("concurrency-observable"); }
     private static Long pools() {
+        diagnosticStage = 1;
         ExecutorService first = Executors.newSingleThreadExecutor();
         ExecutorService second = Executors.newSingleThreadExecutor();
         ExecutorService parallel = Executors.newFixedThreadPool(2);
@@ -68,6 +73,7 @@ public final class Capsule {
         Object rendezvous = new Object();
         local.set("root");
         try {
+            diagnosticStage = 2;
             Future<Integer> left = first.submit(() -> {
                 require(local.get() == null);
                 local.set("first");
@@ -80,10 +86,12 @@ public final class Capsule {
                 monitor.release();
                 return 22;
             });
+            diagnosticStage = 3;
             require(left.get() + right.get() == 42 && "root".equals(local.get()));
             require(first.submit(() -> "first".equals(local.get())).get());
             require(second.submit(() -> "second".equals(local.get())).get());
 
+            diagnosticStage = 4;
             Future<Integer> failed = first.submit(monitor::fail);
             try { failed.get(); throw new IllegalStateException("future-exception-missing"); }
             catch (ExecutionException error) {
@@ -92,10 +100,12 @@ public final class Capsule {
             }
             // Exception propagation releases the instance method's monitor.
             require(second.submit(monitor::reentrant).get() == 20);
+            diagnosticStage = 5;
             Future<Integer> staticLeft = first.submit(ClassMonitor::await);
             Future<Integer> staticRight = second.submit(() -> { ClassMonitor.release(); return 22; });
             require(staticLeft.get() + staticRight.get() == 42);
 
+            diagnosticStage = 6;
             boolean[] started = {false};
             boolean[] ended = {false};
             Future<Integer> cancelled = first.submit(() -> {
@@ -109,6 +119,7 @@ public final class Capsule {
             catch (CancellationException expected) { }
             require(first.submit(() -> ended[0] && !Thread.currentThread().isInterrupted()).get());
 
+            diagnosticStage = 7;
             boolean[] gate = {false};
             Future<Integer> timed = first.submit(() -> {
                 synchronized (rendezvous) { while (!gate[0]) rendezvous.wait(); }
@@ -124,6 +135,7 @@ public final class Capsule {
             require(timed.get() == 42 && Thread.currentThread().isInterrupted());
             require(Thread.interrupted());
 
+            diagnosticStage = 8;
             boolean[] callbackEntered = {false};
             boolean[] callbackReleased = {false};
             FutureTask<Integer> callback = new FutureTask<>(() -> 42) {
@@ -144,6 +156,7 @@ public final class Capsule {
             synchronized (rendezvous) { callbackReleased[0] = true; rendezvous.notifyAll(); }
             require(first.submit(() -> 42).get() == 42);
 
+            diagnosticStage = 9;
             require(parallel.<Integer>invokeAny(Arrays.asList(
                 () -> { Thread.sleep(60_000); return 1; }, () -> 42)) == 42);
             List<Future<Integer>> ordered = parallel.invokeAll(Arrays.asList(() -> 20, () -> 22));
