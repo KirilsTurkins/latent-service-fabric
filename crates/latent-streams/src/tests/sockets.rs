@@ -768,7 +768,23 @@ async fn connect_registration_interrupted(interruption: ConnectAuditInterruption
             .unwrap(),
         0
     );
-    assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
+    let snapshot = tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            match fixture.pools.snapshot() {
+                Ok(snapshot) => break snapshot,
+                Err(error)
+                    if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                        && error.message == "capability-busy" =>
+                {
+                    tokio::task::yield_now().await;
+                }
+                Err(error) => panic!("pool snapshot failed after connect retirement: {error:?}"),
+            }
+        }
+    })
+    .await
+    .expect("bounded pool snapshot after connect retirement");
+    assert_eq!(snapshot.connections, 0);
     drop((peer, session));
     fixture.clean().await;
     drop(fixture);
