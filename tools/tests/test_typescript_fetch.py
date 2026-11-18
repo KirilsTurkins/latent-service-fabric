@@ -12,6 +12,40 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class TypeScriptFetchTests(unittest.TestCase):
+    def test_response_status_text_preserves_valid_reason_phrase_bytes(self):
+        self.run_javascript(r"""
+const target = {TextEncoder, TextDecoder, URL, AbortController, AbortSignal};
+for (const profile of ['lsf-fetch-buffered-v1', 'lsf-fetch-phase-buffered-v2']) {
+  installFetch({}, () => false, target, profile);
+  for (const Response of [globalThis.Response, target.Response]) {
+    for (const input of ['', 'OK', '  OK  ', '\tOK\t', '\u0080\u00ff', null, 42]) {
+      const expected = String(input);
+      const response = new Response('body', {status: 201, statusText: input});
+      assert.equal(response.statusText, expected);
+      assert.equal(response.clone().statusText, expected);
+      assert.equal(await response.text(), 'body');
+      const json = Response.json({value: 1}, {statusText: input});
+      assert.equal(json.statusText, expected);
+      assert.equal(json.clone().statusText, expected);
+    }
+    assert.equal(new Response().statusText, '');
+    for (const value of ['bad\rvalue', 'bad\nvalue', 'bad\u0000value', 'bad\u007fvalue', '\u0100', Symbol('bad')]) {
+      assert.throws(() => new Response(null, {statusText: value}), TypeError);
+    }
+    let conversions = 0;
+    const reason = {toString() {conversions++; return '  Fine  ';}};
+    assert.equal(new Response(null, {statusText: reason}).statusText, '  Fine  ');
+    assert.equal(conversions, 1);
+    let reads = 0;
+    const init = {get statusText() {reads++; return '  Fine  ';}};
+    assert.equal(new Response(null, init).statusText, '  Fine  ');
+    assert.equal(reads, 1);
+  }
+  // Header values have separate normalization rules.
+  assert.equal(new target.Headers({'x-test': '\t value  '}).get('x-test'), 'value');
+}
+""")
+
     def test_urlencoded_bodies_match_reference_bytes_media_type_and_construction_snapshot(self):
         self.run_javascript(r"""
 const target = {TextEncoder, TextDecoder, URL, URLSearchParams, AbortController, AbortSignal};

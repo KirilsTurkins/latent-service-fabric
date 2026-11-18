@@ -1,0 +1,51 @@
+package main
+
+import (
+	"encoding/base64"
+	"fmt"
+	"os"
+	"sync/atomic"
+
+	"example.invalid/base64checkpoint/dispatch"
+)
+
+func semantics() {
+	for _, row := range []struct{ plain, encoded string }{
+		{"", ""}, {"f", "Zg=="}, {"fo", "Zm8="}, {"foo", "Zm9v"},
+		{"foob", "Zm9vYg=="}, {"fooba", "Zm9vYmE="}, {"foobar", "Zm9vYmFy"},
+	} {
+		if base64.StdEncoding.EncodeToString([]byte(row.plain)) != row.encoded { panic("RFC encoding mismatch") }
+	}
+	for _, enc := range []*base64.Encoding{base64.StdEncoding, base64.RawStdEncoding, base64.URLEncoding, base64.RawURLEncoding} {
+		for _, size := range []int{0, 1, 2, 3, 63, 64, 65, 191, 192, 193, 4097, 196610} {
+			input := make([]byte, size)
+			for i := range input { input[i] = byte(i*37 + 11) }
+			encoded := make([]byte, enc.EncodedLen(size))
+			enc.Encode(encoded, input)
+			decoded := make([]byte, enc.DecodedLen(len(encoded)))
+			n, err := enc.Decode(decoded, encoded)
+			if err != nil || n != len(input) { panic("roundtrip size") }
+			for i := range input { if input[i] != decoded[i] { panic("roundtrip data") } }
+		}
+	}
+	fmt.Printf("semantics=ok yields=%d\n", dispatch.Count())
+}
+
+func main() {
+	if len(os.Args) > 1 && os.Args[1] == "semantics" { dispatch.Enable(); semantics(); return }
+	input := make([]byte, 24*1024*1024)
+	output := make([]byte, base64.StdEncoding.EncodedLen(len(input)))
+	dispatch.Enable()
+	var ran atomic.Bool
+	if len(os.Args) == 1 || os.Args[1] != "alone" {
+		ready, start := make(chan struct{}), make(chan struct{})
+		go func() { close(ready); <-start; ran.Store(true) }()
+		<-ready
+		close(start)
+	}
+	base64.StdEncoding.Encode(output, input)
+	siblingBeforeReturn := ran.Load()
+	yieldsBeforeReturn := dispatch.Count()
+	for _, value := range output { if value != 'A' { panic("large output mismatch") } }
+	fmt.Printf("sibling=%t bytes=%d yields=%d\n", siblingBeforeReturn, len(output), yieldsBeforeReturn)
+}

@@ -49,6 +49,14 @@ export function installFetch(http, snapshotActive, target = globalThis, profile 
     if (/[^\t\x20-\x7e\x80-\xff]/.test(result)) throw new TypeError('invalid-header-value');
     return result;
   }
+  function statusTextValue(value) {
+    // A reason phrase uses the same byte alphabet as a header value, but its
+    // leading and trailing whitespace is significant and must not be trimmed.
+    if (typeof value === 'symbol') throw new TypeError('invalid-status-text');
+    const result = String(value);
+    if (/[^\t\x20-\x7e\x80-\xff]/.test(result)) throw new TypeError('invalid-status-text');
+    return result;
+  }
   class HeadersIterator {
     #entries;
     #index = 0;
@@ -272,7 +280,8 @@ export function installFetch(http, snapshotActive, target = globalThis, profile 
       const {content, type} = extractBody(body);
       if ([204, 205, 304].includes(status) && content !== null) throw new TypeError('body-for-null-body-status');
       this.status = status;
-      this.statusText = init.statusText === undefined ? '' : headerValue(init.statusText);
+      const statusText = init.statusText;
+      this.statusText = statusText === undefined ? '' : statusTextValue(statusText);
       this.headers = new Headers(init.headers);
       if (type !== null && !this.headers.has('content-type')) this.headers.set('content-type', type);
       this.url = '';

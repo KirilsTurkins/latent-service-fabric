@@ -21,26 +21,30 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
         # authenticated v1 fixture immutable; fake tools bind their own bytes.
         return json.loads(CONTROL_FIXTURE.read_bytes())
 
-    def test_current_receipt_binds_the_nested_finite_helper_and_preserves_v3_history(self):
+    def test_current_receipt_binds_both_single_helpers_and_preserves_history(self):
         from tools.dotnet_guest.managed_work import INLINE_PRIMARY_REWRITE_RECEIPT
         current = {**self.receipt(), 'managedAcceptedWork': copy.deepcopy(INLINE_PRIMARY_REWRITE_RECEIPT),
-                   'aggregateTaskWait': copy.deepcopy(aggregate_task_wait.FINITE_NESTING_EXPECTED),
+                   'aggregateTaskWait': copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED),
                    'generatedHelperCount': 109, 'finiteWaitObservation': task_wait.FINITE_OBSERVATION,
                    'unchangedOriginalMethods': 44708}
         task_wait.validate_current_receipt(current, finite=True, managed=True, aggregate=True,
                                            require_finite_observation=True)
-        historical = copy.deepcopy(current)
-        historical['aggregateTaskWait'] = copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_V3_EXPECTED)
-        task_wait.validate_receipt(historical, finite=True, managed=True, aggregate=True)
-        with self.assertRaisesRegex(ValueError, 'current-prefetched-poll-required'):
-            task_wait.validate_current_receipt(historical, finite=True, managed=True, aggregate=True)
+        for receipt in (aggregate_task_wait.PREFETCH_POLL_V3_EXPECTED, aggregate_task_wait.FINITE_NESTING_EXPECTED):
+            historical = copy.deepcopy(current)
+            historical['aggregateTaskWait'] = copy.deepcopy(receipt)
+            task_wait.validate_receipt(historical, finite=True, managed=True, aggregate=True)
+            with self.assertRaisesRegex(ValueError, 'current-prefetched-poll-required'):
+                task_wait.validate_current_receipt(historical, finite=True, managed=True, aggregate=True)
         method = ('System.Boolean System.Threading.WasiEventLoop::LsfWaitForActualTaskOrTimeout'
                   '(System.Threading.Tasks.Task,System.Int32,System.Threading.CancellationToken)')
-        for change in ('missing-helper', 'changed-helper', 'old-nesting', 'missing-inverse', 'new-owner'):
+        single = ('System.Boolean System.Threading.WasiEventLoop::LsfWaitForActualTaskCompletion'
+                  '(System.Threading.Tasks.Task)')
+        for change in ('missing-helper', 'changed-helper', 'old-single', 'old-nesting', 'missing-inverse', 'new-owner'):
             wrong = copy.deepcopy(current)
             aggregate = wrong['aggregateTaskWait']
             if change == 'missing-helper': del aggregate['rewrittenBodies'][method]
             elif change == 'changed-helper': aggregate['rewrittenBodies'][method] = '0' * 64
+            elif change == 'old-single': aggregate['rewrittenBodies'][single] = aggregate_task_wait.FINITE_NESTING_EXPECTED['rewrittenBodies'][single]
             elif change == 'old-nesting': aggregate['nesting'] = aggregate_task_wait.PREFETCH_POLL_V3_EXPECTED['nesting']
             elif change == 'missing-inverse': aggregate['finiteMask']['inverseExact'] = False
             else: aggregate['finiteMask']['nativeOwners'] = 1

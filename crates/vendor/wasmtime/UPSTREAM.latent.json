@@ -1391,8 +1391,8 @@
         "bytes": 3048
       },
       "Cargo.lock": {
-        "sha256": "c4fd1c90bf3cb336e5c1147439e7ae8e4f8432e9d900fe974a8ab8d96e6e2397",
-        "bytes": 28260
+        "sha256": "0342e5eeba9384abdd912643e8ca55b3e2718e9155364e0d826389ef129c175a",
+        "bytes": 29294
       }
     },
     "fixedRegistryPackages": {

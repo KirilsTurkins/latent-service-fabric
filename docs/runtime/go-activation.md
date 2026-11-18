@@ -131,6 +131,27 @@ without and 425.29 ms with the JSON checkpoints (+2.7%); median child CPU was
 are not production-node cost or signed-component qualification. The default
 `go-component-async-v1` profile does not install these checkpoints.
 
+When a checkpoint-enabled profile selects `encoding/base64`, the authenticated
+Go 1.27.4 `Encoding.Encode` loop also reaches the existing checkpoint bridge.
+Its local remaining-length guard calls the bridge once per 256 iterations; with
+the existing 1,024-call quantum, at most 786,432 input bytes pass between
+yields. It does not inspect scheduler, host-waitable or timer state. This is an
+encoder-only selection; other Base64 loops are not qualified by it.
+
+The pinned native Go reference ran a synchronized sibling before a 24 MiB
+ordinary encode returned. A core-Wasm control using the maintained scheduler
+source and a test dispatcher reproduced starvation without the encoder site and
+observed the sibling plus 32 yields with it. Both variants preserved the tested
+encodings and all large-output bytes; the selected run yielded during the
+nonzero-data round trips. A small four-sample comparison measured median child
+CPU of 206.81 ms without the site and 202.47 ms with it. A test-only 64-step
+variant measured 215.70 ms and 128 yields, with a 196,608-byte bound. A later
+sample of the selected 256-step implementation measured 310.04 ms without
+and 331.29 ms with the site. These noisy, startup-inclusive observations
+include output validation and do not establish speedup or production cost. The
+core-Wasm reference is not yet wired into CI and does not demonstrate
+host/timer polling or signed qualification.
+
 Original source bytes remain unchanged. Derived copies retain original
 diagnostic line/column positions, source and output digests, and suspension
 sites in the build transformation materials. The host parser is built and
