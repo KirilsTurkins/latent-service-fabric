@@ -60,18 +60,41 @@ RESET_NOTIFICATION_CASE = r'''        case "reset-notification-refusal": {
         }
 '''
 EVENT_WAIT_CASE = r'''        case "manual-reset-sibling": {
-            Stage = "event-create";
-            using var signal = new ManualResetEventSlim(false);
-            int callbacks = 0;
-            if (signal.Wait(0)) throw new Exception("new event already signalled");
-            if (!ThreadPool.QueueUserWorkItem(_ => { callbacks++; signal.Set(); }))
-                throw new Exception("event setter rejected");
-            Stage = "event-wait";
-            signal.Wait();
-            if (!signal.IsSet || callbacks != 1) throw new Exception("event signal or setter lost");
-            signal.Reset();
-            if (signal.Wait(0)) throw new Exception("event reset lost");
-            break;
+            Stage = "event-waiter-submit";
+            var waiter = Task.Run(() => {
+                Stage = "event-create";
+                using var signal = new ManualResetEventSlim(false);
+                int callbacks = 0, phase = 0, pendingSetter = 0;
+                int waiterThread = Environment.CurrentManagedThreadId;
+                if (signal.Wait(0)) throw new Exception("new event already signalled");
+                // Submit from a live work item, not the application root: an
+                // eager root dispatch must not satisfy this pending-wait case.
+                if (!ThreadPool.QueueUserWorkItem(_ => {
+                    bool duringWait = phase == 1 && !signal.IsSet
+                        && Environment.CurrentManagedThreadId == waiterThread;
+                    callbacks++;
+                    pendingSetter = duringWait ? 1 : -1;
+                    phase = 2;
+                    signal.Set();
+                })) throw new Exception("event setter rejected");
+                if (phase != 0 || callbacks != 0 || signal.IsSet)
+                    throw new Exception("event setter ran before wait entry");
+                Stage = "event-wait";
+                // No dispatching call is permitted between arming this witness
+                // and Wait. A setter on this same physical managed thread can
+                // therefore run only through the pending Wait's nested pump.
+                phase = 1;
+                signal.Wait();
+                if (phase != 2 || pendingSetter != 1 || !signal.IsSet || callbacks != 1)
+                    throw new Exception("pending event wait or same-thread setter lost");
+                phase = 3;
+                signal.Reset();
+                if (signal.Wait(0)) throw new Exception("event reset lost");
+            });
+            Stage = "event-waiter-join";
+            waiter.GetAwaiter().GetResult();
+            if (SynchronizationContext.Current != null) throw new Exception("custom context escaped");
+            return "ordinary-tasks:manual-reset-sibling|pending=1|same-thread=1|setter=1|fresh=1";
         }
 '''
 LIBRARY_SOURCE = r'''using System;
@@ -295,7 +318,8 @@ def selected_fixture(monitor_cancel: bool = False, *, reset_notification: bool =
 
 def expected(mode):
     require(mode in QUALIFICATION_CASES, 'dotnet-task-unknown-case')
-    return 'ordinary-tasks:' + mode + '|fresh=1'
+    witness = '|pending=1|same-thread=1|setter=1' if mode == EVENT_WAIT_MODE else ''
+    return 'ordinary-tasks:' + mode + witness + '|fresh=1'
 
 
 def declare(project: Path):

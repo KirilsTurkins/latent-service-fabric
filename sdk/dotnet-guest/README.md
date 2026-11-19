@@ -120,9 +120,17 @@ bounded wait frame and admitted sibling work. It rewrites the two underlying
 BCL Wait methods for all their callers within that profile. Positive-timeout
 event waits and infinite waits with cancellable tokens retain the original WASI
 refusal. The BCL's async-enumerable caller, WaitHandle and general Monitor.Wait
-are not qualified. Pending-entry and nested-event evidence is currently from
-host projections; the prepared signed sibling-signal case does not establish
-that the event remained unset until Wait entered.
+are not qualified. The selected signed `manual-reset-sibling` probe submits its
+setter from a live queued waiter, rejects an eager setter before `Wait()`, and
+requires the setter to observe an unset event on the waiter's same managed
+thread between arming the witness and returning from `Wait()`. There is no
+dispatching call between arming and the wait. The result explicitly reports
+`pending=1|same-thread=1|setter=1`; the previous eager-compatible result is not
+accepted. Exact captured source, known completion and post-invocation retirement
+remain required, with unchanged authorities and resource limits. This is a
+single-threaded WASI dispatch witness, not a general CLR scheduling guarantee.
+Current-source NativeAOT and signed execution must pass before it counts as
+pending-entry evidence; host projections alone do not supply that evidence.
 
 The closed WASI adapter denies ambient files, sockets, wall time and entropy.
 NativeAOT GC monotonic time is routed through
