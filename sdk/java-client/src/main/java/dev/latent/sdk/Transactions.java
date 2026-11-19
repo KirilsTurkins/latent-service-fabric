@@ -520,6 +520,6 @@ public final class Transactions {
 
     /** Constructs a protocol descriptor; this value grants no authority. */
     public static TransactionProfile currentProfile() {
-        return new TransactionProfile("lsf-transaction-v1", "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35", "sha256:6f67a535e1c0409a361ccced27aedc9a4a71a395c1e51f30e506fa628f5361e1");
+        return new TransactionProfile("lsf-transaction-v1", "sha256:3b85f790f85ab23d36e492d7bd4a04a1b8aab87fc6f67dd7d7498bcf28129d35", "sha256:d359245ab3fb4cb68b7979919cec6319bf6aee7e5e5f45df38c1a60494c1d04b");
     }
 }
