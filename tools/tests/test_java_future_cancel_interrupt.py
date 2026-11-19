@@ -110,6 +110,8 @@ class FutureCancellationControl(unittest.TestCase):
             ('before', 'after', 'withdraw', 'withdraw-denied', 'withdraw-lost', 'withdraw-swallow'))
         cached_factory_modes = ('graceful', 'immediate', 'denied', 'lost', 'null', 'throw', 'definite-start',
                                 'uncertain-start', 'duplicate', 'live-thread', 'replacement', 'replacement-null', 'replacement-throw')
+        cached_handoff_modes = ('graceful', 'immediate', 'cancel', 'queue-denied', 'queue-lost',
+                                'interrupt-throws', 'idle-registry-lost', 'two', 'not-idle', 'default-async')
         new_reference_stages = ('scheduled-periodic-validation-reference-jdk', 'scheduled-null-factory-reference-jdk',
             'scheduled-throw-factory-reference-jdk', 'manual-periodic-throw-reference-jdk',
             'managed-reentrant-factory-reference-jdk', 'completable-obtrude-reference-jdk',
@@ -126,6 +128,7 @@ class FutureCancellationControl(unittest.TestCase):
             *('managed-reentrant-factory-owner-' + mode for mode in managed_factory_modes),
             'managed-first-admission-source', *('managed-first-admission-owner-' + mode for mode in managed_first_modes),
             'managed-cached-factory-source', *('managed-cached-factory-owner-' + mode for mode in cached_factory_modes),
+            *('managed-cached-handoff-owner-' + mode for mode in cached_handoff_modes),
             'managed-null-factory-source', *('managed-null-factory-owner-' + mode for mode in managed_null_modes),
             'managed-executor-status-source', *('managed-executor-status-owner-' + mode for mode in managed_status_modes),
             'scheduled-executor-status-source', *('scheduled-executor-status-owner-' + mode for mode in scheduled_status_modes),
@@ -157,9 +160,11 @@ class FutureCancellationControl(unittest.TestCase):
                 return 'MANAGED_FIRST_ADMISSION_OWNER PASS ' + argv[-1]
             if stage in ('managed-cached-factory-reference-jdk', 'managed-cached-factory-source'):
                 return ('MANAGED_CACHED_FACTORY PASS nested;shutdown-thread-null-throw;refusal;committed;'
-                        'idle-reuse;growth;concurrent-reservations;idle-shutdown-difference;live-thread')
+                        'idle-reuse;growth;concurrent-reservations;idle-shutdown-handoff;two-handoffs;live-thread')
             if stage.startswith('managed-cached-factory-owner-'):
                 return 'MANAGED_CACHED_FACTORY_OWNER PASS ' + argv[-1]
+            if stage.startswith('managed-cached-handoff-owner-'):
+                return 'MANAGED_CACHED_HANDOFF_OWNER PASS ' + argv[-1]
             if stage in ('completable-obtrude-reference-jdk', 'completable-obtrude-source'):
                 return ('COMPLETABLE_OBTRUDE_REFERENCE PASS observers;overwrite;exception-identity;'
                         'cancellation;overrides;deferred;waiting-destination;running')
@@ -265,6 +270,7 @@ class FutureCancellationControl(unittest.TestCase):
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ScheduledFactoryConcurrencyOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedFirstAdmissionOwnerControl.java', argv)
         self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedCachedFactoryOwnerControl.java', argv)
+        self.assertIn(sdk / 'fibers/conformance/compiler/scheduled-source-control/ManagedCachedHandoffOwnerControl.java', argv)
         for stage in new_reference_stages:
             self.assertIn(stage, [name for name, _ in calls])
         reference_argv = next(args for stage, args in calls if stage == 'scheduled-stopped-reference-compile')

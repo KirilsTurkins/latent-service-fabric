@@ -154,7 +154,7 @@ public final class ManagedCachedFactoryReferenceControl {
             require(calls.get() == 3, "reserved-submission-not-run-once");
         } finally { release.countDown(); one.join(5000); two.join(5000); stop(pool); }
     }
-    private static void idleShutdownDifference(boolean reference) throws Exception {
+    private static void idleShutdownHandoff() throws Exception {
         var thread = new AtomicReference<Thread>(); var calls = new AtomicInteger();
         var entered = new CountDownLatch(1); var release = new CountDownLatch(1);
         var pool = Executors.newCachedThreadPool(target -> { var worker = new Thread(target); thread.set(worker); return worker; });
@@ -172,14 +172,8 @@ public final class ManagedCachedFactoryReferenceControl {
                 });
                 removed = pool.shutdownNow();
             }
-            if (reference) {
-                require(removed.isEmpty(), "jdk-idle-handoff-returned"); await(entered, "jdk-handoff-not-run");
-                release.countDown(); second.get(5, TimeUnit.SECONDS); require(calls.get() == 1, "jdk-handoff-lost");
-            } else {
-                require(removed.size() == 1 && removed.get(0) == second && !second.isDone() && calls.get() == 0,
-                    "sdk-idle-queue-not-withdrawn");
-                require(second.cancel(false), "sdk-withdrawn-task-not-cancellable");
-            }
+            require(removed.isEmpty(), "idle-handoff-returned"); await(entered, "idle-handoff-not-run");
+            release.countDown(); second.get(5, TimeUnit.SECONDS); require(calls.get() == 1, "idle-handoff-lost");
         } finally { release.countDown(); stop(pool); }
     }
     private static void liveThread() throws Exception {
@@ -198,13 +192,44 @@ public final class ManagedCachedFactoryReferenceControl {
                 && live.isAlive() && interrupts.get() == 0 && calls.get() == 0, "live-thread-custody");
         } finally { release.countDown(); live.join(5000); stop(pool); }
     }
+    private static void twoIdleHandoffs() throws Exception {
+        var entered = new CountDownLatch(2); var releaseInitial = new CountDownLatch(1);
+        var handoffsEntered = new CountDownLatch(2); var releaseHandoffs = new CountDownLatch(1);
+        var threads = new java.util.concurrent.CopyOnWriteArrayList<Thread>(); var calls = new AtomicInteger();
+        var pool = Executors.newCachedThreadPool(target -> { var thread = new Thread(target); threads.add(thread); return thread; });
+        try {
+            Future<?> a = pool.submit(() -> { entered.countDown(); await(releaseInitial, "first-release"); return null; });
+            Future<?> b = pool.submit(() -> { entered.countDown(); await(releaseInitial, "second-release"); return null; });
+            await(entered, "workers-not-started"); releaseInitial.countDown(); a.get(5, TimeUnit.SECONDS); b.get(5, TimeUnit.SECONDS);
+            require(threads.size() == 2, "initial-worker-count");
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            for (Thread worker : threads) while (worker.getState() != Thread.State.TIMED_WAITING) {
+                require(worker.isAlive() && System.nanoTime() - deadline < 0, "worker-not-idle"); Thread.yield();
+            }
+            Future<?> first, second;
+            synchronized (pool) {
+                first = pool.submit(() -> {
+                    calls.incrementAndGet(); handoffsEntered.countDown();
+                    while (true) try { releaseHandoffs.await(); return; } catch (InterruptedException ignored) { }
+                });
+                second = pool.submit(() -> {
+                    calls.incrementAndGet(); handoffsEntered.countDown();
+                    while (true) try { releaseHandoffs.await(); return; } catch (InterruptedException ignored) { }
+                });
+                require(pool.shutdownNow().isEmpty(), "idle-handoffs-returned");
+            }
+            await(handoffsEntered, "idle-handoffs-not-running"); releaseHandoffs.countDown();
+            first.get(5, TimeUnit.SECONDS); second.get(5, TimeUnit.SECONDS);
+            require(threads.size() == 2 && calls.get() == 2, "idle-handoffs-not-preserved");
+        } finally { releaseInitial.countDown(); releaseHandoffs.countDown(); stop(pool); }
+    }
     public static void main(String[] args) throws Exception {
         require(args.length == 1 && (args[0].equals("jdk") || args[0].equals("source")), "profile");
         nestedAcrossFactory();
         for (boolean immediate : new boolean[]{false, true}) for (String outcome : List.of("thread", "null", "throw"))
             duringFactory(immediate, outcome);
         noWorkerFailure(false); noWorkerFailure(true); committedFirst(); idleReuse(); growth(); concurrentReservations();
-        idleShutdownDifference(args[0].equals("jdk")); liveThread();
-        System.out.println("MANAGED_CACHED_FACTORY PASS nested;shutdown-thread-null-throw;refusal;committed;idle-reuse;growth;concurrent-reservations;idle-shutdown-difference;live-thread");
+        idleShutdownHandoff(); twoIdleHandoffs(); liveThread();
+        System.out.println("MANAGED_CACHED_FACTORY PASS nested;shutdown-thread-null-throw;refusal;committed;idle-reuse;growth;concurrent-reservations;idle-shutdown-handoff;two-handoffs;live-thread");
     }
 }
