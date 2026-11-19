@@ -40,12 +40,14 @@ def lower(name):
 
 def converted(kind, value, outbound, invocation=False):
     if kind == "bytes":
-        return f"ByteString.copyFrom({value}.asReadOnlyBuffer())" if outbound else f"{value}.asReadOnlyByteBuffer()"
+        return f"budget.bytes({value})" if outbound else f"{value}.asReadOnlyByteBuffer()"
     if kind in ENUMS:
-        return f"{value}.value()" if outbound else f"new Management.{kind}({value})"
+        return f"budget.scalar({value}.value())" if outbound else f"new Management.{kind}({value})"
     if kind in MESSAGES:
         method = "toInvocation" + kind if invocation and kind in ("ResourceBudget", "ErrorDetail", "PlatformError") else "toWire"
-        return f"{method if outbound else 'fromWire'}({value})"
+        return f"{method if outbound else 'fromWire'}({value}{', budget, depth + 1' if outbound else ''})"
+    if outbound:
+        return f"budget.text({value})" if kind == 'string' else f"budget.scalar({value})"
     return value
 
 
@@ -59,7 +61,10 @@ def generate():
         invocation = wire.startswith("latent.invocation.")
         method = "toInvocation" + name if invocation and name in ("ResourceBudget", "ErrorDetail", "PlatformError") else "toWire"
         fields = MESSAGES[name]
-        lines += [f"    public static {wire} {method}(Management.{name} value) {{", f"        var result = {wire}.newBuilder();"]
+        lines += [f"    public static {wire} {method}(Management.{name} value) {{",
+                  f"        return {method}(value, new TransactionProtocol.EncodeBudget(), 0);", "    }", "",
+                  f"    static {wire} {method}(Management.{name} value, TransactionProtocol.EncodeBudget budget, int depth) {{",
+                  "        budget.enter(depth);", f"        var result = {wire}.newBuilder();"]
         groups = sorted({field["oneof"] for field in fields if "oneof" in field})
         for group in groups:
             count = " + ".join(f"(value.{lower(field['name'])}().isPresent() ? 1 : 0)" for field in fields if field.get("oneof") == group)
@@ -67,11 +72,11 @@ def generate():
         for field in fields:
             kind, accessor, setter = field["type"], f"value.{lower(field['name'])}()", upper(field["name"])
             if field.get("map"):
-                lines.append(f"        result.putAll{setter}({accessor});")
+                lines.append(f"        result.putAll{setter}(budget.map({accessor}));")
             elif field.get("repeated"):
                 expression = converted(kind, "item", True, invocation)
                 suffix = "Value" if kind in ENUMS else ""
-                lines.append(f"        for (var item : {accessor}) result.add{setter}{suffix}({expression});")
+                lines.append(f"        for (var item : budget.list({accessor}, 128)) result.add{setter}{suffix}({expression});")
             elif field.get("optional"):
                 expression = converted(kind, accessor + ".get()", True, invocation)
                 suffix = "Value" if kind in ENUMS else ""

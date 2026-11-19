@@ -280,6 +280,87 @@ test("durable business rejection remains recoverable through later audit failure
   } finally { await fixture.stop(); }
 });
 
+test("pre-cancelled commands retain selected bytes without copying their large backing store", async () => {
+  const fixture = await peer(), abort = new AbortController();
+  const large = new ArrayBuffer(9 * 1024 * 1024);
+  const key = new Uint8Array(large, 20, 1); key[0] = 42;
+  abort.abort();
+  try {
+    await assert.rejects(fixture.client.invokeCommand({ ...command, expectedVersions: [{ key }] }, { signal: abort.signal }), error => {
+      assert.equal(error.failure.category, FailureCategory.LocalCancelled);
+      assert.equal(error.failure.dispatched, false);
+      assert.equal(error.failure.transactionIdentity.command.clientKey, "business-key");
+      assert.equal(error.failure.transactionIdentity.expectedVersions[0].key[0], 42);
+      assert.equal(error.failure.transactionIdentity.expectedVersions[0].key.buffer.byteLength, 1);
+      return true;
+    });
+    assert.equal(fixture.state.calls.length, 0);
+  } finally { await fixture.stop(); }
+});
+
+test("typed-array overrides cannot hide an oversized recovery or wire copy", async () => {
+  class MisreportedView extends Uint8Array {
+    get byteLength() { return 1; }
+    *[Symbol.iterator]() { throw new Error("caller iterator must not run"); }
+  }
+  const key = new MisreportedView(9 * 1024 * 1024);
+  const request = { ...command, expectedVersions: [{ key, version: Uint8Array.of(2) }] };
+  assert.throws(() => encode(method("invokeCommand").input, request, 2 * 1024 * 1024, true), ShapeError);
+  const small = new MisreportedView(1); small[0] = 7;
+  const wire = encode(method("invokeCommand").input, { ...command, expectedVersions: [{ key: small, version: Uint8Array.of(2) }] }, 2 * 1024 * 1024, true);
+  assert.equal(decode(method("invokeCommand").input, wire, 2 * 1024 * 1024, true).expectedVersions[0].key[0], 7);
+  const fixture = await peer(), abort = new AbortController();
+  abort.abort();
+  try {
+    await assert.rejects(fixture.client.invokeCommand(request, { signal: abort.signal }), error => {
+      assert.equal(error.failure.category, FailureCategory.LocalCancelled);
+      assert.equal(error.failure.transactionIdentity.expectedVersions, undefined);
+      return true;
+    });
+    assert.equal(fixture.state.calls.length, 0);
+  } finally { await fixture.stop(); }
+});
+
+test("a collection changed after validation cannot dispatch an invalid wire request", async () => {
+  const fixture = await peer();
+  const versions = [];
+  let reads = 0;
+  Object.defineProperty(versions, 0, { enumerable: true, configurable: true, get() {
+    return ++reads === 1 ? { key: Uint8Array.of(1), version: Uint8Array.of(2) }
+      : { key: Uint8Array.of(1), absent: true, version: Uint8Array.of(2) };
+  } });
+  try {
+    await assert.rejects(fixture.client.invokeCommand({ ...command, expectedVersions: versions }), error => {
+      assert.equal(error.failure.category, FailureCategory.InvalidRequest);
+      assert.equal(error.failure.dispatched, false);
+      return true;
+    });
+    assert.equal(fixture.state.calls.length, 0);
+  } finally { await fixture.stop(); }
+});
+
+test("wire encoding refuses proxies and ignores caller array methods", () => {
+  const proxy = new Proxy(command, { ownKeys() { throw new Error("proxy trap must not run"); } });
+  assert.throws(() => encode(method("invokeCommand").input, proxy, 2 * 1024 * 1024, true), ShapeError);
+  const versions = [{ key: Uint8Array.of(1), version: Uint8Array.of(2) }];
+  versions.map = () => { throw new Error("caller map must not run"); };
+  const wire = encode(method("invokeCommand").input, { ...command, expectedVersions: versions }, 2 * 1024 * 1024, true);
+  assert.equal(decode(method("invokeCommand").input, wire, 2 * 1024 * 1024, true).expectedVersions.length, 1);
+});
+
+test("transaction validation ignores caller-supplied array iterators", async () => {
+  const fixture = await peer();
+  class SelectedView extends Uint8Array { *[Symbol.iterator]() { throw new Error("caller byte iterator must not run"); } }
+  const key = new SelectedView(1); key[0] = 1;
+  const versions = [{ key, version: Uint8Array.of(2) }];
+  versions[Symbol.iterator] = () => { throw new Error("caller iterator must not run"); };
+  try {
+    const response = await fixture.client.invokeCommand({ ...command, expectedVersions: versions });
+    assert.equal(response.metadata.transactionIdentity.expectedVersions[0].version[0], 2);
+    assert.equal(fixture.state.calls.length, 1);
+  } finally { await fixture.stop(); }
+});
+
 test("grpc ABORTED never proves a new attempt or resubmits a command", async () => {
   const fixture = await peer("aborted");
   try {

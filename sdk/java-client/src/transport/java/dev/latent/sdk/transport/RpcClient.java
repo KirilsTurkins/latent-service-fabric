@@ -222,7 +222,11 @@ public final class RpcClient implements Management.ClientProfile, TransactionCli
                 WireRequest wire = encode.apply(request);
                 if (wire.getSerializedSize() > requestLimit) return CompletableFuture.failedFuture(new Management.ClientException(local(Management.FailureCategory.LIMIT, identity)));
                 Request captured = snapshot.apply(wire);
-                if (transaction != null) transaction.capture(captured);
+                if (transaction != null) {
+                    TransactionProtocol.graph(captured);
+                    TransactionProtocol.request(captured, config.tenant);
+                    transaction.capture(captured);
+                }
                 int responseLimit = transaction != null ? Math.min(TransactionProtocol.WIRE_BYTES, config.responseBytes)
                         : request instanceof Management.InspectActivationTreeRequest || request instanceof Management.InspectHttpTargetRequest ? Math.min(65536, config.responseBytes)
                         : request instanceof Management.ListCapabilitiesRequest ? Math.min(131072, config.responseBytes)
