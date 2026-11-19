@@ -48,7 +48,7 @@ def selected(observation, identities):
             'listeners': False, 'descriptorNamespace': False,
             'rootRequiresCompletedClose': True, 'automaticCloseDrain': True,
             'closeDrain': 'accepted-terminal-intent-only-v1', 'maximumRootCloseWaiters': 1,
-            'pausedEndRead': 'eof-only-unread-data-refuses',
+            'pausedEndRead': 'one-window-until-resume',
             'physicalRetirement': 'not-inferred', 'authority': 'none', 'qualification': 'unknown'}
 
 
