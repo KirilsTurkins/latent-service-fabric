@@ -110,15 +110,24 @@ GO_OVERLAP_TEST_ALLOCATOR = '''    #[allow(unsafe_code, reason = "test-only exac
 # The fixed combined diagnostic checks its final-byte proof before selecting
 # both paths; no raw mapping, child-admission or physical-retirement operation
 # changes. Bind all four sources; child/worker/combined state gets no unsafe
-# allowance. See docs/testing/rust-combined-http-diagnostic.md.
+# allowance. Strong-only context custody uses Arc::into_inner on every holder:
+# the original metadata reservation outlives its Arc backing, including concurrent
+# last drops. Mapping admission and munmap-before-refund are unchanged.
+# See docs/testing/rust-combined-http-diagnostic.md.
 NATIVE_STACK = f"{CRATE}/src/native_stacks.rs"
 NATIVE_STACK_CHILD = f"{CRATE}/src/native_stacks/children.rs"
 NATIVE_STACK_WORKER = f"{CRATE}/src/native_stacks/workers.rs"
 NATIVE_STACK_COMBINED = f"{CRATE}/src/native_stacks/combined.rs"
 NATIVE_STACK_CHILD_SHA256 = "d1814527adf59a2ca9c94f7b5dd9fbcd32b3c02d265863856a62ca3ada73a9a4"
-NATIVE_STACK_SHA256 = "3aecb4465665fcf7ff4a389e5f28cab5f22c0e56fea7cefe9f2886afadbf413e"
+NATIVE_STACK_SHA256 = "0cd70a9c89cbe0a230007ae6db53dd620f1c64eacecccd43354542228cafe844"
 NATIVE_STACK_WORKER_SHA256 = "dba9018a5401e807dac8b9853e9a327c566054d700b519eff2788b2289a19bb9"
-NATIVE_STACK_COMBINED_SHA256 = "b616094bea5e9f6b7dfd31573378800b2a5563b38c5b7a43a701cca2ff099b83"
+NATIVE_STACK_COMBINED_SHA256 = "f94b7bdea5c8e7d8ea2884aa7995579d549fed119b6bc0800c6877f26145b889"
+# Exact test-only System allocator observer, not a production unsafe allowance.
+# Its immutable inner cfg requires test + Linux x86_64 + the explicit feature;
+# construction capture is thread-local and every worker is released on unwind.
+# See docs/testing/native-stack-context-custody.md.
+NATIVE_STACK_CUSTODY_TEST = f"{CRATE}/src/native_stacks/tests/stack_custody_allocation.rs"
+NATIVE_STACK_CUSTODY_TEST_SHA256 = "89439b39bede6f17d9a809e3ac07c3e0c12b503103322291d03f2f089611e032"
 ALLOW = '''#[allow(
     unsafe_code,
     reason = "the sole native loader accepts only a private proof over authenticated immutable bytes"
@@ -328,6 +337,11 @@ def validate(root: Path) -> list[str]:
                 errors.append("audited Go overlap test allocator changed; review its cfg(test) scope and physical release witness")
             else:
                 source = source.replace(GO_OVERLAP_TEST_ALLOCATOR, "", 1)
+        elif relative == NATIVE_STACK_CUSTODY_TEST:
+            if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_CUSTODY_TEST_SHA256:
+                errors.append("audited native-stack custody test allocator changed; review test-only scope and physical-release observation")
+            else:
+                source = ""
         elif relative == NATIVE_STACK:
             if hashlib.sha256(source.encode("utf-8")).hexdigest() != NATIVE_STACK_SHA256:
                 errors.append("audited native-stack allocator changed; review original admission and physical unmapping")
