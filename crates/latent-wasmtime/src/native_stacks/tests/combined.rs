@@ -29,7 +29,7 @@ fn context(
     budget: &ActivationBudget,
     runtime: &ActivationRuntime,
     maximum: usize,
-) -> Arc<StackContext> {
+) -> StackContextHandle {
     StackContext::with_combined_http(
         budget.clone(),
         runtime.clone(),
@@ -197,10 +197,7 @@ async fn combined_child_and_actual_nested_engine_workers_keep_one_original_ledge
             .call_async(&mut store, ())
             .await
     };
-    assert_eq!(
-        scoped(Arc::clone(&context), call).unwrap().await.unwrap(),
-        42
-    );
+    assert_eq!(scoped(context.clone(), call).unwrap().await.unwrap(), 42);
     drop(task);
     runtime.begin_drain();
     context.finish_logical().unwrap();

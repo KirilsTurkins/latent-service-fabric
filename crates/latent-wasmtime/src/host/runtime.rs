@@ -27,6 +27,7 @@ pub(super) use fixed_result::Completion;
 use fixed_result::FixedValue;
 mod positive_timer_observer;
 use positive_timer_observer::{Event as TimerEvent, Observer as TimerObserver};
+mod owner_storage;
 
 #[cfg(test)]
 mod tests;
@@ -52,9 +53,10 @@ fn backing_bytes<T>(count: usize) -> Option<u64> {
 /// remove an owner, mint another activation, or establish native retirement.
 pub(crate) struct Table {
     owners: Vec<RuntimeOwner>,
+    owner_limit: usize,
     timers: Vec<RuntimeTimer>,
     runtime: ActivationRuntime,
-    pub(crate) native_stacks: Option<Arc<crate::native_stacks::StackContext>>,
+    pub(crate) native_stacks: Option<crate::native_stacks::StackContextHandle>,
     timer_observer: Option<TimerObserver>,
     #[cfg(feature = "development-go-timer-overlap")]
     overlap: Option<crate::development_go_timer_overlap::Observer>,
@@ -67,17 +69,15 @@ impl Table {
         limits: RuntimeLimits,
         timer_observer: Option<TimerObserver>,
     ) -> Result<Self, PlatformError> {
-        // Validated runtime limits cap total at 8192. Both Vec backings are
-        // independently prepaid before either is allocated; a zero timer limit
-        // leaves its Vec unallocated.
+        // The owners Vec is lazy; timer storage keeps its existing prepayment.
+        // Validated runtime limits cap total owners at 8192.
         let owner_count = limits.total();
         let timer_count = limits.timers as usize;
-        let (owner_bytes, backings_bytes, bytes) = (|| {
-            let owner_bytes = backing_bytes::<RuntimeOwner>(owner_count)?;
+        let (backings_bytes, bytes) = (|| {
             let timer_bytes = backing_bytes::<RuntimeTimer>(timer_count)?;
-            let backings = owner_bytes.checked_add(timer_bytes)?;
-            let bytes = backings.checked_add(u64::try_from(std::mem::size_of::<Self>()).ok()?)?;
-            Some((owner_bytes, backings, bytes))
+            let bytes =
+                timer_bytes.checked_add(u64::try_from(std::mem::size_of::<Self>()).ok()?)?;
+            Some((timer_bytes, bytes))
         })()
         .ok_or_else(|| {
             failure(
@@ -88,16 +88,7 @@ impl Table {
         let mut allocation = budget
             .reserve_host_memory(bytes)
             .map_err(|e| e.to_host_memory_error())?;
-        let mut owners = Vec::new();
-        owners.try_reserve_exact(owner_count).map_err(|_| {
-            failure(
-                PlatformErrorCode::ResourceExhausted,
-                "runtime-owner-allocation",
-            )
-        })?;
-        // Confirm each backing as it physically appears, even if a later
-        // allocation fails. Unused envelope capacity stays reserved.
-        allocation.confirm_bytes(owner_bytes);
+        let owners = Vec::new();
         let mut timers = Vec::new();
         timers.try_reserve_exact(timer_count).map_err(|_| {
             failure(
@@ -108,7 +99,7 @@ impl Table {
         allocation.confirm_bytes(backings_bytes);
         // Pinned Global RawVec preserves the requested exact capacities.
         // No owner is published under an unexpected backing-size contract.
-        if owners.capacity() != owner_count || timers.capacity() != timer_count {
+        if timers.capacity() != timer_count {
             return Err(failure(
                 PlatformErrorCode::ResourceExhausted,
                 "runtime-table-capacity",
@@ -117,6 +108,7 @@ impl Table {
         let runtime = ActivationRuntime::new(budget, limits)?;
         let mut table = Self {
             owners,
+            owner_limit: owner_count,
             timers,
             runtime,
             native_stacks: None,
@@ -127,6 +119,98 @@ impl Table {
         };
         table.allocation.confirm();
         Ok(table)
+    }
+
+    fn prepare_owner_slot(&mut self) -> Result<(), PlatformError> {
+        self.prepare_owner_slot_with(owner_storage::allocate)
+    }
+
+    fn prepare_owner_slot_with(
+        &mut self,
+        allocate: impl FnOnce(usize) -> Result<Vec<RuntimeOwner>, ()>,
+    ) -> Result<(), PlatformError> {
+        if self.owners.len() < self.owners.capacity() {
+            return Ok(());
+        }
+        let old_capacity = self.owners.capacity();
+        if old_capacity >= self.owner_limit {
+            return Err(failure(
+                PlatformErrorCode::ResourceExhausted,
+                "runtime-owner-allocation",
+            ));
+        }
+        let capacity = old_capacity.saturating_mul(2).max(1).min(self.owner_limit);
+        let old_bytes = backing_bytes::<RuntimeOwner>(old_capacity).ok_or_else(|| {
+            failure(
+                PlatformErrorCode::ResourceExhausted,
+                "runtime-owner-allocation",
+            )
+        })?;
+        let new_bytes = backing_bytes::<RuntimeOwner>(capacity).ok_or_else(|| {
+            failure(
+                PlatformErrorCode::ResourceExhausted,
+                "runtime-owner-allocation",
+            )
+        })?;
+        let previous = self.allocation.bytes();
+        // Reserve the full replacement while the old backing remains charged.
+        self.allocation
+            .grow(new_bytes)
+            .map_err(|e| e.to_host_memory_error())?;
+        let mut replacement = match allocate(capacity) {
+            Ok(replacement) => replacement,
+            Err(()) => {
+                self.allocation.shrink(previous);
+                return Err(failure(
+                    PlatformErrorCode::ResourceExhausted,
+                    "runtime-owner-allocation",
+                ));
+            }
+        };
+        self.allocation.confirm();
+        // No owner is dropped or recreated while moving into prepaid storage.
+        replacement.append(&mut self.owners);
+        let old = std::mem::replace(&mut self.owners, replacement);
+        drop(old);
+        self.allocation.shrink(previous + new_bytes - old_bytes);
+        Ok(())
+    }
+
+    fn register_owner(
+        &mut self,
+        kind: OwnerKind,
+        continuation: Option<RuntimeToken>,
+    ) -> Result<RuntimeToken, PlatformError> {
+        self.register_owner_with_hook(
+            kind,
+            continuation,
+            #[cfg(test)]
+            || {},
+        )
+    }
+
+    fn register_owner_with_hook(
+        &mut self,
+        kind: OwnerKind,
+        continuation: Option<RuntimeToken>,
+        #[cfg(test)] after_preflight: impl FnOnce(),
+    ) -> Result<RuntimeToken, PlatformError> {
+        if self.owners.len() == self.owners.capacity() {
+            // The preflight grants nothing; register below rechecks under the
+            // authoritative lock after the physical allocation has completed.
+            self.runtime.preflight_registration(kind, continuation)?;
+            #[cfg(test)]
+            after_preflight();
+            if let Err(failure) = self.prepare_owner_slot() {
+                return Err(self
+                    .runtime
+                    .reject_storage_preparation(kind, continuation, failure));
+            }
+        }
+        let owner = self.runtime.register(kind, continuation)?;
+        let token = owner.token();
+        self.owners.push(owner);
+        Ok(token)
     }
     /// Existing original ledger, retained without allocating a replacement.
     /// Only the backend's completed physical Store retirement may use this to
@@ -193,7 +277,7 @@ fn table(state: &mut HostState) -> Result<&mut Table, PlatformError> {
 }
 pub(super) fn native_context(
     state: &mut HostState,
-) -> Result<Arc<crate::native_stacks::StackContext>, PlatformError> {
+) -> Result<crate::native_stacks::StackContextHandle, PlatformError> {
     let table = table(state)?;
     let context = table.native_stacks.clone().ok_or_else(|| {
         failure(
@@ -212,7 +296,7 @@ pub(crate) fn prepare_native_stack(
         &crate::component_threading::Authentication,
         &latent_executor::PreparedComponent,
     )>,
-) -> Result<Arc<crate::native_stacks::StackContext>, PlatformError> {
+) -> Result<crate::native_stacks::StackContextHandle, PlatformError> {
     let budget = state.accounting.budget().clone();
     let maximum_native = state.runtime_limits.map(|limits| limits.native_owners);
     let table = table(state)?;
@@ -239,7 +323,7 @@ pub(crate) fn prepare_native_stack(
             proof,
             descriptor,
         )?;
-        table.native_stacks = Some(Arc::clone(&context));
+        table.native_stacks = Some(context.clone());
         return Ok(context);
     }
     let context = if async_workers {
@@ -265,7 +349,7 @@ pub(crate) fn prepare_native_stack(
             maximum_children,
         )?
     };
-    table.native_stacks = Some(Arc::clone(&context));
+    table.native_stacks = Some(context.clone());
     Ok(context)
 }
 
@@ -326,7 +410,50 @@ where
             return Completion::new(Err(convert(error)), None);
         }
     };
-    let result = table(state).and_then(execute);
+    #[cfg(feature = "development-go-lazy-owner-observer")]
+    let selected = crate::development_go_lazy_owner_observer::selected(
+        &state.context.activation_id.0,
+        operation,
+    );
+    #[cfg(feature = "development-go-lazy-owner-observer")]
+    let original_budget = selected.then(|| state.accounting.budget().clone());
+    #[cfg(feature = "development-go-lazy-owner-observer")]
+    let table_preexisting = state.runtime.is_some();
+    #[cfg(feature = "development-go-lazy-owner-observer")]
+    let mut owned = None;
+    let result = table(state).and_then(|table| {
+        #[cfg(feature = "development-go-lazy-owner-observer")]
+        let owner_count_before = table.owners.len();
+        let result = execute(table);
+        #[cfg(feature = "development-go-lazy-owner-observer")]
+        if let (Some(budget), Ok(_)) = (&original_budget, &result) {
+            let snapshot = table.runtime.snapshot();
+            owned = Some(crate::development_go_lazy_owner_observer::Owner {
+                before: owner_count_before,
+                after: table.owners.len(),
+                capacity: table.owners.capacity(),
+                tasks: snapshot.owners[0],
+                other_owners: snapshot.owners[1..].iter().copied().sum(),
+                live_token: table
+                    .owners
+                    .first()
+                    .is_some_and(|owner| owner.token().id != 0),
+                same_original_budget: table.allocation.is_from_budget(budget),
+            });
+        }
+        result
+    });
+    #[cfg(feature = "development-go-lazy-owner-observer")]
+    if let (Some(budget), Some(owner)) = (original_budget, owned) {
+        crate::development_go_lazy_owner_observer::record(
+            crate::development_go_lazy_owner_observer::Snapshot {
+                calls: 0,
+                table_preexisting,
+                granted_bytes: budget.granted().memory_bytes,
+                owner,
+            },
+        );
+    }
     if let Err(error) = &result {
         observe_runtime_refusal(state, error);
     }
@@ -394,9 +521,7 @@ pub(crate) fn install(linker: &mut Linker<HostState>) -> wasmtime::Result<()> {
         |table| {
             let kind = owner_kind(kind);
             let parent = continuation.map(token);
-            let owner = table.runtime.register(kind, parent)?;
-            let value = owner.token();
-            table.owners.push(owner);
+            let value = table.register_owner(kind, parent)?;
             if let Some(observer) = &mut table.timer_observer {
                 observer.root_admitted(kind, parent, value, table.runtime.snapshot().owners);
             }
