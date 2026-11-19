@@ -180,7 +180,7 @@ database clients do not become LSF transactions/intents.
 Runtime clocks, entropy, logging, GC and suspension have separate explicit narrow
 authority and accounting, including initialization. They do not authorize
 application mutations or persistent work. The six profiles are maintained compiled
-Rust, C, TypeScript, Go/TinyGo, Java/TeaVM and C#/.NET NativeAOT components, with
+Rust, C, TypeScript, upstream Go with the [LSF scheduler overlay](../component-development/go-authoring.md), Java/TeaVM and C#/.NET NativeAOT components, with
 their own exception/panic/Promise/goroutine/Task/owned-handle semantics. Do not infer
 JVM/CLR/Node or OS-thread behavior. Host suspension retains actual activation
 ownership under [ADR-0028](../../adr/0028-retain-activation-ownership-across-asynchronous-waits.md).
@@ -207,6 +207,13 @@ orchestration and durable application timers remain Phase 6.
 
 ## Incoming identity, formats and linked retention
 
+The following describes the transactional inbox contract. Standalone configuration
+currently refuses `transactionalTriggers` with `transactionalTriggers.scopeCustodyUnavailable`.
+The implemented protected-store checks compare existing source history and its
+checkpoint watermark. Authorizing a first source and reconciling an older restore
+remain prerequisites for enabling delivery. The ordinary pull trigger can redeliver.
+[Trigger installation](../runtime/nats-triggers.md#transactional-inbox-status)
+
 Incoming identity binds tenant/namespace/incarnation, granted source binding and
 canonical immutable message identity, under an explicit finite deduplication
 window. Broker session/delivery counters/activation IDs are not identity. Commit
@@ -227,10 +234,12 @@ payloads, inbox protection and required schema/binding/publication metadata.
 The [local-blob custody owner](../../crates/latent-local-blobs/README.md) and
 command-envelope library now support verified local attachments with original
 session/engine bindings and reciprocal ownership rows. They preserve the
-existing inline result/effect representation. Standalone startup still refuses
-required payload-reference rows without its physical inventory, and state/
-snapshot/GC integration retains its separate acceptance requirements. Logical
-catalogue consistency alone cannot establish that the underlying bytes exist.
+existing inline result/effect representation. Protected standalone startup binds
+a durable local root to the opened engine, checks the reciprocal references
+and verifies the required bytes before serving. A refused or conflicted state
+replacement keeps the old reference. Readers and other durable owners can
+still pin bytes after a successful replacement. Guest reference attachment and
+complete snapshot closure remain open. [Local payload lifecycle](blob-model.md#ownership-and-retention)
 Application result bytes can expire while receipt-only recovery and deduplication
 identity remain. Unresolved dependent work prevents unsafe GC. Unknown/expired
 identity is no abort proof. Durable time anchors retain their original clock and

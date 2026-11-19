@@ -9,7 +9,8 @@ are preserved. New helper functions/types are appended; a missing context traps
 instead of selecting the shared stack. Input and output bytes have separate
 SHA256 identities; original debug offsets are explicitly unqualified afterward.
 
-The source uses already locked wasmparser/wasm-encoder 0.259.0 and SHA2 0.11.0.
+The facade imports the [shared transform](../../../crates/latent-component-threading/README.md).
+Its [Cargo lock](Cargo.lock) resolves wasmparser and wasm-encoder 0.262.0 and SHA-2 0.11.0.
 It rejects wrong preimages, non-core/GC inputs, missing/wrong context imports,
 unqualified imported globals/memory, shared/memory64/multiple memory and wrong
 stack-global shape. Its finite input/function/operator bounds are compiler

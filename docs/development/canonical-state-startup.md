@@ -82,9 +82,10 @@ Preserve the external checkpoint, protected clock floors, authoritative catalog,
 store and original command/effect history together under the selected recovery
 protocol. The [container backup helper](../operations/local-storage-recovery.md)
 only copies its fixed roots; it neither follows an external checkpoint path nor
-establishes transactional restore approval. Older-history restore changes
-incarnation and remains paused for explicit reconciliation. A code rollback
-cannot undo business state or an external action.
+establishes transactional restore approval. Older-history restore preserves the
+business incarnation and advances the recovery epoch. Dispatch stays paused for
+explicit reconciliation. A code rollback cannot undo business state or external
+actions. [Namespace history](../architecture/namespace-history-epochs.md)
 
 Use [transaction recovery](../operations/transaction-recovery.md) for original
 command, commit and effect inspection. Those read/control commands do not provide

@@ -56,9 +56,9 @@ compiler input.
 
 ## Dependencies and verification
 
-[Cargo.toml](Cargo.toml) preserves the implementation's exact wasmparser and
-wasm-encoder 0.259.0 and SHA-2 0.11.0 pins. Runtime workspace parser and digest
-versions are unchanged. The package follows the workspace MSRV and forbids unsafe
+[Cargo.toml](Cargo.toml) pins wasmparser and wasm-encoder to 0.262.0 and
+SHA-2 to 0.11.0. The independently locked Rust transform facade consumes this
+same implementation. The package follows the workspace MSRV and forbids unsafe
 code; it does not link a runtime engine.
 
 Inspect its registered source controls through the repository test front door:
