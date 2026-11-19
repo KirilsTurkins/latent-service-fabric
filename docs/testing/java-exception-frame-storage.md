@@ -36,8 +36,9 @@ continuation storage.
 The transformation requires the complete unchanged TeaVM 0.15 `exceptions.h`
 resource, SHA-256
 `024e4fafa0a2cd330911b5d84d1b929f928a88d74730cc265d08cbbb940eb368`.
-The exact resource is retained as a test fixture from the pinned TeaVM
-classlib C backend, under the existing TeaVM license attribution in `NOTICE`.
+The exact `org/teavm/backend/c/exceptions.h` resource from the pinned
+`teavm-core-0.15.0.jar` is retained as a test fixture. See `NOTICE` for its
+TeaVM source attribution and Apache-2.0 terms.
 The original macros remain byte-for-byte intact; a distinct slot-taking try
 macro supplies only the changed storage expression.
 
