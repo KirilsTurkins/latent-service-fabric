@@ -277,13 +277,144 @@ internal static class ManualResetEventControl
         Restored();
     }
 
+    private static void CheckClrContext()
+    {
+        // Observe a blocked waiter, not a race between Task.Run(Set) and Wait.
+        // Suppress flow into this reference thread so its bootstrap/teardown
+        // cannot contribute notifications from the test runner's context.
+        using var signal = new ManualResetEventSlim(false, 0);
+        int entered = 0, notifications = 0;
+        Exception? failure = null;
+        var waiter = new Thread(() => {
+            bool measuring = false;
+            var local = new AsyncLocal<int>(change => {
+                if (measuring && change.ThreadContextChanged) Interlocked.Increment(ref notifications);
+            });
+            local.Value = 7;
+            try {
+                measuring = true;
+                Volatile.Write(ref entered, 1);
+                signal.Wait();
+                Require(local.Value == 7, "clr-event-context-value");
+            }
+            catch (Exception error) { failure = error; }
+            finally { measuring = false; local.Value = 0; }
+        }) { IsBackground = true };
+        if (ExecutionContext.IsFlowSuppressed()) waiter.Start();
+        else { using (ExecutionContext.SuppressFlow()) waiter.Start(); }
+        try {
+            Require(SpinWait.SpinUntil(() => Volatile.Read(ref entered) == 1
+                && (waiter.ThreadState & System.Threading.ThreadState.WaitSleepJoin) != 0, 10000),
+                "clr-event-waiter-not-observed-blocked");
+            Require(!signal.IsSet, "clr-event-signal-before-observation");
+        }
+        finally {
+            signal.Set();
+            Require(waiter.Join(10000), "clr-event-waiter-not-reaped");
+        }
+        if (failure is not null) System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
+        Require(notifications == 0, "clr-event-context-notifications");
+    }
+
+    private static void CheckPendingContext(Type projection)
+    {
+        var simple = projection.GetMethod("WaitSimple")!.CreateDelegate<Action<ManualResetEventSlim>>();
+        var timed = projection.GetMethod("WaitCore")!.CreateDelegate<Func<ManualResetEventSlim, int, CancellationToken, bool>>();
+        var submit = projection.GetMethod("Submit")!.CreateDelegate<Action<Action>>();
+        var owners = projection.GetField("Owners")!;
+        var running = projection.GetField("Running")!;
+        var settled = projection.GetField("Settled")!;
+        var dispatches = projection.GetField("Dispatches")!;
+        var readinessFailure = projection.GetField("ReadinessFailure")!;
+        var frame = new[] { "Target", "Token", "Start", "Timeout", "Observed", "Current", "Depth" }
+            .Select(name => projection.GetField(name)!).ToArray();
+        var waits = new Dictionary<string, Action<ManualResetEventSlim>> {
+            ["simple"] = simple,
+            ["infinite"] = value => Require(timed(value, -1, CancellationToken.None), "event-infinite-result"),
+        };
+        var failures = new List<string>();
+        foreach (var (name, wait) in waits)
+        foreach (bool refuse in new[] { false, true })
+        {
+            string label = name + (refuse ? "-refusal-retry" : "-signal");
+            using var signal = new ManualResetEventSlim(false);
+            var changes = new List<string>();
+            bool measuring = false;
+            var local = new AsyncLocal<int>(change => {
+                // Do not throw from this callback: record the evidence and
+                // assert it only after the wait and owner cleanup have finished.
+                if (measuring && change.ThreadContextChanged)
+                    changes.Add(change.PreviousValue + "->" + change.CurrentValue);
+            });
+            var saved = frame.Select(field => field.GetValue(null)).ToArray();
+            int beforeDispatches = (int)dispatches.GetValue(null)!;
+            int beforeSettled = (int)settled.GetValue(null)!;
+            int workerValue = -1;
+            bool suppressed = ExecutionContext.IsFlowSuppressed();
+            Require((int)owners.GetValue(null)! == 0 && (int)running.GetValue(null)! == 0,
+                "event-context-initial-owners");
+            void Restored()
+            {
+                Require(local.Value == 7 && ExecutionContext.IsFlowSuppressed() == suppressed,
+                    "event-context-caller-state-" + label);
+                for (int index = 0; index < frame.Length; index++)
+                    Require(Equals(frame[index].GetValue(null), saved[index]),
+                        "event-context-frame-" + frame[index].Name + "-" + label);
+            }
+            void Observe(string phase)
+            {
+                if (changes.Count != 0)
+                    failures.Add(label + "-" + phase + ":" + string.Join(",", changes));
+                changes.Clear();
+            }
+            local.Value = 7;
+            try {
+                measuring = true;
+                ExecutionContext.Run(ManualResetEventProjection.Default, _ => { }, null);
+                Require(changes.SequenceEqual(new[] { "7->0", "0->7" }), "event-context-observer-control");
+                changes.Clear();
+                // The projection's queue never runs inline and does not capture
+                // ExecutionContext. This also rejects a fix that simply runs
+                // the dispatcher inside the waiting caller's context.
+                submit(() => { workerValue = local.Value; signal.Set(); });
+                Require(!signal.IsSet && (int)dispatches.GetValue(null)! == beforeDispatches,
+                    "event-context-not-pending-" + label);
+                if (refuse)
+                {
+                    var primary = new InvalidOperationException("event-context-readiness-primary");
+                    readinessFailure.SetValue(null, primary);
+                    try { wait(signal); throw new InvalidOperationException("event-context-refusal-not-thrown"); }
+                    catch (InvalidOperationException error) {
+                        Require(ReferenceEquals(error, primary), "event-context-primary-changed");
+                    }
+                    finally { readinessFailure.SetValue(null, null); }
+                    Require(!signal.IsSet && (int)owners.GetValue(null)! == 1
+                        && (int)running.GetValue(null)! == 0
+                        && (int)settled.GetValue(null)! == beforeSettled
+                        && (int)dispatches.GetValue(null)! == beforeDispatches,
+                        "event-context-refused-owner-lost");
+                    Restored(); Observe("refused");
+                }
+                wait(signal);
+                Require(signal.IsSet && (int)owners.GetValue(null)! == 0
+                    && (int)running.GetValue(null)! == 0
+                    && (int)settled.GetValue(null)! == beforeSettled + 1
+                    && (int)dispatches.GetValue(null)! == beforeDispatches + 1,
+                    "event-context-owner-settlement-" + label);
+                Restored(); Observe("returned");
+                if (workerValue != 0) failures.Add(label + "-caller-context-leaked:" + workerValue);
+            }
+            finally { measuring = false; local.Value = 0; readinessFailure.SetValue(null, null); }
+        }
+        Require(failures.Count == 0, "event-wait-context-mismatch:" + string.Join(";", failures));
+    }
+
     internal static void Run(string assembly, string output)
     {
-        using var reference = new ManualResetEventSlim(false);
-        var setter = Task.Run(reference.Set);
-        reference.Wait(); setter.Wait();
-        Require(reference.IsSet, "clr-event-reference");
-        CheckProjection(BuildProjection(assembly, output));
+        CheckClrContext();
+        var projection = BuildProjection(assembly, output);
+        CheckProjection(projection);
+        CheckPendingContext(projection);
         Console.WriteLine("MANUAL_RESET_EVENT_IL_HOST PASS clr;zero;validation;signal;reset;nested;owners;refusal");
     }
 }
