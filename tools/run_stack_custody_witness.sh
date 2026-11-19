@@ -24,7 +24,8 @@ for profile in ordinary combined; do
     "${command[@]}" -- --list --format terse --color never > "${OUTPUT}/${profile}.list"
     grep -Fx "${WITNESS}: test" "${OUTPUT}/${profile}.list"
     if [[ "${profile}" == combined ]]; then
-        grep -E '^native_stacks::tests::combined::.+: test$' "${OUTPUT}/${profile}.list"
+        grep -E '^native_stacks::tests::combined::.+: test$' "${OUTPUT}/${profile}.list" \
+            > "${OUTPUT}/${profile}.required"
     fi
     # Compilation is already complete; bound the actual blocking observation.
     timeout --kill-after=10s 180s "${command[@]}" -- \
@@ -32,6 +33,10 @@ for profile in ordinary combined; do
         | tee "${OUTPUT}/${profile}.log"
     grep -Fx "test ${WITNESS} ... ok" "${OUTPUT}/${profile}.log"
     if [[ "${profile}" == combined ]]; then
-        grep -E '^test native_stacks::tests::combined::.+ \.\.\. ok$' "${OUTPUT}/${profile}.log"
+        # Derive the controls from this build, not a hand-maintained inventory.
+        # One passing control must not conceal another missing or ignored one.
+        while IFS= read -r entry; do
+            grep -Fx "test ${entry%: test} ... ok" "${OUTPUT}/${profile}.log"
+        done < "${OUTPUT}/${profile}.required"
     fi
 done

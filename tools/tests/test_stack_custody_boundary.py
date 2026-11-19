@@ -1,7 +1,7 @@
 """Custody review tripwires and feature-specific runner failure behavior."""
 from pathlib import Path
+import json
 import os
-import platform
 import shutil
 import subprocess
 import tempfile
@@ -78,18 +78,28 @@ all = "warn"
         self.assertTrue(any("unreviewed unsafe" in e for e in boundary.validate(self.root)))
 
 
-@unittest.skipUnless(platform.system() == "Linux" and platform.machine() == "x86_64",
-                     "runner requires Linux x86_64")
 class CustodyRunner(unittest.TestCase):
-    def run_script(self, mode="pass"):
+    def run_script(self, mode="pass", system="Linux", machine="x86_64"):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / "tools").mkdir()
             script = root / "tools/run_stack_custody_witness.sh"
             shutil.copyfile(ROOT / "tools/run_stack_custody_witness.sh", script)
-            fake = root / "cargo"
-            fake.write_text('''#!/usr/bin/env python3
-import json, os, sys
+            programs = {
+                "uname": '''import os, sys
+print(os.environ["SYSTEM"] if sys.argv[1] == "-s" else os.environ["MACHINE"])
+''',
+                "timeout": '''import json, os, subprocess, sys
+from pathlib import Path
+with Path(os.environ["TIMEOUT_CALLS"]).open("a") as output:
+    output.write(json.dumps(sys.argv[1:]) + "\\n")
+if sys.argv[1:3] != ["--kill-after=10s", "180s"]:
+    sys.exit(9)
+if os.environ["MODE"] == "timeout":
+    sys.exit(124)
+sys.exit(subprocess.run(sys.argv[3:]).returncode)
+''',
+                "cargo": '''import json, os, sys
 from pathlib import Path
 with Path(os.environ["CALLS"]).open("a") as output:
     output.write(json.dumps(sys.argv[1:]) + "\\n")
@@ -104,23 +114,37 @@ witness = os.environ["WITNESS"]
 if mode != "missing":
     print(witness + ": test" if listing else "test " + witness + " ... " + ("ignored" if mode == "ignored" else "ok"))
 if combined and mode != "missing-combined":
-    case = os.environ["COMBINED"]
-    print(case + ": test" if listing else "test " + case + " ... " + ("ignored" if mode == "ignored-combined" else "ok"))
-''')
-            fake.chmod(0o755)
+    for suffix in ("", "_second"):
+        if suffix and mode == "partial-combined" and not listing:
+            continue
+        case = os.environ["COMBINED"] + suffix
+        ignored = mode == "ignored-combined" or (suffix and mode == "partial-ignored")
+        print(case + ": test" if listing else "test " + case + " ... " + ("ignored" if ignored else "ok"))
+''',
+            }
+            for name, source in programs.items():
+                fake = root / name
+                fake.write_text("#!/usr/bin/env python3\n" + source)
+                fake.chmod(0o755)
             calls = root / "calls.jsonl"
+            timeouts = root / "timeouts.jsonl"
             env = {**os.environ, "PATH": str(root) + os.pathsep + os.environ["PATH"],
-                   "MODE": mode, "CALLS": str(calls), "WITNESS": WITNESS, "COMBINED": COMBINED}
+                   "MODE": mode, "CALLS": str(calls), "TIMEOUT_CALLS": str(timeouts),
+                   "WITNESS": WITNESS, "COMBINED": COMBINED,
+                   "SYSTEM": system, "MACHINE": machine}
             result = subprocess.run(["bash", str(script), str(root / "output")],
                                     env=env, capture_output=True, text=True, timeout=15)
-            import json
-            commands = [json.loads(line) for line in calls.read_text().splitlines()]
-            return result, commands
+            def read_calls(path):
+                return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
+            return result, read_calls(calls), read_calls(timeouts)
 
     def test_both_explicit_profiles_discover_and_execute(self):
-        result, commands = self.run_script()
+        result, commands, timeouts = self.run_script()
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertEqual(len(commands), 4)
+        self.assertEqual(len(timeouts), 2)
+        for timeout in timeouts:
+            self.assertEqual(timeout[:3], ["--kill-after=10s", "180s", "cargo"])
         for index, command in enumerate(commands):
             self.assertIn("--locked", command)
             self.assertNotIn("--all-features", command)
@@ -132,10 +156,26 @@ if combined and mode != "missing-combined":
 
     def test_missing_ignored_or_failed_execution_never_passes(self):
         for mode in ("missing", "ignored", "missing-combined", "ignored-combined",
-                     "list-failure", "run-failure"):
+                     "partial-combined", "partial-ignored", "list-failure", "run-failure"):
             with self.subTest(mode=mode):
-                result, _ = self.run_script(mode)
+                result, _, _ = self.run_script(mode)
                 self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_timeout_stops_before_the_next_profile(self):
+        result, commands, timeouts = self.run_script("timeout")
+        self.assertEqual(result.returncode, 124, result.stdout + result.stderr)
+        self.assertEqual(len(commands), 1)
+        self.assertIn("--list", commands[0])
+        self.assertEqual(len(timeouts), 1)
+
+    def test_unsupported_platform_fails_before_invoking_cargo(self):
+        for system, machine in (("Darwin", "x86_64"), ("Linux", "aarch64")):
+            with self.subTest(system=system, machine=machine):
+                result, commands, timeouts = self.run_script(system=system, machine=machine)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("requires Linux x86_64", result.stderr)
+                self.assertEqual(commands, [])
+                self.assertEqual(timeouts, [])
 
 
 if __name__ == "__main__":
