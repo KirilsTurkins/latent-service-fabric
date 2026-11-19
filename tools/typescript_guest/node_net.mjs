@@ -67,8 +67,11 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
   }
   class Socket {
     #token; #listeners = new Map(); #writes = []; #dataAdmission;
+    #endCallbacks; #nextEndCallback = 0; #endFailureQueued = false; #endWriteGate;
+    #invalidEndCallbacks; #nextInvalidEndCallback = 0; #invalidEndError;
+    #invalidEndQueued = false; #invalidEndAdmitted = false;
     #readBusy = false; #writeBusy = false; #connectBusy = false; #chunk; #quietRead = false;
-    #progressing = false; #stopReady = false; #closeStarted = false; #nativeClosed = false;
+    #progressing = false; #stopReady = false; #stopUncertain = false; #closeStarted = false; #nativeClosed = false;
     #cleanupFailed = false; #notificationQueued = false; #notificationDone = false;
     #connecting = false; #connected = false; #destroyed = false; #closed = false;
     #ending = false; #finished = false; #eof = false; #flowing = false; #buffered;
@@ -135,6 +138,70 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
           }
         });
       } catch (cause) { if (held) transport.poison(this.#token, cause); throw cause; }
+    }
+    #retainEndCallback(callback, invalid) {
+      if (queuedRecords >= maxQueuedRecords) throw error('ERR_LSF_RESOURCE_EXHAUSTED', 'end');
+      const record = {callback};
+      // The reservation precedes publication in either callback list. If
+      // allocation fails with uncertain mutation, retain it and fence the
+      // original socket instead of admitting another record on that basis.
+      ++queuedRecords;
+      try {
+        if (invalid) (this.#invalidEndCallbacks ??= []).push(record);
+        else (this.#endCallbacks ??= []).push(record);
+      } catch (cause) {
+        if (this.#token) transport.poison(this.#token, cause);
+        throw cause;
+      }
+      return record;
+    }
+    #rollbackEndCallback(record) {
+      const callbacks = this.#endCallbacks;
+      if (!callbacks) return false;
+      for (let index = this.#nextEndCallback; index < callbacks.length; ++index) {
+        if (callbacks[index] !== record) continue;
+        for (let next = index + 1; next < callbacks.length; ++next) callbacks[next - 1] = callbacks[next];
+        --callbacks.length; --queuedRecords;
+        return true;
+      }
+      return false;
+    }
+    #deliverEndCallbacks(cause) {
+      const callbacks = this.#endCallbacks;
+      if (!callbacks) return;
+      const end = callbacks.length, args = [cause];
+      while (this.#nextEndCallback < end) {
+        const index = this.#nextEndCallback;
+        this.#user(callbacks[index].callback, args);
+        callbacks[index] = undefined; this.#nextEndCallback = index + 1;
+        --queuedRecords;
+      }
+      if (this.#nextEndCallback === callbacks.length) {
+        this.#endCallbacks = undefined; this.#nextEndCallback = 0;
+      }
+    }
+    #queueFailedEndCallbacks() {
+      if (!this.#endCallbacks || this.#nextEndCallback === this.#endCallbacks.length ||
+          this.#endFailureQueued) return;
+      this.#endFailureQueued = true;
+      const cause = this.#error ?? error('ERR_STREAM_DESTROYED', 'write');
+      // A single job retains the original socket tail through every callback.
+      // If scheduling is uncertain, leave both the list and tail quarantined.
+      let admitted = false;
+      this.#queuedUser(() => { if (admitted && !this.#stopUncertain) this.#deliverEndCallbacks(cause); }, [], false);
+      admitted = true;
+    }
+    #deliverInvalidEndCallbacks() {
+      const callbacks = this.#invalidEndCallbacks;
+      if (!callbacks) return;
+      const args = [this.#error ?? this.#invalidEndError];
+      while (this.#nextInvalidEndCallback < callbacks.length) {
+        const index = this.#nextInvalidEndCallback;
+        this.#user(callbacks[index].callback, args);
+        callbacks[index] = undefined; this.#nextInvalidEndCallback = index + 1;
+        --queuedRecords;
+      }
+      this.#invalidEndCallbacks = undefined; this.#nextInvalidEndCallback = 0;
     }
     on(name, listener) { return this.#add(name, listener, false); }
     addListener(name, listener) { return this.on(name, listener); }
@@ -343,7 +410,13 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (queuedRecords >= maxQueuedRecords) throw error('ERR_LSF_RESOURCE_EXHAUSTED', 'write');
       const bytes = copyBytes(data, encoding);
       if (bytes.length > maxQueuedBytes - queuedBytes) throw error('ERR_LSF_RESOURCE_EXHAUSTED', 'write');
-      this.#writes.push({bytes, callback, offset: 0, maximum: 0, needsReady: false}); ++queuedRecords; queuedBytes += bytes.length; this.#queued += bytes.length;
+      const record = {bytes, callback, offset: 0, maximum: 0, needsReady: false};
+      if (this.#endWriteGate) this.#endWriteGate.started = true;
+      // Reserve before a possibly uncertain list mutation. A thrown insertion
+      // retains the original record/bytes and fences subsequent socket work.
+      ++queuedRecords; queuedBytes += bytes.length; this.#queued += bytes.length;
+      try { this.#writes.push(record); }
+      catch (cause) { if (this.#token) transport.poison(this.#token, cause); throw cause; }
       const accepted = this.#queued < this.#highWaterMark;
       if (!accepted) this.#needDrain = true;
       this.#progress(); return accepted;
@@ -466,17 +539,97 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
         return;
       }
       if (this.#destroyed) return;
-      this.#finished = true; this.#emit('finish'); this.#maybeClose();
+      this.#finished = true; this.#deliverEndCallbacks(null);
+      this.#emit('finish'); this.#maybeClose();
     }
     end(data, encoding, callback) {
       if (typeof data === 'function') { callback = data; data = undefined; encoding = undefined; }
       else if (typeof encoding === 'function') { callback = encoding; encoding = undefined; }
+      if (data === null) data = undefined;
       if (!this.#token || this.#destroyed) throw error('ERR_SOCKET_CLOSED', 'end');
-      if (callback !== undefined) this.once('finish', callback);
+      if (callback !== undefined && typeof callback !== 'function') throw error('ERR_INVALID_ARG_VALUE', 'listener');
+      if (this.#ending && data !== undefined) {
+        const failure = this.#invalidEndError ?? error('ERR_STREAM_WRITE_AFTER_END', 'write');
+        if (callback) this.#retainEndCallback(callback, true);
+        this.#invalidEndError = failure;
+        if (!this.#invalidEndQueued) {
+          let admitted = false;
+          const fail = () => { if (admitted) this.destroy(this.#invalidEndError); }, args = [];
+          this.#invalidEndQueued = true;
+          // Keep the original socket alive until this error job returns.
+          // There is no network write or replay for an already-ended socket.
+          this.#queuedUser(fail, args, false);
+          admitted = true; this.#invalidEndAdmitted = true;
+        }
+        return this;
+      }
+      if (this.#finished && data === undefined) {
+        if (callback) {
+          if (queuedRecords >= maxQueuedRecords) throw error('ERR_LSF_RESOURCE_EXHAUSTED', 'end');
+          const failure = error('ERR_STREAM_ALREADY_FINISHED', 'end'), args = [failure];
+          let admitted = false;
+          const notify = value => {
+            if (admitted) { Reflect.apply(callback, undefined, [value]); --queuedRecords; }
+          };
+          ++queuedRecords;
+          this.#queuedUser(notify, args, false);
+          admitted = true;
+        }
+        return this;
+      }
+      // A data-bearing end needs one record for the write as well as its
+      // callback; refuse before publishing either when only one slot remains.
+      if (callback && data !== undefined && queuedRecords >= maxQueuedRecords - 1)
+        throw error('ERR_LSF_RESOURCE_EXHAUSTED', 'end');
+      if (callback && data !== undefined) {
+        const writer = this.write, gate = {started: false};
+        const record = this.#retainEndCallback(callback, false);
+        let held = false, failed = false, failure;
+        try {
+          // Keep existing work from progressing until the new end callback is
+          // either accepted or a definite pre-write refusal is rolled back.
+          transport.enterTail(this.#token); held = true;
+          const previous = this.#endWriteGate; this.#endWriteGate = gate;
+          try { Reflect.apply(writer, this, [data, encoding]); }
+          finally { this.#endWriteGate = previous; }
+          this.#ending = true; transport.acceptTerminal(this.#token);
+        } catch (cause) {
+          failed = true; failure = cause;
+          if (!held || !gate.started && (writer === originalSocketWrite || typeof writer !== 'function')) {
+            // The built-in write failed before it began publishing a record.
+            // Only this exact callback's reservation can be rolled back.
+            let rolledBack = false;
+            try { rolledBack = this.#rollbackEndCallback(record); }
+            catch { /* A partial rollback cannot certify release. */ }
+            if (!rolledBack) {
+              try { transport.poison(this.#token, cause); } catch { /* Preserve the original failure. */ }
+            }
+          } else {
+            // An overridden writer or a started insertion cannot prove that no
+            // write was accepted. Retain the callback and its original owner.
+            try { transport.poison(this.#token, cause); } catch { /* Preserve the original failure. */ }
+          }
+        } finally {
+          if (held) {
+            try { transport.leaveTail(this.#token); }
+            catch (cause) {
+              if (!failed) { failed = true; failure = cause; }
+              else { try { transport.poison(this.#token, cause); } catch { /* Preserve the original failure. */ } }
+            }
+          }
+        }
+        if (failed) throw failure;
+        return this;
+      }
+      if (callback) this.#retainEndCallback(callback, false);
       if (data !== undefined) this.write(data, encoding);
       this.#ending = true; transport.acceptTerminal(this.#token); this.#progress(); return this;
     }
-    #maybeClose() { if (this.#eof && this.#finished && !this.#destroyed) this.destroy(); }
+    #maybeClose() {
+      // An admitted write-after-end error already owns the next terminal turn;
+      // EOF must not turn it into a successful close before that job runs.
+      if (this.#eof && this.#finished && !this.#destroyed && !this.#invalidEndQueued) this.destroy();
+    }
     #afterTail() { this.#progress(true); }
     #progress(afterTail = false) {
       if (this.#progressing || this.#notificationDone ||
@@ -514,6 +667,7 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (result.failed) this.#cleanupFailure(result.fault);
       else this.#stopReady = true;
       this.#flushWrites();
+      this.#queueFailedEndCallbacks();
       // Its queued callbacks/tails precede consuming close. The transport's
       // fixed after-tail hook resumes, without a worker Promise or queued pump.
     }
@@ -526,8 +680,12 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (this.#notificationQueued) return;
       this.#notificationQueued = true;
       queue(() => {
+        // A stop throw may arrive after this job was queued. It cannot certify
+        // that earlier cleanup actually completed; retain the notification.
+        if (this.#stopUncertain) return;
         try {
           if (this.#error) this.#emit('error', this.#error);
+          this.#deliverInvalidEndCallbacks();
           this.#emit('close', this.#error !== undefined);
         } catch (cause) { if (this.#token) transport.poison(this.#token, cause); throw cause; }
         finally {
@@ -538,7 +696,8 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     }
     destroy(cause) {
       if (this.#destroyed) return this;
-      this.#destroyed = true; this.#connected = false; this.#connecting = false; this.#error = cause;
+      this.#destroyed = true; this.#connected = false; this.#connecting = false;
+      this.#error = this.#invalidEndAdmitted ? this.#invalidEndError : cause;
       if (this.#timer !== undefined) {
         const previous = this.#timer; this.#timer = undefined; clearTimer(previous);
       }
@@ -548,7 +707,15 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       let failed = false, failure;
       try { transport.stop(this.#token, this.#onStopped, this); }
       catch (value) { failed = true; failure = value; }
-      if (failed) { this.#cleanupFailure(failure); this.#flushWrites(); this.#progress(); }
+      if (failed) {
+        // A synchronous throw does not prove whether stop or cancellation was
+        // accepted. Keep every original write and callback owned; do not report
+        // close or retry cleanup on the strength of an uncertain observation.
+        // The existing root check exposes this exact fault and keeps the slot.
+        this.#stopUncertain = true;
+        try { transport.poison(this.#token, failure); }
+        catch { throw failure; }
+      }
       return this;
     }
     get connecting() { return this.#connecting; }
@@ -576,6 +743,7 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     unref() { throw unsupported('unref'); }
     pipe() { throw unsupported('pipe'); }
   }
+  const originalSocketWrite = Socket.prototype.write;
   function createConnection(...args) { return new Socket().connect(...args); }
   return Object.freeze({Socket, createConnection, connect: createConnection,
     createServer() { throw unsupported('createServer'); }});

@@ -39,11 +39,13 @@ class BufferedFetchTests(unittest.TestCase):
         self.assertIs(inspect.signature(qualification.execute).parameters['buffered_only'].default,False)
         self.assertIs(inspect.signature(qualification.qualify).parameters['buffered_only'].default,False)
         rows=buffered.vectors()
-        self.assertEqual(len(rows),5)
-        self.assertEqual([row[1] for row in rows],list(range(5)))
+        self.assertEqual(len(rows),7)
+        self.assertEqual([row[1] for row in rows],list(range(7)))
         self.assertTrue(all(row[4]==0 for row in rows))
         self.assertEqual(rows[0][3],'windows:65536,65536,1:copied:no-prefetch')
         self.assertEqual(rows[1][3],'cancelled:one-window:remainder-unread')
+        self.assertEqual(rows[5][3],'response-init:ordered:snapshotted:json')
+        self.assertEqual(rows[6][3],'response-init:conversion:validation')
 
     def test_real_empty_peer_report_cannot_hide_contact_or_mutation(self):
         with closing(Peer(b'Bearer '+b'0'*64,maximum_seconds=5)) as peer:

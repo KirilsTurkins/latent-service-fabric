@@ -77,6 +77,12 @@ def download_archive() -> bytes:
         # The response context has closed and any partially read bytes are
         # discarded before the fixed asset is fetched under the same deadline.
         reason = "timeout"
+    except urllib.error.URLError as error:
+        # urllib wraps connection timeouts raised while opening the URL.
+        # Other transport failures must not broaden the fallback policy.
+        if not isinstance(error.reason, TimeoutError):
+            raise
+        reason = "timeout"
     print(f"wit-bindgen release download encountered {reason}; trying pinned release asset API",
           file=sys.stderr)
     request = urllib.request.Request(ASSET_URL, headers={

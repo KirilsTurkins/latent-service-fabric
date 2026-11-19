@@ -23,6 +23,7 @@ public static class Projection
     public static void OriginalPump(object? state) => throw new NotImplementedException();
     public static void FinitePump(object? state) => throw new NotImplementedException();
     public static bool FiniteWait(Task task, int milliseconds, CancellationToken token) => throw new NotImplementedException();
+    public static bool InfiniteWait(Task task) => throw new NotImplementedException();
 }
 
 internal static class Program
@@ -87,6 +88,7 @@ internal static class Program
             Require(Identity(identity, Method(oldLoop, name)) == Identity(identity, Method(loop, name)), "changed-infinite-" + name);
         Require(Method(loop, "LsfWaitForActualTaskCompletion").Parameters.Count == 1, "changed-join-signature");
         var normalPump = Method(loop, "LsfDispatchUntilActualTaskCompletion");
+        var infinite = Method(loop, "LsfWaitForActualTaskCompletion");
         var finitePump = Method(loop, "LsfObserveFiniteTaskCompletion");
         var finite = Method(loop, "LsfWaitForActualTaskOrTimeout");
         var dispatch = normalPump.Body.Instructions.Select(instruction => instruction.Operand).OfType<MethodReference>()
@@ -104,6 +106,7 @@ internal static class Program
             [context.Fields.Single(field => field.Name == "Default").FullName] = target.Fields.Single(field => field.Name == "Default"),
         };
         CopyBody(normalPump, Method(target, "OriginalPump"), projected, methods, fields);
+        CopyBody(infinite, Method(target, "InfiniteWait"), projected, methods, fields);
         CopyBody(finitePump, Method(target, "FinitePump"), projected, methods, fields);
         CopyBody(finite, Method(target, "FiniteWait"), projected, methods, fields);
         projected.Assembly.Name.Name = "FiniteWaitHostProjection";
@@ -142,10 +145,75 @@ internal static class Program
         return (outcome, completed, cancelled, restored);
     }
 
+    private static void InfiniteCompletedControls()
+    {
+        var wait = projectionType!.GetMethod("InfiniteWait")!.CreateDelegate<Func<Task, bool>>();
+        var current = projectionType.GetField("Current")!;
+        var depth = projectionType.GetField("Depth")!;
+        var dispatch = projectionType.GetField("DispatchAction")!;
+        var prior = new TaskCompletionSource<int>().Task;
+        current.SetValue(null, prior);
+        foreach (string outcome in new[] { "fault", "cancel" })
+        {
+            var originalError = new ArgumentException("expected");
+            var token = new CancellationToken(true);
+            Task completed = outcome == "fault" ? Task.FromException(originalError) : Task.FromCanceled(token);
+            int notifications = 0;
+            var local = new AsyncLocal<string?>(change => { if (change.ThreadContextChanged) notifications++; });
+            local.Value = "caller";
+            try { completed.Wait(); throw new InvalidOperationException("reference-wait-did-not-throw"); }
+            catch (AggregateException error)
+            {
+                Require(outcome == "fault" && ReferenceEquals(error.InnerException, originalError)
+                    || outcome == "cancel" && error.InnerException is TaskCanceledException cancelled
+                        && cancelled.CancellationToken == token, "reference-original-exception");
+            }
+            Require(notifications == 0, "reference-completed-context");
+            depth.SetValue(null, 4);
+            dispatch.SetValue(null, (Action)(() => throw new InvalidOperationException("unexpected-dispatch")));
+            Require(wait(completed), "completed-infinite-result");
+            Require(notifications == 0 && local.Value == "caller" && ReferenceEquals(current.GetValue(null), prior)
+                && (int)depth.GetValue(null)! == 4, "completed-infinite-context-and-frame");
+            depth.SetValue(null, 32);
+            Require(wait(completed) && notifications == 0 && (int)depth.GetValue(null)! == 32
+                && ReferenceEquals(current.GetValue(null), prior), "completed-infinite-depth-limit");
+            try { completed.Wait(0); throw new InvalidOperationException("completed-wait-did-not-throw"); }
+            catch (AggregateException error)
+            {
+                Require(outcome == "fault" && ReferenceEquals(error.InnerException, originalError)
+                    || outcome == "cancel" && error.InnerException is TaskCanceledException cancelled
+                        && cancelled.CancellationToken == token, "completed-original-exception");
+            }
+            Require(notifications == 0, "completed-exception-context");
+            local.Value = null;
+        }
+
+        depth.SetValue(null, 4);
+        var pending = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        dispatch.SetValue(null, (Action)(() => {
+            Require(ReferenceEquals(current.GetValue(null), pending.Task) && (int)depth.GetValue(null)! == 5,
+                "pending-infinite-frame");
+            pending.SetResult(42);
+        }));
+        Require(wait(pending.Task), "pending-infinite-result");
+        Require(ReferenceEquals(current.GetValue(null), prior) && (int)depth.GetValue(null)! == 4,
+            "pending-infinite-frame-restored");
+        var original = new InvalidOperationException("dispatch-primary");
+        dispatch.SetValue(null, (Action)(() => throw original));
+        try { wait(new TaskCompletionSource<int>().Task); throw new InvalidOperationException("dispatch-did-not-throw"); }
+        catch (InvalidOperationException error) { Require(ReferenceEquals(error, original), "infinite-dispatch-primary"); }
+        Require(ReferenceEquals(current.GetValue(null), prior) && (int)depth.GetValue(null)! == 4,
+            "infinite-error-frame-restored");
+        dispatch.SetValue(null, null);
+        current.SetValue(null, null);
+        depth.SetValue(null, 0);
+    }
+
     private static void Main(string[] args)
     {
         Require(args.Length is 4 or 5, "arguments");
         var wait = BuildProjection(args[0], args[1], args[2], args[3]);
+        InfiniteCompletedControls();
         Require(RestoreCase(wait, false) == ("false", true, false, 1), "emitted-task-snapshot");
         Require(RestoreCase(wait, true) == ("false", false, true, 1), "emitted-token-snapshot");
         var source = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -208,7 +276,7 @@ internal static class Program
         try { wait(new TaskCompletionSource<int>().Task, 1000, CancellationToken.None); throw new InvalidOperationException("dispatch-did-not-throw"); }
         catch (InvalidOperationException error) { Require(ReferenceEquals(error, thrown), "dispatch-primary-changed"); }
         Require(ReferenceEquals(current.GetValue(null), prior) && (int)depth.GetValue(null)! == 4, "exception-scope-restore");
-        Console.WriteLine("FINITE_WAIT_EMITTED_IL_HOST PASS unchanged-infinite;restore-task;restore-token;precedence;outcomes;nested;finally");
+        Console.WriteLine("FINITE_WAIT_EMITTED_IL_HOST PASS completed-infinite;unchanged-infinite;restore-task;restore-token;precedence;outcomes;nested;finally");
         if (args.Length == 5)
             AggregateFiniteControl.Run(args[1], args[4], args[2], args[3]);
     }

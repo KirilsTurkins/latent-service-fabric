@@ -64,7 +64,8 @@ public sealed partial class BoundedClient : Profile.IClientProfile
             admitted = true;
             new GraphBudget(config.MaxGraphBytes, config.MaxGraphNodes, deadline.Token).Scan(request);
             ValidateRequest(request);
-            var wireRequest = (WireRequest)ProfileCodec.ToWire(request, new WireRequest());
+            var wireRequest = (WireRequest)ProfileCodec.ToWire(request, new WireRequest(),
+                new GraphBudget(config.MaxGraphBytes, config.MaxGraphNodes, deadline.Token));
             CheckDeadline(state, deadline.Token);
             WireResponse wireResponse = await dispatch(new(this, state, deadline.Token), wireRequest).ConfigureAwait(false);
             CheckDeadline(state, deadline.Token);

@@ -32,6 +32,46 @@ without a pending exception is not a real Wasm trap.
 | Native/JS stacks and host structures | Existing native stack and NativeMemory admission, plus original host-memory envelope | Conservative sizes/escrows and separate stack retirement observations | Unchanged; no new stack or host allocation introduced by these fixes; complete physical coverage remains to be proved |
 | Store teardown / pool quarantine | Original activation ledger and allocation guards | HostState owner table can drop before guest instance backing; failed runtime finalization need not quarantine the execution report | **Unresolved.** This increment does not provide physical Store custody or a per-Store pool-decommit acknowledgement |
 
+## Promise resolving-function ownership
+
+The authenticated Firefox source creates separate resolve and reject function
+objects for an explicit resolving-function pair. On settlement it clears both
+functions' Promise and sibling references. A retained function can therefore
+outlive the tracked Promise. The earlier Promise-only Native owner did not
+account for either independent surviving function; the functions' JS heap
+bytes still remained within the original guest linear-memory envelope.
+
+The source derivation now admits each resolving function through the existing
+captured-function Native owner before its original allocation. Its rooted
+handle is registered with the existing weak-GC tracker, which retains that
+same owner until the individual function is collected and the collection-end
+checkpoint acknowledges it. If the second admission or allocation fails, the
+first function and its original owner remain tracked; a failed allocation's
+reservation is retired through the original checkpoint. The two extra Native
+slots can cause an earlier resource refusal under the existing limit. The
+ordinary synchronous profile and the limits and grants themselves are not
+changed. A compiler-snapshot resolver still live after the original full GC is
+refused by the existing captured-function fence.
+
+The Promise and reaction tracking records also remain marked initializing
+between pre-admission and the original allocation's success/failure callback.
+An intervening checkpoint must not free either record or acknowledge its
+owners, and an initializing snapshot record fails closed. The focused tracker
+control reproduces the old premature acknowledgement with an interleaved
+checkpoint; whether the selected engine actually reenters at that interval is
+not established by that host-double control.
+
+Mozilla's separately authenticated Firefox 147.0 Windows JS shell
+(`jsshell-win64.zip` SHA-256
+`d5a3aa8b6cf980fd0310fc59f7c923d5d4d98e7937792bdbb4de248bd70167ce`)
+ran `tools/tests/fixtures/typescript_resolver_ownership/spidermonkey_reference.js`:
+the Promise and reject function collected while the resolve function remained
+callable. The shell is an upstream reference, not the selected source-built
+WASI engine. Pinned-source derivation and finite C++ owner-port controls cover
+admission, partial pairs, GC/creation interleaving and snapshot fencing. They
+do not establish signed-component, full reentrancy, physical host retirement
+or aggregate per-byte qualification.
+
 ## Subsequent import readiness admission fix
 
 The selected async-import bridge now reserves the existing shared readiness

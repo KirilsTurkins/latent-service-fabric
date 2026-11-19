@@ -8,10 +8,75 @@ namespace Latent.Sdk.Transport.Tests;
 
 internal static partial class Program
 {
+    private sealed class MisreportedVersions(Tx.ExpectedVersion item) : IReadOnlyList<Tx.ExpectedVersion>
+    {
+        public int Count => 1;
+        public Tx.ExpectedVersion this[int index] => item;
+        public IEnumerator<Tx.ExpectedVersion> GetEnumerator()
+        {
+            for (int i = 0; i < 129; i++) yield return item with { Key = new byte[] { (byte)i } };
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
+    private sealed class ChangingVersions(Tx.ExpectedVersion item) : IReadOnlyList<Tx.ExpectedVersion>
+    {
+        private int enumerations;
+        public int Count => 1;
+        public Tx.ExpectedVersion this[int index] => item;
+        public IEnumerator<Tx.ExpectedVersion> GetEnumerator()
+        {
+            int count = ++enumerations <= 3 ? 1 : 129;
+            for (int i = 0; i < count; i++) yield return item with { Key = new byte[] { (byte)i } };
+        }
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+    }
     private static async Task<Tx.TransactionFailure> TransactionFailure(Task operation, Profile.FailureCategory category, bool dispatched)
     {
         var failure = await TxFailure(operation, category); Check(failure.Transport.Dispatched == dispatched, "effect dispatch evidence changed"); return failure;
     }
+    private static Task TransactionRecoverySnapshotCopiesEffectInputs()
+    {
+        byte[] expected = Enumerable.Repeat((byte)7, 32).ToArray();
+        byte[] digest = Enumerable.Repeat((byte)9, 32).ToArray();
+        var mutation = TxEffectMutation() with { ExpectedVersion = expected };
+        var plan = TxEffectPlan(mutation) with { PlanDigest = digest };
+        var request = new Tx.GetStateOperationReceiptRequest(TxInspect, mutation.OperationId, plan);
+        var identity = TransactionRules.IdentitySnapshot(request);
+        var direct = TransactionRules.IdentitySnapshot(mutation);
+        expected[0] = 1; digest[0] = 2;
+        Check(identity.EffectPlan?.Original?.ExpectedVersion.Span[0] == 7, "plan precondition retained caller memory");
+        Check(identity.EffectPlan?.PlanDigest.Span[0] == 9, "plan digest retained caller memory");
+        Check(identity.ExpectedVersion?.Span[0] == 7, "original precondition retained caller memory");
+        Check(direct.EffectMutation?.ExpectedVersion.Span[0] == 7, "effect request retained caller memory");
+        byte[] oversized = new byte[4 * 1024 * 1024];
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        var rejected = TransactionRules.IdentitySnapshot(mutation with { ExpectedVersion = oversized });
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        Check(rejected.EffectMutation is null && allocated < 1024 * 1024, "oversized precondition was copied before refusal");
+        var versions = new MisreportedVersions(new Tx.ExpectedVersion(new byte[] { 1 }, null, new byte[] { 2 }));
+        var malformed = TxInvoke() with { ExpectedVersions = versions };
+        Check(TransactionRules.IdentitySnapshot(malformed).ExpectedVersions is null, "misreported recovery list escaped bounded copying");
+        try { TransactionRules.Request(malformed); throw new InvalidOperationException("misreported request list accepted"); }
+        catch (FormatException) { Check(true, "misreported request list rejected"); }
+        ProfileCodec.ToWire(TxInvoke(), new global::Latent.Transaction.V1.InvokeCommandRequest(), new GraphBudget(1024 * 1024, 256, CancellationToken.None));
+        try
+        {
+            ProfileCodec.ToWire(malformed, new global::Latent.Transaction.V1.InvokeCommandRequest(), new GraphBudget(1024 * 1024, 256, CancellationToken.None));
+            throw new InvalidOperationException("misreported list escaped the encoding budget");
+        }
+        catch (GraphLimitException) { Check(true, "wire encoding bounds a changing collection independently"); }
+        return Task.CompletedTask;
+    }
+
+    private static async Task TransactionChangingCollectionCannotDispatch()
+    {
+        await using Peer peer = await Peer.Start(context => Peer.Error(context, "13"));
+        await using BoundedClient client = await BoundedClient.ConnectAsync(Options(peer.Endpoint));
+        var versions = new ChangingVersions(new Tx.ExpectedVersion(new byte[] { 1 }, null, new byte[] { 2 }));
+        var rejected = await TxFailure(client.InvokeCommandAsync(TxInvoke() with { ExpectedVersions = versions }, Defaults).AsTask(), Profile.FailureCategory.Limit);
+        Check(!rejected.Transport.Dispatched && peer.Requests.IsEmpty, "changing collection bypassed the owned snapshot validation");
+    }
+
     private static Tx.PlanEffectMutationRequest TxEffectMutation() => new(new(Tx.CurrentTransactionProfile.Create(), TxSelector, new string('a', 64), TxPublication),
         "effect-operation-a", Tx.StateMutationKind.RetryKnownFailedEffect, Enumerable.Repeat((byte)1, 32).ToArray(), TxDigest, "explicit redrive", 100);
     private static Tx.EffectManagementPlan TxEffectPlan(Tx.PlanEffectMutationRequest original) => new(original, Enumerable.Repeat((byte)2, 32).ToArray(),

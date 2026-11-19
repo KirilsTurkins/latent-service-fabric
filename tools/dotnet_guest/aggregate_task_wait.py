@@ -152,13 +152,26 @@ FINITE_NESTING_EXPECTED = {
             '28c962130eac6aabab096d74cf2a6ef1775fc2a317fc5bf60e9fbe9706cab002'},
 }
 
+# The v5 producer checks an already completed single Task before entering a
+# wait frame or the default context. Retain the exact v4 receipt for history.
+COMPLETED_SINGLE_EXPECTED = {
+    **FINITE_NESTING_EXPECTED,
+    'patch': 'latent.dotnet.wait-all.v5',
+    'profile': 'dotnet-aggregate-task-wait-candidate-v5',
+    'rewrittenBodies': {**FINITE_NESTING_EXPECTED['rewrittenBodies'],
+        'System.Boolean System.Threading.WasiEventLoop::LsfWaitForActualTaskCompletion(System.Threading.Tasks.Task)':
+            '20ff54845e18aec14cc97a8e5f97e7af4650fd09cfde36387500c13e2406d0c0'},
+}
+
 # Existing consumers of this name select the current prefetched-poll receipt.
-PREFETCH_POLL_EXPECTED = FINITE_NESTING_EXPECTED
+PREFETCH_POLL_EXPECTED = COMPLETED_SINGLE_EXPECTED
 
 
 def validate(value):
     expected = (PREFETCH_POLL_EXPECTED if type(value) is dict
                 and value.get('patch') == PREFETCH_POLL_EXPECTED['patch'] else
+                FINITE_NESTING_EXPECTED if type(value) is dict
+                and value.get('patch') == FINITE_NESTING_EXPECTED['patch'] else
                 PREFETCH_POLL_V3_EXPECTED if type(value) is dict
                 and value.get('patch') == PREFETCH_POLL_V3_EXPECTED['patch'] else EXPECTED)
     if not exact(value, expected):

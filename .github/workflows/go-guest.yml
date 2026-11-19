@@ -52,6 +52,8 @@ on:
       - tools/tests/fixtures/go-checkpoint-text/**
       - tools/tests/go_checkpoint_json_reference.py
       - tools/tests/fixtures/go-checkpoint-json/**
+      - tools/tests/go_checkpoint_base64_reference.py
+      - tools/tests/fixtures/go-checkpoint-base64/**
       - tools/qualify_go_synchronization.py
       - tools/tests/test_go_synchronization.py
       - tools/tests/test_go_admission.py
@@ -209,6 +211,8 @@ on:
       - tools/tests/fixtures/go-checkpoint-text/**
       - tools/tests/go_checkpoint_json_reference.py
       - tools/tests/fixtures/go-checkpoint-json/**
+      - tools/tests/go_checkpoint_base64_reference.py
+      - tools/tests/fixtures/go-checkpoint-base64/**
       - tools/qualify_go_synchronization.py
       - tools/tests/test_go_synchronization.py
       - tools/tests/test_go_admission.py
@@ -480,6 +484,8 @@ jobs:
           python3 -B tools/tests/go_checkpoint_maps_reference.py --go "$RUNNER_TEMP/go-guest-tools/go/bin/go" --node "$(command -v node)"
           python3 -B tools/tests/go_checkpoint_text_reference.py --go "$RUNNER_TEMP/go-guest-tools/go/bin/go" --node "$(command -v node)"
           python3 -B tools/tests/go_checkpoint_json_reference.py --go "$RUNNER_TEMP/go-guest-tools/go/bin/go" --node "$(command -v node)"
+          set -o pipefail
+          GOCACHE="$("$RUNNER_TEMP/go-guest-tools/go/bin/go" env GOCACHE)" timeout --signal=TERM --kill-after=10s 300s python3 -B tools/tests/go_checkpoint_base64_reference.py --go "$RUNNER_TEMP/go-guest-tools/go/bin/go" --node "$(command -v node)" | tee "$RUNNER_TEMP/go-base64-reference.json"
           python3 -m unittest tools.tests.test_go_captured_checkpoints
           python3 tools/qualify_go_captured_checkpoints.py --output "$RUNNER_TEMP/go-checkpoints" --runtime-profile go-component-activation-v2
           python3 tools/qualify_go_captured_checkpoints.py --output "$RUNNER_TEMP/go-no-checkpoints" --runtime-profile go-component-activation-v1
@@ -618,6 +624,7 @@ jobs:
         with:
           name: go-guest-upstream-${{ github.sha }}
           path: |
+            ${{ runner.temp }}/go-base64-reference.json
             ${{ runner.temp }}/go-standard-entropy/qualification.json
             ${{ runner.temp }}/go-standard-entropy/FAILED.json
             ${{ runner.temp }}/go-standard-entropy/capture.json
