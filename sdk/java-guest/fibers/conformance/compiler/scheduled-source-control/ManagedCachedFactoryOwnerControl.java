@@ -184,12 +184,16 @@ public final class ManagedCachedFactoryOwnerControl {
                     finally { helperAccepted.countDown(); }
                 });
                 thread.start();
-                try { await(helperAccepted, "replacement-helper-blocked"); await(helperRan, "replacement-helper-not-running"); }
+                try { await(helperAccepted, "replacement-helper-blocked"); }
                 catch (InterruptedException error) { throw new AssertionError(error); }
             }
             Thread thread = new Thread(target); thread.setUncaughtExceptionHandler((ignored, error) -> workerFailure.set(error)); return thread;
         });
         selected.set(pool);
+        // Project the existing maximum-worker branch without allocating an
+        // unbounded number of real workers. At this synthetic bound, the
+        // reentrant helper must be accepted while the replacement is starting.
+        var limit = pool.getClass().getDeclaredField("parallelism"); limit.setAccessible(true); limit.setInt(pool, 1);
         Activation.checkpointObservation = () -> {
             entered.countDown();
             try { await(release, "checkpoint-release"); } catch (InterruptedException error) { throw new AssertionError(error); }
@@ -202,7 +206,7 @@ public final class ManagedCachedFactoryOwnerControl {
             release.countDown();
             if (mode.equals("success")) {
                 await(helperRan, "helper-not-run"); retained.get(5, TimeUnit.SECONDS); helper.get().get(5, TimeUnit.SECONDS);
-                require(helperFailure.get() == null && attempts.get() == 3 && calls.get() == 2, "replacement-growth");
+                require(helperFailure.get() == null && attempts.get() == 2 && calls.get() == 2, "replacement-growth");
                 pool.shutdown(); require(pool.awaitTermination(5, TimeUnit.SECONDS), "replacement-not-retired");
                 held(0, 0, 0); Activation.idle();
             } else {

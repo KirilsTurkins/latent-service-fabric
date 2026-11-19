@@ -792,7 +792,7 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             sources=sdk/'fibers/compiler-patch';sources.mkdir(parents=True)
             for name in ('CoroutineTransformation.java','Compile.java','Check.java',
                          'TypeInferer.java','ArrayTypeCheck.java','AsyncMethodFinder.java','MonitorAsyncControl.java',
-                         'VolatileDefinitionFinder.java'):
+                         'VolatileDefinitionFinder.java','RepeatedFieldReadElimination.java','FieldReadCheck.java'):
                 (sources/name).write_bytes(read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch'/name))
             cache=root/'files-2.1';base=cache/'org.teavm/teavm-core/0.15.0/pinned';base.mkdir(parents=True)
             core=base/'teavm-core-0.15.0.jar'
@@ -843,11 +843,15 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
                     return json.dumps({'schemaVersion':'latent.java.coroutine-copy-cost-control.v1',
                         'cases':['domain-choice','reducible-parity','overflow-before-copy'],'passed':True})
                 mode='original' if stage.endswith('original-control') else 'corrected'
+                if stage.startswith('java-field-read-'):
+                    self.assertEqual(args[0], '-Xmx256m')
+                    args = args[1:]
                 self.assertEqual(args[-1],mode)
                 self.assertEqual(args[0],'-cp')
                 expected=core if mode=='original' else project/'compiler-patch/teavm-core-patched.jar'
                 self.assertTrue(args[1].startswith(str(expected)))
-                schema='latent.java.monitor-async-control.v1' if '-monitor-' in stage else 'latent.java.coroutine-phi-control.v1'
+                schema=('latent.java.field-read-exception-control.v1' if '-field-read-' in stage else
+                    'latent.java.monitor-async-control.v1' if '-monitor-' in stage else 'latent.java.coroutine-phi-control.v1')
                 return json.dumps({'schemaVersion':schema,'mode':mode,'passed':True})
             compiler=SimpleNamespace(sdk=sdk,dependency_cache=cache,run=run,directory=root/'compiler-logs')
             compiler.directory.mkdir()
@@ -857,7 +861,7 @@ class PinnedCoroutinePhiRepair(unittest.TestCase):
             self.assertEqual([call[0] for call in calls],['java-coroutine-patch',
                 'java-coroutine-original-control','java-coroutine-monitor-original-control',
                 'java-coroutine-corrected-control','java-coroutine-monitor-corrected-control',
-                'java-coroutine-copy-cost-control'])
+                'java-coroutine-copy-cost-control','java-field-read-original-control','java-field-read-corrected-control'])
             self.assertEqual(receipt['structuralCopyCostPolicy'], 'initial-ir-structural-copy-v1')
             self.assertEqual(receipt['realStructuralCopyCostControls'],
                 ['domain-choice','reducible-parity','overflow-before-copy'])
@@ -1552,3 +1556,124 @@ class JavaBoundedLifecycleSummary(unittest.TestCase):
             summary=node.bounded_summary(result,root)
             self.assertEqual(summary['status'],'failed')
             self.assertEqual(len(summary['cases']),3)
+
+
+class ExceptionalFieldCacheControl(unittest.TestCase):
+    """Source/selection controls; the production stage also runs real TeaVM IR."""
+
+    def test_exact_field_optimizer_preimage_is_reversible_and_unknown_source_refuses(self):
+        import hashlib
+        from tools.java_guest import field_read_patch as repair
+        path = campaign.ROOT/'sdk/java-guest/fibers/compiler-patch/RepeatedFieldReadElimination.java'
+        raw = read_file(path)
+        self.assertEqual(hashlib.sha256(raw).hexdigest(), repair.UPSTREAM_SHA256)
+        fixed = repair.corrected_source(raw).decode()
+        restored = fixed.replace('import org.teavm.hppc.', 'import com.carrotsearch.hppc.')
+        for before, after in reversed(repair.REPLACEMENTS):
+            self.assertEqual(restored.count(after), 1)
+            restored = restored.replace(after, before)
+        self.assertEqual(restored.encode(), raw)
+        self.assertIn('everythingInvalid[tryCatchBlock.getHandler().getIndex()] = true;', fixed)
+        self.assertLess(fixed.index('invalidFields.clear();'), fixed.index('insertInvalidationPoints(cfg, dom, program);'))
+        self.assertIn('changed = false;', fixed)
+        for altered in (raw + b'\n', raw.replace(b'public class ', b'public final class ', 1)):
+            with self.assertRaisesRegex(ValueError, 'unreviewed-teavm-field-read-source'):
+                repair.corrected_source(altered)
+
+    def test_original_and_corrected_markers_are_independent_and_source_bound(self):
+        import json
+        from tools.java_guest import field_read_patch as repair
+        original, replacement, classes, other = map(Path, ('original.jar', 'fixed.jar', 'classes', 'other.jar'))
+        calls = []
+        def run(stage, *args):
+            calls.append((stage, args))
+            mode = args[-1]
+            self.assertEqual(args[0:3], ('java', '-Xmx256m', '-cp'))
+            self.assertEqual(args[-2], 'org.teavm.model.optimization.FieldReadCheck')
+            self.assertTrue(args[3].startswith(str(original if mode == 'original' else replacement)))
+            return json.dumps({'schemaVersion': 'latent.java.field-read-exception-control.v1',
+                'mode': mode, 'passed': True})
+        compiler = SimpleNamespace(sdk=campaign.ROOT/'sdk/java-guest', run=run)
+        result = repair.check(compiler, original, replacement, classes, [original, other])
+        self.assertEqual([call[0] for call in calls], ['java-field-read-original-control', 'java-field-read-corrected-control'])
+        self.assertTrue(result['realOriginalExceptionalFieldCacheDefectObserved'])
+        self.assertTrue(result['realCorrectedExceptionalFieldReadsPreserved'])
+        self.assertTrue(result['realCorrectedFieldReadPassReusePreserved'])
+        self.assertEqual(result['upstreamFieldReadSourceSha256'], repair.UPSTREAM_SHA256)
+
+    def test_missing_false_stale_or_nonboolean_marker_never_grants_execution_credit(self):
+        import json
+        from tools.java_guest import field_read_patch as repair
+        for bad in ('empty', 'false', 'stale', 'integer', 'unknown', 'array'):
+            for selected in ('original', 'corrected'):
+                with self.subTest(bad=bad, selected=selected):
+                    calls = []
+                    def run(stage, *args):
+                        mode = args[-1]; calls.append(mode)
+                        record = {'schemaVersion': 'latent.java.field-read-exception-control.v1', 'mode': mode, 'passed': True}
+                        if mode == selected:
+                            if bad == 'empty': return ''
+                            if bad == 'false': record['passed'] = False
+                            if bad == 'stale': record['mode'] = 'unverified'
+                            if bad == 'integer': record['passed'] = 1
+                            if bad == 'unknown': record['extra'] = True
+                            if bad == 'array': record = []
+                        return json.dumps(record)
+                    compiler = SimpleNamespace(sdk=campaign.ROOT/'sdk/java-guest', run=run)
+                    with self.assertRaises(ValueError):
+                        repair.check(compiler, Path('original.jar'), Path('fixed.jar'), Path('classes'), [])
+                    self.assertEqual(calls, ['original'] if selected == 'original' else ['original', 'corrected'])
+
+    def test_closed_field_class_family_is_required_and_controls_never_enter_the_runtime_jar(self):
+        import zipfile
+        from tools.java_guest import coroutine_patch as patch
+        from tools.java_guest import field_read_patch as repair
+        self.assertEqual(repair.CLASSES & patch.PATCH_CLASSES, repair.CLASSES)
+        self.assertEqual(len(repair.CLASSES), 5)
+        self.assertIn(repair.CONTROL, patch.CONTROLS)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); original = root/'original.jar'; classes = root/'classes'
+            for name in patch.PATCH_CLASSES | patch.CONTROLS:
+                path = classes/name; path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'\xca\xfe\xba\xbecompiled')
+            def write_jar(names):
+                with zipfile.ZipFile(original, 'w') as jar:
+                    for name in sorted(names): jar.writestr(name, b'original class')
+                    jar.writestr('unrelated.class', b'unchanged')
+            for omitted in sorted(repair.CLASSES):
+                write_jar(patch.PATCH_CLASSES - {omitted})
+                with self.subTest(missing=omitted), self.assertRaisesRegex(ValueError, 'class-closure'):
+                    patch.jar_entries(original)
+            write_jar(patch.PATCH_CLASSES | {repair.ROOT + 'RepeatedFieldReadElimination$Unknown.class'})
+            with self.assertRaisesRegex(ValueError, 'class-closure'): patch.jar_entries(original)
+            write_jar(patch.PATCH_CLASSES)
+            target = root/'fixed.jar'; receipt = patch.replace_jar(original, classes, target)
+            self.assertEqual(set(receipt['replacedClasses']), patch.PATCH_CLASSES)
+            with zipfile.ZipFile(target) as jar:
+                self.assertFalse(patch.CONTROLS & set(jar.namelist()))
+                self.assertEqual(jar.read('unrelated.class'), b'unchanged')
+            (classes/repair.CONTROL).unlink()
+            with self.assertRaisesRegex(ValueError, 'compiled-closure'):
+                patch.replace_jar(original, classes, root/'missing-control.jar')
+
+    def test_real_ir_exercises_exception_semantics_coroutines_reuse_and_normal_optimization(self):
+        text = read_file(campaign.ROOT/'sdk/java-guest/fibers/compiler-patch/FieldReadCheck.java').decode()
+        for required in ('new RepeatedFieldReadElimination().optimize(input, input.program)',
+                'new CoroutineTransformation(input.source, Set.of(AWAIT), false).apply(input.program,',
+                'startsWith("Variable used before definition:")',
+                'origin.getClassName().equals("org.teavm.model.util.PhiUpdater")',
+                'normal-successor-forwarding-lost', 'original-field-cache-defect-not-observed',
+                'exception-handler-reused-post-call-field-value', 'nested-or-shared-handler-field-read-lost',
+                'straight-line-repeated-read-not-eliminated', 'original-pass-state-defect-not-observed',
+                'reused-pass-kept-prior-state', 'volatile-field-read-eliminated',
+                'for (boolean late : new boolean[] {false, true})', 'normalAndReuse(args[0]);'):
+            self.assertIn(required, text)
+
+
+    def test_field_repair_is_bound_into_the_build_and_analysis_source_inventories(self):
+        from tools import java_capsule_build, qualify_java_amplifier
+        name = 'tools/java_guest/field_read_patch.py'
+        self.assertIn(name, java_capsule_build.RECIPE)
+        self.assertIn(campaign.ROOT/name, qualify_java_amplifier.observed_sources())
+        for script in ('tools/qualify_java_checkpoint_context.py', 'tools/qualify_java_queue_heap.py'):
+            self.assertIn(name, read_file(campaign.ROOT/script).decode())
