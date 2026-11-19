@@ -28,7 +28,7 @@ unsafe_code = "forbid"
 [workspace.lints.clippy]
 all = "warn"
 [workspace.dependencies.wasmtime]
-version = "=48.0.8"
+version = "=48.0.9"
 default-features = false
 ''')
         self.write(f"{boundary.CRATE}/Cargo.toml", '''[lints.rust]
