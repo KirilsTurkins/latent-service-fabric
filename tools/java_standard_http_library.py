@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 import sys
 import time
 
 from tools.build_snapshot import digest
+from tools.dev_workflow import paths
 from tools.java_capsule_build import build
 from tools.java_capsule_project import create
 from tools.java_guest.compiler import Compiler, read_only_dependency_cache, tool_inventory
@@ -23,6 +25,77 @@ CANDIDATE = 'sha256:0159ae14f34c314b8d5ff06a5b2defac711eb6911e85066f7176cece4513
 SOURCE = 'examples/java-http-request/Capsule.java'
 
 
+_MISSING_COMPILER = re.compile(r"(?m)^[ \t]*> Could not find (org\.teavm:[A-Za-z0-9_.-]+:[A-Za-z0-9_.+-]+)\.$")
+_METADATA_URL = re.compile(r"(?m)^[ \t]+- ([^\s]+)$")
+
+
+def missing_compiler_metadata(log: str, lock: bytes) -> bool:
+    """Recognize only locked TeaVM POM absence before Gradle task execution."""
+    if (log.count('FAILURE: Build failed with an exception.') != 1
+            or log.count("A problem occurred configuring root project 'lsf-java-guest-feasibility'.") != 1
+            or log.count("Could not resolve all artifacts for configuration 'classpath'.") != 1
+            or log.count('BUILD FAILED') != 1 or '> Task ' in log
+            or 'verification' in log.lower() or 'Execution failed for task' in log):
+        return False
+    missing = _MISSING_COMPILER.findall(log)
+    if not missing or log.count('Could not ') != len(missing) + 1:
+        return False
+    allowed = set()
+    for item in json.loads(lock)['artifacts']:
+        parts = item['path'].split('/')
+        if (len(parts) == 5 and parts[:2] == ['org', 'teavm']
+                and parts[-1] == parts[2] + '-' + parts[3] + '.jar'):
+            allowed.add('org.teavm:' + parts[2] + ':' + parts[3])
+    expected = set()
+    for coordinate in missing:
+        if coordinate not in allowed:
+            return False
+        group, name, version = coordinate.split(':')
+        expected.add('https://repo.maven.apache.org/maven2/' + group.replace('.', '/')
+                     + '/' + name + '/' + version + '/' + name + '-' + version + '.pom')
+    return set(_METADATA_URL.findall(log)) == expected
+
+
+class AcquisitionCompiler(Compiler):
+    """Only the maintained greeting's online acquisition may retry POM absence.
+
+    Ordinary application compilers are unchanged. Every attempt still uses the
+    pinned build, dependency verification, original deadline and retention cap.
+    Offline builds, task failures, compiler errors and unverifiable diagnostics
+    never become retries. All failed command/log records remain retained.
+    """
+    def run(self, stage, tool, *arguments, **kwargs):
+        retry_command = (stage == 'java-to-c' and tool == 'gradle' and not self.offline
+                         and arguments == ('--no-daemon', 'generateC'))
+        for attempt in range(3):
+            selected = arguments if attempt == 0 else (*arguments[:-1], '--refresh-dependencies', arguments[-1])
+            try:
+                return super().run(stage, tool, *selected, **kwargs)
+            except ValueError as error:
+                if (not retry_command or attempt == 2
+                        or str(error) != 'Java compiler stage failed: java-to-c; see retained log'):
+                    raise
+                try:
+                    ordinal = len(self.records) - 1
+                    record = self.records[ordinal]
+                    log = paths.read(self.directory, str(ordinal) + '-java-to-c.log', 4 * 1024 * 1024).decode('utf-8')
+                    retryable = (record['stage'] == stage and type(record['exitCode']) is int
+                        and record['exitCode'] == 1 and 'processFailure' not in record
+                        and missing_compiler_metadata(log, self.original_sdk['feasibility/dependencies.lock.json']))
+                except Exception:
+                    retryable = False
+                if not retryable:
+                    raise
+                self.check_unchanged()
+                deadline = self.deadline
+                if getattr(self, '_parent_deadline', None) is not None:
+                    deadline = min(deadline, self._parent_deadline - 5)
+                delay = 2 * (attempt + 1)
+                if time.monotonic() + delay >= deadline:
+                    raise
+                time.sleep(delay)
+
+
 def compiler_cache(commands, wasi_sdk: Path, output: Path, selected: Path | None) -> Path:
     """A captured application never turns compiler registry resolution back on."""
     remaining = min(900, commands.deadline-time.monotonic())
@@ -30,7 +103,7 @@ def compiler_cache(commands, wasi_sdk: Path, output: Path, selected: Path | None
         raise ValueError('standard-java-original-deadline-expired')
     if selected is None:
         fixture = create(output/'compiler-source', 'greeting')
-        compiler = Compiler(output/'compiler-acquisition', wasi_sdk, timeout=remaining)
+        compiler = AcquisitionCompiler(output/'compiler-acquisition', wasi_sdk, timeout=remaining)
         compiler.compile(fixture/'src', fixture/'wit', 'examples:greeting/service@1.0.0', output/'compiler-build')
         compiler.check_unchanged()
         selected = compiler.directory/'gradle-home/caches/modules-2'

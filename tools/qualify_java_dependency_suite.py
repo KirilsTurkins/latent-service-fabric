@@ -17,7 +17,8 @@ if __package__ in {None, ''}:
 from tools.build_observation import build_environment
 from tools.build_snapshot import canonical, digest
 from tools.java_capsule_project import create
-from tools.java_guest.compiler import Compiler, read_only_dependency_cache, tool_inventory
+from tools.java_guest.compiler import read_only_dependency_cache, tool_inventory
+from tools.java_standard_http_library import AcquisitionCompiler as Compiler
 from tools.phase2_operator_process import read_json, require, write_json
 from tools.phase3_resource_identity import file_identity
 from tools.qualify_java_capsules import inputs
