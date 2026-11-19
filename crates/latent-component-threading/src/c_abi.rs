@@ -639,6 +639,53 @@ pub fn transform_c_canonical_abi(
     ))
 }
 
+/// Unselected v2 source derivation. The original linked compiler core remains
+/// the preimage; the existing v1 transform is then applied to the verified
+/// checkpoint intermediate. The caller must separately prepay the additional
+/// intermediate and authenticate the resulting component before execution.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CCheckpointCanonicalAbiReceipt {
+    pub original_digest: [u8; 32],
+    pub checkpoint: c_checkpoint::CCheckpointReceipt,
+    pub canonical: CCanonicalAbiReceipt,
+    pub runtime_profile_qualified: bool,
+}
+
+pub fn transform_c_canonical_abi_checkpoint_v2(
+    original: &[u8],
+    expected: [u8; 32],
+    public: &str,
+) -> Result<(Vec<u8>, CCheckpointCanonicalAbiReceipt), &'static str> {
+    let (checkpoint_core, checkpoint) =
+        c_checkpoint::transform_c_root_checkpoints_v2(original, expected, public)?;
+    let (output, canonical) =
+        transform_c_canonical_abi(&checkpoint_core, checkpoint.checkpoint_core_digest, public)?;
+    Ok((
+        output,
+        CCheckpointCanonicalAbiReceipt {
+            original_digest: expected,
+            checkpoint,
+            canonical,
+            runtime_profile_qualified: false,
+        },
+    ))
+}
+
+/// Recompute the separate v2 source derivation; this does not verify a
+/// component graph or select an engine profile.
+pub fn verify_c_canonical_abi_checkpoint_v2(
+    original: &[u8],
+    derived: &[u8],
+    public: &str,
+) -> Result<CCheckpointCanonicalAbiReceipt, &'static str> {
+    let (expected, receipt) =
+        transform_c_canonical_abi_checkpoint_v2(original, Sha256::digest(original).into(), public)?;
+    if expected != derived {
+        return Err("c-checkpoint-canonical-core-byte-mismatch");
+    }
+    Ok(receipt)
+}
+
 pub fn verify_c_canonical_abi(
     original: &[u8],
     derived: &[u8],

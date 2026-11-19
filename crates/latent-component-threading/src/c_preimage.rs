@@ -56,7 +56,7 @@ fn finite_i32_offset(raw: &mut wasmparser::BinaryReader<'_>) -> Result<(), &'sta
     Ok(())
 }
 
-fn bounded_core(input: &[u8], original: bool) -> Result<u64, &'static str> {
+pub(crate) fn bounded_core(input: &[u8], original: bool) -> Result<u64, &'static str> {
     if input.len() > MAX_C_RECOMPUTED_IMAGE_BYTES {
         return Err("c-preimage-finite-core-byte-bound");
     }

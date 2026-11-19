@@ -35,6 +35,7 @@ pub use root::{
 mod public_root;
 pub use public_root::{PublicRootReceipt, prepare_owned_public_root};
 pub mod c_abi;
+pub mod c_checkpoint;
 pub mod c_context;
 pub mod c_lifecycle;
 pub mod c_preimage;
