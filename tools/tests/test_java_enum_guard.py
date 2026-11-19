@@ -4,6 +4,8 @@ import ast
 import hashlib
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import Mock
 
 from tools.java_guest import enum_guard
 from tools.java_guest.compiler import Compiler
@@ -79,6 +81,40 @@ alignas(8) E_VT E_Cls = {
             with self.subTest(parent=parent), self.assertRaisesRegex(ValueError, 'parent-chain'):
                 enum_guard.seal(self.preprocessed, self.root, self.index)
             self.enum.write_text(self.enum.read_text().replace(parent, 'jl_Enum_Cls'))
+
+    def test_managed_link_reserves_stack_below_data_with_original_memory_ceiling(self):
+        generated = self.root / 'project/build/teavm-c'
+        generated.mkdir(parents=True)
+        (generated / 'all.c').write_bytes((self.root / 'all.c').read_bytes())
+        (generated / 'enum.c').write_bytes(self.enum.read_bytes())
+        indices = self.root / 'compiler-patch'
+        indices.mkdir()
+        (indices / 'enum-index-v1.tsv').write_bytes(self.index)
+        (indices / 'date-init-required-v1.txt').write_bytes(b'unused\n')
+        destination = self.root / 'output'
+        bindings = destination / 'bindings'
+        bindings.mkdir(parents=True)
+        for name in ('bridge.c', 'probe.c', 'probe.h', 'probe_component_type.o'):
+            (bindings / name).write_bytes(name.encode())
+        compiler = SimpleNamespace(sdk=self.root / 'sdk', deadline=float('inf'),
+            capture_preprocessed=Mock(return_value=self.preprocessed), run=Mock(return_value=''))
+        receipt = enum_guard.run(compiler, generated, (), destination, destination / 'core.wasm')
+        args, kwargs = compiler.run.call_args
+        self.assertEqual(args[:2], ('c-to-wasm', 'clang'))
+        self.assertIn('-Wl,--stack-first', args)
+        self.assertEqual([arg for arg in args if str(arg).startswith('-Wl,-z,stack-size=')],
+                         ['-Wl,-z,stack-size=131072'])
+        self.assertEqual([arg for arg in args if str(arg).startswith('-Wl,--max-memory=')],
+                         ['-Wl,--max-memory=67108864'])
+        self.assertEqual(receipt['cStack'], {'bytes': 131072, 'layout': 'stack-first'})
+        self.assertEqual(kwargs['input_bytes'], enum_guard.seal(
+            self.preprocessed, generated, self.index, date_required=False)[0])
+        # A link failure must still abort; a planned reservation is no execution receipt.
+        failure = RuntimeError('bounded-link-failed')
+        compiler.run.side_effect = failure
+        with self.assertRaises(RuntimeError) as caught:
+            enum_guard.run(compiler, generated, (), destination, destination / 'core.wasm')
+        self.assertIs(caught.exception, failure)
 
     def test_unmodified_nonfiber_clang_command_and_frozen_diagnostics(self):
         # The non-fiber command retains every flag and positional input from
