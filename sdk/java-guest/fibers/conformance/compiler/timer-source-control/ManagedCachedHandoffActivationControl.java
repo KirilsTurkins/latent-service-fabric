@@ -49,7 +49,7 @@ public final class ManagedCachedHandoffActivationControl {
         var capture = target.getClass().getDeclaredFields()[0]; capture.setAccessible(true); return capture.get(target);
     }
     private static void single(String mode) throws Exception {
-        Object root = enter(); var calls = new AtomicInteger(); var target = new AtomicReference<Runnable>();
+        Object root = enter(); var calls = new AtomicInteger(); var claimObservations = new AtomicInteger(); var target = new AtomicReference<Runnable>();
         var selected = new AtomicReference<Thread>(); var uncaught = new AtomicReference<Throwable>();
         var failed = new CountDownLatch(1); var marker = new IllegalStateException("lost-queue-ack");
         var pool = Executors.newCachedThreadPool(command -> {
@@ -69,7 +69,11 @@ public final class ManagedCachedHandoffActivationControl {
             pool.submit(() -> {}).get(5, TimeUnit.SECONDS); waitIdle(selected.get()); held(1, 0, 0, 1, 1);
             Future<Integer> handoff;
             synchronized (pool) {
-                handoff = pool.submit(() -> { calls.incrementAndGet(); return 42; }); held(1, 1, 1, 1, 1);
+                handoff = pool.submit(() -> {
+                    if (mode.equals("immediate") || mode.equals("graceful"))
+                        require(Thread.currentThread().isInterrupted() == mode.equals("immediate"), "handoff-stop-interrupt");
+                    calls.incrementAndGet(); return 42;
+                }); held(1, 1, 1, 1, 1);
                 require(calls.get() == 0 && !handoff.isDone(), "handoff-ran-without-worker");
                 var reserved = pool.getClass().getDeclaredField("reservedFirsts"); reserved.setAccessible(true);
                 Object item = reserved.get(pool); require(item != null, "handoff-not-rooted");
@@ -82,6 +86,13 @@ public final class ManagedCachedHandoffActivationControl {
                 closeRoot(); require((int)invoke("scanPendingPools") == 1 && (boolean)invoke("pending")
                     && !(boolean)invoke("retireIdlePools"), "handoff-root-not-fenced");
                 if (mode.equals("graceful")) pool.shutdown(); else require(pool.shutdownNow().isEmpty(), "handoff-returned");
+                if (mode.equals("immediate")) {
+                    // The real Activation claim keeps its original owners across a consumed wakeup.
+                    Bindings.LatentRuntimeActivation.settledObservation = () -> {
+                        require(Thread.currentThread() == selected.get(), "claim-on-wrong-worker");
+                        Thread.interrupted(); claimObservations.incrementAndGet();
+                    };
+                }
                 if (mode.equals("cancel")) { require(handoff.cancel(false), "handoff-not-cancelled"); held(1, 1, 0, 1, 1); }
                 if (mode.equals("queue-denied")) Bindings.LatentRuntimeActivation.denySettle = true;
                 if (mode.equals("queue-lost")) Bindings.LatentRuntimeActivation.settleAcknowledgementFailure = marker;
@@ -103,10 +114,12 @@ public final class ManagedCachedHandoffActivationControl {
             selected.get().join(5000);
             require(!selected.get().isAlive() && pool.awaitTermination(5, TimeUnit.SECONDS)
                 && calls.get() == (mode.equals("cancel") ? 0 : 1), "handoff-not-retired");
+            require(claimObservations.get() == (mode.equals("immediate") ? 1 : 0), "claim-observation-missing");
             held(1, 0, 0, 0, 0); invoke("retireIdlePools"); finish(root);
         } finally {
             Bindings.LatentRuntimeActivation.denySettle = false;
             Bindings.LatentRuntimeActivation.settleAcknowledgementFailure = null;
+            Bindings.LatentRuntimeActivation.settledObservation = null;
             pool.shutdownNow();
         }
     }

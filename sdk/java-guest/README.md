@@ -262,6 +262,13 @@ Idle-worker links use the existing bounded Java heap and no additional host
 owner; scanning the list and waking waiters scales with the existing worker
 count.
 
+A committed callback observes the stop interruption even when its factory or
+idle-wait/host-settlement path consumed the original wakeup. The worker checks
+for a concurrent `shutdownNow()` again after clearing an earlier interrupt. If
+an application `Thread` hook throws while preparing that status, the callback
+is not run: its original Item and remaining Result/action ownership are retained,
+completion is fenced, and the acknowledged Queue settlement is not retried.
+
 The first-task reservation is an intrusive link on the already charged entry;
 its worker retains only the original Queue lease identity, not the command or
 entry. The reservation, identity and counters use the existing bounded Java heap

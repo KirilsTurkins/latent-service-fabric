@@ -27,7 +27,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     // Status observations must remain available while an application holds
     // the executor monitor or a worker interrupt hook runs under it.
     private volatile boolean shutdown;
-    private boolean interrupting;
+    private volatile boolean interrupting;
     private volatile boolean retiring;
     private int running;
     private volatile int pendingWork;
@@ -657,7 +657,24 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                         if (transferring) { item.transferState = CLAIMED; unlinkReserved(item); }
                     }
                 }
-                if (!interrupting) Thread.interrupted();
+                try {
+                    // Startup hooks, idle waits, or host settlement may consume
+                    // the stop wakeup. Recheck after clearing a non-stop flag so
+                    // a concurrent shutdownNow cannot lose its interruption.
+                    if ((interrupting || (Thread.interrupted() && interrupting)) && !current.isInterrupted())
+                        current.interrupt();
+                } catch (Throwable error) {
+                    // Application Thread hooks can throw before the callback.
+                    // Queue settlement already succeeded: keep this exact Item
+                    // and its Result/action custody, without retrying that lease
+                    // or pretending the accepted callback physically completed.
+                    synchronized (this) {
+                        item.transferState = QUARANTINED;
+                        item.nextReserved = reservedFirsts; reservedFirsts = item;
+                        Activation.fenceUncertainCompletion();
+                    }
+                    throw error;
+                }
                 try { item.command.run(); }
                 finally {
                     try {

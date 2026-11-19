@@ -94,15 +94,21 @@ public final class ManagedCachedFactoryReferenceControl {
     }
     private static void committedFirst() throws Exception {
         var entered = new CountDownLatch(1); var release = new CountDownLatch(1); var calls = new AtomicInteger();
+        var interrupted = new AtomicReference<Boolean>();
         var pool = Executors.newCachedThreadPool(target -> new Thread(() -> {
             entered.countDown();
             while (true) try { release.await(); break; } catch (InterruptedException ignored) { }
+            // A factory may consume its startup wakeup before entering the worker.
+            Thread.interrupted();
             target.run();
         }));
         try {
-            var result = pool.submit(calls::incrementAndGet); await(entered, "worker-not-held");
+            var result = pool.submit(() -> {
+                interrupted.set(Thread.currentThread().isInterrupted()); return calls.incrementAndGet();
+            }); await(entered, "worker-not-held");
             require(pool.shutdownNow().isEmpty() && !result.isDone(), "committed-first-exposed");
             release.countDown(); require(result.get(5, TimeUnit.SECONDS).equals(1) && calls.get() == 1, "committed-first-lost");
+            require(Boolean.TRUE.equals(interrupted.get()), "committed-first-stop-interrupt-lost");
         } finally { release.countDown(); stop(pool); }
     }
     private static void idleReuse() throws Exception {
