@@ -80,7 +80,7 @@ def main(argv=None):
         project = create(output / 'compiler-project', 'greeting')
         compiler = Compiler(output / 'compiler', args.wasi_sdk, gradle=args.gradle,
             sdk=project / 'vendor/lsf/sdk/java-guest', platform=project / 'vendor/lsf/wit/platform',
-            timeout=min(900, commands.deadline - time.monotonic()))
+            timeout=min(900, commands.deadline - time.monotonic()), _deadline=commands.deadline)
         component, _bindings = compiler.compile(project / 'src', project / 'wit',
             read_json(project / 'capsule-project.json')['world'], output / 'compiler-component')
         compiler.check_unchanged()

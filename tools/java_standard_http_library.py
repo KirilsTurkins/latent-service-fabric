@@ -103,7 +103,9 @@ def compiler_cache(commands, wasi_sdk: Path, output: Path, selected: Path | None
         raise ValueError('standard-java-original-deadline-expired')
     if selected is None:
         fixture = create(output/'compiler-source', 'greeting')
-        compiler = AcquisitionCompiler(output/'compiler-acquisition', wasi_sdk, timeout=remaining)
+        # Source capture and constructor setup must not restart the owner's clock.
+        compiler = AcquisitionCompiler(output/'compiler-acquisition', wasi_sdk, timeout=remaining,
+                                       _deadline=commands.deadline)
         compiler.compile(fixture/'src', fixture/'wit', 'examples:greeting/service@1.0.0', output/'compiler-build')
         compiler.check_unchanged()
         selected = compiler.directory/'gradle-home/caches/modules-2'

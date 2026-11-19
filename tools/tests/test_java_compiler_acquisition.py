@@ -210,6 +210,83 @@ class AcquisitionRetryTests(unittest.TestCase):
         self.assertIs(suite.Compiler, owner.AcquisitionCompiler)
         self.sleep.assert_not_called()
 
+    def delayed_acquisition_setup(self):
+        """Use the real constructor/run path, with controlled setup time and tools."""
+        java = self.compiler.directory / 'pinned-jdk/bin/java'
+        java.parent.mkdir(parents=True)
+        java.write_bytes(b'pinned-tool-control')
+        self.stack.enter_context(patch.dict('os.environ', {'JAVA_HOME': str(java.parent.parent)}))
+        self.stack.enter_context(patch.object(production.shutil, 'which', return_value=str(java)))
+        self.stack.enter_context(patch.object(production.Compiler, '_wasi_compiler_version',
+                                              return_value='21.1.4-wasi-sdk'))
+        self.stack.enter_context(patch.object(production, 'source_module',
+                                              return_value=SimpleNamespace(verify_version=Mock())))
+
+        def environment(_directory):
+            # Setup crosses the caller's absolute deadline before version probes.
+            self.clock.return_value = 110.0
+            return {}
+
+        self.stack.enter_context(patch.object(production, 'build_environment', side_effect=environment))
+        self.process.side_effect = AssertionError('acquisition subprocess escaped the parent deadline')
+
+    def test_cache_acquisition_does_not_restart_deadline_after_source_setup(self):
+        self.delayed_acquisition_setup()
+        output = self.compiler.directory / 'cache-owner'
+
+        def create(_directory, _template):
+            self.clock.return_value = 70.0
+            return self.compiler.directory / 'maintained-greeting'
+
+        with patch.object(owner, 'create', side_effect=create), \
+                self.assertRaisesRegex(ValueError, 'Java build deadline exceeded'):
+            owner.compiler_cache(SimpleNamespace(deadline=100.0), Path('unused'), output, None)
+        self.process.assert_not_called()
+        self.sleep.assert_not_called()
+        self.assertFalse((output / 'compiler-cache-selection.json').exists())
+
+    def test_dependency_acquisition_keeps_deadline_across_constructor_setup(self):
+        self.delayed_acquisition_setup()
+        for mode in ('private', 'recovery'):
+            with self.subTest(mode=mode):
+                self.clock.return_value = 10.0
+                commands = SimpleNamespace(deadline=100.0, environment={}, records=[])
+                output = self.compiler.directory / ('suite-' + mode)
+
+                def create(_directory, _template):
+                    self.clock.return_value = 70.0
+                    return self.compiler.directory / 'maintained-greeting'
+
+                with patch.object(suite, 'Commands', return_value=commands), \
+                        patch.object(suite, 'source_inputs', return_value={}), \
+                        patch.object(suite, 'native', return_value=(Path('products'), Path('receipt'))), \
+                        patch.object(suite, 'ordinary_tuple', return_value={}), \
+                        patch.object(suite, 'create', side_effect=create), \
+                        self.assertRaisesRegex(ValueError, 'Java build deadline exceeded'):
+                    suite.main(['--output', str(output), '--wasi-sdk', 'unused', '--mode', mode])
+                failure = json.loads((output / 'FAILED.json').read_text())
+                self.assertEqual(failure['stage'], 'normal-pinned-compiler-acquisition')
+                self.assertEqual(failure['reason'], 'Java build deadline exceeded')
+                self.assertFalse((output / 'compiler-acquisition.json').exists())
+        self.process.assert_not_called()
+        self.sleep.assert_not_called()
+
+    def test_source_setup_expiration_refuses_before_compiler_workspace_creation(self):
+        output = self.compiler.directory / 'expired-cache-owner'
+
+        def create(_directory, _template):
+            self.clock.return_value = 110.0
+            return self.compiler.directory / 'maintained-greeting'
+
+        with patch.object(owner, 'create', side_effect=create), \
+                patch.object(production, 'build_environment') as environment, \
+                self.assertRaisesRegex(ValueError, 'Java-build-original-owner-deadline'):
+            owner.compiler_cache(SimpleNamespace(deadline=100.0), Path('unused'), output, None)
+        environment.assert_not_called()
+        self.process.assert_not_called()
+        self.sleep.assert_not_called()
+        self.assertFalse((output / 'compiler-acquisition').exists())
+
     def test_explicit_cache_never_creates_an_acquisition_compiler(self):
         selected = self.compiler.directory / 'selected'
         with patch.object(owner, 'AcquisitionCompiler') as compiler, patch.object(owner, 'create') as create, \
