@@ -9,14 +9,13 @@ identities; an older receipt does not qualify a different engine.
 selects `angular-ssr-component-v1` for the supported renderer adapter.
 The [executable fixture](../../examples/renderer-profile/README.md) qualifies
 real Angular SSR and hydration. The [installed generic-cell adapter](angular-renderer-runtime.md)
-implements #233; the observed Angular build adapter remains #234. Exact package admission
-and catalog lifecycle are implemented by the separate
-[web release admission profile](../reference/web-release-admission.md) (#225).
-That profile rejects this private proof ABI. The composed production adapter
-exports the exact public async interface and has an explicit `rendererProfile`
-node selector, separate from security policy. T1 remains gated pending the
-observed Angular recipe and web deployment authority; arbitrary Angular/Node
-compatibility is not implied.
+implements #233. The [Angular builder](../development/angular-build-evidence.md)
+captures the server and browser outputs and composes the public async interface.
+[Web release admission](../reference/web-release-admission.md) checks the
+package and rejects the fixture's private proof ABI. The protected node also
+requires the explicit `rendererProfile` selection and current web deployment
+authority. The [enforced T1 workflow](../testing/angular-t1-workflow.md)
+records the signed application path and its tested inputs.
 
 ## Pinned inputs and identity
 
@@ -37,13 +36,12 @@ reports retain the versions exercised by their recorded builds.
 The checked-in [profile](../../examples/renderer-profile/profile.json), npm lock
 and source are versioned build inputs. Each build reports profile, package-lock,
 embedding, server, client and resulting component digests. A build observation
-is not signed provenance. #234 must bind actual observed materials to the
-immutable package and existing SBOM/builder evidence model.
+supplies inputs to the package's separate signing, builder provenance and SBOM checks.
 
 The retained repeated build failed byte-for-byte component reproducibility.
-Identical recorded materials do not imply a predicted component digest. #234
-must resolve or disclose the nondeterminism and reject a reproducibility claim;
-every generated artifact remains independently content-addressed.
+The builder records `reproducibility: not-checked` for an ordinary build.
+With `--verify-reproducible`, a mismatch between the two complete builds refuses
+publication. Each admitted artifact retains its actual content digest.
 
 The installed adapter binds component digest, package identity, renderer profile digest,
 adapter/host ABI, exact engine version and settings, target triple/CPU features,

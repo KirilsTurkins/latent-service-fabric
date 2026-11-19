@@ -52,15 +52,18 @@ provider authority and does not create a namespace automatically.
 Follow [installed transaction RPCs](../development/installed-transaction-rpc.md)
 for the protected store and startup boundary, then
 [transaction recovery](../operations/transaction-recovery.md) for lost responses.
-Shared [transaction HTTP](../development/transaction-http-v1.md) and
-[deferred HTTP installation](../development/deferred-http-installation.md) use
-those same owners. Missing namespace installation exposes authenticated management
+Shared [transaction HTTP](../development/transaction-http-v1.md) uses those
+owners for commands, fresh queries, original results and scoped effect status.
+A signed operation can select [deferred HTTP](../development/deferred-http-installation.md)
+or [deferred JetStream](../development/deferred-jetstream.md). Each requires its
+own staging and dispatch bindings. Transactional **incoming** triggers are still
+[refused at configuration](../runtime/nats-triggers.md#transactional-inbox-status). Missing namespace installation exposes authenticated management
 until creation and restart capture the current lifecycle. A changed deployment
 needs a new startup selection.
 
-These Development profiles and PR #970's pending current recovery are outside
-the published alpha.5 distribution. Collective native/application and packaged
-acceptance remains separate; use the matching version's guide for released tools.
+Use Development source for these profiles. The published alpha.5 tools have
+their own versioned guides. The [installed recovery tests](../testing/installed-transaction-recovery.md)
+identify which native and packaged scenarios have execution evidence.
 
 ## Execution security profile
 

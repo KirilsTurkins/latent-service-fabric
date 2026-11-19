@@ -8,10 +8,11 @@ Payload-reference plans describe independent logical owners and reciprocal
 indexes; they cannot pin a file or authorize a read. The consuming
 [local-blob owner](../latent-local-blobs/README.md) now supplies physical pins and
 a coherent inventory port, while `latent-commit` can attach verified local
-payloads to its atomic envelope. Standalone startup still refuses required
-payload-reference rows until the complete physical inventory is installed.
-State/snapshot ownership and the full retention/GC/recovery campaign remain
-separate integration and qualification work.
+payloads to its atomic envelope. Protected standalone startup checks required
+local files against the same engine view, tenant and configured blob provider.
+Replacing or deleting a state cell removes its old reference in the fenced
+commit. Other references and active readers continue to hold the bytes.
+[Physical recovery and retention](../../docs/architecture/blob-model.md#ownership-and-retention)
 
 ## Responsibilities and architecture
 
@@ -45,7 +46,7 @@ separate integration and qualification work.
 
 Direct workspace dependencies: [latent-core](../latent-core/README.md), [latent-protected-files](../latent-protected-files/README.md).
 
-Consumers with normal workspace dependency edges include [latentd](../../apps/latentd/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-commit](../latent-commit/README.md), [latent-effects](../latent-effects/README.md), [latent-workflows](../latent-workflows/README.md), [latent-wire](../latent-wire/README.md). Optional features still gate the selected graph; target-specific and test edges are also declared in the manifests.
+Consumers with normal workspace dependency edges include [latentd](../../apps/latentd/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-commit](../latent-commit/README.md), [latent-effects](../latent-effects/README.md), [latent-nats](../latent-nats/README.md), [latent-workflows](../latent-workflows/README.md), [latent-wire](../latent-wire/README.md). Optional features still gate the selected graph; target-specific and test edges are also declared in the manifests.
 
 Use [Cargo.toml](Cargo.toml) for external dependencies, target gates and test/build edges; [the workspace manifest](../../Cargo.toml) and [the toolchain guide](../../docs/development/toolchain.md) own current pins. Dependency presence does not install a runtime service.
 
