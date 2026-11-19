@@ -227,8 +227,18 @@ class CTimedRuntime(unittest.TestCase):
                 self.assertFalse(legacy.isolation.receipt['cTimedSourceMapping']['selectPrecisionQualified'])
                 self.assertIsNone(legacy.threading_time_alias)
         source = (fixture.ROOT / 'tools/c_capsule_build.py').read_text()
-        self.assertLess(source.index('compiler.select_threading_clock_inputs()'),
-                        source.index('materials = list(compiler.materials.values())'))
+        # Optional source ports are now selected by the snapshot helper. Check
+        # the build's call order, not the removed inline list-construction text.
+        build = next(value for value in ast.parse(source).body
+                     if isinstance(value, ast.FunctionDef) and value.name == 'build')
+        def call_lines(name):
+            return [value.lineno for value in ast.walk(build)
+                    if isinstance(value, ast.Call) and ast.unparse(value.func) == name]
+        selections = call_lines('compiler.select_threading_clock_inputs')
+        snapshots = call_lines('observed_compiler_materials')
+        self.assertTrue(selections, 'clock inputs must be selected')
+        self.assertTrue(snapshots, 'compiler materials must be observed')
+        self.assertLess(max(selections), min(snapshots))
         self.assertIn('c-timed-all-original-twenty-and-sixteen-timed-outcomes',
                       Path(qualification.__file__).read_text())
 
