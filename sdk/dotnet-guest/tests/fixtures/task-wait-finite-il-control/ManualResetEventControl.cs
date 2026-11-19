@@ -2,10 +2,16 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using System.Reflection;
 
-// Only the operating-system predicate, dispatcher, clock and private
-// IsDisposed getter are host ports. No NativeAOT component or host ledger runs.
+// The platform predicate, dispatcher, clock, context entry and private
+// IsDisposed getter are host ports. The new context factory's actual emitted
+// body executes against the host CoreLib under test-only access permission.
+// No NativeAOT component or host ledger runs.
 public static class ManualResetEventProjection
 {
+    public static readonly List<string> OwnerChanges = new();
+    public static readonly AsyncLocal<int> Owner = new(change => {
+        if (change.ThreadContextChanged) OwnerChanges.Add(change.PreviousValue + "->" + change.CurrentValue);
+    });
     public static ManualResetEventSlim? Target;
     public static CancellationToken Token;
     public static long Start;
@@ -58,6 +64,10 @@ public static class ManualResetEventProjection
     public static bool Entry(ManualResetEventSlim value, int milliseconds, CancellationToken token)
         => throw new NotImplementedException();
     public static void WaitDispatch(object? state) => throw new NotImplementedException();
+    public static ExecutionContext EventContext(ExecutionContext? source, object owner) => throw new NotImplementedException();
+    public static void EventDispatch(object? state) => throw new NotImplementedException();
+    public static bool EventEntry(ManualResetEventSlim value, int milliseconds, CancellationToken token) => throw new NotImplementedException();
+    public static bool EventShim(ManualResetEventSlim value, int milliseconds, CancellationToken token) => throw new NotImplementedException();
 }
 
 internal static class ManualResetEventControl
@@ -126,15 +136,26 @@ internal static class ManualResetEventControl
         var shim = Program.Method(mres, "LsfAggregateWait");
         var entry = Program.Method(loop, "LsfAggregateWait");
         var dispatch = Program.Method(loop, "LsfAggregateDispatch");
+        var runtime = actual.Types.Single(type => type.FullName == "Lsf.CompilerOwned.ManagedWorkRuntime");
+        var eventContext = Program.Method(context, "LsfAggregateEventContext");
+        var eventDispatch = Program.Method(runtime, "LsfAggregateEventDispatch");
+        var eventEntry = Program.Method(runtime, "LsfAggregateEventWait");
+        var eventShim = Program.Method(mres, "LsfAggregateEventWait");
         var methods = new Dictionary<string, MethodDefinition> {
             [simple.FullName] = Program.Method(target, "WaitSimple"),
             [wait.FullName] = Program.Method(target, "WaitCore"),
             [shim.FullName] = Program.Method(target, "Shim"),
             [entry.FullName] = Program.Method(target, "Entry"),
             [dispatch.FullName] = Program.Method(target, "WaitDispatch"),
+            [eventContext.FullName] = Program.Method(target, "EventContext"),
+            [eventDispatch.FullName] = Program.Method(target, "EventDispatch"),
+            [eventEntry.FullName] = Program.Method(target, "EventEntry"),
+            [eventShim.FullName] = Program.Method(target, "EventShim"),
         };
         var references = wait.Body.Instructions.Concat(shim.Body.Instructions)
             .Concat(entry.Body.Instructions).Concat(dispatch.Body.Instructions)
+            .Concat(eventContext.Body.Instructions).Concat(eventDispatch.Body.Instructions)
+            .Concat(eventEntry.Body.Instructions).Concat(eventShim.Body.Instructions)
             .Select(instruction => instruction.Operand).OfType<MethodReference>().ToArray();
         void Bind(string owner, string name, string replacement)
         {
@@ -157,9 +178,11 @@ internal static class ManualResetEventControl
                      ("s_lsfAggregateTimeout", "Timeout"), ("s_lsfAggregateCompleted", "Observed") })
             fields[loop.Fields.Single(field => field.Name == original).FullName] = target.Fields.Single(field => field.Name == replacement);
         fields[context.Fields.Single(field => field.Name == "Default").FullName] = target.Fields.Single(field => field.Name == "Default");
+        fields[runtime.Fields.Single(field => field.Name == "current").FullName] = target.Fields.Single(field => field.Name == "Owner");
         CopyWaitPrefix(wait, Program.Method(target, "WaitCore"), projected, methods);
         foreach (var (source, name) in new[] { (simple, "WaitSimple"), (shim, "Shim"),
-                     (entry, "Entry"), (dispatch, "WaitDispatch") })
+                     (entry, "Entry"), (dispatch, "WaitDispatch"), (eventContext, "EventContext"),
+                     (eventDispatch, "EventDispatch"), (eventEntry, "EventEntry"), (eventShim, "EventShim") })
             Program.CopyBody(source, Program.Method(target, name), projected, methods, fields);
         projected.Assembly.Name.Name = "ManualResetEventHostProjection";
         projected.Name = "ManualResetEventHostProjection.dll";
@@ -332,11 +355,16 @@ internal static class ManualResetEventControl
             ["simple"] = simple,
             ["infinite"] = value => Require(timed(value, -1, CancellationToken.None), "event-infinite-result"),
         };
+        var owner = (AsyncLocal<int>)projection.GetField("Owner")!.GetValue(null)!;
+        var ownerChanges = (List<string>)projection.GetField("OwnerChanges")!.GetValue(null)!;
         var failures = new List<string>();
         foreach (var (name, wait) in waits)
         foreach (bool refuse in new[] { false, true })
+        foreach (bool suppress in new[] { false, true })
         {
-            string label = name + (refuse ? "-refusal-retry" : "-signal");
+            string label = name + (refuse ? "-refusal-retry" : "-signal") + (suppress ? "-suppressed" : "-flowing");
+            using var flowScope = suppress && !ExecutionContext.IsFlowSuppressed()
+                ? (IDisposable)ExecutionContext.SuppressFlow() : null;
             using var signal = new ManualResetEventSlim(false);
             var changes = new List<string>();
             bool measuring = false;
@@ -349,34 +377,38 @@ internal static class ManualResetEventControl
             var saved = frame.Select(field => field.GetValue(null)).ToArray();
             int beforeDispatches = (int)dispatches.GetValue(null)!;
             int beforeSettled = (int)settled.GetValue(null)!;
-            int workerValue = -1;
+            int workerValue = -1, workerOwner = -1;
             bool suppressed = ExecutionContext.IsFlowSuppressed();
             Require((int)owners.GetValue(null)! == 0 && (int)running.GetValue(null)! == 0,
                 "event-context-initial-owners");
             void Restored()
             {
-                Require(local.Value == 7 && ExecutionContext.IsFlowSuppressed() == suppressed,
+                Require(local.Value == 7 && owner.Value == 11 && ExecutionContext.IsFlowSuppressed() == suppressed,
                     "event-context-caller-state-" + label);
                 for (int index = 0; index < frame.Length; index++)
                     Require(Equals(frame[index].GetValue(null), saved[index]),
                         "event-context-frame-" + frame[index].Name + "-" + label);
             }
+            bool FilterRestored() { Restored(); return true; }
             void Observe(string phase)
             {
                 if (changes.Count != 0)
                     failures.Add(label + "-" + phase + ":" + string.Join(",", changes));
                 changes.Clear();
+                Require(ownerChanges.SequenceEqual(new[] { "11->0", "0->11" }),
+                    "event-context-owner-notifications-" + label + "-" + phase);
+                ownerChanges.Clear();
             }
-            local.Value = 7;
+            local.Value = 7; owner.Value = 11;
             try {
                 measuring = true;
                 ExecutionContext.Run(ManualResetEventProjection.Default, _ => { }, null);
                 Require(changes.SequenceEqual(new[] { "7->0", "0->7" }), "event-context-observer-control");
-                changes.Clear();
+                changes.Clear(); ownerChanges.Clear();
                 // The projection's queue never runs inline and does not capture
                 // ExecutionContext. This also rejects a fix that simply runs
                 // the dispatcher inside the waiting caller's context.
-                submit(() => { workerValue = local.Value; signal.Set(); });
+                submit(() => { workerValue = local.Value; workerOwner = owner.Value; signal.Set(); });
                 Require(!signal.IsSet && (int)dispatches.GetValue(null)! == beforeDispatches,
                     "event-context-not-pending-" + label);
                 if (refuse)
@@ -384,7 +416,7 @@ internal static class ManualResetEventControl
                     var primary = new InvalidOperationException("event-context-readiness-primary");
                     readinessFailure.SetValue(null, primary);
                     try { wait(signal); throw new InvalidOperationException("event-context-refusal-not-thrown"); }
-                    catch (InvalidOperationException error) {
+                    catch (InvalidOperationException error) when (ReferenceEquals(error, primary) && FilterRestored()) {
                         Require(ReferenceEquals(error, primary), "event-context-primary-changed");
                     }
                     finally { readinessFailure.SetValue(null, null); }
@@ -402,11 +434,80 @@ internal static class ManualResetEventControl
                     && (int)dispatches.GetValue(null)! == beforeDispatches + 1,
                     "event-context-owner-settlement-" + label);
                 Restored(); Observe("returned");
-                if (workerValue != 0) failures.Add(label + "-caller-context-leaked:" + workerValue);
+                if (workerValue != 0 || workerOwner != 0)
+                    failures.Add(label + "-caller-context-leaked:" + workerValue + ":" + workerOwner);
             }
-            finally { measuring = false; local.Value = 0; readinessFailure.SetValue(null, null); }
+            finally { measuring = false; local.Value = 0; owner.Value = 0; ownerChanges.Clear(); readinessFailure.SetValue(null, null); }
         }
         Require(failures.Count == 0, "event-wait-context-mismatch:" + string.Join(";", failures));
+    }
+
+
+    private static void CheckCapturedNestedContext(Type projection)
+    {
+        var wait = projection.GetMethod("WaitSimple")!.CreateDelegate<Action<ManualResetEventSlim>>();
+        var submit = projection.GetMethod("Submit")!.CreateDelegate<Action<Action>>();
+        var owner = (AsyncLocal<int>)projection.GetField("Owner")!.GetValue(null)!;
+        var ownerChanges = (List<string>)projection.GetField("OwnerChanges")!.GetValue(null)!;
+        var owners = projection.GetField("Owners")!;
+        var running = projection.GetField("Running")!;
+        var settled = projection.GetField("Settled")!;
+        var frame = new[] { "Target", "Token", "Start", "Timeout", "Observed", "Current", "Depth" }
+            .Select(name => projection.GetField(name)!).ToArray();
+        var saved = frame.Select(field => field.GetValue(null)).ToArray();
+        using var outer = new ManualResetEventSlim(false);
+        using var inner = new ManualResetEventSlim(false);
+        var changes = new List<string>();
+        bool measuring = false;
+        var local = new AsyncLocal<int>(change => {
+            if (measuring && change.ThreadContextChanged)
+                changes.Add(change.PreviousValue + "->" + change.CurrentValue);
+        });
+        ExecutionContext? captured = null;
+        ExecutionContext.Run(ManualResetEventProjection.Default, _ => {
+            local.Value = 13; owner.Value = 23;
+            captured = ExecutionContext.Capture();
+        }, null);
+        Require(captured is not null, "event-captured-context-missing");
+        local.Value = 7; owner.Value = 11; ownerChanges.Clear();
+        int beforeSettled = (int)settled.GetValue(null)!;
+        try {
+            submit(() => ExecutionContext.Run(captured!, _ => {
+                Require(local.Value == 13 && owner.Value == 23, "event-captured-sibling-values");
+                Require((int)owners.GetValue(null)! == 2 && (int)running.GetValue(null)! == 1,
+                    "event-captured-outer-owner");
+                wait(inner);
+                Require(local.Value == 13 && owner.Value == 23 && inner.IsSet,
+                    "event-captured-nested-context-restored");
+                local.Value = 14;
+                outer.Set();
+            }, null));
+            submit(() => {
+                Require(local.Value == 0 && owner.Value == 0, "event-captured-inner-leak");
+                Require((int)owners.GetValue(null)! == 2 && (int)running.GetValue(null)! == 2,
+                    "event-captured-inner-owners");
+                inner.Set();
+            });
+            measuring = true;
+            wait(outer);
+            measuring = false;
+            Require(local.Value == 7 && owner.Value == 11, "event-captured-caller-values");
+            Require(changes.SequenceEqual(new[] { "0->13", "14->0" }),
+                "event-captured-original-notifications:" + string.Join(",", changes));
+            Require(ownerChanges.SequenceEqual(new[] {
+                "11->0", "0->23", "23->0", "0->23", "23->0", "0->11" }),
+                "event-captured-owner-notifications:" + string.Join(",", ownerChanges));
+            Require((int)owners.GetValue(null)! == 0 && (int)running.GetValue(null)! == 0
+                && (int)settled.GetValue(null)! == beforeSettled + 2, "event-captured-settlement");
+            for (int index = 0; index < frame.Length; index++)
+                Require(Equals(frame[index].GetValue(null), saved[index]), "event-captured-frame-" + frame[index].Name);
+            // A derived private context must not mutate the captured source map
+            // or notification list. Re-enter the original sibling capture.
+            ExecutionContext.Run(captured!, _ => {
+                Require(local.Value == 13 && owner.Value == 23, "event-captured-source-mutated");
+            }, null);
+        }
+        finally { measuring = false; local.Value = 0; owner.Value = 0; ownerChanges.Clear(); }
     }
 
     internal static void Run(string assembly, string output)
@@ -415,6 +516,7 @@ internal static class ManualResetEventControl
         var projection = BuildProjection(assembly, output);
         CheckProjection(projection);
         CheckPendingContext(projection);
+        CheckCapturedNestedContext(projection);
         Console.WriteLine("MANUAL_RESET_EVENT_IL_HOST PASS clr;zero;validation;signal;reset;nested;owners;refusal");
     }
 }

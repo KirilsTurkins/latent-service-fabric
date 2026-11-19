@@ -87,10 +87,10 @@ def probe(output: Path) -> dict:
                                                    require_finite_observation=finite)
             except ValueError:
                 receipt_failures.append(name)
-            write_json(output / 'receipt-validation.json', {'rejected': receipt_failures})
             if receipt['outputDigest'] != digest(read_file(output / (name + '.dll'), task_wait.MAX_ASSEMBLY)):
                 raise ValueError('event-context-derived-digest')
             receipts[name] = receipt
+        write_json(output / 'receipt-validation.json', {'rejected': receipt_failures})
         stage = 'projection-build'
         fixture = sdk / 'tests/fixtures/task-wait-finite-il-control'
         source = output / 'control-source'
