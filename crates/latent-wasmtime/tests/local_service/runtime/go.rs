@@ -1,6 +1,10 @@
 //! Ordinary compiler-built Go APIs through signed V5 node admission.
 use super::*;
 
+#[cfg(feature = "development-go-lazy-owner-observer")]
+#[path = "go/lazy_owner.rs"]
+mod lazy_owner;
+
 #[path = "go/managed_idle.rs"]
 mod managed_idle;
 

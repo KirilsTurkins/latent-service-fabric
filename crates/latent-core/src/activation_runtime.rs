@@ -256,6 +256,71 @@ impl ActivationRuntime {
         self.register_after_live_check(kind, continuation, || {})
     }
 
+    /// Check whether a host may prepare storage for a possible admission.
+    /// This consumes original-ledger fuel for the bounded scan but does not
+    /// reserve an owner, make a task runnable or promise admission will succeed.
+    /// A terminal ledger still changes the phase to Cancelling as usual.
+    /// Another thread may change the runtime immediately afterwards: callers
+    /// must still use `register` and retain any prepared physical storage.
+    pub fn preflight_registration(
+        &self,
+        kind: OwnerKind,
+        continuation: Option<RuntimeToken>,
+    ) -> Result<(), PlatformError> {
+        self.check_live()?;
+        let mut state = self
+            .inner
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let result = self
+            .validate_registration_locked(&state, kind, continuation)
+            .and_then(|_| self.check_commit_ledger_locked(&mut state))
+            .and_then(|_| {
+                let scan = if continuation.is_some() {
+                    self.inner.limits.total() as u64
+                } else {
+                    0
+                };
+                self.charge_admission_fuel_locked(&mut state, 100 + scan)
+            });
+        if result.is_err() {
+            state.admission_failures = state.admission_failures.saturating_add(1);
+        }
+        result
+    }
+
+    /// Finish a failed host storage preparation without admitting an owner.
+    /// Recheck the ordinary registration errors and charge its bounded scan
+    /// under the same lock before returning the physical storage failure.
+    /// This also accounts for the failed attempt in the original observation.
+    pub fn reject_storage_preparation(
+        &self,
+        kind: OwnerKind,
+        continuation: Option<RuntimeToken>,
+        storage_failure: PlatformError,
+    ) -> PlatformError {
+        if let Err(failure) = self.check_live() {
+            return failure;
+        }
+        let mut state = self
+            .inner
+            .state
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let result = self
+            .validate_registration_locked(&state, kind, continuation)
+            .and_then(|_| self.check_commit_ledger_locked(&mut state))
+            .and_then(|_| {
+                self.charge_admission_fuel_locked(
+                    &mut state,
+                    100 + self.inner.limits.total() as u64,
+                )
+            });
+        state.admission_failures = state.admission_failures.saturating_add(1);
+        result.err().unwrap_or(storage_failure)
+    }
+
     fn register_after_live_check(
         &self,
         kind: OwnerKind,
@@ -327,18 +392,15 @@ impl ActivationRuntime {
         self.register_locked_with_hook(state, kind, continuation, |_| {})
     }
 
-    fn register_locked_with_hook(
+    fn validate_registration_locked(
         &self,
-        state: &mut State,
+        state: &State,
         kind: OwnerKind,
         continuation: Option<RuntimeToken>,
-        mut hook: impl FnMut(AdmissionStep),
-    ) -> Result<RuntimeOwner, PlatformError> {
+    ) -> Result<u64, PlatformError> {
         let inherited = match continuation {
             Some(token) if self.record(state, token).is_some() => true,
-            Some(_) => {
-                return Err(error(PlatformErrorCode::InvalidArgument, "runtime-token"));
-            }
+            Some(_) => return Err(error(PlatformErrorCode::InvalidArgument, "runtime-token")),
             None => false,
         };
         match state.phase {
@@ -348,7 +410,7 @@ impl ActivationRuntime {
                 return Err(error(
                     PlatformErrorCode::Cancelled,
                     "runtime-admission-closed",
-                ));
+                ))
             }
         }
         let index = kind.index();
@@ -364,29 +426,48 @@ impl ActivationRuntime {
                 "runtime-owner-limit",
             )));
         }
-        let next_id = state.next_id.checked_add(1).ok_or_else(|| {
+        state.next_id.checked_add(1).ok_or_else(|| {
             error(
                 PlatformErrorCode::ResourceExhausted,
                 "runtime-token-exhausted",
             )
-        })?;
-        // Preserve the existing token, phase and capacity error precedence.
-        // Then recheck before doing any new accounting/allocation: the first
-        // liveness check preceded this lock and the original ledger may have
-        // closed or reached its deadline while this operation waited.
-        self.check_commit_ledger_locked(state)?;
-        hook(AdmissionStep::CheckedBeforeAccounting);
+        })
+    }
+
+    fn charge_admission_fuel_locked(
+        &self,
+        state: &mut State,
+        amount: u64,
+    ) -> Result<(), PlatformError> {
         // Scanning is bounded and charged on the original fuel ledger.
         self.inner
             .budget
-            .consume_cpu_fuel(100 + self.inner.limits.total() as u64)
+            .consume_cpu_fuel(amount)
             .map_err(|failure| match failure {
                 crate::BudgetError::AccountingFinalized => {
                     state.phase = RuntimePhase::Cancelling;
                     error(PlatformErrorCode::Cancelled, "runtime-cancelled")
                 }
                 other => other.to_platform_error(),
-            })?;
+            })
+    }
+
+    fn register_locked_with_hook(
+        &self,
+        state: &mut State,
+        kind: OwnerKind,
+        continuation: Option<RuntimeToken>,
+        mut hook: impl FnMut(AdmissionStep),
+    ) -> Result<RuntimeOwner, PlatformError> {
+        let next_id = self.validate_registration_locked(state, kind, continuation)?;
+        let index = kind.index();
+        // Preserve the existing token, phase and capacity error precedence.
+        // Then recheck before doing any new accounting/allocation: the first
+        // liveness check preceded this lock and the original ledger may have
+        // closed or reached its deadline while this operation waited.
+        self.check_commit_ledger_locked(state)?;
+        hook(AdmissionStep::CheckedBeforeAccounting);
+        self.charge_admission_fuel_locked(state, 100 + self.inner.limits.total() as u64)?;
         hook(AdmissionStep::ChargedFuel);
         if state.slab.is_none() {
             let count = self.inner.limits.total();
