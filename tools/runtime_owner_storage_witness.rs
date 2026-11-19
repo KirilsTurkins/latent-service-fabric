@@ -1,5 +1,7 @@
-//! Standalone observation of the actual runtime owner-storage source. Run in
-//! a single-threaded process against the same pinned latent-core build.
+//! Isolated observation of the actual runtime owner-storage source. This Cargo
+//! target has no libtest harness, so only the synchronous calls below allocate
+//! while the global allocator witness is armed.
+#![allow(unsafe_code)]
 use std::alloc::{GlobalAlloc, Layout, System};
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -20,8 +22,8 @@ struct Witness;
 #[global_allocator]
 static GLOBAL: Witness = Witness;
 
-// This executable is isolated from the host; its allocator observes only the
-// synchronous, explicitly armed calls made below.
+// SAFETY: the observer delegates the original layout and pointer to System.
+// Refusal returns null without allocating; no pointer is ever dereferenced.
 unsafe impl GlobalAlloc for Witness {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let mode = MODE.load(Ordering::SeqCst);

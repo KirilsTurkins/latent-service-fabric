@@ -53,6 +53,12 @@ name = "aot_sandbox"
 path = "tests/aot_sandbox.rs"
 harness = false
 
+# Keep allocator observations isolated from the libtest harness and host allocator.
+[[test]]
+name = "runtime_owner_storage_witness"
+path = "../../tools/runtime_owner_storage_witness.rs"
+harness = false
+
 [dependencies]
 tokio = { workspace = true, optional = true }
 latent-packaging = { path = "../latent-packaging" }
