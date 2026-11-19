@@ -42,6 +42,17 @@ cleanup. This ownership repair does not qualify custom `Thread.start` overrides;
 the [runtime profile](../../docs/runtime/java-activation-fibers.md) records that
 remaining reference-runtime difference.
 
+Managed activation builds reserve a **128 KiB C stack at the start of linear
+memory**, including the guarded Date link path. TeaVM/SjLj worker startup can
+exceed the ordinary 64 KiB C stack. Placing the downward-growing stack below
+static data prevents its underflow from silently overwriting activation-owner
+registries; an out-of-bounds access traps the activation instead. This is an
+internal backing reservation, not a larger caller grant: the 64 MiB linker
+maximum, Java heap limits, and host admission/ownership budgets are unchanged.
+The non-fiber compiler command is unchanged. This finite reservation does not
+promise that arbitrary Java recursion or every library fits; successful signed
+execution and physical cleanup still require source-matched qualification.
+
 Edit `src/dev/latent/app/Capsule.java` and `wit/world.wit` in the created project.
 The entry class implements generated `dev.latent.generated.Bindings.Exports`.
 Additional Java source files beneath `src` are captured. Declare developer-selected
