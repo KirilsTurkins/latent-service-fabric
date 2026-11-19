@@ -223,9 +223,9 @@ python tools/illustration_palette.py
 python -m unittest tools.tests.test_illustration_palette -v
 ```
 
-After reviewing a semantic token change, update the two current SVGs and inspect
-their rendered labels and geometry. Their explicit `maintained` inventory entries
-name their owners and current consumers. The helper checks every literal color
+After reviewing a semantic token change, check each affected maintained diagram
+at its rendered size. Its `maintained-diagram` inventory entry names its owner
+and current consumers. The helper checks every literal color
 against the shared palette and rejects unknown assets or missing consumers.
 
 Historical and released-snapshot SVG hashes remain checked independently.

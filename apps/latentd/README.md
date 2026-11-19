@@ -15,6 +15,8 @@ Development also contains opt-in protected transaction storage, deferred dispatc
 | [src/standalone/start/](src/standalone/start/) | Startup order, listener publication and offline composition. |
 | [src/standalone/providers/](src/standalone/providers/) | Explicit provider installation and scalar host capability registration. |
 | [src/standalone/state/mod.rs](src/standalone/state/mod.rs) | Canonical protected state startup, validation and transaction owners. |
+| [src/standalone/state/installations/event.rs](src/standalone/state/installations/event.rs) | Matches the signed event requirements to the installed JetStream adapter and independently checks staging and dispatch policy. |
+| [src/standalone/state/store.rs](src/standalone/state/store.rs) | Reopens protected state and verifies required retained payloads with the matching durable local blob provider. |
 | [src/standalone/effects.rs](src/standalone/effects.rs) | Deferred dispatcher on the same protected database and original clock/capacity owners. |
 | [src/standalone/http.rs](src/standalone/http.rs) | One shared bounded application listener; sibling static-asset and renderer selection. |
 | [src/standalone/transport.rs](src/standalone/transport.rs) | Transport admission and cleanup independent of activation quota. |

@@ -147,11 +147,14 @@ cannot mint it. Release takes a fresh matching view under the publication guard
 and refuses live durable references or provisional pins.
 
 The command coordinator can attach these captured owners to its atomic envelope,
-checking the existing inline result/effect bytes. This does not replace the
-guest blob ABI with reference dispatch. Standalone startup currently rejects
-required payload-reference rows because the complete physical inventory is not
-installed there. Ordinary guest blobs, S3, command payloads, state links and
-snapshots retain their separate availability and acceptance boundaries.
+checking the existing inline result/effect bytes. When a protected Linux node
+reopens a durable local root, it binds that same blob provider to the state
+engine and checks each required reference against its owner records and file
+contents before exposing either service. A missing file, digest mismatch or
+different provider blocks startup. An ordinary root cannot satisfy this check.
+Guest transactions still pass inline values. Backup and orphan reclamation
+also need proof that every retained owner has been accounted for.
+[Startup and retention details](../architecture/blob-model.md#ownership-and-retention)
 
 ## Validation
 

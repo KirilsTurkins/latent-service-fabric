@@ -122,6 +122,11 @@ retire and staging must seal before the host's final authority/conflict fence
 and atomic state/outbox/outcome persistence. The guest cannot commit early or
 make an immediate irreversible call inside a strict command.
 
+An entity command waits for its lane before publishing a new durable claim.
+Ordinary callers and duplicate observers draw from the same global, tenant and
+entity wait budgets. An observer must pass the current result-read check before
+it can wait on the original command. [Entity lane handoff](../development/entity-lanes.md#host-handoff)
+
 A fresh query uses an independent bounded read-only view and creates no durable
 business command or outbox row. Result recovery reads the original durable
 identity under current result-read authority without invoking the guest. The

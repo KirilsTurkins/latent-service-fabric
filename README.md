@@ -68,15 +68,17 @@ C and Go source SDKs follow the repository release tag; they do not have a
 separate package version. Keep the toolkit and its authenticated selection
 together when upgrading, using a fresh input directory as described in setup.
 
-Standalone node configuration exposes outbound HTTP, local blobs, activation
-clocks and OS-backed randomness through explicit provider installations.
-Other maintained provider integrations use trusted Rust embedding; consult the
-[provider reference](docs/reference/standalone-providers.md) before choosing a
-setup. Development now includes protected transactional state, deferred effects
-and current-authorized recovery behind explicitly selected profiles; their
-collective and packaged acceptance remains open. See
-[transaction recovery](docs/operations/transaction-recovery.md) and
-[the roadmap](docs/roadmap.md). Clustering remains planned. Management RPCs are
+The standalone node can install outbound HTTP, local blobs, clocks, randomness
+and a bounded JetStream publisher. Operators select the provider and grant its
+operations to each deployment. [Standalone provider configuration](docs/reference/standalone-providers.md)
+
+On Development, an explicitly configured transaction can commit state and a
+deferred HTTP or JetStream intent together. After a lost reply, a caller can
+look up the original command and inspect the effect separately. The published
+alpha.5 toolkit predates these transaction paths.
+[Transaction recovery](docs/operations/transaction-recovery.md) · [Roadmap](docs/roadmap.md)
+
+Clustering remains planned. Management RPCs are
 local; application HTTP ingress has its own
 [listener and security configuration](docs/reference/http-ingress.md).
 

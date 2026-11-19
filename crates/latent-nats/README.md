@@ -29,7 +29,7 @@ No guest can create an endpoint, durable consumer or unlimited subject subscript
 
 ## Dependencies and build
 
-Direct workspace dependencies: [latent-core](../latent-core/README.md), [latent-effects](../latent-effects/README.md), [latent-activation](../latent-activation/README.md), [latent-node](../latent-node/README.md), [latent-routing](../latent-routing/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-policy](../latent-policy/README.md).
+Direct workspace dependencies: [latent-core](../latent-core/README.md), [latent-effects](../latent-effects/README.md), [latent-activation](../latent-activation/README.md), [latent-node](../latent-node/README.md), [latent-routing](../latent-routing/README.md), [latent-capabilities](../latent-capabilities/README.md), [latent-policy](../latent-policy/README.md), [latent-commit](../latent-commit/README.md), [latent-state](../latent-state/README.md). The transactional source uses the command identity and protected state history when deciding how to settle a delivery.
 
 Consumers with normal workspace dependency edges include [latentd](../../apps/latentd/README.md). Optional features still gate the selected graph; target-specific and test edges are also declared in the manifests.
 
@@ -55,6 +55,19 @@ Representative source tests (not a complete coverage inventory):
 - [`receipts_require_exact_stream_positive_sequence_and_unambiguous_shapes`](src/protocol/tests.rs)
 
 Integration targets: [tests/deferred_events.rs](tests/deferred_events.rs).
+
+## Standalone installation
+
+A strict command can install the signed event requirements for one qualified
+topic. Staging and dispatch use separate policy bindings. Each publication
+checks the original stream's creation identity, configuration and finite
+duplicate window. The broker acknowledgement belongs to the effect attempt.
+[Standalone installation](../../apps/latentd/src/standalone/state/installations/event.rs)
+
+On the inbound side, ordinary pull bindings may redeliver. Standalone
+configuration rejects `transactionalTriggers` until durable custody of the
+input source is available. The existing inbox admission and replay code can
+validate retained source history. [Trigger configuration](../../docs/runtime/nats-triggers.md#transactional-inbox-status)
 
 ## Related documentation
 

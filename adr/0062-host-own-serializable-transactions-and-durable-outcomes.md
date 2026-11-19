@@ -16,6 +16,12 @@ and [recovery qualification](../docs/testing/installed-transaction-recovery.md)
 describe its current scope. The original decision and threat table below retain
 their accepted wording and do not establish completed collective qualification.
 
+The decision table below names TinyGo. The maintained [Go guest SDK](../sdk/go-guest/README.md)
+builds with upstream Go and the reviewed `wasiOnIdle` scheduler overlay.
+For incoming messages the standalone configuration still refuses transactional
+triggers while durable source custody is unresolved. Signed outbound JetStream
+effects have a separate [installation contract](../docs/development/deferred-jetstream.md).
+
 There is a specific implementation variance to reconcile before closing the
 restore/collective gates: this decision calls for older-history restore to change
 namespace incarnation. The installed [history owner](../crates/latent-state/src/namespace/history.rs)
