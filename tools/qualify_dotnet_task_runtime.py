@@ -37,6 +37,26 @@ def require_current_task_wait_receipt(port):
         require_finite_observation=True)
 
 
+def require_current_task_wait_binding(port):
+    """Bind this managed programme to the current receipt before signing.
+
+    The shared validator owns version and helper identities. Requiring the
+    aggregate section here also prevents a valid finite-only receipt from
+    qualifying the ordinary managed-task programme.
+    """
+    require_current_task_wait_receipt(port)
+    selection = port.get('selection')
+    native = port.get('nativeAotReferenceBinding')
+    require(port.get('profile') == PROFILE and 'aggregateTaskWait' in port
+            and type(selection) is dict
+            and selection.get('requiredDeclarations') == sorted((
+                'latent:clock/monotonic@0.1.0', 'latent:runtime/activation@0.1.0',
+                'latent:clock/wall@0.1.0', 'latent:random/random@0.1.0'))
+            and type(native) is dict and type(native.get('responseFiles')) is list
+            and len(native['responseFiles']) == 1,
+            'dotnet-tasks-final-corelib-binding')
+
+
 def require_reset_notification_receipt(captured, observed):
     cases = observed.get('dotnetTaskRuntime', {}).get('cases')
     library, selected = selected_fixture(reset_notification=True)
@@ -95,15 +115,7 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
         require((greeting / 'source-inputs.json').read_bytes() == before, 'dotnet-tasks-source-capture-changed')
         record['build'] = read_json(greeting / 'BUILD-COMPLETE.json')
         port = read_json(greeting / 'task-wait-port.json')
-        require_current_task_wait_receipt(port)
-        require(port['profile'] == PROFILE and port['completion'] == 'actual-task-only'
-                and port.get('aggregateTaskWait', {}).get('patch') == 'latent.dotnet.wait-all.v6'
-                and port['selection']['requiredDeclarations'] == sorted((
-                    'latent:clock/monotonic@0.1.0', 'latent:runtime/activation@0.1.0',
-                    'latent:clock/wall@0.1.0', 'latent:random/random@0.1.0'))
-                and port['finiteAndCancellableWaits']=='original-Task-WhenAny-Delay'
-                and len(port['nativeAotReferenceBinding']['responseFiles']) == 1,
-                'dotnet-tasks-final-corelib-binding')
+        require_current_task_wait_binding(port)
         record['taskWaitPort'] = port
         stage = 'sign'
         builds = [greeting if template == 'greeting' else companions[template] for template in TEMPLATES]
