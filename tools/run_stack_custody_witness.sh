@@ -21,7 +21,8 @@ for profile in ordinary combined; do
     command=(cargo test --locked -p latent-wasmtime --lib --features "${features}")
     # Listing builds the exact feature closure first. A zero-test success caused
     # by accidentally selecting the other global allocator must not pass.
-    "${command[@]}" -- --list --format terse --color never > "${OUTPUT}/${profile}.list"
+    "${command[@]}" -- --list --format terse --color never \
+        > "${OUTPUT}/${profile}.list" 2> "${OUTPUT}/${profile}.build.log"
     grep -Fx "${WITNESS}: test" "${OUTPUT}/${profile}.list"
     if [[ "${profile}" == combined ]]; then
         grep -E '^native_stacks::tests::combined::.+: test$' "${OUTPUT}/${profile}.list" \
@@ -29,7 +30,7 @@ for profile in ordinary combined; do
     fi
     # Compilation is already complete; bound the actual blocking observation.
     timeout --kill-after=10s 180s "${command[@]}" -- \
-        native_stacks::tests:: --test-threads=1 --format pretty --color never \
+        native_stacks::tests:: --test-threads=1 --format pretty --color never 2>&1 \
         | tee "${OUTPUT}/${profile}.log"
     grep -Fx "test ${WITNESS} ... ok" "${OUTPUT}/${profile}.log"
     if [[ "${profile}" == combined ]]; then

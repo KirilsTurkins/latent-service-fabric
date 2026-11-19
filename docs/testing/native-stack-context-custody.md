@@ -16,14 +16,21 @@ On Linux x86_64 with the repository's pinned Rust toolchain:
 bash tools/run_stack_custody_witness.sh
 ```
 
-The same script runs in the `runtime` lane of `tools/validate_contracts.sh`.
-It builds and runs the native-stack unit tests twice: with
+The same script runs in the `runtime` lane of `tools/validate_contracts.sh` and
+in the narrowly selected `Native stack physical custody` workflow. The focused
+workflow does not require unrelated guest compiler installation and retains
+results even when compilation or execution fails. It supplements the existing
+runtime contract lane; it does not replace workspace or signed guest tests.
+
+The script builds and runs the native-stack unit tests twice: with
 `development-stack-custody-witness`, then with that feature plus
 `development-rust-http-combined`. Each pass must discover and successfully
-execute the allocator witness. The combined pass also requires the real
-combined-profile tests to be present and pass. Missing or ignored witnesses,
-zero-test success, command failures, and execution timeout fail the script.
-The output directory (optional first argument) retains each inventory and log.
+execute the allocator witness. The combined pass also requires every discovered
+combined-profile test to pass. Missing or ignored witnesses, zero-test success,
+command failures, and execution timeout fail the script. The output directory
+(optional first argument) retains each inventory, compiler stderr, execution
+log and combined-control requirement list. A missing or incomplete profile is
+not successful qualification, even if the other profile passes.
 
 Do not substitute `--all-features` for these passes. The existing Go overlap
 observer also installs a test global allocator; enabling its feature excludes

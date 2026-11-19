@@ -177,6 +177,35 @@ if combined and mode != "missing-combined":
                 self.assertEqual(commands, [])
                 self.assertEqual(timeouts, [])
 
+    def test_dedicated_workflow_uses_the_same_fail_closed_runner(self):
+        from tools import ci_lane_inventory as lanes
+
+        name = ".github/workflows/native-stack-custody.yml"
+        model = lanes.workflow_model((ROOT / name).read_text())
+        for trigger in ("pull_request", "push"):
+            event = model["on"][trigger]
+            self.assertEqual(event["branches"], ["development"])
+            for required in (name, "tools/run_stack_custody_witness.sh",
+                             "crates/latent-wasmtime/src/lib.rs",
+                             "crates/latent-wasmtime/src/native_stacks/**",
+                             "crates/vendor/wasmtime/**", "Cargo.toml", "Cargo.lock"):
+                self.assertIn(required, event["paths"])
+        self.assertEqual(model["permissions"], {"contents": "read"})
+        job = model["jobs"]["custody"]
+        self.assertEqual(job["runs-on"], "ubuntu-24.04")
+        self.assertGreater(job["timeout-minutes"], 0)
+        self.assertLessEqual(job["timeout-minutes"], 30)
+        commands = [step["run"] for step in job["steps"] if "run" in step]
+        self.assertEqual(commands, [
+            'bash tools/run_stack_custody_witness.sh "$RUNNER_TEMP/native-stack-custody"'])
+        self.assertFalse(any(step.get("continue-on-error", False) for step in job["steps"]))
+        retained = [step for step in job["steps"]
+                    if step.get("uses", "").startswith("KirilsTurkins/lsf-upload-artifact@")]
+        self.assertEqual(len(retained), 1)
+        self.assertEqual(retained[0]["if"], "always()")
+        self.assertEqual(retained[0]["with"]["path"],
+                         "${{ runner.temp }}/native-stack-custody/")
+
 
 if __name__ == "__main__":
     unittest.main()
