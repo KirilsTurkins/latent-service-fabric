@@ -56,7 +56,7 @@ pub(crate) struct Table {
     owner_limit: usize,
     timers: Vec<RuntimeTimer>,
     runtime: ActivationRuntime,
-    pub(crate) native_stacks: Option<Arc<crate::native_stacks::StackContext>>,
+    pub(crate) native_stacks: Option<crate::native_stacks::StackContextHandle>,
     timer_observer: Option<TimerObserver>,
     #[cfg(feature = "development-go-timer-overlap")]
     overlap: Option<crate::development_go_timer_overlap::Observer>,
@@ -277,7 +277,7 @@ fn table(state: &mut HostState) -> Result<&mut Table, PlatformError> {
 }
 pub(super) fn native_context(
     state: &mut HostState,
-) -> Result<Arc<crate::native_stacks::StackContext>, PlatformError> {
+) -> Result<crate::native_stacks::StackContextHandle, PlatformError> {
     let table = table(state)?;
     let context = table.native_stacks.clone().ok_or_else(|| {
         failure(
@@ -296,7 +296,7 @@ pub(crate) fn prepare_native_stack(
         &crate::component_threading::Authentication,
         &latent_executor::PreparedComponent,
     )>,
-) -> Result<Arc<crate::native_stacks::StackContext>, PlatformError> {
+) -> Result<crate::native_stacks::StackContextHandle, PlatformError> {
     let budget = state.accounting.budget().clone();
     let maximum_native = state.runtime_limits.map(|limits| limits.native_owners);
     let table = table(state)?;
@@ -323,7 +323,7 @@ pub(crate) fn prepare_native_stack(
             proof,
             descriptor,
         )?;
-        table.native_stacks = Some(Arc::clone(&context));
+        table.native_stacks = Some(context.clone());
         return Ok(context);
     }
     let context = if async_workers {
@@ -349,7 +349,7 @@ pub(crate) fn prepare_native_stack(
             maximum_children,
         )?
     };
-    table.native_stacks = Some(Arc::clone(&context));
+    table.native_stacks = Some(context.clone());
     Ok(context)
 }
 
