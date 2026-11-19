@@ -269,6 +269,17 @@ an application `Thread` hook throws while preparing that status, the callback
 is not run: its original Item and remaining Result/action ownership are retained,
 completion is fenced, and the acknowledged Queue settlement is not retried.
 
+The ordinary `shutdown-now` signed fixture now also selects cached-worker
+handoffs before its existing four scenarios: immediate stop, graceful stop,
+callback failure, and a committed first task whose startup wrapper consumes the
+stop interruption. A factory that refuses all additional workers makes a
+successful later submission the idle-handoff witness; sleeps, thread-state
+inspection, and a fixed number of yields are not used as evidence. The same
+application bytes go to the reference JDK and guest compiler. The fixed
+cached-handoff branch selects this existing signed qualification independently
+of the scheduled-library programme, with unchanged budgets and physical-idle
+checks. Selection and JVM source results are not signed execution evidence.
+
 The first-task reservation is an intrusive link on the already charged entry;
 its worker retains only the original Queue lease identity, not the command or
 entry. The reservation, identity and counters use the existing bounded Java heap
