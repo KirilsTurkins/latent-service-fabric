@@ -142,8 +142,16 @@ async function rwlockControls(module){
  {
   const h=harness(module,0),e=h.root.exports;e.rw_setup();e.rw_set_shared();
   assert.equal(e.rw_init_default(),e.rw_notsup());assert.equal(e.rw_read(),0);assert.equal(e.rw_unlock(),0);
-  assert.equal(e.rw_timedread(),e.rw_notsup());assert.equal(e.rw_timedwrite(),e.rw_notsup());
-  e.rw_set_reader_limit();assert.equal(e.rw_read(),e.rw_again());assert.equal(e.read_admitted(),0);
+  assert.equal(e.rw_timedread(),0);assert.equal(e.rw_timedread(),0);
+  assert.equal(h.first.exports.rw_timedwrite(),e.rw_notsup());
+  assert.equal(e.rw_unlock(),0);assert.equal(e.rw_unlock(),0);
+  assert.equal(e.rw_timedwrite(),0);
+  assert.equal(h.first.exports.rw_timedread(),e.rw_notsup());
+  assert.equal(h.first.exports.rw_timedwrite(),e.rw_notsup());
+  assert.equal(e.rw_timedread(),e.rw_deadlock());assert.equal(e.rw_timedwrite(),e.rw_deadlock());
+  assert.equal(e.rw_unlock(),0);
+  e.rw_set_reader_limit();assert.equal(e.rw_read(),e.rw_again());
+  assert.equal(e.rw_timedread(),e.rw_again());assert.equal(e.read_admitted(),0);
   assert.equal(e.rw_errno(),37);
  }
  {
@@ -245,7 +253,9 @@ async function semaphoreControls(module){
   assert.equal(e.ss_setup(e.ss_intmax()),0);assert.equal(e.ss_post(),-1);assert.equal(e.ss_errno(),e.ss_overflow());
   assert.equal(e.ss_getvalue(),e.ss_intmax());assert.equal(e.ss_shared(),-1);assert.equal(e.ss_errno(),e.ss_notsup());
   assert.equal(e.ss_invalid(),-1);assert.equal(e.ss_errno(),e.ss_einval());
-  assert.equal(e.ss_getvalue(),e.ss_intmax());assert.equal(e.ss_timedwait(),-1);assert.equal(e.ss_errno(),e.ss_notsup());
+  assert.equal(e.ss_getvalue(),e.ss_intmax());assert.equal(e.ss_timedwait(),0);assert.equal(e.ss_errno(),e.ss_einval());
+  assert.equal(e.ss_getvalue(),e.ss_intmax()-1);assert.equal(e.read_admitted(),0);assert.equal(e.ss_destroy(),0);
+  assert.equal(e.ss_setup(0),0);assert.equal(e.ss_timedwait(),-1);assert.equal(e.ss_errno(),e.ss_notsup());
   assert.equal(e.read_admitted(),0);assert.equal(e.ss_destroy(),0);
  }
  console.log('PASS semaphore source: permits, wait ownership, races, refusal and cancellation; JSPI test ports only');

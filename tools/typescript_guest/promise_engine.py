@@ -63,6 +63,31 @@ def instrument_combinator_element_function(source: bytes) -> bytes:
     return source
 
 
+def instrument_resolving_functions(source: bytes) -> bytes:
+    """Pre-admit each original resolver closure until its own collection."""
+    for handle, native, indent in ((b"resolveFn", b"ResolvePromiseFunction", 34),
+                                   (b"rejectFn", b"RejectPromiseFunction", 33)):
+        original = (b"  " + handle + b".set(NewNativeFunction(cx, " + native + b", 1, funName,\n"
+            + b" " * indent + b"gc::AllocKind::FUNCTION_EXTENDED,\n"
+            + b" " * indent + b"GenericObject));\n"
+            b"  if (!" + handle + b") {\n    return false;\n  }\n")
+        record = b"activation" + handle[:1].upper() + handle[1:] + b"Record"
+        replacement = (b"  void* " + record + b" = nullptr;\n"
+            b"  if (activationObserved &&\n"
+            b"      !activationPromiseHooks->beforeCapturedAllocate(cx, &" + record + b")) {\n"
+            b"    return false;\n  }\n" + original.replace(
+                b"  if (!" + handle + b") {\n    return false;\n  }\n",
+                b"  if (!" + handle + b") {\n"
+                b"    if (activationObserved) activationPromiseHooks->allocationFailed(" + record + b");\n"
+                b"    return false;\n  }\n"
+                b"  if (activationObserved) activationPromiseHooks->capturedCreated(cx, " + handle + b".get(), " + record + b");\n"))
+        if handle == b"resolveFn":
+            replacement = (b"  const bool activationObserved = activationPromiseHooks &&\n"
+                b"      activationPromiseContext == cx;\n" + replacement)
+        source = replace_once(source, original, replacement, "admit-before-" + native.decode())
+    return source
+
+
 def derive_promise_lifecycle(original: dict[str, bytes], header: bytes) -> tuple[dict[str, bytes], dict]:
     """Create a distinct carrier with mandatory pre-allocation/lifetime hooks.
 
@@ -174,6 +199,7 @@ def derive_promise_lifecycle(original: dict[str, bytes], header: bytes) -> tuple
             b"  if (activationObserved) activationPromiseHooks->nativeJobCreated(cx, job, activationRecord);\n"))
         source = replace_once(source, admission_preimage, after, "admit-before-" + native.decode())
     source = instrument_combinator_element_function(source)
+    source = instrument_resolving_functions(source)
     result["js/src/builtin/Promise.cpp"] = source
     if "js/public/ActivationPromiseHooks.h" in original:
         raise ValueError("original engine already defines private hook ABI")
@@ -187,6 +213,7 @@ def derive_promise_lifecycle(original: dict[str, bytes], header: bytes) -> tuple
         "pendingReactionAdmissionBeforeAllocation": True,
         "thenableResolutionJobAdmissionBeforeAllocation": True,
         "combinatorElementNativeAdmissionBeforeAllocation": True,
+        "resolvingFunctionNativeAdmissionBeforeAllocation": True,
         "originalReactionJobRecordLookup": True,
         "GCPerformsHostCallsOrRefunds": False,
         "originalPromiseObjectDeclarationUnchanged": True,

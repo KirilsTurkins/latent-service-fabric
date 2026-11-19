@@ -68,7 +68,8 @@ class CurrentPublishedFetchTests(unittest.TestCase):
         self.assertIn('!inputs.qualify-current-borrow', job['if'])
         self.assertEqual(workflow['concurrency']['group'],
             "typescript-guest-${{ github.ref }}${{ inputs.qualify-current-borrow && '-current-borrow' || '' }}"
-            "${{ inputs.qualify-current-published-fetch && '-current-published-fetch' || '' }}")
+            "${{ inputs.qualify-current-published-fetch && '-current-published-fetch' || '' }}"
+            "${{ inputs.qualify-current-buffered-fetch && '-current-buffered-fetch' || '' }}")
         self.assertIn('!inputs.qualify-current-published-fetch', workflow['jobs']['current-signed-borrow']['if'])
         downloads = [step['with']['name'] for step in job['steps']
                      if step.get('uses', '').startswith('KirilsTurkins/lsf-download-artifact@')]

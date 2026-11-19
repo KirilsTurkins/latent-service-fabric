@@ -167,6 +167,17 @@ impl Request {
         if let Some(id) = id {
             transaction::identifier(id).map_err(|_| HttpError::InvalidHeaders)?;
         }
+        let effect_id = transaction::singleton(&self.data.headers, "effect-id")?;
+        if let Some(effect) = effect_id {
+            if route.mode() != RouteMode::Result
+                || effect.len() != 64
+                || !effect
+                    .bytes()
+                    .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+            {
+                return Err(HttpError::InvalidHeaders);
+            }
+        }
         let expected = transaction::singleton(&self.data.headers, "if-match")?;
         let minimum = transaction::singleton(&self.data.headers, "if-state-view")?;
         let retry = transaction::command_retry(
@@ -233,6 +244,7 @@ impl Request {
         };
         let facts = TransactionRequest {
             client_key,
+            effect_id: effect_id.map(str::to_owned),
             preconditions,
             minimum_view,
             business_path: self.data.path,

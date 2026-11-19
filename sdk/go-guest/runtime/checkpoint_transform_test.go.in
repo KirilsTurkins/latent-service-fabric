@@ -8,6 +8,7 @@ import (
     "go/types"
     "os"
     "path/filepath"
+    "runtime"
     "strings"
     "testing"
 )
@@ -37,6 +38,61 @@ func TestEntryLoopRangeAndClosureSites(t *testing.T) {
     for _, site := range row.Sites { if !site.Suspendable { t.Fatal("ordinary site rejected") } }
     if !strings.Contains(string(adapted), "runtime.lsfCheckpoint") { t.Fatal("missing compiler link") }
     if _, err := parser.ParseFile(token.NewFileSet(), "adapted.go", adapted, parser.ParseComments); err != nil { t.Fatal(err) }
+}
+
+func TestBase64StridesArePinnedToTheCodecLoops(t *testing.T) {
+    root := t.TempDir()
+    source := filepath.Join(root, "base64.go")
+    original, err := os.ReadFile(filepath.Join(runtime.GOROOT(), "src/encoding/base64/base64.go"))
+    if err != nil { t.Fatal(err) }
+    if digest(original) != base64CodecDigest { t.Fatal("pinned base64 source drift") }
+    if err := os.WriteFile(source, original, 0600); err != nil { t.Fatal(err) }
+    row, err := transform(input{Path:source, Diagnostic:source, Mode:base64AppendMode}, root)
+    if err != nil { t.Fatal(err) }
+    expected := []site{{154, 21, true, 256}, {315, 34, true, 1024}, {352, 63, true, 1024},
+        {368, 62, true, 1024}, {411, 46, true, 1024}, {524, 68, true, 1024},
+        {549, 43, true, 1024}, {570, 21, true, 1024}}
+    if len(row.Sites) != len(expected) { t.Fatalf("sites: %+v", row.Sites) }
+    for i, value := range expected { if row.Sites[i] != value { t.Fatalf("sites: %+v", row.Sites) } }
+    adapted, err := os.ReadFile(row.Adapted)
+    if err != nil { t.Fatal(err) }
+    if strings.Count(string(adapted), "if len(src)&255 == 0 { __lsf_checkpoint_") != 1 {
+        t.Fatal("missing unique bounded encoder checkpoint")
+    }
+    if strings.Count(string(adapted), "__lsf_base64_decode_last := 0") != 1 ||
+        strings.Count(string(adapted), "if si - __lsf_base64_decode_last >= 1024") != 3 ||
+        strings.Count(string(adapted), "if si&1023 == 0 { __lsf_checkpoint_") != 3 {
+        t.Fatal("missing bounded decoder checkpoints")
+    }
+    if strings.Count(string(adapted), "if n&1023 == 0 { __lsf_checkpoint_") != 1 {
+        t.Fatal("missing bounded AppendDecode checkpoint")
+    }
+    if strings.Contains(string(adapted), "_non_suspendable();") { t.Fatal("unexpected rejected checkpoint") }
+    if _, err := parser.ParseFile(token.NewFileSet(), source, adapted, parser.ParseComments); err != nil { t.Fatal(err) }
+    codec, err := transform(input{Path:source, Diagnostic:source, Mode:base64CodecMode}, root)
+    if err != nil || len(codec.Sites) != 7 { t.Fatalf("codec selection: %+v %v", codec.Sites, err) }
+    codecSource, err := os.ReadFile(codec.Adapted)
+    if err != nil { t.Fatal(err) }
+    if strings.Contains(string(codecSource), "if n&1023 == 0 { __lsf_checkpoint_") {
+        t.Fatal("old codec selection includes AppendDecode")
+    }
+    legacy, err := transform(input{Path:source, Diagnostic:source, Mode:base64EncodeMode}, root)
+    if err != nil || len(legacy.Sites) != 1 || legacy.Sites[0] != (site{154, 21, true, 256}) {
+        t.Fatalf("encoder-only selection: %+v %v", legacy.Sites, err)
+    }
+    legacySource, err := os.ReadFile(legacy.Adapted)
+    if err != nil { t.Fatal(err) }
+    if strings.Count(string(legacySource), "if len(src)&255 == 0 { __lsf_checkpoint_") != 1 ||
+        strings.Contains(string(legacySource), "__lsf_base64_decode_last") {
+        t.Fatal("encoder-only selection drifted")
+    }
+    if _, err := transform(input{Path:source, Diagnostic:source, Mode:"unrecognized"}, root); err == nil {
+        t.Fatal("unknown mode accepted")
+    }
+    if err := os.WriteFile(source, append(original, '\n'), 0600); err != nil { t.Fatal(err) }
+    if _, err := transform(input{Path:source, Diagnostic:source, Mode:base64AppendMode}, root); err == nil {
+        t.Fatal("changed standard source accepted")
+    }
 }
 
 func TestNonSuspendablePathsRetainReachableRejection(t *testing.T) {

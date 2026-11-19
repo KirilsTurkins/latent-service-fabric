@@ -147,7 +147,7 @@ int create_enomem(void) { return ENOMEM; }
 #include <stddef.h>
 #include "c-sync-reference-abi.h"
 #include "thread-abi.h"
-struct timespec;
+struct timespec { int64_t tv_sec; long tv_nsec; };
 #define RECORD_LIMIT 32u
 static int fake_errno;
 #undef errno
@@ -260,8 +260,9 @@ int rw_write(void) { return pthread_rwlock_wrlock(&test_rwlock); }
 int rw_tryread(void) { return pthread_rwlock_tryrdlock(&test_rwlock); }
 int rw_trywrite(void) { return pthread_rwlock_trywrlock(&test_rwlock); }
 int rw_unlock(void) { return pthread_rwlock_unlock(&test_rwlock); }
-int rw_timedread(void) { return pthread_rwlock_timedrdlock(&test_rwlock,NULL); }
-int rw_timedwrite(void) { return pthread_rwlock_timedwrlock(&test_rwlock,NULL); }
+static const struct timespec rw_invalid_deadline={0,1000000000L};
+int rw_timedread(void) { return pthread_rwlock_timedrdlock(&test_rwlock,&rw_invalid_deadline); }
+int rw_timedwrite(void) { return pthread_rwlock_timedwrlock(&test_rwlock,&rw_invalid_deadline); }
 int rw_errno(void) { return fake_errno; }
 int rw_busy(void) { return EBUSY; }
 int rw_again(void) { return EAGAIN; }
