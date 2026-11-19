@@ -92,6 +92,8 @@ class StaticSymbolTests(unittest.TestCase):
         self.assertEqual(defined_symbols(table(rows)), ["common", "local", "strong", "weak"])
         self.assertEqual(wasm_object(object_with(rows), include_all_symbols=True)["definedSymbols"],
                          ["common", "local", "strong", "weak"])
+        self.assertEqual(wasm_object(object_with(rows), include_all_symbols=True)["nonlocalSymbols"],
+                         ["common", "strong", "weak"])
         self.assertNotIn("definedSymbols", wasm_object(object_with(rows)))
         with self.assertRaisesRegex(DependencyError, "symbol-table-missing"):
             defined_symbols(b"")
