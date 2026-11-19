@@ -187,13 +187,44 @@ EVENT_WAIT_EXPECTED = {
             '0a8d0185336e3e00b6e8d59bb47cc87369267e8dd37833ce9d93087baf4d1ac2'},
 }
 
+# The v7 producer isolates ordinary event waits without suppressing captured
+# sibling notifications or changing aggregate waits. Identities were emitted
+# from the pinned WASI CoreLib in run 44528271999 (head ce515bfb), whose CLR
+# projection passed before the old v6 receipt consumer refused this delta.
+# This is host-projection evidence, not NativeAOT or signed-WASI qualification.
+EVENT_CONTEXT_EXPECTED = {
+    **EVENT_WAIT_EXPECTED,
+    'patch': 'latent.dotnet.wait-all.v7',
+    'profile': 'dotnet-aggregate-task-wait-candidate-v7',
+    'eventWait': {**EVENT_WAIT_EXPECTED['eventWait'],
+        'callerContext': 'immutable-values-owner-only-notifications-original-RunInternal',
+        'capturedSiblingContext': 'original-notifications-preserved',
+        'flowSuppression': 'original-CaptureForRestore-and-finally-restore',
+        'contextHelpers': 4,
+        'newPersistentFields': 0,
+    },
+    'rewrittenBodies': {**EVENT_WAIT_EXPECTED['rewrittenBodies'],
+        'System.Boolean System.Threading.ManualResetEventSlim::Wait(System.Int32,System.Threading.CancellationToken)':
+            'e3487699f5f350c6a7ae5080c7f8ead983848ada509ef3c7874a268464d487ae',
+        'System.Threading.ExecutionContext System.Threading.ExecutionContext::LsfAggregateEventContext(System.Threading.ExecutionContext,System.Threading.IAsyncLocal)':
+            'f05ad6dfc2d789070936b39826ec861cc1e195daea0ee0e8b0f2a99c71eacb1a',
+        'System.Void Lsf.CompilerOwned.ManagedWorkRuntime::LsfAggregateEventDispatch(System.Object)':
+            'ff6dadd8963c5072492cfb4106e2b88aa1b3c9fd747d3e6f36a5a177699c353e',
+        'System.Boolean Lsf.CompilerOwned.ManagedWorkRuntime::LsfAggregateEventWait(System.Threading.ManualResetEventSlim,System.Int32,System.Threading.CancellationToken)':
+            'd8a37e873055d5be001e6547cb65f1fac2802371357189cbd5599c0eccd78e76',
+        'System.Boolean System.Threading.ManualResetEventSlim::LsfAggregateEventWait(System.Int32,System.Threading.CancellationToken)':
+            '19d37fa1bb5ae4da46cf61195c6c2fc40cec5e0fa1690804415c1474a8f7b575'},
+}
+
 # Existing consumers of this name select the current prefetched-poll receipt.
-PREFETCH_POLL_EXPECTED = EVENT_WAIT_EXPECTED
+PREFETCH_POLL_EXPECTED = EVENT_CONTEXT_EXPECTED
 
 
 def validate(value):
     expected = (PREFETCH_POLL_EXPECTED if type(value) is dict
                 and value.get('patch') == PREFETCH_POLL_EXPECTED['patch'] else
+                EVENT_WAIT_EXPECTED if type(value) is dict
+                and value.get('patch') == EVENT_WAIT_EXPECTED['patch'] else
                 COMPLETED_SINGLE_EXPECTED if type(value) is dict
                 and value.get('patch') == COMPLETED_SINGLE_EXPECTED['patch'] else
                 FINITE_NESTING_EXPECTED if type(value) is dict
