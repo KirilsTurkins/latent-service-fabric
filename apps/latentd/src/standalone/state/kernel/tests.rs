@@ -474,7 +474,7 @@ async fn checkpoint_with_matching_source_inventory_survives_restart() {
             "transaction": {"processingScope": source.processing_scope, "namespace": source.namespace,
                 "incarnation": source.incarnation, "qualification": {"formatVersion": 1,
                     "serverVersion": "2.14.6", "streamCreated": source.stream_created,
-                    "maximumMessages": 10000, "maximumBytes": 67108864, "maximumAgeMillis": 0,
+                    "maximumMessages": 10000, "maximumBytes": 67_108_864, "maximumAgeMillis": 0,
                     "maximumMessageBytes": 16384}, "duplicateWindowMillis": 30000,
                 "stateReadBytes": 4096, "stateWriteBytes": 2048, "effectCount": 2}
         }))
