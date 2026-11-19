@@ -302,7 +302,11 @@ fn audit_query_busy(status: &tonic::Status) -> bool {
         && error.detail_items.len() == 1
         && error.detail_items[0].kind == "audit-journal"
         && error.detail_items[0].fields.len() == 1
-        && error.detail_items[0].fields.get("reason").map(String::as_str) == Some("audit-busy")
+        && error.detail_items[0]
+            .fields
+            .get("reason")
+            .map(String::as_str)
+            == Some("audit-busy")
 }
 
 fn audit_status(reason: &str) -> tonic::Status {
