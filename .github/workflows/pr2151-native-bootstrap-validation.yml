@@ -61,7 +61,7 @@ jobs:
         result=subprocess.run(['python','-B','-c',original],env=environment,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=150)
         (out/'original-bootstrap.log').write_text(result.stdout);print(result.stdout[-10000:])
         assert result.returncode != 0 and 'CAPTURED FIXTURE COMMAND:' in result.stdout
-        assert any(name in result.stdout for name in ('clippy','rustfmt','rust-std'))
+        assert 'syncing channel updates for 1.97.1' in result.stdout and 'channel-rust-1.97.1.toml.sha256' in result.stdout
         text=before.decode()
         anchor='from pathlib import Path\n'
         assert text.count(anchor)==1
