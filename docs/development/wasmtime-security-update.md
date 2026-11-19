@@ -2,7 +2,8 @@
 
 ## Current Development selection
 
-The workspace and `tools/toolchain.toml` currently pin Wasmtime **48.0.8**.
+The workspace and `tools/toolchain.toml` currently pin Wasmtime **48.0.9**. This patch addresses RUSTSEC-2026-0566
+through RUSTSEC-2026-0573.
 The main package is now the [maintained source cohort](../runtime/wasmtime.md#selected-continuation-and-memory-profiles)
 with selected allocation hooks; its upstream version alone is not its complete
 compatibility or security-review identity.
