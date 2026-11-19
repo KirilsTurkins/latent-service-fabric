@@ -199,6 +199,42 @@ contact a real provider, or run unchanged published/private clients. Those gates
 the HTTP/Abort/body/lifecycle matrix and physical cleanup remain required; engine
 support stays `unknown` / `not-evaluated` after a successful build.
 
+## Synthetic response construction
+
+`new Response(body, init)` accepts a null or omitted initializer, reads its
+`status` property once, and applies Web IDL unsigned-short conversion before
+the Fetch 200–599 status check. The typed HTTP provider remains separate: a
+malformed provider status is rejected rather than coerced into another status,
+and the acquired body owner is disposed. Source controls compare ordinary cases
+with Node 24.19.0 and use the Web IDL rule for negative modulo and BigInt, where
+that Node version differs. These controls are not signed component qualification.
+
+For the selected body types, `new Response` and `Response.json` convert
+`ResponseInit` members in Web IDL order: `headers`, `status`, then
+`statusText`. Header values become ByteStrings during conversion; status and
+reason-phrase checks, header syntax and pair-length validation follow later.
+The converted header values are captured before later getters can mutate the
+input. `Response.json` converts its initializer before serializing its value.
+The sequence converter caches each iterator's `next` method and does not close
+the iterators when conversion fails. Node 24.19 rereads `next`; Web IDL is the
+reference for that edge case. Node also rejects null for `Response.json`'s
+initializer, although Web IDL treats it as an empty dictionary.
+
+The temporary converted header snapshot is limited to 16,448 record fields and
+1,081,344 normalized name/value characters. Sequence initializers retain the
+existing 64-pair bound; a malformed pair is converted through at most 64
+elements before refusal. A valid final list within the existing 64-name and
+32-KiB limits fits the snapshot bounds: every duplicate contributes at least
+two separator characters to the final list, while each valid name is at most
+64 characters. Leading and trailing spaces and tabs are removed before the
+snapshot count. Oversized malformed input can therefore refuse before later
+initializer members are read. Enumerable Symbol record keys and non-ByteString
+values also refuse during conversion. The record's own-key enumeration and the
+snapshot's extra allocations remain subject to the original guest-memory limit;
+no engine backing-store or physical-retirement measurement is implied.
+Unsupported BodyInit types still refuse, and their exception precedence against
+initializer getters is not qualified by this control.
+
 ## Synthetic response factories
 
 The buffered profile supplies `Response.error()` and
@@ -206,9 +242,10 @@ The buffered profile supplies `Response.error()` and
 class. These are pure response constructors: they contact no provider, follow no
 redirect and confer no request authority. `error()` produces status 0, type
 `error`, an empty immutable header list and a null body; public `new Response`
-still requires status 200 to 599. Both factory results and their clones retain the
-immutable header guard. Reading a null body returns empty bytes/text without
-marking it used; parsing that empty text as JSON still rejects.
+still requires status 200 to 599 after conversion. Both factory results and
+their clones retain the immutable header guard. Reading a null body returns
+empty bytes/text without marking it used; parsing that empty text as JSON still
+rejects.
 
 `redirect()` accepts strings and objects with a string-returning `toString()`,
 including a URL object supplied by a compatible selected library. It supports

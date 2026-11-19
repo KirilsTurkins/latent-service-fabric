@@ -48,10 +48,10 @@ class Reader:
         return value
 
 
-def _defined_symbols(linking: bytes, *, require_table: bool) -> tuple[list[str], list[str]]:
+def _defined_symbols(linking: bytes, *, require_table: bool) -> tuple[list[str], list[str], list[str]]:
     """Inspect the bounded symbol table without assuming every definition is strong."""
     section = Reader(linking)
-    symbols, all_symbols, found = set(), set(), False
+    symbols, all_symbols, external_symbols, found = set(), set(), set(), False
     while section.offset < len(linking):
         kind, length = section.byte(), section.unsigned()
         end = section.offset + length
@@ -95,6 +95,8 @@ def _defined_symbols(linking: bytes, *, require_table: bool) -> tuple[list[str],
                     table.unsigned()  # section index; never an external definition
                 if name is not None and not undefined:
                     all_symbols.add(name)
+                    if binding != 2:
+                        external_symbols.add(name)
                     if binding == 0:
                         if name in symbols:
                             raise DependencyError("c-static-archive-duplicate-strong-symbol")
@@ -104,7 +106,7 @@ def _defined_symbols(linking: bytes, *, require_table: bool) -> tuple[list[str],
         section.offset = end
     if require_table and not found:
         raise DependencyError("c-wasm-symbol-table-missing")
-    return sorted(symbols), sorted(all_symbols)
+    return sorted(symbols), sorted(all_symbols), sorted(external_symbols)
 
 
 def strong_symbols(linking: bytes) -> list[str]:
@@ -115,3 +117,8 @@ def strong_symbols(linking: bytes) -> list[str]:
 def defined_symbols(linking: bytes) -> list[str]:
     """Return strong, weak, local and common definitions, refusing an absent table."""
     return _defined_symbols(linking, require_table=True)[1]
+
+
+def nonlocal_symbols(linking: bytes) -> list[str]:
+    """Return all externally linked definitions, including weak and common."""
+    return _defined_symbols(linking, require_table=True)[2]

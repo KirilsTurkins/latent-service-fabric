@@ -6,6 +6,17 @@ use serde::Serialize;
 
 use super::{error, transport, Duration, PlatformError, PlatformErrorCode, StandaloneNode};
 
+// Stop callbacks may wake arbitrary owners. Preserve the first panic while
+// visiting the remaining original admission fences in their established order.
+// A later panic payload whose destructor panics can still interrupt this walk.
+fn attempt_stop(first: &mut Option<Box<dyn std::any::Any + Send>>, stop: impl FnOnce()) {
+    if let Err(panic) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(stop)) {
+        if first.is_none() {
+            *first = Some(panic);
+        }
+    }
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ShutdownReport {
@@ -132,33 +143,48 @@ impl StandaloneNode {
         }
         self.supply_chain.close_admission();
         self.capabilities.retire();
+        let mut first_panic = None;
         if let Some(providers) = &self.providers {
-            providers.retire();
+            attempt_stop(&mut first_panic, || providers.retire());
         }
         if let Some(factory) = &self.factory {
-            factory.retire_capabilities();
+            attempt_stop(&mut first_panic, || factory.retire_capabilities());
         }
         if let Some(policies) = &self.policies {
-            policies.handle().retire();
+            attempt_stop(&mut first_panic, || policies.handle().retire());
         }
-        self.load.stop_accepting();
+        attempt_stop(&mut first_panic, || self.load.stop_accepting());
         if let Some(rollouts) = &self.rollouts {
-            rollouts.handle().close();
+            attempt_stop(&mut first_panic, || rollouts.handle().close());
         }
-        let handle = self
-            .transport
-            .as_ref()
-            .map(super::transport::Transport::handle);
-        if let Some(handle) = &handle {
-            handle.stop_accepting();
-        }
-        let http_handle = self.http.as_ref().map(super::http::HttpOwner::handle);
-        if let Some(handle) = &http_handle {
-            handle.stop_accepting();
+        let mut handle = None;
+        attempt_stop(&mut first_panic, || {
+            handle = self
+                .transport
+                .as_ref()
+                .map(super::transport::Transport::handle);
+            if let Some(handle) = &handle {
+                handle.stop_accepting();
+            }
+        });
+        let mut http_handle = None;
+        attempt_stop(&mut first_panic, || {
+            http_handle = self.http.as_ref().map(super::http::HttpOwner::handle);
+            if let Some(handle) = &http_handle {
+                handle.stop_accepting();
+            }
+        });
+        let mut cleanup_handle = None;
+        attempt_stop(&mut first_panic, || {
+            let cleanup = self.cleanup.as_ref().expect("owned cleanup driver");
+            cleanup_handle = Some(cleanup.handle());
+            cleanup.stop_accepting();
+        });
+        if let Some(panic) = first_panic {
+            std::panic::resume_unwind(panic);
         }
         let cleanup = self.cleanup.take().expect("owned cleanup driver");
-        let cleanup_handle = cleanup.handle();
-        cleanup.stop_accepting();
+        let cleanup_handle = cleanup_handle.expect("owned cleanup handle");
         let proposed = tokio::time::Instant::now() + self.shutdown_grace;
         let drain_deadline = self
             .startup_deadline

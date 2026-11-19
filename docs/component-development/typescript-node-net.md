@@ -19,12 +19,30 @@ queued/dispatched counter implementation.
 When backpressure clears, `drain` precedes the callback for the final write that
 emptied the buffer. Calling `end()` while that write is pending suppresses the
 late `drain`; neither event order releases the original operation or borrow early.
+On successful send shutdown, accepted `end` callbacks receive `null` before
+`finish`, after the original shutdown result and borrow acknowledgement. Normal
+destroy reports its error (or `ERR_STREAM_DESTROYED`) to pending callbacks before
+the close event. An `end(data, callback)` after end admits no further write;
+its write-after-end error event precedes that call's callback. A no-data end
+callback added after finish receives `ERR_STREAM_ALREADY_FINISHED` asynchronously.
+`end(null, callback)` is a no-data end and consumes no write record.
+The original socket retains those callback tails through notification; unknown
+cleanup or scheduler refusal remains quarantined rather than proving retirement.
+If stop itself throws synchronously, its acceptance is unknown: the socket is
+fenced with its original write and callback records, no close event is emitted,
+and the root observes the original fault unless an earlier fault already won.
+If the built-in write refuses invalid data or the byte limit before publishing a
+record, `end(data, callback)` removes only that attempted callback reservation.
+An uncertain write-list mutation or an overridden writer that throws retains
+the reservation and fences that socket instead of assuming non-admission.
 
 This finite port permits at most two reserved Socket states, three pending
-operations per Socket, 16 queued write records (including empty writes),
-65,536 queued write bytes and 16,384 bytes per transfer. Queued empty-write
-callback records remain reserved until their actual callback job returns;
-original runtime budgets can refuse earlier than these port ceilings.
+operations per Socket, 16 shared queued write and pending end-callback records
+(including empty writes), 65,536 queued write bytes and 16,384 bytes per
+transfer. End callbacks hold their original record through callback return;
+throws or uncertain scheduling retain it with the quarantined socket. Queued
+empty-write callback records remain reserved until their actual callback job
+returns. Original runtime budgets can refuse earlier than these port ceilings.
 If the built-in resume job is refused and that same refusal escapes listener
 registration without a later successful resume, the new data listener is
 removed. Overridden resume methods that replace the exception retain the

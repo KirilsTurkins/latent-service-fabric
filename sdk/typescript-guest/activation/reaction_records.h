@@ -10,6 +10,7 @@ class ReactionRecords final {
     NativeOwner native;
     JobOwners job;
     JS::Heap<JSObject*> object;
+    bool initializing = true;
     bool physical = false;
     bool transferred = false;
     std::unique_ptr<Record> next;
@@ -79,14 +80,16 @@ public:
     return true;
   }
 
-  static void allocationFailed(void*) {
+  static void allocationFailed(void* pointer) {
     // The reserved record stays non-physical, eligible for deferred rollback.
+    if (pointer) static_cast<Record*>(pointer)->initializing = false;
   }
   static void created(JSContext*, JSObject* object, void* pointer) {
     if (!pointer) return;
     auto* record = static_cast<Record*>(pointer);
     record->object = object;
     record->physical = true;
+    record->initializing = false;
   }
   void* record(JSContext*, JSObject* object) const {
     for (auto* record = records_.get(); record; record = record->next.get()) {
@@ -138,7 +141,7 @@ public:
     auto* link = &records_;
     while (*link) {
       auto* record = link->get();
-      if (record->physical) {
+      if (record->initializing || record->physical) {
         link = &record->next;
         continue;
       }
@@ -160,7 +163,7 @@ public:
   }
   bool hasPendingReactions() const {
     for (auto* record = records_.get(); record; record = record->next.get()) {
-      if (record->physical && !record->transferred) return true;
+      if (record->initializing || (record->physical && !record->transferred)) return true;
     }
     return failed_admission_ || retirement_pending_;
   }
