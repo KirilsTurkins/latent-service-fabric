@@ -14,6 +14,8 @@ on:
       - 'sdk/java-guest/fibers/**'
       - 'tools/qualify_java_published_workers.py'
       - 'tools/java_guest/compiler.py'
+      - 'tools/java_guest/enum_guard.py'
+      - 'tools/java_guest/date_link_guard.py'
       - 'tools/java_guest/compiler_profile_distribution.py'
       - 'tools/tests/test_java_scheduled_library.py'
       - 'crates/latent-wasmtime/tests/local_service/runtime.rs'

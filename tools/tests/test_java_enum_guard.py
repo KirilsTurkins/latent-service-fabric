@@ -116,6 +116,18 @@ alignas(8) E_VT E_Cls = {
             enum_guard.run(compiler, generated, (), destination, destination / 'core.wasm')
         self.assertIs(caught.exception, failure)
 
+    def test_managed_link_changes_select_both_signed_qualification_owners(self):
+        import json
+        from tools import ci_lane_inventory as lanes
+        root = Path(__file__).resolve().parents[2]
+        for name in ('java-scheduled-library.yml', 'java-scheduled-development.yml'):
+            with self.subTest(workflow=name):
+                model = lanes.workflow_model((root / '.github/workflows' / name).read_text())
+                contract = json.loads((root / 'tools/ci/contracts/workflows' / name / 'workflow.json').read_text())
+                self.assertEqual(model['on'], contract['policy']['on'])
+                for source in ('tools/java_guest/enum_guard.py', 'tools/java_guest/date_link_guard.py'):
+                    self.assertIn(source, model['on']['push']['paths'])
+
     def test_unmodified_nonfiber_clang_command_and_frozen_diagnostics(self):
         # The non-fiber command retains every flag and positional input from
         # development before this guarded activation-only change.
