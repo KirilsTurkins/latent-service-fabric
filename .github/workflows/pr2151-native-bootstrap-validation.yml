@@ -1,0 +1,183 @@
+name: Qualify the native fixture without incidental toolchain downloads
+'on':
+  push:
+    branches: [work/pr2151-native-bootstrap-20261119]
+permissions:
+  contents: read
+jobs:
+  validate:
+    if: github.repository == 'KirilsTurkins/latent-service-fabric' && github.ref == 'refs/heads/work/pr2151-native-bootstrap-20261119'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      LSF_REQUIRE_NATIVE_PROCESS_TESTS: '1'
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+    - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+      with:
+        ref: 77a5178170e5472dc937d5bfff7323771cd11686
+        persist-credentials: false
+    - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+      with:
+        python-version: 3.13.5
+    - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+    - name: Install the ordinary Python dependencies
+      run: python -m pip install --requirement tools/requirements.lock
+    - name: Observe and close the optional toolchain-bootstrap dependency
+      run: |
+        python - <<'PYCODE'
+        import hashlib, json, os, subprocess
+        from pathlib import Path
+        out=Path('/tmp/pr2151-native-bootstrap');out.mkdir()
+        source=Path('tools/tests/test_local_tests.py')
+        before=source.read_bytes()
+        def blob(data):return hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+        assert blob(before)=='b604611fcab27a6845a53d13c52067072f7ce4a3'
+        original='''import subprocess,unittest
+        from unittest.mock import patch
+        from tools.tests.test_local_tests import NativeEntrypointTests
+        check_output = subprocess.check_output
+        def diagnostic(*args, **kwargs):
+            try: return check_output(*args, **kwargs)
+            except subprocess.CalledProcessError as error:
+                print("CAPTURED FIXTURE COMMAND:", error.cmd, "\\n", (error.output or "")[-16384:])
+                raise
+        suite=unittest.TestSuite([NativeEntrypointTests("test_real_rust_independent_additions_merge_and_run_through_local_owner")])
+        with patch.object(subprocess, "check_output", diagnostic):
+            result=unittest.TextTestRunner().run(suite)
+        raise SystemExit(not result.wasSuccessful())
+        '''
+        # Only this diagnostic child refuses network bootstrap. No real compiler
+        # component is removed and no fixture assertion is skipped.
+        environment=dict(os.environ,RUSTUP_DIST_SERVER='http://127.0.0.1:9',CARGO_NET_OFFLINE='true')
+        result=subprocess.run(['python','-B','-c',original],env=environment,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=150)
+        (out/'original-bootstrap.log').write_text(result.stdout);print(result.stdout[-10000:])
+        assert result.returncode != 0 and 'CAPTURED FIXTURE COMMAND:' in result.stdout
+        assert any(name in result.stdout for name in ('clippy','rustfmt','rust-std'))
+        text=before.decode()
+        anchor='from pathlib import Path\n'
+        assert text.count(anchor)==1
+        text=text.replace(anchor,anchor+'import tomllib\n')
+        anchor='def invoke(argv: list[str], repo: Path = ROOT) -> tuple[int, object]:\n'
+        helper='''def native_fixture_toolchain() -> str:
+            """Use the source-pinned compiler without unrelated lint/guest downloads."""
+            config = tomllib.loads((ROOT / "rust-toolchain.toml").read_text(encoding="utf-8"))
+            return "[toolchain]\\nchannel = " + json.dumps(config["toolchain"]["channel"]) + '\\nprofile = "minimal"\\n'
+
+
+        '''
+        assert text.count(anchor)==1;text=text.replace(anchor,helper+anchor)
+        old='''            def command(*args):
+                        return subprocess.check_output(args, cwd=repo, stderr=subprocess.STDOUT, text=True).strip()
+        '''
+        new='''            def command(*args):
+                        try:
+                            return subprocess.check_output(args, cwd=repo, stderr=subprocess.STDOUT, text=True).strip()
+                        except subprocess.CalledProcessError as error:
+                            raise AssertionError(f"fixture command {args!r} failed:\\n{error.output[-16384:]}") from error
+        '''
+        assert text.count(old)==1;text=text.replace(old,new)
+        old='''            # The temporary workspace is outside ROOT and cannot inherit its pin.
+                    # Do not let the runner default select a different Cargo artifact layout.
+                    (repo / "rust-toolchain.toml").write_bytes((ROOT / "rust-toolchain.toml").read_bytes())
+        '''
+        new='''            # Keep the exact source compiler outside ROOT, but this native-only
+                    # fixture needs neither cross-target libraries nor lint components.
+                    (repo / "rust-toolchain.toml").write_text(native_fixture_toolchain(), encoding="utf-8")
+        '''
+        assert text.count(old)==1;text=text.replace(old,new)
+        anchor='class DriftTests(unittest.TestCase):\n'
+        test='''    def test_native_fixture_pins_only_the_source_compiler(self) -> None:
+                source = tomllib.loads((ROOT / "rust-toolchain.toml").read_text(encoding="utf-8"))
+                self.assertEqual(tomllib.loads(native_fixture_toolchain()), {
+                    "toolchain": {"channel": source["toolchain"]["channel"], "profile": "minimal"}})
+
+        '''
+        assert text.count(anchor)==1;text=text.replace(anchor,anchor+test)
+        source.write_text(text)
+        compile(text,str(source),'exec')
+        subprocess.run(['git','diff','--check'],check=True)
+        (out/'repair.patch').write_bytes(subprocess.check_output(['git','diff','--','tools/tests/test_local_tests.py']))
+        postimage=source.read_bytes()
+        record={'source':'77a5178170e5472dc937d5bfff7323771cd11686','files':{'tools/tests/test_local_tests.py':{'before':blob(before),'after':blob(postimage)}}}
+        (out/'postimages.json').write_text(json.dumps(record,indent=2)+'\n')
+        dest=out/'files/tools/tests/test_local_tests.py';dest.parent.mkdir(parents=True);dest.write_bytes(postimage)
+        print(json.dumps(record,indent=2))
+        PYCODE
+    - name: Require all entrypoint controls with compiler downloads refused
+      env:
+        RUSTUP_DIST_SERVER: http://127.0.0.1:9
+        CARGO_NET_OFFLINE: 'true'
+      run: |
+        set -euo pipefail
+        python -B -m unittest tools.tests.test_local_tests > /tmp/pr2151-native-bootstrap/entrypoint-tests.log 2>&1
+        cat /tmp/pr2151-native-bootstrap/entrypoint-tests.log
+        python - <<'PYCODE'
+        import subprocess
+        from pathlib import Path
+        from tools.ci_lane_inventory import workflow_model
+        steps=workflow_model(Path('.github/workflows/ci.yml').read_text())['jobs']['docs']['steps']
+        command=next(step['run'] for step in steps if step.get('name')=='Validate documentation and profile selection')
+        result=subprocess.run(['bash','-e','-o','pipefail','-c',command],stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True,timeout=240)
+        Path('/tmp/pr2151-native-bootstrap/full-docs-owner.log').write_text(result.stdout)
+        print(result.stdout[-12000:]);assert result.returncode==0
+        PYCODE
+        git diff --check
+    - name: Retain exact source and bounded bootstrap evidence
+      if: always()
+      uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+      with:
+        name: pr2151-native-bootstrap-validation
+        path: /tmp/pr2151-native-bootstrap
+        retention-days: 3
+        if-no-files-found: error
+  publish-blob:
+    needs: validate
+    permissions:
+      contents: write
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+    - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+      with:
+        ref: 77a5178170e5472dc937d5bfff7323771cd11686
+        persist-credentials: false
+    - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+      with:
+        name: pr2151-native-bootstrap-validation
+        path: /tmp/pr2151-bootstrap-postimage
+    - name: Publish the sole validated fixture source without moving any ref
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        python - <<'PYCODE'
+        import base64,hashlib,json,os,urllib.request
+        from pathlib import Path
+        root=Path('/tmp/pr2151-bootstrap-postimage');record=json.loads((root/'postimages.json').read_bytes())
+        name='tools/tests/test_local_tests.py'
+        def blob(data):return hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+        assert record['source']=='77a5178170e5472dc937d5bfff7323771cd11686' and set(record['files'])=={name}
+        assert blob(Path(name).read_bytes())==record['files'][name]['before']=='b604611fcab27a6845a53d13c52067072f7ce4a3'
+        path=root/'files'/name;assert not path.is_symlink() and path.stat().st_size<131072
+        data=path.read_bytes();assert blob(data)==record['files'][name]['after']
+        request=urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs',
+            data=json.dumps({'content':base64.b64encode(data).decode(),'encoding':'base64'}).encode(),
+            headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'},method='POST')
+        with urllib.request.urlopen(request,timeout=60) as response: result=json.load(response)
+        assert result['sha']==record['files'][name]['after'];record['files'][name]['uploaded']=result['sha']
+        Path('/tmp/pr2151-bootstrap-published.json').write_text(json.dumps(record,indent=2)+'\n');print(json.dumps(record,indent=2))
+        PYCODE
+    - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+      with:
+        name: pr2151-bootstrap-published-blob
+        path: /tmp/pr2151-bootstrap-published.json
+        retention-days: 3
+        if-no-files-found: error
