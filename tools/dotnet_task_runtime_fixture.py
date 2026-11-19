@@ -5,6 +5,7 @@ import shutil
 import zipfile
 
 from tools import dotnet_dependency_authoring as authoring
+from tools import dotnet_task_runtime_context as event_context
 from tools.application_dependencies import LOCK
 from tools.build_observation import build_environment
 from tools.build_snapshot import digest
@@ -24,7 +25,7 @@ BASELINE_CASES = ('run', 'when-all', 'thread-pool', 'scheduler', 'error', 'cance
 CASES = BASELINE_CASES + ('cancel-pending',)
 RESET_NOTIFICATION_MODE = 'reset-notification-refusal'
 EVENT_WAIT_MODE = 'manual-reset-sibling'
-QUALIFICATION_CASES = CASES + (EVENT_WAIT_MODE, RESET_NOTIFICATION_MODE)
+QUALIFICATION_CASES = CASES + (EVENT_WAIT_MODE,) + event_context.CASES + (RESET_NOTIFICATION_MODE,)
 CANCEL_CASE = '        case "cancel-pending": {\n            using var cancellation = new CancellationTokenSource();\n            var token = cancellation.Token;\n            var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);\n            var running = Task.Run(async () => {\n                Stage = "cancel-pending-delay";\n                var delay = Task.Delay(10000, token);\n                Incomplete(delay);\n                entered.SetResult(true);\n                await delay.ConfigureAwait(false);\n                throw new Exception("pending cancellation ignored");\n            }, token);\n            Stage = "cancel-pending-enter";\n            entered.Task.GetAwaiter().GetResult();\n            Incomplete(running);\n            Stage = "cancel-pending-cancel";\n            cancellation.Cancel();\n            try { running.GetAwaiter().GetResult(); throw new Exception("running task did not cancel"); }\n            catch (OperationCanceledException error) {\n                if (error.CancellationToken != token || !running.IsCanceled)\n                    throw new Exception("pending cancellation identity or state changed");\n            }\n            break;\n        }\n'
 RESET_NOTIFICATION_CASE = r'''        case "reset-notification-refusal": {
             Stage = "reset-notification-setup";
@@ -312,12 +313,14 @@ def selected_fixture(monitor_cancel: bool = False, *, reset_notification: bool =
         require(source.count(marker) == 1 and 'case "reset-notification-refusal"' not in source
                 and 'case "manual-reset-sibling"' not in source,
                 'dotnet-task-reset-notification-source')
-        return source.replace(marker, EVENT_WAIT_CASE + RESET_NOTIFICATION_CASE + marker), QUALIFICATION_CASES
+        return source.replace(marker, EVENT_WAIT_CASE + event_context.SOURCE + RESET_NOTIFICATION_CASE + marker), QUALIFICATION_CASES
     return source, CASES
 
 
 def expected(mode):
     require(mode in QUALIFICATION_CASES, 'dotnet-task-unknown-case')
+    if mode in event_context.CASES:
+        return event_context.expected(mode)
     witness = '|pending=1|same-thread=1|setter=1' if mode == EVENT_WAIT_MODE else ''
     return 'ordinary-tasks:' + mode + witness + '|fresh=1'
 

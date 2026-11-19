@@ -9,6 +9,7 @@ import sys
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from tools import dotnet_task_runtime_context as event_context
 from tools.build_observation import build_environment
 from tools.dotnet_guest.build import build
 from tools.dotnet_guest.compiler import runtime_inputs
@@ -21,7 +22,8 @@ from tools.run_rust_capsule_workflow import run
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, inventory, read_json, snapshot, write_json
 
-HELPERS = ('tools/dotnet_task_runtime_fixture.py', 'tools/dotnet_task_runtime_probe.py',
+HELPERS = ('tools/dotnet_task_runtime_fixture.py', 'tools/dotnet_task_runtime_context.py',
+    'tools/dotnet_task_runtime_probe.py',
     'tools/qualify_dotnet_task_runtime.py', 'tools/run_rust_capsule_workflow.py',
     'tools/dotnet_guest/task_wait.py', 'tools/dotnet_guest/async_exports.py',
     'tools/dotnet_guest/compiler.py', 'tools/dotnet_guest/entropy_grants.py')
@@ -66,7 +68,7 @@ def require_reset_notification_receipt(captured, observed):
             and all(type(row) is dict for row in cases)
             and [row.get('mode') for row in cases] == list(QUALIFICATION_CASES),
             'dotnet-tasks-exact-case-inventory')
-    for mode in (EVENT_WAIT_MODE, RESET_NOTIFICATION_MODE):
+    for mode in (EVENT_WAIT_MODE, *event_context.CASES, RESET_NOTIFICATION_MODE):
         witness = cases[QUALIFICATION_CASES.index(mode)]
         invocation = witness.get('invocation')
         retirement = witness.get('retirement')

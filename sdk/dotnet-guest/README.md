@@ -132,6 +132,19 @@ single-threaded WASI dispatch witness, not a general CLR scheduling guarantee.
 Current-source NativeAOT and signed execution must pass before it counts as
 pending-entry evidence; host projections alone do not supply that evidence.
 
+The same selected signed programme also includes `manual-reset-context`,
+`manual-reset-suppressed-context` and `manual-reset-captured-context`. Each
+requires a pending same-thread setter, exact caller-value restoration and the
+original flow-suppression state. Unsafe setters must see default context values
+without notifying the waiting caller. The captured setter must see its own
+value and retain exactly its original `0 -> 13`, `14 -> 0` notification pair;
+suppressing every notification is not accepted. The saved sibling capture is
+re-entered to check that it was not mutated. These cases keep the existing
+activation grants, owner limits, source binding and retirement checks. They are
+required runtime witnesses, not signed execution evidence until the current
+NativeAOT build and signed programme pass. They do not qualify the BCL's
+async-enumerable caller or general monitor waits.
+
 The closed WASI adapter denies ambient files, sockets, wall time and entropy.
 NativeAOT GC monotonic time is routed through
 `latent:clock/monotonic@0.1.0`, declared in WIT and separately granted by
