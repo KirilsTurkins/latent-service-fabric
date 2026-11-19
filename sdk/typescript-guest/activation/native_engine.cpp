@@ -166,6 +166,17 @@ bool acknowledge_promise_retirement(JSContext* cx) {
          }) && reactions.checkpoint(cx) && promises.checkpoint(cx);
 }
 
+bool prepare_native_object_allocation(JSContext* cx) {
+  if (JS_IsExceptionPending(cx)) return false;
+  if (!effects_allowed(cx) || native_objects.stopped()) {
+    JS_ReportErrorASCII(cx, "activation-runtime-native-object-phase-or-admission-denied");
+    return false;
+  }
+  // Use the same original-owner pressure checkpoint as Promise allocation.
+  // This is a GC-safe preflight, not admission or a refund for reachable work.
+  return collect_before_native_allocation(cx);
+}
+
 bool admit_native_object(JSContext* cx, NativeObjectLease& lease) {
   // Mutable Abort/Event graphs carry invocation-local listeners/weak links.
   // They are never admitted while creating a shared compiler snapshot.
