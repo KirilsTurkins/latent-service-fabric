@@ -8,7 +8,7 @@ import re
 from tools.application_dependencies import Closure
 from tools.application_dependency_store import DependencyError, MAX_OBJECT, path_name, read_bytes
 from tools.build_snapshot import digest
-from tools.c_static_symbols import MAX_SYMBOL_BYTES, MAX_SYMBOLS, defined_symbols, strong_symbols
+from tools.c_static_symbols import MAX_SYMBOL_BYTES, MAX_SYMBOLS, defined_symbols, nonlocal_symbols, strong_symbols
 
 
 MAX_SOURCE_UNITS = 256
@@ -41,7 +41,7 @@ def wasm_object(payload: bytes, *, include_all_symbols: bool = False,
                 allow_exception_tags: bool = False) -> dict:
     if not payload.startswith(b"\0asm\x01\0\0\0"):
         raise CDependencyError("c-static-archive-host-native-member")
-    offset, linking, features, definitions, all_definitions = 8, None, {}, [], None
+    offset, linking, features, definitions, all_definitions, external_definitions = 8, None, {}, [], None, None
     while offset < len(payload):
         section = payload[offset]; offset += 1
         size, offset = unsigned(payload, offset)
@@ -66,6 +66,7 @@ def wasm_object(payload: bytes, *, include_all_symbols: bool = False,
                 definitions = strong_symbols(payload[content:end])
                 if include_all_symbols:
                     all_definitions = defined_symbols(payload[content:end])
+                    external_definitions = nonlocal_symbols(payload[content:end])
             elif name == "target_features":
                 count, content = unsigned(payload, content)
                 if count > 64:
@@ -92,6 +93,7 @@ def wasm_object(payload: bytes, *, include_all_symbols: bool = False,
               "targetFeatures": features, "strongSymbols": definitions}
     if include_all_symbols:
         result["definedSymbols"] = all_definitions
+        result["nonlocalSymbols"] = external_definitions
     return result
 
 

@@ -29,6 +29,12 @@ internal sealed class GraphBudget
         if (--nodes < 0 || bytes < 0) throw new GraphLimitException();
     }
 
+    internal void Text(string value)
+    {
+        if (value.Length > bytes) throw new GraphLimitException();
+        Spend(4L * Utf8.GetByteCount(value));
+    }
+
     internal void Scan(object? value, int depth = 0)
     {
         Spend();
@@ -36,7 +42,7 @@ internal sealed class GraphBudget
         switch (value)
         {
             case null: return;
-            case string text: Spend(4L * Utf8.GetByteCount(text)); return;
+            case string text: Text(text); return;
             case ReadOnlyMemory<byte> memory: Spend(3L * memory.Length); return;
             case IEnumerable sequence:
                 foreach (object? item in sequence) Scan(item, depth + 1);
@@ -53,8 +59,15 @@ internal static class ProfileCodec
 {
     internal static string PropertyName(FieldDescriptor field) => char.ToUpperInvariant(field.JsonName[0]) + field.JsonName[1..];
 
-    internal static IMessage ToWire(object value, IMessage message)
+    internal static IMessage ToWire(object value, IMessage message) =>
+        ToWire(value, message, new GraphBudget(8 * 1024 * 1024, 4096, CancellationToken.None));
+
+    internal static IMessage ToWire(object value, IMessage message, GraphBudget budget) => ToWire(value, message, budget, 0);
+
+    private static IMessage ToWire(object value, IMessage message, GraphBudget budget, int depth)
     {
+        if (depth > 16) throw new GraphLimitException();
+        budget.Spend();
         var selected = new HashSet<OneofDescriptor>();
         foreach (FieldDescriptor field in message.Descriptor.Fields.InFieldNumberOrder())
         {
@@ -75,27 +88,34 @@ internal static class ProfileCodec
                 foreach (object entry in (IEnumerable)source)
                 {
                     Type pair = entry.GetType();
-                    destination.Add(ToScalar(pair.GetProperty("Key")!.GetValue(entry)!, key),
-                        ToScalar(pair.GetProperty("Value")!.GetValue(entry)!, item));
+                    destination.Add(ToScalar(pair.GetProperty("Key")!.GetValue(entry)!, key, budget, depth),
+                        ToScalar(pair.GetProperty("Value")!.GetValue(entry)!, item, budget, depth));
                 }
             }
             else if (field.IsRepeated)
             {
                 var destination = (IList)field.Accessor.GetValue(message);
-                foreach (object item in (IEnumerable)source) destination.Add(ToScalar(item, field));
+                foreach (object item in (IEnumerable)source) destination.Add(ToScalar(item, field, budget, depth));
             }
-            else field.Accessor.SetValue(message, ToScalar(source, field));
+            else field.Accessor.SetValue(message, ToScalar(source, field, budget, depth));
         }
         return message;
     }
 
-    private static object ToScalar(object value, FieldDescriptor field) => value is null ? throw new FormatException("null protobuf value") : field.FieldType switch
+    private static object ToScalar(object value, FieldDescriptor field, GraphBudget budget, int depth)
     {
-        FieldType.Message => ToWire(value, (IMessage)Activator.CreateInstance(field.MessageType.ClrType)!),
-        FieldType.Bytes => ByteString.CopyFrom(((ReadOnlyMemory<byte>)value).Span),
-        FieldType.Enum => Enum.ToObject(field.EnumType.ClrType, value.GetType().GetProperty("Value")!.GetValue(value)!),
-        _ => value
-    };
+        if (value is null) throw new FormatException("null protobuf value");
+        if (field.FieldType == FieldType.Message)
+            return ToWire(value, (IMessage)Activator.CreateInstance(field.MessageType.ClrType)!, budget, depth + 1);
+        if (value is string text) budget.Text(text);
+        else budget.Spend(value is ReadOnlyMemory<byte> memory ? 3L * memory.Length : 256);
+        return field.FieldType switch
+        {
+            FieldType.Bytes => ByteString.CopyFrom(((ReadOnlyMemory<byte>)value).Span),
+            FieldType.Enum => Enum.ToObject(field.EnumType.ClrType, value.GetType().GetProperty("Value")!.GetValue(value)!),
+            _ => value
+        };
+    }
 
     internal static object FromWire(IMessage message, Type type)
     {

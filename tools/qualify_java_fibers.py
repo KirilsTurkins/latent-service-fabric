@@ -525,7 +525,7 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
                  "-d", output, *sources)
     expected = ("COMPLETABLE_FUTURE_MODEL_CONTROL PASS actual-missing-class-negative;canonical-api-and-helper-identities;"
         "resolved-reference-closure;unsupported-no-fallback;result-settlement-fence;queued-settlement-fence;"
-        "actual-coroutine-monitors=29;owned-callback-bodies=33;bodies=191;actual-generated-callbacks=23;application-identity")
+        "actual-coroutine-monitors=29;owned-callback-bodies=33;bodies=205;actual-generated-callbacks=28;application-identity")
     observed = compiler.run("completable-model-control", "java", "-Xmx256m", "-cp",
                             str(output) + os.pathsep + classpath,
                             "dev.latent.guest.runtime.compiler.CompletableFutureModelControl").strip()
@@ -536,8 +536,8 @@ def completable_model_control(compiler: Compiler, output: Path) -> dict:
     if fields != ("COMPLETABLE_FUTURE_FIELD_MODEL_CONTROL PASS declared-and-inherited-types;"
                   "closed-read-write-references;absent-no-fallback;models=6"):
         raise ValueError("Java CompletableFuture field model control did not complete")
-    return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 6, "modelMethodBodies": 191,
-            "coroutineMonitorBodies": 29, "ownedCallbackBodies": 33, "actualGeneratedCallbacks": 23,
+    return {"status": "actual-locked-classlib-model-passed", "modelFingerprintVersion": 6, "modelMethodBodies": 205,
+            "coroutineMonitorBodies": 29, "ownedCallbackBodies": 33, "actualGeneratedCallbacks": 28,
             "jarDigests": identities,
             "fieldReferences": "actual-declared-and-inherited-types-passed",
             "portOrApplicationClassesInitialized": False, "actualGuestBindingsUsed": False}

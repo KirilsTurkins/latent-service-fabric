@@ -81,12 +81,19 @@ pub(crate) struct Inner {
     pub resolvers: Vec<Option<Resolver>>,
     pub tls: Vec<Option<crate::tls::InstalledTlsOwner>>,
     pub connections: Arc<crate::connection_registry::Registry>,
+    #[cfg(all(test, unix))]
+    pub(crate) connect_audit_gate: Mutex<Option<ConnectAuditGate>>,
     #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
     native: Mutex<Option<crate::kernel::native::NativeOwner>>,
     #[cfg(all(target_os = "linux", any(test, feature = "development-outbound")))]
     pub(crate) native_bank: Option<Arc<crate::kernel::native::StreamBank>>,
     _configuration: ProviderMetadata,
 }
+#[cfg(all(test, unix))]
+pub(crate) type ConnectAuditGate = (
+    tokio::sync::oneshot::Sender<()>,
+    tokio::sync::oneshot::Receiver<()>,
+);
 #[cfg(test)]
 pub(crate) type ProviderInstaller = fn(
     Arc<ProviderPools>,
@@ -682,6 +689,8 @@ impl StreamProvider {
                 resolvers,
                 tls,
                 connections,
+                #[cfg(all(test, unix))]
+                connect_audit_gate: Mutex::new(None),
                 #[cfg(target_os = "linux")]
                 native: Mutex::new(None),
                 #[cfg(target_os = "linux")]

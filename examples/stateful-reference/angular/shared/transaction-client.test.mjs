@@ -24,6 +24,166 @@ function response(disposition, {error, revision = '1', units = 3} = {}) {
 }
 function client(fetcher) { return new DraftClient(routes, {origin: 'https://node.example', fetcher}); }
 
+test('unavailable query is reported without discarding the original command', async () => {
+  const app = client(async () => new Response(JSON.stringify({profile: 'transaction-http-v1',
+    disposition: 'query', representation: 'receipt-only', result: null}), {status: 503}));
+  const key = app.prepare('demo', '0', 3);
+  await assert.rejects(app.query('demo'), /query-unavailable/);
+  assert.equal(app.pending.key, key);
+  assert.equal(app.status, 'prepared');
+});
+
+test('failed query cannot install an application body from an error response', async () => {
+  const app = client(async () => {
+    const body = await response('query').text();
+    return new Response(body, {status: 503});
+  });
+  await assert.rejects(app.query('demo'), /query-unavailable/);
+  assert.equal(app.view, undefined);
+});
+
+test('fragmented query bodies remain bounded and decode correctly', async () => {
+  const payload = new TextEncoder().encode(await response('query').text());
+  const app = client(async () => new Response(new ReadableStream({
+    start(controller) {
+      for (let index = 0; index < 100; index++) controller.enqueue(new Uint8Array());
+      for (const byte of payload) controller.enqueue(Uint8Array.of(byte));
+      controller.close();
+    },
+  }), {status: 200}));
+  const result = await app.query('demo');
+  assert.equal(result.value.draftId, 'demo');
+  const oversized = client(async () => new Response(new Uint8Array(192 * 1024 + 1), {status: 200}));
+  await assert.rejects(oversized.query('demo'), /response-byte-limit/);
+  const empty = client(async () => new Response(new ReadableStream({
+    start(controller) {
+      for (let index = 0; index < 1025; index++) controller.enqueue(new Uint8Array());
+      controller.close();
+    },
+  }), {status: 200}));
+  await assert.rejects(empty.query('demo'), /response-fragment-limit/);
+});
+
+test('a response started before permission denial cannot restore a private view', async () => {
+  let release;
+  let count = 0;
+  const app = client(async () => {
+    if (++count === 1) return new Promise(resolve => { release = resolve; });
+    return new Response('', {status: 403});
+  });
+  const original = app.prepare('demo', '0', 3);
+  const stale = app.query('demo');
+  await assert.rejects(app.query('demo'), /permission-denied/);
+  release(response('query'));
+  await assert.rejects(stale, /permission-denied/);
+  assert.equal(app.view, undefined);
+  assert.equal(app.pending.key, original);
+  assert.equal(app.status, 'permission-denied');
+});
+
+test('a parsed response cannot be applied after permission was denied', async () => {
+  let count = 0, release, parsed;
+  const ready = new Promise(resolve => { parsed = resolve; });
+  const app = client(async () => ++count === 1 ? response('query') : new Response('', {status: 403}));
+  const request = app.request.bind(app);
+  app.request = async (...args) => {
+    const reply = await request(...args);
+    if (reply.status === 200) { parsed(); await new Promise(resolve => { release = resolve; }); }
+    return reply;
+  };
+  const stale = app.query('demo');
+  await ready;
+  await assert.rejects(app.query('demo'), /permission-denied/);
+  release();
+  await assert.rejects(stale, /permission-denied/);
+  assert.equal(app.view, undefined);
+});
+
+test('effect status uses the original command and accepts only its bounded effect', async () => {
+  const id = 'e'.repeat(64), requests = [];
+  const app = client(async (url, options) => {
+    requests.push({url, ...options});
+    if (requests.length === 1) {
+      const body = await response('committed').json();
+      body['effect-ids'] = [id];
+      return new Response(JSON.stringify(body), {status: 200});
+    }
+    return new Response(JSON.stringify({profile: 'transaction-http-v1', disposition: 'effect',
+      representation: 'effect-status', effect: {'effect-id': requests.length === 2 ? id : 'f'.repeat(64),
+        disposition: 'provider-acknowledged', 'dispatch-attempt': 2}}), {status: 200});
+  });
+  const original = app.prepare('demo', '0', 3);
+  await app.submit();
+  assert.deepEqual(await app.effectStatus(id), {effectId: id, disposition: 'provider-acknowledged', dispatchAttempt: 2});
+  assert.equal(requests[1].headers.get('idempotency-key'), original);
+  assert.equal(requests[1].headers.get('effect-id'), id);
+  await assert.rejects(app.effectStatus('f'.repeat(64)), /original-command-effect-required/);
+  assert.equal(requests.length, 2);
+  await assert.rejects(app.effectStatus(id), /invalid-effect-status/);
+});
+
+test('a query response cannot stand in for a command disposition', async () => {
+  const app = client(async () => response('query'));
+  const original = app.prepare('demo', '0', 3);
+  await assert.rejects(app.submit(), /unexpected-transaction-response/);
+  assert.equal(app.status, 'uncertain');
+  assert.equal(app.pending.key, original);
+  assert.equal(app.view, undefined);
+});
+
+test('an inconsistent HTTP status cannot install a terminal command result', async () => {
+  const app = client(async () => new Response(await response('committed').text(), {status: 503}));
+  const original = app.prepare('demo', '0', 3);
+  await assert.rejects(app.submit(), /inconsistent-transaction-status/);
+  assert.equal(app.status, 'uncertain');
+  assert.equal(app.pending.key, original);
+  assert.equal(app.view, undefined);
+  assert.throws(() => app.finishOriginal(), /original-command-not-terminal/);
+});
+
+test('an older recovery response cannot downgrade a terminal command', async () => {
+  let count = 0;
+  const app = client(async () => ++count === 1 ? response('committed') : new Response(await response('in-progress').text(), {status: 202}));
+  const original = app.prepare('demo', '0', 3);
+  await app.submit();
+  const terminalView = app.view;
+  await assert.rejects(app.recover(), /terminal-command-regression/);
+  assert.equal(app.status, 'committed');
+  assert.equal(app.view, terminalView);
+  assert.equal(app.pending.key, original);
+  app.finishOriginal();
+});
+
+test('a late submission cannot overwrite a recovered terminal command', async () => {
+  let release;
+  let count = 0;
+  const app = client(async () => ++count === 1
+    ? new Promise(resolve => { release = resolve; }) : response('committed'));
+  app.prepare('demo', '0', 3);
+  const submission = app.submit();
+  await app.recover();
+  release(new Response(await response('in-progress').text(), {status: 202}));
+  await assert.rejects(submission, /terminal-command-regression/);
+  assert.equal(app.status, 'committed');
+  app.finishOriginal();
+});
+
+test('a finished command cannot overwrite a newly prepared command', async () => {
+  let release;
+  let count = 0;
+  const app = client(async () => ++count === 1
+    ? new Promise(resolve => { release = resolve; }) : response('committed'));
+  app.prepare('demo', '0', 3);
+  const oldSubmission = app.submit();
+  await app.recover();
+  app.finishOriginal();
+  const next = app.prepare('demo', '1', 4);
+  release(new Response(await response('in-progress').text(), {status: 202}));
+  await assert.rejects(oldSubmission, /original-command-changed/);
+  assert.equal(app.status, 'prepared');
+  assert.equal(app.pending.key, next);
+});
+
 test('uncertain delivery retains the original body, precondition and key and only recovery is sent', async () => {
   const requests = [];
   const app = client(async (url, options) => {
@@ -72,6 +232,33 @@ test('business rejection recovery does not refresh expected revision or retry a 
   assert.equal(calls, 2);
 });
 
+test('a proven abort can be explicitly finished without retry', async () => {
+  const app = client(async () => response('aborted'));
+  app.prepare('demo', '0', 3);
+  await app.submit();
+  assert.equal(app.canFinishOriginal(), true);
+  assert.equal(app.canRetryAborted(), true);
+  app.finishOriginal();
+  assert.equal(app.status, 'idle');
+  assert.equal(app.pending, undefined);
+  app.prepare('demo', '0', 4);
+});
+
+test('an abort without its original fence cannot be finished or retried', async () => {
+  const app = client(async () => {
+    const value = await response('aborted').json();
+    value['abort-fence'] = null;
+    return new Response(JSON.stringify(value), {status: 409});
+  });
+  const original = app.prepare('demo', '0', 3);
+  await app.submit();
+  assert.equal(app.canFinishOriginal(), false);
+  assert.equal(app.canRetryAborted(), false);
+  assert.throws(() => app.finishOriginal(), /original-command-not-terminal/);
+  await assert.rejects(app.retryAborted(), /affirmative-original-abort-proof-required/);
+  assert.equal(app.pending.key, original);
+});
+
 test('explicit technical-abort retry retains the original command and fences further retry after an uncertain response', async () => {
   const requests = [];
   const app = client(async (url, options) => {
@@ -99,6 +286,14 @@ test('u64 business revisions retain every original bit in requests and decoded r
   assert.equal(result.value.revision, maximum);
   assert.throws(() => revisionOverflow(), /invalid-business-revision/);
   function revisionOverflow() { client(async () => response('query')).prepare('demo', '18446744073709551616', 3); }
+});
+
+test('oversized denial clears private observations before reading the body', async () => {
+  const app = client(async () => new Response('x'.repeat(192 * 1024 + 1), {status: 403}));
+  app.view = {private: 'prior user'}; app.last = {private: 'prior user'}; app.minimumView = 'prior-token';
+  await assert.rejects(app.query('demo'), /permission-denied/);
+  assert.equal(app.view, undefined); assert.equal(app.last, undefined); assert.equal(app.minimumView, undefined);
+  assert.equal(app.status, 'permission-denied');
 });
 
 test('current authority refusal clears private observations and cross-origin routes are rejected', async () => {

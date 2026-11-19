@@ -110,14 +110,24 @@ pub(super) fn node(
     (node, artifacts)
 }
 
-#[expect(
-    clippy::too_many_lines,
-    reason = "one explicit real publication/policy/budget owner supplies the physical native control"
-)]
 pub(super) async fn session(
     node: &StandaloneNode,
     artifacts: &DirectoryArtifactRepository,
     endpoint: StreamEndpoint,
+) -> (CapabilitySession, Control) {
+    session_with_profile(node, artifacts, endpoint, 1024 * 1024, true).await
+}
+
+#[expect(
+    clippy::too_many_lines,
+    reason = "one explicit real publication/policy/budget owner supplies the physical native control"
+)]
+pub(super) async fn session_with_profile(
+    node: &StandaloneNode,
+    artifacts: &DirectoryArtifactRepository,
+    endpoint: StreamEndpoint,
+    memory_bytes: u64,
+    require_audit: bool,
 ) -> (CapabilitySession, Control) {
     let component_bytes = b"\0asm\r\0\x01\0".to_vec();
     let digest = latent_artifacts::content_digest(&component_bytes);
@@ -182,7 +192,7 @@ pub(super) async fn session(
             json!({"formatVersion":1,"tenant":"tests","rules":[{
             "id":"physical","effect":"allow","principals":[{"kind":"user","subject":"alice"}],
             "services":["guest-stream"],"publications":[publication.publication().as_str()],"capability":CAPABILITY,
-            "operations":OPERATIONS,"resources":{"kind":"stream","endpoints":[endpoint]},"requireAudit":true,
+            "operations":OPERATIONS,"resources":{"kind":"stream","endpoints":[endpoint]},"requireAudit":require_audit,
             "ceiling":{"operations":128,"inputBytes":1_048_576,"outputBytes":1_048_576,"wallTimeMillis":10_000}}]}),
         ),
         (
@@ -251,7 +261,7 @@ pub(super) async fn session(
         .unwrap();
     let grant = ResourceBudget {
         cpu_fuel: 100_000,
-        memory_bytes: 1024 * 1024,
+        memory_bytes,
         wall_time_limit_millis: Some(5000),
         log_bytes: 1024,
         child_calls: 0,

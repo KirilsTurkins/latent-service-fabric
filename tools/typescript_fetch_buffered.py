@@ -23,7 +23,9 @@ def vectors():
         ('buffered-cancel-remainder',1,'domain-json','cancelled:one-window:remainder-unread',0),
         ('buffered-unsupported-stream-members',2,'domain-json','tee:pipeTo:pipeThrough:values:unsupported',0),
         ('buffered-body-api-limit',3,'domain-json','body-limit:1048576',0),
-        ('buffered-null-versus-empty',4,'domain-json','null:absent:empty:disturbed',0)]
+        ('buffered-null-versus-empty',4,'domain-json','null:absent:empty:disturbed',0),
+        ('response-init-order',5,'domain-json','response-init:ordered:snapshotted:json',0),
+        ('response-init-errors',6,'domain-json','response-init:conversion:validation',0)]
 
 
 def peer_evidence(value):
