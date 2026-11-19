@@ -31,6 +31,19 @@ def request(host, path='/api/status', method='GET', headers=None):
         connection.close()
 
 
+def check_cookie_isolation(host, peer, result):
+    before = len(peer.requests)
+    status, _, _ = request(host, headers={'Cookie': 'session=application-owned-test-marker'})
+    count = len(peer.requests) - before
+    result['cookieProbeStatus'] = status
+    result['cookieProbeRequests'] = count
+    if count == 1:
+        result['cookieProbeForwarded'] = 'cookie' in peer.requests[-1]['headerNames']
+    require(status == 200, 'static-api-cookie-response-unavailable')
+    require(count == 1, 'static-api-cookie-request-count')
+    require(not result['cookieProbeForwarded'], 'static-api-browser-cookie-forwarded')
+
+
 def run(args):
     work = args.work.resolve(strict=True)
     result = {'schemaVersion': 'latent.static-api.composition.v1', 'passed': False, 'cloudQualified': False,
@@ -70,8 +83,7 @@ def run(args):
             require(status == 200 and body == b'{"status":"available"}', 'static-api-https-success')
             require(peer.requests[-1]['credentialMatches'] and peer.requests[-1]['target'] == 'GET /health HTTP/1.1',
                     'static-api-trusted-credential')
-            require(request(host, headers={'Cookie': 'session=application-owned-test-marker'})[0] == 200
-                    and 'cookie' not in peer.requests[-1]['headerNames'], 'static-api-browser-cookie-forwarded')
+            check_cookie_isolation(host, peer, result)
             before = len(peer.requests)
             for path, method, expected in [('/api/missing', 'GET', 404), ('/api/status', 'POST', 405),
                 ('/api/status?upstream=other-customer', 'GET', 400)]:
