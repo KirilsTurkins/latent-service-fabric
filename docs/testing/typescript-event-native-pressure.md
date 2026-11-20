@@ -76,3 +76,30 @@ custody, or whole-runtime byte accounting.
 The normal source-owned engine build and strict signed Fetch programme must
 qualify the combined source. No diagnostic binary is a production input and no
 historical or modeled pass substitutes for that gate.
+
+## Declaration boundary
+
+The signed Fetch attempt on PR #2156 head `3d88e6d`, run `44616090286`,
+job `135963175967`, stopped at strict typechecking before guest execution.
+Artifact `14585192162` (SHA-256
+`6e8c8838c845ae05e30ecb1fe628a24416f91ae6e3f501ce2bbbd710f59e0103`)
+retains TS2345 for adding and removing the non-abort `fanout-fill` listener.
+The runtime declarations had incorrectly restricted both methods to `abort`.
+
+The declarations now accept string event names, matching the selected native
+EventTarget methods inherited by AbortSignal. Callback and option types are
+unchanged; no browser globals, new runtime API, casts or typecheck suppressions
+are added. The source signal, positive held-listener requirement and every
+signed refusal/recovery assertion remain unchanged.
+
+The existing networking compiler-boundary job now also runs the strict
+declaration controls using its already installed, lock-checked frontend. The
+controls compile the actual fan-out helper source, reject the old abort-only
+declarations, and reject invalid event/callback arguments and undeclared browser globals. Missing tools,
+skipped controls and compiler errors fail this explicit gate. The full ordinary
+component build and signed programme remain separate mandatory steps.
+
+```sh
+LSF_TYPESCRIPT_FRONTEND=/path/to/installed-tools \
+  python3 -m tools.tests.test_typescript_abort_declarations
+```

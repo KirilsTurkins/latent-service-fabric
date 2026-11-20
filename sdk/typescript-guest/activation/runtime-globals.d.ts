@@ -13,9 +13,10 @@ interface AbortSignal {
     readonly reason: any;
     onabort: ((event: any) => void) | null;
     throwIfAborted(): void;
-    addEventListener(type: 'abort', listener: (event: any) => void,
+    // Native AbortSignal retains EventTarget's string event-name contract.
+    addEventListener(type: string, listener: (event: any) => void,
         options?: boolean | { once?: boolean }): void;
-    removeEventListener(type: 'abort', listener: (event: any) => void): void;
+    removeEventListener(type: string, listener: (event: any) => void): void;
 }
 declare var AbortSignal: {
     abort(reason?: any): AbortSignal;
