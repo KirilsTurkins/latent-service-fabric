@@ -53,6 +53,30 @@ listener, the ordinary awaited Promise checkpoint, and successful explicit
 retry of the same nine-dependent graph. All reason, order, fresh-state,
 no-network, budget, deadline, and cleanup assertions remain in force.
 
+## Strict declaration boundary
+
+Signed Fetch run `44620650191` at `0d7c4fa3` compiled the source-owned engine,
+but stopped before guest execution: the shipped AbortSignal declarations
+restricted both listener methods to `"abort"`, rejecting the existing
+`"fanout-fill"` control with TS2345. The declarations now accept string event
+names, as the inherited native EventTarget methods already do. Callback and
+options types are unchanged. This neither adds an API implementation nor
+casts away the refusal probe's type errors.
+
+The existing signed Fetch job runs the following check after installing its
+locked compiler. It uses the unchanged full probe, real Jco-generated WIT
+bindings and selected runtime declarations, without DOM or Node ambient types:
+
+```sh
+python3 tools/check_typescript_abort_event_types.py --tools /path/to/pinned/frontend
+```
+
+The check requires the repository-pinned Node and TypeScript versions. It
+rejects numeric event names, invalid listeners and invalid `once` values.
+Independently restoring either old abort-only signature must reject the
+unchanged signed source; restoring the current declarations must compile again.
+These are compiler observations, not signed execution or retirement evidence.
+
 ## Reproduction and evidence limits
 
 ```sh
