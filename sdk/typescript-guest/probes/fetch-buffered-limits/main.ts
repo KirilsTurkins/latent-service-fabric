@@ -75,6 +75,43 @@ export const api: typeof Contract = {
       reader.releaseLock();
       return 'null:absent:empty:disturbed';
     }
+    if (mode === 5) {
+      const order: string[] = [];
+      const values = {'x-observed': 'before'};
+      const response = new Response(null, {
+        get headers() { order.push('headers'); return values; },
+        get status() { order.push('status'); values['x-observed'] = 'after'; return 201.9; },
+        get statusText() { order.push('statusText'); return 'Created'; },
+      });
+      if (order.join(',') !== 'headers,status,statusText' || response.status !== 201 ||
+          response.statusText !== 'Created' || response.headers.get('x-observed') !== 'before')
+        throw new Error('response-init-order-or-snapshot');
+      const jsonOrder: string[] = [];
+      const json = Response.json({toJSON() { jsonOrder.push('json'); return {ok: true}; }}, {
+        get headers() { jsonOrder.push('headers'); return {'x-json': 'present'}; },
+        get status() { jsonOrder.push('status'); return 202; },
+      });
+      if (jsonOrder.join(',') !== 'headers,status,json' || json.status !== 202 ||
+          json.headers.get('x-json') !== 'present' || json.headers.get('content-type') !== 'application/json' ||
+          await json.text() !== '{"ok":true}') throw new Error('response-json-init-order');
+      return 'response-init:ordered:snapshotted:json';
+    }
+    if (mode === 6) {
+      let statusRead = false, convertedFirst = false;
+      try { new Response(null, {headers: [['x', '\u0100']], get status() { statusRead = true; return 200; }}); }
+      catch (error) { convertedFirst = error instanceof TypeError; }
+      if (!convertedFirst || statusRead) throw new Error('response-header-conversion-order');
+      const order: string[] = [];
+      let statusFirst = false;
+      try {
+        new Response(null, {get headers() { order.push('headers'); return [['bad\nname', 'v']]; },
+          get status() { order.push('status'); return 0; },
+          get statusText() { order.push('statusText'); return ''; }});
+      } catch (error) { statusFirst = error instanceof RangeError; }
+      if (!statusFirst || order.join(',') !== 'headers,status,statusText')
+        throw new Error('response-init-validation-precedence');
+      return 'response-init:conversion:validation';
+    }
     throw new TypeError('buffered-body-unknown-mode');
   },
 };

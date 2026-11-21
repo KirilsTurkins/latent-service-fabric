@@ -131,6 +131,58 @@ without and 425.29 ms with the JSON checkpoints (+2.7%); median child CPU was
 are not production-node cost or signed-component qualification. The default
 `go-component-async-v1` profile does not install these checkpoints.
 
+When a checkpoint-enabled profile selects `encoding/base64`, the authenticated
+Go 1.27.4 `Encoding.Encode` loop also reaches the existing checkpoint bridge.
+Its local remaining-length guard calls the bridge once per 256 iterations; with
+the existing 1,024-call quantum, at most 786,432 input bytes pass between
+yields. It does not inspect scheduler, host-waitable or timer state.
+
+The pinned native Go reference ran a synchronized sibling before a 24 MiB
+ordinary encode returned. A core-Wasm control using the maintained scheduler
+source and a test dispatcher reproduced starvation without the encoder site and
+observed the sibling plus 32 yields with it. Both variants preserved the tested
+encodings and all large-output bytes; the selected run yielded during the
+nonzero-data round trips. A small four-sample comparison measured median child
+CPU of 206.81 ms without the site and 202.47 ms with it. A test-only 64-step
+variant measured 215.70 ms and 128 yields, with a 196,608-byte bound. A later
+sample of the selected 256-step implementation measured 310.04 ms without
+and 331.29 ms with the site. These noisy, startup-inclusive observations
+include output validation and do not establish speedup or production cost. The
+Go qualification is configured to run the core-Wasm reference; it does not
+demonstrate host/timer polling or signed qualification.
+
+The authenticated `Encoding.Decode` loops now also reach that bridge. The
+outer loops use a local previous-input index to admit a checkpoint after at
+least 1,024 more source bytes; the newline loops admit one at each 1,024-byte
+index. For uninterrupted valid input, the current quantum yields at intervals
+of 1,048,576 encoded bytes. The local index is not scheduler state, and the
+dispatcher and non-checkpoint profile are unchanged. This selection does not
+qualify every Base64 streaming or wrapper loop.
+
+In the pinned core-Wasm reference, the historical encoder-only selection
+returned from a 24 MiB decode before its ready sibling ran; the new codec
+selection observed that sibling and 23 yields. Long newline, padding and
+mixed-input cases also observed the sibling, and outputs and tested malformed
+input errors matched pinned native Go. Two small no-sibling samples measured
+median child CPU of 229.08 versus 188.01 ms and 274.62 versus 229.10 ms for the
+encoder-only and codec selections. These noisy, startup-inclusive measurements
+include input/output validation and do not establish speedup or production
+cost. The configured Go qualification runs the reference with a test
+activation and queue pump; it does not qualify a signed guest or real host.
+
+The authenticated `AppendDecode` trailing-padding loop reaches the same
+bridge every 1,024 padding bytes. With the current quantum, at most 1,048,576
+consecutive padding bytes pass between yields. In the pinned core-Wasm
+reference, 24 MiB of invalid padding returned before its ready sibling under
+the previous codec selection; this selection observed the sibling and 24
+yields. Tested partial outputs, errors, valid and custom padding, and an
+overlapping input/output buffer matched native Go. Two small no-sibling
+samples measured median child CPU of 231.45 versus 202.52 ms and 204.54
+versus 176.07 ms for the previous and new selection. These noisy measurements
+include startup and input/output work; they do not establish speedup or
+production cost. The existing Go qualification is configured to run the
+reference; no signed guest or real-host behavior is inferred.
+
 Original source bytes remain unchanged. Derived copies retain original
 diagnostic line/column positions, source and output digests, and suspension
 sites in the build transformation materials. The host parser is built and

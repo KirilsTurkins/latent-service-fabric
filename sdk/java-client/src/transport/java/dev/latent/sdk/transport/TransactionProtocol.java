@@ -58,9 +58,59 @@ final class TransactionProtocol {
         Protocol.require(buffer.remaining() <= maximum && (!nonempty || buffer.hasRemaining()));
         return buffer;
     }
-    private static List<?> list(Object value, int maximum) {
+    static List<?> list(Object value, int maximum) {
         Protocol.require(value instanceof List<?> && ((List<?>) value).size() <= maximum);
-        return (List<?>) value;
+        return boundedList((List<?>) value, maximum);
+    }
+    static <T> List<T> boundedList(List<T> value, int maximum) {
+        Protocol.require(value != null && value.size() <= maximum);
+        var bounded = new java.util.ArrayList<T>();
+        for (T item : value) {
+            Protocol.require(bounded.size() < maximum);
+            bounded.add(item);
+        }
+        return bounded;
+    }
+    static <K, V> Map<K, V> boundedMap(Map<K, V> value) {
+        Protocol.require(value != null && value.size() <= 32);
+        var bounded = new java.util.LinkedHashMap<K, V>();
+        int count = 0;
+        for (var entry : value.entrySet()) {
+            Protocol.require(++count <= 32);
+            bounded.put(entry.getKey(), entry.getValue());
+        }
+        return bounded;
+    }
+    static final class EncodeBudget {
+        private long bytes = GRAPH_BYTES;
+        private int nodes = 4096;
+        void charge(long amount) {
+            Protocol.require(amount >= 0 && --nodes >= 0 && amount <= bytes);
+            bytes -= amount;
+        }
+        void enter(int depth) { Protocol.require(depth <= 32); charge(32); }
+        String text(String value) {
+            Protocol.require(value != null && value.length() <= bytes);
+            charge(4L * value.length());
+            return value;
+        }
+        com.google.protobuf.ByteString bytes(ByteBuffer value) {
+            Protocol.require(value != null);
+            var selected = value.asReadOnlyBuffer();
+            Protocol.require(selected.remaining() <= 4 * 1024 * 1024);
+            charge(selected.remaining());
+            return com.google.protobuf.ByteString.copyFrom(selected);
+        }
+        <T> T scalar(T value) { Protocol.require(value != null); charge(32); return value; }
+        <T> List<T> list(List<T> value, int maximum) { return boundedList(value, maximum); }
+        <K, V> Map<K, V> map(Map<K, V> value) {
+            Map<K, V> bounded = boundedMap(value);
+            for (var entry : bounded.entrySet()) {
+                if (entry.getKey() instanceof String key) text(key); else scalar(entry.getKey());
+                if (entry.getValue() instanceof String member) text(member); else scalar(entry.getValue());
+            }
+            return bounded;
+        }
     }
     private static void same(Object left, Object right) { Protocol.require(java.util.Objects.equals(left, right)); }
     private static void digest(Object value) { Protocol.require(id(value).matches("sha256:[0-9a-f]{64}")); }
@@ -161,8 +211,9 @@ final class TransactionProtocol {
     }
     private static void metadata(Object value, boolean caller) {
         Protocol.require(value instanceof Map<?, ?> && ((Map<?, ?>) value).size() <= 32);
-        int total = 0;
+        int total = 0, count = 0;
         for (var entry : ((Map<?, ?>) value).entrySet()) {
+            Protocol.require(++count <= 32);
             String key = id(entry.getKey()), member = text(entry.getValue(), 1024, false);
             Protocol.require(!caller || !key.toLowerCase(java.util.Locale.ROOT).matches("latent\\.(auth|principal)\\..*"));
             total += key.getBytes(StandardCharsets.UTF_8).length + member.getBytes(StandardCharsets.UTF_8).length;

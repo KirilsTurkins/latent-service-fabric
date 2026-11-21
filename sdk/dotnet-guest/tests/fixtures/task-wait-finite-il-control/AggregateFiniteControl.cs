@@ -32,6 +32,7 @@ public static class AggregateFiniteProjection
     public static void OriginalPump(object? state) => throw new NotImplementedException();
     public static void FinitePump(object? state) => throw new NotImplementedException();
     public static bool FiniteWait(Task task, int milliseconds, CancellationToken token) => throw new NotImplementedException();
+    public static bool InfiniteWait(Task task) => throw new NotImplementedException();
 }
 
 internal static class AggregateFiniteControl
@@ -55,6 +56,7 @@ internal static class AggregateFiniteControl
         var target = projected.Types.Single(type => type.FullName == nameof(AggregateFiniteProjection));
         var ready = Program.Method(loop, "LsfAggregateReady");
         var normalPump = Program.Method(loop, "LsfDispatchUntilActualTaskCompletion");
+        var infinite = Program.Method(loop, "LsfWaitForActualTaskCompletion");
         var finitePump = Program.Method(loop, "LsfObserveFiniteTaskCompletion");
         var originalLoop = baselineModule.Types.Single(type => type.FullName == "System.Threading.WasiEventLoop");
         var finite = Program.Method(fixedVersion ? loop : originalLoop, "LsfWaitForActualTaskOrTimeout");
@@ -84,6 +86,7 @@ internal static class AggregateFiniteControl
             fields[loop.Fields.Single(field => field.Name == original).FullName] = target.Fields.Single(field => field.Name == replacement);
         fields[context.Fields.Single(field => field.Name == "Default").FullName] = target.Fields.Single(field => field.Name == "Default");
         foreach (var (source, name) in copies) Program.CopyBody(source, Program.Method(target, name), projected, methods, fields);
+        Program.CopyBody(infinite, Program.Method(target, "InfiniteWait"), projected, methods, fields);
         var assemblyName = fixedVersion ? "AggregateFiniteFixedProjection" : "AggregateFiniteOriginalProjection";
         projected.Assembly.Name.Name = assemblyName;
         projected.Name = assemblyName + ".dll";
@@ -102,8 +105,50 @@ internal static class AggregateFiniteControl
         Require(Task.WaitAll(new[] { worker }, 5000) && worker.Result, "clr-nested-finite-in-aggregate");
     }
 
+    private static void InfiniteCompletedControls(Type projection)
+    {
+        var wait = projection.GetMethod("InfiniteWait")!.CreateDelegate<Func<Task, bool>>();
+        var target = projection.GetField("Target")!;
+        var current = projection.GetField("Current")!;
+        var depth = projection.GetField("Depth")!;
+        var action = projection.GetField("DispatchAction")!;
+        using var aggregate = new ManualResetEventSlim(false);
+        var prior = new TaskCompletionSource<int>().Task;
+        target.SetValue(null, aggregate); current.SetValue(null, prior); depth.SetValue(null, 4);
+        var completed = Task.FromException(new InvalidOperationException("expected"));
+        int notifications = 0;
+        var local = new AsyncLocal<string?>(change => { if (change.ThreadContextChanged) notifications++; });
+        local.Value = "caller";
+        Require(wait(completed) && notifications == 0 && ReferenceEquals(target.GetValue(null), aggregate)
+            && ReferenceEquals(current.GetValue(null), prior) && (int)depth.GetValue(null)! == 4,
+            "aggregate-completed-single-frame");
+        depth.SetValue(null, 32);
+        Require(wait(completed) && notifications == 0 && ReferenceEquals(target.GetValue(null), aggregate)
+            && ReferenceEquals(current.GetValue(null), prior) && (int)depth.GetValue(null)! == 32,
+            "aggregate-completed-single-depth");
+        local.Value = null;
+        depth.SetValue(null, 4);
+        var pending = new TaskCompletionSource<int>();
+        action.SetValue(null, (Action)(() => {
+            Require(target.GetValue(null) is null && ReferenceEquals(current.GetValue(null), pending.Task)
+                && (int)depth.GetValue(null)! == 5, "aggregate-pending-single-frame");
+            pending.SetResult(42);
+        }));
+        Require(wait(pending.Task) && ReferenceEquals(target.GetValue(null), aggregate)
+            && ReferenceEquals(current.GetValue(null), prior) && (int)depth.GetValue(null)! == 4,
+            "aggregate-pending-single-restore");
+        var original = new InvalidOperationException("aggregate-dispatch-primary");
+        action.SetValue(null, (Action)(() => throw original));
+        try { wait(new TaskCompletionSource<int>().Task); throw new InvalidOperationException("dispatch-did-not-throw"); }
+        catch (InvalidOperationException error) { Require(ReferenceEquals(error, original), "aggregate-dispatch-error"); }
+        Require(ReferenceEquals(target.GetValue(null), aggregate) && ReferenceEquals(current.GetValue(null), prior)
+            && (int)depth.GetValue(null)! == 4, "aggregate-error-single-restore");
+        target.SetValue(null, null); current.SetValue(null, null); depth.SetValue(null, 0); action.SetValue(null, null);
+    }
+
     private static void CheckProjection(Type projection, bool fixedVersion)
     {
+        InfiniteCompletedControls(projection);
         var ready = projection.GetMethod("Ready")!.CreateDelegate<Func<bool>>();
         var wait = projection.GetMethod("FiniteWait")!.CreateDelegate<Func<Task, int, CancellationToken, bool>>();
         var target = projection.GetField("Target")!;
@@ -183,6 +228,6 @@ internal static class AggregateFiniteControl
         ClrReference();
         CheckProjection(BuildProjection(candidate, originalFinite, tool, output + ".aggregate-original.dll", false), false);
         CheckProjection(BuildProjection(candidate, originalFinite, tool, output + ".aggregate-fixed.dll", true), true);
-        Console.WriteLine("AGGREGATE_FINITE_IL_HOST PASS clr-reference;original-mismatch;ready;timeout;cancellation;exception;nested;restore");
+        Console.WriteLine("AGGREGATE_FINITE_IL_HOST PASS completed-infinite;clr-reference;original-mismatch;ready;timeout;cancellation;exception;nested;restore");
     }
 }

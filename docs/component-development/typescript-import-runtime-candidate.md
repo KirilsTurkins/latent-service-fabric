@@ -21,6 +21,16 @@ the pump can retire it with no timer records or joined subtasks. Ordinary
 synchronous calls that do not use this bridge do not create the set. This
 source behavior does not establish signed-runtime qualification.
 
+When SpiderMonkey creates an explicit Promise resolving-function pair, the
+candidate now reserves one original Native owner for each function before its
+allocation. The Promise keeps its separate owner. After settlement, either
+function can remain reachable without the Promise, so each function's owner
+remains charged until its own collection and retirement acknowledgement.
+The pair can require two additional Native slots and refuse earlier under an
+unchanged limit; no grant is increased. A resolver retained in the compiler
+snapshot is refused at the existing capture fence. This is source and
+reference-engine evidence, not current signed-component qualification.
+
 Timer results that have already been observed ready retain their observation
 order until callback dispatch or clear. An immediately rearmed interval joins
 the end of that bounded order, and an observed unexpected cancellation fences

@@ -549,8 +549,8 @@ impl Drop for ReadinessFlight {
 }
 
 // Retain the original buffer/output and socket across currentness and audit.
-// If consumed bytes cannot be handed off, fence the same connection before
-// releasing any original owners that remain in this flight.
+// Fence the same connection if consumed bytes or an EOF handoff are abandoned
+// before releasing any original owners that remain in this flight.
 struct ReadFlight {
     buffer: Option<IoTransferBuffer>,
     output: Option<IoOutputChunk>,
@@ -558,10 +558,11 @@ struct ReadFlight {
     pending: Pending,
     connection: ConnectionOwner,
     consumed: bool,
+    handoff_pending: bool,
 }
 impl Drop for ReadFlight {
     fn drop(&mut self) {
-        if self.consumed {
+        if self.consumed || self.handoff_pending {
             self.connection.abort(StreamErrorCode::Cancelled);
         }
     }
@@ -612,6 +613,30 @@ impl Drop for WriteFlight {
         if self.possible {
             self.record_accepted(self.accepted);
             self.connection.abort(StreamErrorCode::Cancelled);
+        }
+    }
+}
+
+// A send half-close may have reached the original socket before a later
+// authority check or audit completes. Cancellation must fence that same
+// connection while its Pending guard and original charges are still held.
+struct SendShutdownFlight {
+    connection: ConnectionOwner,
+    possible: bool,
+}
+impl Drop for SendShutdownFlight {
+    fn drop(&mut self) {
+        if self.possible {
+            if std::thread::panicking() {
+                // Preserve the original unwind if an abort wake itself panics.
+                // Like the existing retirement walk, this cannot contain a
+                // secondary panic payload whose own destructor also panics.
+                let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    self.connection.abort(StreamErrorCode::Cancelled);
+                }));
+            } else {
+                self.connection.abort(StreamErrorCode::Cancelled);
+            }
         }
     }
 }
@@ -683,6 +708,14 @@ pub(crate) async fn connect(
     } else {
         AuditProviderOutcome::Unknown
     })?;
+    #[cfg(all(test, unix))]
+    {
+        let gate = inner.connect_audit_gate.lock().unwrap().take();
+        if let Some((entered, release)) = gate {
+            let _ = entered.send(());
+            let _ = release.await;
+        }
+    }
     if call.io_mut().finish_audit().await == CapabilityAuditDurability::OutcomeUnknown {
         return Err(error(StreamErrorCode::Uncertain));
     }
@@ -756,7 +789,15 @@ pub(crate) async fn connect(
         opening_custody,
     );
     inner.connections.register(&opening_owner, &connection)?;
-    Ok(Box::new(Handle { connection }))
+    let handle = Box::new(Handle { connection });
+    // Audit and publication can outlive the original connect authority. A
+    // rejected handoff stops this same paid owner, including when another
+    // observer has already retained the registered connection.
+    if let Err(failure) = handle.connection.connect_handoff_current().await {
+        handle.connection.abort(failure.code);
+        return Err(handle.connection.terminal_error(failure));
+    }
+    Ok(handle)
 }
 
 #[expect(
@@ -1571,10 +1612,30 @@ impl ConnectionOwner {
             .await
             .map_err(Into::into)
     }
-    // Successful readiness and readiness-only timeouts both require the same
-    // original call to remain current after audit. Busy/failed authority checks
-    // fail closed; they are not reclassified as an ordinary socket timeout.
-    fn ready_timeout_current(
+    async fn connect_handoff_current(&self) -> Result<(), StreamError> {
+        let io = self.call.io();
+        let deadline = self.deadline.min(io.deadline());
+        // Retry only the broker's exact transient bookkeeping contention;
+        // recheck the same call under its original deadline and stop signal.
+        recheck_io(io, deadline).await.map_err(StreamError::from)?;
+        let state = self
+            .state
+            .lock()
+            .map_err(|_| error(StreamErrorCode::Exhausted))?;
+        if state.closing {
+            return Err(
+                error(state.failure.unwrap_or(StreamErrorCode::InvalidState))
+                    .uncertain(state.attempted_write),
+            );
+        }
+        if Instant::now() >= deadline {
+            return Err(error(StreamErrorCode::Timeout).uncertain(state.attempted_write));
+        }
+        Ok(())
+    }
+    // A readiness observation retains its original connect and operation
+    // authorities through audit and the original deadlines.
+    fn original_call_current(
         &self,
         pending: &Pending,
         call: &mut ProviderCall,
@@ -1586,9 +1647,9 @@ impl ConnectionOwner {
             return Err(error(StreamErrorCode::Timeout));
         }
         io.recheck_authority().map_err(StreamError::from)?;
-        // `ready` is authorized independently of the original connect call.
-        // Both exact accepted owners must remain current for a nonterminal
-        // observation; neither check mints or replaces authority.
+        // The operation is authorized independently of the original connect
+        // call. Both accepted owners must remain current for a nonterminal
+        // handoff; neither check mints or replaces authority.
         call.recheck_authority().map_err(StreamError::from)?;
         io.checkpoint().map_err(StreamError::from)?;
         let state = self
@@ -1607,6 +1668,41 @@ impl ConnectionOwner {
         Ok(())
     }
 
+    // Only bookkeeping contention may delay an already observed result. Each
+    // attempt rechecks both accepted authorities, without replaying I/O.
+    async fn original_call_current_wait(
+        &self,
+        pending: &Pending,
+        call: &mut ProviderCall,
+    ) -> Result<(), StreamError> {
+        let io = self.call.io();
+        let deadline = pending.deadline.min(call.deadline()).min(io.deadline());
+        io.wait_for(current_until(
+            || {
+                io.recheck_authority()?;
+                call.recheck_authority()
+            },
+            deadline,
+        ))
+        .await
+        .map_err(StreamError::from)?
+        .map_err(StreamError::from)?;
+        let state = self
+            .state
+            .lock()
+            .map_err(|_| error(StreamErrorCode::Exhausted))?;
+        if state.closing {
+            return Err(
+                error(state.failure.unwrap_or(StreamErrorCode::InvalidState))
+                    .uncertain(state.attempted_write),
+            );
+        }
+        if Instant::now() >= deadline {
+            return Err(error(StreamErrorCode::Timeout).uncertain(state.attempted_write));
+        }
+        Ok(())
+    }
+
     async fn complete_readiness_observation(
         &self,
         pending: Pending,
@@ -1620,7 +1716,7 @@ impl ConnectionOwner {
             settled: false,
         };
         let result = match self.audit_ref(&mut flight.call, success).await {
-            Ok(()) => self.ready_timeout_current(&flight.pending, &mut flight.call),
+            Ok(()) => self.original_call_current(&flight.pending, &mut flight.call),
             Err(failure) => Err(failure),
         };
         if let Err(failure) = result {
@@ -1684,6 +1780,7 @@ impl OutboundStream for Handle {
                     pending,
                     connection: connection.clone(),
                     consumed: false,
+                    handoff_pending: false,
                 };
                 let deadline = flight.call.deadline();
                 let result = {
@@ -1760,7 +1857,22 @@ impl OutboundStream for Handle {
                     }
                     return Err(failure);
                 }
+                // Audit can suspend after bytes or EOF have already been
+                // observed. Do not hand that result to the caller if either
+                // original authority or deadline changed in the meantime.
+                // EOF also needs custody while the new handoff check waits.
+                flight.handoff_pending = true;
+                if let Err(failure) = connection
+                    .original_call_current_wait(&flight.pending, &mut flight.call)
+                    .await
+                {
+                    connection.abort(failure.code);
+                    flight.consumed = false;
+                    flight.handoff_pending = false;
+                    return Err(connection.terminal_error(failure));
+                }
                 flight.consumed = false;
+                flight.handoff_pending = false;
                 Ok(flight.output.take())
             },
         )?;
@@ -1928,6 +2040,18 @@ impl OutboundStream for Handle {
                     connection.abort(failure.code);
                     return Err(failure.uncertain(true));
                 }
+                // Audit may suspend after this prefix has reached the original
+                // transport. A stale completion keeps the accepted count and
+                // uncertainty while fencing that same connection.
+                if let Err(mut failure) = connection
+                    .original_call_current_wait(&flight.pending, &mut flight.call)
+                    .await
+                {
+                    failure.accepted_prefix_bytes = u32::try_from(count).expect("bounded chunk");
+                    connection.abort(failure.code);
+                    flight.possible = false;
+                    return Err(connection.terminal_error(failure).uncertain(true));
+                }
                 flight.possible = false;
                 Ok(u32::try_from(count).expect("bounded chunk"))
             },
@@ -1978,16 +2102,16 @@ impl OutboundStream for Handle {
                     let call_deadline = call.deadline();
                     let lifetime = pending.deadline.min(call_deadline).min(connection.call.io().deadline());
                     let result = if pending.observation_immediate {
-                        connection.ready_timeout_current(&pending, &mut call)
+                        connection.original_call_current(&pending, &mut call)
                             .and_then(|()| pending.socket.ready_now(selected)
                                 .map_err(|_| error(StreamErrorCode::IoFailed)))
                             .and_then(|ready| {
-                                connection.ready_timeout_current(&pending, &mut call)?;
+                                connection.original_call_current(&pending, &mut call)?;
                                 Ok(ready)
                             })
                     } else if let Some(observation) = pending.observation_deadline.filter(|value| *value < lifetime) {
                         if Instant::now() >= observation {
-                            connection.ready_timeout_current(&pending, &mut call).map(|()| None)
+                            connection.original_call_current(&pending, &mut call).map(|()| None)
                         } else {
                             tokio::select! {
                                 biased;
@@ -1995,7 +2119,7 @@ impl OutboundStream for Handle {
                                     value.and_then(|value| value.map(Some).map_err(|_| error(StreamErrorCode::IoFailed)))
                                 }
                                 () = tokio::time::sleep_until(observation.into()) => {
-                                    connection.ready_timeout_current(&pending, &mut call).map(|()| None)
+                                    connection.original_call_current(&pending, &mut call).map(|()| None)
                                 }
                             }
                         }
@@ -2058,15 +2182,25 @@ impl OutboundStream for Handle {
                         connection.audit(call, false).await?;
                         return Err(connection.terminal_error(failure));
                     }
+                    let mut send_flight = SendShutdownFlight {
+                        connection: connection.clone(),
+                        possible: false,
+                    };
                     if how == StreamShutdown::Both {
                         connection.stop(None);
                     } else {
-                        connection
+                        let result = connection
                             .wait(&pending, call.deadline(), async {
                                 loop {
                                     recheck_provider(&mut call).await?;
-                                    if pending.socket.shutdown_send()?.is_some() {
-                                        break Ok::<_, StreamError>(());
+                                    // From this boundary a panic, cancellation
+                                    // or later authority failure cannot prove
+                                    // that the original FIN was not sent.
+                                    send_flight.possible = true;
+                                    match pending.socket.shutdown_send() {
+                                        Ok(Some(())) => break Ok::<_, StreamError>(()),
+                                        Ok(None) => send_flight.possible = false,
+                                        Err(failure) => break Err(failure),
                                     }
                                     pending
                                         .socket
@@ -2075,16 +2209,43 @@ impl OutboundStream for Handle {
                                         .map_err(|_| error(StreamErrorCode::IoFailed))?;
                                 }
                             })
-                            .await??;
+                            .await
+                            .and_then(|value| value);
+                        if let Err(failure) = result {
+                            connection.abort(failure.code);
+                            send_flight.possible = false;
+                            let failure = match connection.audit_ref(&mut call, false).await {
+                                Ok(()) => failure,
+                                Err(audit) => audit,
+                            };
+                            return Err(connection.terminal_error(failure));
+                        }
                         connection
                             .state
                             .lock()
                             .unwrap_or_else(std::sync::PoisonError::into_inner)
                             .write_shut = true;
                     }
-                    connection.audit(call, true).await?;
+                    let completion = match connection.audit_ref(&mut call, true).await {
+                        Ok(()) if how == StreamShutdown::Send => {
+                            connection
+                                .original_call_current_wait(&pending, &mut call)
+                                .await
+                        }
+                        result => result,
+                    };
+                    if let Err(failure) = completion {
+                        if send_flight.possible {
+                            connection.abort(failure.code);
+                            send_flight.possible = false;
+                            return Err(connection.terminal_error(failure));
+                        }
+                        return Err(failure);
+                    }
                     drop(pending);
-                    Ok(connection.observe())
+                    let observation = connection.observe();
+                    send_flight.possible = false;
+                    Ok(observation)
                 })?;
         // Full abort must be available while a write is held or after the
         // send half has closed. It still has one prepaid control owner; no

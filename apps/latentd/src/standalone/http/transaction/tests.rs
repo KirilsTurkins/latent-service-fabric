@@ -130,6 +130,37 @@ fn query_without_invocation_does_not_advertise_a_view() {
 }
 
 #[test]
+fn effect_lookup_exposes_only_bounded_delivery_state() {
+    let response = t::GetEffectResponse {
+        effect: Some(t::EffectReceipt {
+            effect_id: "a".repeat(64),
+            disposition: t::EffectDisposition::UncertainAfterDispatch as i32,
+            dispatch_attempt: 2,
+            provider_receipt: Some("private-provider-receipt".into()),
+            failure_code: Some("private-failure".into()),
+            ..Default::default()
+        }),
+    };
+    let (status, body) = project(response.into()).unwrap();
+    assert_eq!(
+        (status, body.disposition, body.representation),
+        (200, "effect", "effect-status")
+    );
+    let encoded = serde_json::to_string(&body).unwrap();
+    assert!(encoded.contains("uncertain"));
+    assert!(!encoded.contains("private-provider-receipt"));
+    assert!(!encoded.contains("private-failure"));
+    let invalid = t::GetEffectResponse {
+        effect: Some(t::EffectReceipt {
+            effect_id: "a".repeat(64),
+            disposition: 999,
+            ..Default::default()
+        }),
+    };
+    assert!(project(invalid.into()).is_err());
+}
+
+#[test]
 fn platform_failure_does_not_override_a_committed_command_disposition() {
     let response = t::InvokeCommandResponse {
         command: Some(t::CommandInspection {

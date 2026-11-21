@@ -64,9 +64,17 @@ The shared browser client uses the existing `transaction-http-v1` routes,
 `idempotency-key`, explicit abort-fence retry and minimum-view query headers.
 It makes no automatic mutation retry and retains the original request bytes
 and identity after response loss. Business rejection remains terminal until
-the user explicitly finishes that command. The client preserves all u64 bits,
+the user explicitly finishes that command. After a proven technical abort,
+the user may explicitly retry the original command or finish it without retry;
+missing or invalid abort proof permits neither action. The client preserves all u64 bits,
 limits response bytes and request time, refuses foreign origins and clears
 private observations when current authority refuses access.
+
+For effects returned with the original command, **Check effect status** performs
+an explicit read through the result route. Current `inspect-effect` permission
+and the original command/effect association are required; the browser does not
+receive provider receipts or poll automatically. Provider acknowledgement does
+not establish consumer processing.
 
 `angular/angular-build.json` uses the maintained `angular-ssr-component-v1`
 and `scoped-http-get-v1` profiles. The renderer prepares only the two fixed

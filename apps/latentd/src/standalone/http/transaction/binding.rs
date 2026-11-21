@@ -201,26 +201,23 @@ pub(in crate::standalone::http) fn recover(
         result_read_deadline(deadline.unix_millis(), deadline.monotonic(), sample)?;
     let context = latent_wire::invocation::AuthenticatedInvocationContext::new(principal)
         .with_transport_deadline_at(unix, expiry);
-    let request = t::LookupCommandRequest {
-        profile: Some(latent_rpc::phase4::current_profile()),
-        command: Some(t::CommandSelector {
-            namespace: Some(t::NamespaceSelector {
-                tenant: revision.target.tenant.0.clone(),
-                namespace: route.namespace().into(),
-                incarnation: route.incarnation().to_string(),
-            }),
-            operation: revision.target.function.0,
-            entity: route.entity().map(str::to_owned),
-            client_key: facts.client_key().ok_or(400u16)?.into(),
-            shared_recovery_scope: None,
+    let command = t::CommandSelector {
+        namespace: Some(t::NamespaceSelector {
+            tenant: revision.target.tenant.0.clone(),
+            namespace: route.namespace().into(),
+            incarnation: route.incarnation().to_string(),
         }),
-        attempt_id: None,
-        authorization_publication: Some(c::PublicationRef {
-            tenant: revision.target.tenant.0,
-            id: revision.publication.ok_or(403u16)?.as_str().into(),
-        }),
+        operation: revision.target.function.0,
+        entity: route.entity().map(str::to_owned),
+        client_key: facts.client_key().ok_or(400u16)?.into(),
+        shared_recovery_scope: None,
     };
-    let response = services.management.execute_state(context, request.into());
+    let authorization = c::PublicationRef {
+        tenant: revision.target.tenant.0,
+        id: revision.publication.ok_or(403u16)?.as_str().into(),
+    };
+    let request = recovery_request(command, authorization, facts.effect_id());
+    let response = services.management.execute_state(context, request);
     Ok(Box::pin(async move {
         let _installation = installation;
         let response = response.await.map_err(super::super::dispatch::status)?;
@@ -228,6 +225,30 @@ pub(in crate::standalone::http) fn recover(
         drop(lease);
         delivery
     }))
+}
+
+fn recovery_request(
+    command: t::CommandSelector,
+    authorization: c::PublicationRef,
+    effect_id: Option<&str>,
+) -> latent_rpc::phase4::Request {
+    if let Some(effect_id) = effect_id {
+        t::GetEffectRequest {
+            profile: Some(latent_rpc::phase4::current_profile()),
+            command: Some(command),
+            effect_id: effect_id.into(),
+            authorization_publication: Some(authorization),
+        }
+        .into()
+    } else {
+        t::LookupCommandRequest {
+            profile: Some(latent_rpc::phase4::current_profile()),
+            command: Some(command),
+            attempt_id: None,
+            authorization_publication: Some(authorization),
+        }
+        .into()
+    }
 }
 
 fn result_read_deadline(
@@ -259,6 +280,41 @@ fn denied() -> PlatformError {
 #[cfg(test)]
 mod result_deadline_tests {
     use super::*;
+
+    #[test]
+    fn effect_read_keeps_the_original_command_and_publication_scope() {
+        let command = t::CommandSelector {
+            namespace: Some(t::NamespaceSelector {
+                tenant: "tenant".into(),
+                namespace: "drafts".into(),
+                incarnation: "7".into(),
+            }),
+            operation: "edit".into(),
+            entity: Some("draft".into()),
+            client_key: "original".into(),
+            ..Default::default()
+        };
+        let publication = c::PublicationRef {
+            tenant: "tenant".into(),
+            id: "publication".into(),
+        };
+        let effect = "a".repeat(64);
+        let latent_rpc::phase4::Request::GetEffect(request) =
+            recovery_request(command.clone(), publication.clone(), Some(&effect))
+        else {
+            panic!("effect read required")
+        };
+        assert_eq!(request.command.as_ref(), Some(&command));
+        assert_eq!(
+            request.authorization_publication.as_ref(),
+            Some(&publication)
+        );
+        assert_eq!(request.effect_id, effect);
+        assert!(matches!(
+            recovery_request(command, publication, None),
+            latent_rpc::phase4::Request::LookupCommand(_)
+        ));
+    }
 
     #[test]
     fn retained_result_read_narrows_long_http_deadline_and_preserves_earlier_originals() {

@@ -48,6 +48,17 @@ mod triggers;
 #[cfg(feature = "development-outbound-streams")]
 pub use stream_control::StreamControlStatus;
 
+// A retirement can synchronously wake an arbitrary waiter. Preserve its first
+// panic for the caller, but visit the other existing node provider owners.
+// Dropping a later panic payload may itself panic and interrupt the walk.
+fn attempt_retirement(first: &mut Option<Box<dyn std::any::Any + Send>>, action: impl FnOnce()) {
+    if let Err(panic) = std::panic::catch_unwind(std::panic::AssertUnwindSafe(action)) {
+        if first.is_none() {
+            *first = Some(panic);
+        }
+    }
+}
+
 pub(in crate::standalone) struct ProviderRuntime {
     pub runtime: Arc<ActivationCapabilityRuntime>,
     pools: Arc<ProviderPools>,
@@ -598,37 +609,41 @@ impl ProviderRuntime {
     }
 
     pub fn retire(&self) {
-        self.runtime.retire();
+        let mut first_panic = None;
+        attempt_retirement(&mut first_panic, || self.runtime.retire());
         if let Some(driver) = &self.stream_driver {
-            driver.stop();
+            attempt_retirement(&mut first_panic, || driver.stop());
         }
         if let Some(streams) = &self.streams {
-            streams.retire();
+            attempt_retirement(&mut first_panic, || streams.retire());
         }
         for registration in &self.registrations {
-            registration.retire();
+            attempt_retirement(&mut first_panic, || registration.retire());
         }
-        self.pools.retire();
+        attempt_retirement(&mut first_panic, || self.pools.retire());
         if let Some(secrets) = &self.secrets {
-            secrets.close();
+            attempt_retirement(&mut first_panic, || secrets.close());
         }
         for secrets in &self.streaming_secrets {
-            secrets.close();
+            attempt_retirement(&mut first_panic, || secrets.close());
         }
         if let Some(secrets) = &self.guest_secrets {
-            secrets.close();
+            attempt_retirement(&mut first_panic, || secrets.close());
         }
         if let Some(secrets) = &self.event_secrets {
-            secrets.close();
+            attempt_retirement(&mut first_panic, || secrets.close());
         }
         if let Some(secrets) = &self.incoming_secrets {
-            secrets.close();
+            attempt_retirement(&mut first_panic, || secrets.close());
         }
         if let Some(metrics) = &self.metrics {
-            metrics.retire();
+            attempt_retirement(&mut first_panic, || metrics.retire());
         }
         if let Some(blobs) = &self.blobs {
-            blobs.close();
+            attempt_retirement(&mut first_panic, || blobs.close());
+        }
+        if let Some(panic) = first_panic {
+            std::panic::resume_unwind(panic);
         }
     }
 

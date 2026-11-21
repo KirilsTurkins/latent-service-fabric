@@ -1,19 +1,23 @@
 # Pinned value, table and Store allocation admission
 
-This is the complete crates.io Wasmtime 48.0.8 package, licensed under
+This is the complete crates.io Wasmtime 48.0.9 package, licensed under
 Apache-2.0 WITH LLVM-exception (see the unmodified LICENSE). The original
 archive checksum and all 250 original file identities are recorded in
 UPSTREAM.latent.json. `latent-dynamic-memory.patch` applies to that exact
 original package; it contains 39 changed upstream files and 24 added
-source/license files. Other Wasmtime packages use the matching 48.0.8 locked
+source/license files. Other Wasmtime packages use the matching 48.0.9 locked
 registry versions. The standalone development lock selects Tokio 1.51.6 for
 RUSTSEC-2026-0386; the immutable upstream inventory retains its original lock
-identity. This dependency-only lock correction changes no Wasmtime runtime source.
+identity. Both standalone development locks select env_logger 0.11.8 to replace its unmaintained humantime dependency with jiff. These dependency-only lock corrections change no Wasmtime runtime source.
 
-The 48.0.8 source includes upstream fixes for GHSA-3982-jqvv-277m,
+The 48.0.9 source includes upstream fixes for GHSA-3982-jqvv-277m,
 GHSA-qw58-7h65-crq2 and GHSA-6fr9-xmw9-5352. The owned v30
 bounded root suspension changes remain in this patch; hosted qualification is
 required for new native products. Earlier receipts remain historical.
+
+Upstream 48.0.9 addresses RUSTSEC-2026-0566 through RUSTSEC-2026-0573.
+Managed Stores use the registry directly for subtype checks, preserving their
+allocation budget while retaining the upstream subtype test semantics.
 
 The maintained extension is `component::DynamicValueMemory` and
 `Func::call_async_with_memory`. It admits actual allocation capacity in the

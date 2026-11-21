@@ -228,7 +228,7 @@ class CTimedRuntime(unittest.TestCase):
                 self.assertIsNone(legacy.threading_time_alias)
         source = (fixture.ROOT / 'tools/c_capsule_build.py').read_text()
         self.assertLess(source.index('compiler.select_threading_clock_inputs()'),
-                        source.index('materials = list(compiler.materials.values())'))
+                        source.index('materials = observed_compiler_materials(compiler, threaded=threaded)'))
         self.assertIn('c-timed-all-original-twenty-and-sixteen-timed-outcomes',
                       Path(qualification.__file__).read_text())
 

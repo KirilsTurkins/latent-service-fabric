@@ -149,6 +149,9 @@ export class RpcClient implements profile.ClientProfile, transactionClient.Trans
       encoded = encode(method(operation).input, request, maximumRequest, transactional);
       if (transactional) {
         const snapshot = decode(method(operation).input, encoded, maximumRequest, true);
+        // Validate the owned wire snapshot too: caller-controlled collections
+        // can change what they yield between validation and encoding.
+        transactions.validateRequest(operation, snapshot, this.#tenant);
         recovery = transactions.identity(operation, snapshot);
         context = transactions.context(operation, snapshot);
       } else {

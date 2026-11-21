@@ -1068,7 +1068,7 @@ func transactionIdentity(request any) tx.RecoveryIdentity {
 	}
 	value := reflect.ValueOf(original)
 	budget := graphBudget{bytes: 384 * 1024, nodes: 4096}
-	if transactionCollections(value, 0, "") != nil || budget.scan(value, 0) != nil {
+	if budget.scan(value, 0) != nil || transactionCollections(value, 0, "") != nil {
 		return tx.RecoveryIdentity{}
 	}
 	v := transactionValidator{}

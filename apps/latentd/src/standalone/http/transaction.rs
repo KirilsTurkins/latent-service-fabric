@@ -100,6 +100,14 @@ struct AbortFence {
 }
 #[derive(Serialize)]
 #[serde(rename_all = "kebab-case")]
+struct EffectStatus {
+    effect_id: String,
+    disposition: &'static str,
+    dispatch_attempt: u32,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "kebab-case")]
 struct Response {
     profile: &'static str,
     disposition: &'static str,
@@ -112,6 +120,8 @@ struct Response {
     result_expires_at: Option<String>,
     abort_fence: Option<AbortFence>,
     result: Option<ResultValue>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    effect: Option<EffectStatus>,
 }
 
 pub(super) fn complete(
@@ -202,8 +212,10 @@ fn project(response: phase4::Response) -> Result<(u16, Response), u16> {
         result_expires_at: None,
         abort_fence: None,
         result: None,
+        effect: None,
     };
     let (command, invocation, query) = match response {
+        phase4::Response::GetEffect(value) => return project_effect(body, *value),
         phase4::Response::InvokeCommand(value) => {
             body.disposition = "recovery-required";
             (value.command, value.invocation, false)
@@ -256,6 +268,43 @@ fn project(response: phase4::Response) -> Result<(u16, Response), u16> {
         body.representation = "application-result";
     }
     Ok((status, body))
+}
+
+fn project_effect(
+    mut body: Response,
+    response: t::GetEffectResponse,
+) -> Result<(u16, Response), u16> {
+    let effect = response.effect.ok_or(503u16)?;
+    if effect.effect_id.len() != 64
+        || !effect
+            .effect_id
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    {
+        return Err(502);
+    }
+    let disposition =
+        match t::EffectDisposition::try_from(effect.disposition).map_err(|_| 503u16)? {
+            t::EffectDisposition::Pending => "pending",
+            t::EffectDisposition::Dispatching => "dispatching",
+            t::EffectDisposition::ProviderAcknowledged => "provider-acknowledged",
+            t::EffectDisposition::KnownFailure => "known-failure",
+            t::EffectDisposition::UncertainAfterDispatch => "uncertain",
+            t::EffectDisposition::Expired => "expired",
+            t::EffectDisposition::PolicyBlocked => "policy-blocked",
+            t::EffectDisposition::AdministrativelyTerminated => "administratively-terminated",
+            t::EffectDisposition::RetryScheduled => "retry-scheduled",
+            t::EffectDisposition::DeadLettered => "dead-lettered",
+            t::EffectDisposition::Unspecified => return Err(503),
+        };
+    body.disposition = "effect";
+    body.representation = "effect-status";
+    body.effect = Some(EffectStatus {
+        effect_id: effect.effect_id,
+        disposition,
+        dispatch_attempt: effect.dispatch_attempt,
+    });
+    Ok((200, body))
 }
 
 fn project_command(body: &mut Response, command: t::CommandInspection) -> Result<u16, u16> {

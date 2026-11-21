@@ -6,6 +6,9 @@ export function installFetch(http, snapshotActive, target = globalThis, profile 
   const phaseTiming = profile === 'lsf-fetch-phase-buffered-v2';
   const maxBody = 1024 * 1024, maxHeaders = 64, maxHeaderBytes = 32768;
   const encoder = new target.TextEncoder(), decoder = new target.TextDecoder();
+  const apply = Reflect.apply, ownKeys = Reflect.ownKeys, ownDescriptor = Object.getOwnPropertyDescriptor;
+  const setPrototype = Object.setPrototypeOf, sliceString = String.prototype.slice, toString = String;
+  const encode = encoder.encode, decode = decoder.decode;
   const SearchParams = target.URLSearchParams;
   const serializeParams = typeof SearchParams === 'function' ? SearchParams.prototype.toString : null;
   const unsupported = member => new TypeError(profile + ':unsupported:' + member);
@@ -49,6 +52,36 @@ export function installFetch(http, snapshotActive, target = globalThis, profile 
     if (/[^\t\x20-\x7e\x80-\xff]/.test(result)) throw new TypeError('invalid-header-value');
     return result;
   }
+  function byteString(value, message) {
+    if (typeof value === 'symbol') throw new TypeError(message);
+    const result = typeof value === 'string' ? value : toString(value);
+    for (let i = 0; i < result.length; i++) if (result[i] > '\xff') throw new TypeError(message);
+    return result;
+  }
+  function statusTextValue(result) {
+    // Reason-phrase validation follows dictionary conversion and status range
+    // checking; leading and trailing whitespace remains significant.
+    if (/[^\t\x20-\x7e\x80-\xff]/.test(result)) throw new TypeError('invalid-status-text');
+    return result;
+  }
+  class HeadersIterator {
+    #entries;
+    #index = 0;
+    #kind;
+    constructor(entries, kind) { this.#entries = entries; this.#kind = kind; }
+    next() {
+      // Re-read the bounded list for each step. Mutations between calls must
+      // affect the same sorted position as ordinary Fetch Headers.
+      const entries = this.#entries();
+      if (this.#index >= entries.length) return {value: undefined, done: true};
+      const entry = entries[this.#index++];
+      return {value: this.#kind === 'keys' ? entry[0] : this.#kind === 'values' ? entry[1] : entry, done: false};
+    }
+  }
+  // Preserve the realm's ordinary iterator prototype and helpers. A plain
+  // generator would stay closed after done, hiding later appended headers.
+  Object.setPrototypeOf(HeadersIterator.prototype, Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]())));
+  Object.defineProperty(HeadersIterator.prototype, Symbol.toStringTag, {value: 'Headers Iterator', configurable: true});
   class Headers {
     #entries = new Map();
     constructor(init = undefined) {
@@ -94,12 +127,117 @@ export function installFetch(http, snapshotActive, target = globalThis, profile 
       if (immutableHeaders.has(this)) throw new TypeError('immutable-response-headers');
       this.#entries.delete(name(key));
     }
-    *entries() { yield* [...this.#entries].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0); }
-    *keys() { for (const [key] of this.entries()) yield key; }
-    *values() { for (const [, value] of this.entries()) yield value; }
-    [Symbol.iterator]() { return this.entries(); }
-    forEach(callback, thisArg) { for (const [key, value] of this.entries()) callback.call(thisArg, value, key, this); }
+    #iterator(kind) {
+      const owner = this;
+      return new HeadersIterator(() => [...owner.#entries].sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0), kind);
+    }
+    entries() { return this.#iterator('entries'); }
+    keys() { return this.#iterator('keys'); }
+    values() { return this.#iterator('values'); }
+    [Symbol.iterator]() { return this.#iterator('entries'); }
+    forEach(callback, thisArg) {
+      if (typeof callback !== 'function') throw new TypeError('invalid-headers-callback');
+      for (const [key, value] of this.#iterator('entries')) callback.call(thisArg, value, key, this);
+    }
     getSetCookie() { throw unsupported('Headers.getSetCookie'); }
+  }
+  const appendCapturedHeader = Headers.prototype.append;
+  const jsonResponseInit = Symbol('internal-response-json');
+  function internalList() { return setPrototype([], null); }
+  function iteratorRecord(source, method) {
+    const iterator = apply(method, source, []);
+    if (iterator === null || typeof iterator !== 'object' && typeof iterator !== 'function')
+      throw new TypeError('invalid-header-sequence');
+    return {iterator, next: iterator.next};
+  }
+  function iteratorStep(record) {
+    const result = apply(record.next, record.iterator, []);
+    if (result === null || typeof result !== 'object' && typeof result !== 'function')
+      throw new TypeError('invalid-header-sequence');
+    return result;
+  }
+  function captureHeadersInit(input) {
+    if (input === null || typeof input !== 'object' && typeof input !== 'function')
+      throw new TypeError('invalid-header-init');
+    // A valid final header list has at most 64 names and 32 KiB, including
+    // two separator bytes per duplicate. Count repeated names as well while
+    // retaining a bounded converted snapshot before syntax validation.
+    const maxPairs = maxHeaders + Math.floor(maxHeaderBytes / 2);
+    const maxCaptured = maxHeaderBytes + Math.floor(maxHeaderBytes / 2) * 64;
+    const fields = internalList();
+    let captured = 0;
+    function capture(value, trim) {
+      const raw = byteString(value, 'invalid-header-init');
+      let start = 0, end = raw.length;
+      if (trim) {
+        while (start < end && (raw[start] === ' ' || raw[start] === '\t')) start++;
+        while (end > start && (raw[end - 1] === ' ' || raw[end - 1] === '\t')) end--;
+      }
+      captured += end - start;
+      if (captured > maxCaptured) throw new RangeError('fetch-header-conversion-limit');
+      if (start === end) return '';
+      const selected = start === 0 && end === raw.length ? raw : apply(sliceString, raw, [start, end]);
+      // Produce a fresh bounded value; no physical engine-retirement claim is
+      // implied by the temporary source string or its implementation backing.
+      return apply(decode, decoder, [apply(encode, encoder, [selected])]);
+    }
+    const iterator = input[Symbol.iterator];
+    if (iterator != null) {
+      if (typeof iterator !== 'function') throw new TypeError('invalid-header-sequence');
+      // Web IDL's sequence conversion does not call IteratorClose when an
+      // element conversion fails. Cache each iterator's original next method.
+      const outer = iteratorRecord(input, iterator);
+      for (;;) {
+        const step = iteratorStep(outer);
+        if (step.done) break;
+        const entry = step.value;
+        if (fields.length >= maxHeaders || entry === null || typeof entry !== 'object' && typeof entry !== 'function')
+          throw new TypeError('invalid-header-sequence');
+        const pairIterator = entry[Symbol.iterator];
+        if (typeof pairIterator !== 'function') throw new TypeError('invalid-header-sequence');
+        const pair = internalList();
+        const inner = iteratorRecord(entry, pairIterator);
+        let length = 0;
+        for (;;) {
+          const item = iteratorStep(inner);
+          if (item.done) break;
+          const value = item.value;
+          // Accepted pairs have exactly two entries. Longer malformed inputs
+          // are converted only to this explicit finite bound before refusal.
+          if (length >= maxHeaders) throw new TypeError('invalid-header-sequence');
+          if (length < 2) pair[length] = capture(value, length === 1);
+          else byteString(value, 'invalid-header-init');
+          length++;
+        }
+        fields[fields.length] = {pair, length};
+      }
+    } else {
+      // Web IDL examines each current own descriptor, including enumerable
+      // Symbol keys, in the original OwnPropertyKeys order.
+      const keys = ownKeys(input);
+      for (let i = 0; i < keys.length; i++) {
+        const key = keys[i], descriptor = ownDescriptor(input, key);
+        if (descriptor === undefined || !descriptor.enumerable) continue;
+        if (fields.length >= maxPairs) throw new RangeError('fetch-header-conversion-limit');
+        const pair = internalList();
+        pair[0] = capture(key, false);
+        pair[1] = capture(input[key], true);
+        fields[fields.length] = {pair, length: 2};
+      }
+    }
+    return fields;
+  }
+  function responseInit(init) {
+    if (init == null) init = {};
+    if (typeof init !== 'object' && typeof init !== 'function') throw new TypeError('invalid-response-init');
+    const sourceHeaders = init.headers;
+    const headers = sourceHeaders === undefined ? null : captureHeadersInit(sourceHeaders);
+    const statusValue = init.status;
+    const numeric = statusValue === undefined ? 200 : +statusValue;
+    const status = Number.isFinite(numeric) ? ((Math.trunc(numeric) % 65536) + 65536) % 65536 : 0;
+    const text = init.statusText;
+    const statusText = text === undefined ? '' : byteString(text, 'invalid-status-text');
+    return {headers, status, statusText};
   }
   function bodyRecord(owner, content) { records.set(owner, {content, used: false, stream: null, controller: null}); }
   function unread(record) {
@@ -240,15 +378,26 @@ export function installFetch(http, snapshotActive, target = globalThis, profile 
     }
   }
   class Response extends Body {
-    constructor(body = null, init = {}) {
+    constructor(body = null, init = {}, internal = undefined) {
       super();
-      const status = init.status === undefined ? 200 : Number(init.status);
-      if (!Number.isInteger(status) || status < 200 || status > 599) throw new RangeError('invalid-response-status');
-      const {content, type} = extractBody(body);
+      const options = internal === jsonResponseInit ? init : responseInit(init);
+      let {content, type} = extractBody(body);
+      if (internal === jsonResponseInit) type = 'application/json';
+      const {status} = options;
+      if (status < 200 || status > 599) throw new RangeError('invalid-response-status');
+      const statusText = statusTextValue(options.statusText);
+      const headers = new Headers();
+      if (options.headers !== null) {
+        for (let i = 0; i < options.headers.length; i++) {
+          const entry = options.headers[i];
+          if (entry.length !== 2) throw new TypeError('invalid-header-sequence');
+          apply(appendCapturedHeader, headers, entry.pair);
+        }
+      }
       if ([204, 205, 304].includes(status) && content !== null) throw new TypeError('body-for-null-body-status');
       this.status = status;
-      this.statusText = init.statusText === undefined ? '' : headerValue(init.statusText);
-      this.headers = new Headers(init.headers);
+      this.statusText = statusText;
+      this.headers = headers;
       if (type !== null && !this.headers.has('content-type')) this.headers.set('content-type', type);
       this.url = '';
       this.redirected = false;
@@ -270,11 +419,10 @@ export function installFetch(http, snapshotActive, target = globalThis, profile 
       return result;
     }
     static json(value, init = {}) {
+      const options = responseInit(init);
       const body = JSON.stringify(value);
       if (body === undefined) throw new TypeError('value-not-json-serializable');
-      const headers = new Headers(init.headers);
-      if (!headers.has('content-type')) headers.set('content-type', 'application/json');
-      return new Response(body, {...init, headers});
+      return new Response(body, options, jsonResponseInit);
     }
     static error() {
       const result = new Response();
@@ -377,8 +525,12 @@ export function installFetch(http, snapshotActive, target = globalThis, profile 
         for (const part of parts) { contentBytes.set(part, offset); offset += part.byteLength; }
         const headers = new Headers(received.headers.map(({name, value}) => [name, value]));
         if (received.bodyMediaType && !headers.has('content-type')) headers.set('content-type', received.bodyMediaType);
-        const result = new Response(request.method === 'HEAD' || [204, 205, 304].includes(received.status) ? null : contentBytes,
-          {status: received.status, headers});
+        // WIT supplies a u16. Never apply public ResponseInit coercion to a
+        // malformed provider result or fabricate a different wire status.
+        const status = received.status;
+        if (!Number.isInteger(status) || status < 200 || status > 599) throw new RangeError('invalid-response-status');
+        const result = new Response(request.method === 'HEAD' || [204, 205, 304].includes(status) ? null : contentBytes,
+          {status, headers});
         readonly(result, {url: request.url, type: 'basic'});
         if (phaseTiming && received.reasonPhrase !== undefined) {
           readonly(result, {statusText: wireReason(received.reasonPhrase)});

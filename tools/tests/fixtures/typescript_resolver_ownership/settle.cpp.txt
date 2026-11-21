@@ -1,0 +1,22 @@
+// Pinned Firefox 9dab3d6f643e926a340c391ea30968e940390dec, MPL-2.0.
+static void SetAlreadyResolvedResolutionFunction(JSFunction* resolutionFun) {
+  JSFunction* resolve;
+  JSFunction* reject;
+  if (resolutionFun->maybeNative() == ResolvePromiseFunction) {
+    resolve = resolutionFun;
+    reject = GetRejectFunctionFromResolve(resolutionFun);
+  } else {
+    resolve = GetResolveFunctionFromReject(resolutionFun);
+    reject = resolutionFun;
+  }
+
+  resolve->setExtendedSlot(ResolveFunctionSlot_Promise, UndefinedValue());
+  resolve->setExtendedSlot(ResolveFunctionSlot_RejectFunction,
+                           UndefinedValue());
+
+  reject->setExtendedSlot(RejectFunctionSlot_Promise, UndefinedValue());
+  reject->setExtendedSlot(RejectFunctionSlot_ResolveFunction, UndefinedValue());
+
+  MOZ_ASSERT(IsAlreadyResolvedResolveFunction(resolve));
+  MOZ_ASSERT(IsAlreadyResolvedRejectFunction(reject));
+}
