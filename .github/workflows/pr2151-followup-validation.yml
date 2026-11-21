@@ -1,0 +1,164 @@
+name: PR 2151 bounded observer and compiler acquisition validation
+on:
+  push:
+    branches: [diag/pr2151-native-pressure-20261121]
+    paths: [.github/workflows/pr2151-followup-validation.yml]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: true
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: true
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: true
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: true
+      PYTHONDONTWRITEBYTECODE: 1
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: f881e760dfb527e341b2b43b60d99f217ad2d8ae
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          components: rustfmt
+      - uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334
+        with:
+          cache-bin: false
+          cache-targets: true
+          cache-workspace-crates: false
+          key: ubuntu-24.04
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+      - name: Authenticate five-file patch and retain the exact formatted test inputs
+        run: |
+          python3 - <<'PY'
+          import base64,gzip,hashlib,json,os,pathlib,subprocess,tomllib
+          patch=gzip.decompress(base64.b64decode('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'.replace('AK9WRP/2He/n3EP','AK9WRP/2He/n1EP'),validate=True))
+          assert len(patch)==16364 and hashlib.sha256(patch).hexdigest()=='1a575cda7ccacfa0308a49b7debed62e17ca5a148506a167fa0b39812e9a9469'
+          rows=[
+            ['crates/latent-streams/src/tests/lifecycle.rs','665bd6698518f06bf3993e5b9b0a2f8ab9d28729','0c23e3d24412980076134724654e0e5720c34484'],
+            ['crates/latent-streams/src/tests/fixture.rs','963442ce9ee52d8b2cd13cd0a08cdacb0dff41ea','11083d148a86a9b93198c7e606d85a44dff5def6'],
+            ['crates/latent-streams/src/tests/sockets.rs','c0968c99e03cc1076788409dc516cb28c374201e','379b5945ef4588d32c88d7312e1da9d9d849eb40'],
+            ['tools/java_standard_http_library.py','b3873add36535afdfeb9b92a038a25fae0d64edd','d6d59e6f1f87db14c70367e181796a82d429a971'],
+            ['tools/tests/test_java_compiler_acquisition.py','b100909805e93eecb9a4c2bec0cf8d468d35b354','cdc29fd6469ea8e137063247d522b7d0326f7e71']]
+          def blob(b):return hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+          assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()=='f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          for name,before,_ in rows:assert blob(pathlib.Path(name).read_bytes())==before,name
+          subprocess.run(['git','apply','--check','-'],input=patch,check=True)
+          subprocess.run(['git','apply','-'],input=patch,check=True)
+          for name,_,after in rows:assert blob(pathlib.Path(name).read_bytes())==after,name
+          assert tomllib.loads(pathlib.Path('Cargo.toml').read_text())['workspace']['package']['edition']=='2021'
+          subprocess.run(['rustfmt','--edition','2021',*[r[0] for r in rows[:3]]],check=True)
+          subprocess.run(['git','diff','--check'],check=True)
+          assert set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())=={r[0] for r in rows}
+          output=pathlib.Path(os.environ['RUNNER_TEMP'])/'followup-postimages'
+          observed=[]
+          for name,before,patched in rows:
+              raw=pathlib.Path(name).read_bytes()
+              dest=output/name;dest.parent.mkdir(parents=True,exist_ok=True);dest.write_bytes(raw)
+              observed.append({'path':name,'before':before,'patched':patched,'after':blob(raw),'sha256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw)})
+          receipt={'source':'f881e760dfb527e341b2b43b60d99f217ad2d8ae','patchSha256':hashlib.sha256(patch).hexdigest(),'files':observed}
+          (output/'manifest.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          print(json.dumps(receipt))
+          PY
+      - name: Run complete native provider suite and repeat both original failure cases
+        run: |
+          set -euo pipefail
+          cargo test --locked --all-features -p latent-streams --lib -- --test-threads=1 2>&1 | tee "$RUNNER_TEMP/followup-native.log"
+          for attempt in 1 2 3 4 5; do
+            cargo test --locked --all-features -p latent-streams --lib tests::lifecycle::last_output_copy_keeps_original_connection_charge_during_retirement -- --exact --nocapture 2>&1 | tee -a "$RUNNER_TEMP/followup-repeated.log"
+            cargo test --locked --all-features -p latent-streams --lib tests::sockets::connect_cancellation_before_registration_refuses_handoff -- --exact --nocapture 2>&1 | tee -a "$RUNNER_TEMP/followup-repeated.log"
+          done
+      - name: Require acquisition boundaries and complete SDK controls under the pinned JDK
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_java_compiler_acquisition tools.tests.test_java_dependency_suite tools.tests.test_java_resource_runtime tools.tests.test_java_standard_http_ownership tools.tests.test_java_teavm_failure_trace -v 2>&1 | tee "$RUNNER_TEMP/followup-acquisition.log"
+          python3 -B -m unittest discover -s sdk/java-guest/tests -v 2>&1 | tee "$RUNNER_TEMP/followup-sdk.log"
+          python3 -B tools/validate_repository.py 2>&1 | tee "$RUNNER_TEMP/followup-repository.log"
+      - name: Require the tested source to equal every retained postimage
+        run: |
+          python3 - <<'PY'
+          import json,os,pathlib,subprocess
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])/'followup-postimages'
+          rows=json.loads((root/'manifest.json').read_text())['files']
+          for row in rows:assert pathlib.Path(row['path']).read_bytes()==(root/row['path']).read_bytes(),row['path']
+          assert set(subprocess.check_output(['git','diff','--name-only'],text=True).splitlines())=={r['path'] for r in rows}
+          subprocess.run(['git','diff','--check'],check=True)
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: followup-postimages
+          path: ${{ runner.temp }}/followup-postimages
+          if-no-files-found: error
+          retention-days: 3
+      - if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: followup-validation-logs
+          path: ${{ runner.temp }}/followup-*.log
+          if-no-files-found: warn
+          retention-days: 3
+  blobs:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          name: followup-postimages
+          path: postimages
+          digest-mismatch: error
+      - name: Publish only the five validated blobs without moving any ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64,hashlib,json,os,pathlib,urllib.request
+          expected={
+            'crates/latent-streams/src/tests/lifecycle.rs':'665bd6698518f06bf3993e5b9b0a2f8ab9d28729',
+            'crates/latent-streams/src/tests/fixture.rs':'963442ce9ee52d8b2cd13cd0a08cdacb0dff41ea',
+            'crates/latent-streams/src/tests/sockets.rs':'c0968c99e03cc1076788409dc516cb28c374201e',
+            'tools/java_standard_http_library.py':'b3873add36535afdfeb9b92a038a25fae0d64edd',
+            'tools/tests/test_java_compiler_acquisition.py':'b100909805e93eecb9a4c2bec0cf8d468d35b354'}
+          root=pathlib.Path('postimages');receipt=json.loads((root/'manifest.json').read_text());rows=receipt['files']
+          assert receipt['source']=='f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          assert receipt['patchSha256']=='1a575cda7ccacfa0308a49b7debed62e17ca5a148506a167fa0b39812e9a9469'
+          assert len(rows)==5 and {r['path']:r['before'] for r in rows}==expected
+          material={}
+          for row in rows:
+              p=root/row['path'];assert p.is_file() and not p.is_symlink()
+              raw=p.read_bytes();assert len(raw)==row['bytes'] and len(raw)<100000
+              sha=hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()
+              assert sha==row['after'] and hashlib.sha256(raw).hexdigest()==row['sha256']
+              material[row['path']]=(raw,sha)
+          observed=[]
+          for name,(raw,sha) in material.items():
+              request=urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs',data=json.dumps({'content':base64.b64encode(raw).decode(),'encoding':'base64'}).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'},method='POST')
+              with urllib.request.urlopen(request,timeout=30) as response:result=json.load(response)
+              assert result['sha']==sha;observed.append({'path':name,'sha':sha})
+          pathlib.Path('published-blobs.json').write_text(json.dumps({'source':receipt['source'],'blobs':observed,'refsMoved':False},indent=2)+'\n')
+          print(json.dumps(observed))
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: followup-published-blobs
+          path: published-blobs.json
+          if-no-files-found: error
+          retention-days: 3
