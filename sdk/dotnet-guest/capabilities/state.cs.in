@@ -62,8 +62,12 @@ public static class State
         public Result<Raw.Entry?, Raw.StateError> Next() => view.Guard(() => owner.Borrow(Raw.PageNext));
         public void Dispose() {
             if (closed) return;
-            try { owner.Dispose(); }
-            finally { closed = true; view.PageClosed(); }
+            // A failed destructor consumes the page without proving release.
+            // Preflight ownership so later attempts keep the parent fenced.
+            owner.Borrow(_ => true);
+            owner.Dispose();
+            closed = true;
+            view.PageClosed();
         }
     }
 
