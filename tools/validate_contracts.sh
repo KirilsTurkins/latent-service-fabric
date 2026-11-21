@@ -88,6 +88,13 @@ case "${VALIDATION_LANE}" in
 esac
 
 case "${VALIDATION_LANE}" in
+  all|runtime)
+    # --all-features selects the mutually exclusive Go allocator, not this witness.
+    bash tools/run_stack_custody_witness.sh "${OUTPUT}/native-stack-custody"
+    ;;
+esac
+
+case "${VALIDATION_LANE}" in
   all|runtime|standalone|sdk-provider|measurements)
     python3 tools/reset_validation_echo.py --target-root "${TARGET_ROOT}"
     python3 tools/build_provenance.py --verify-reproducible \
