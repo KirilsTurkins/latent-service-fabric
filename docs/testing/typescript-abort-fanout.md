@@ -37,6 +37,10 @@ Retirement performs no host call. The existing safe checkpoint acknowledges the
 original token; a refused acknowledgement retains custody and fences admission.
 No GC completion is fabricated for an ordinary GC-owned graph.
 
+The [rooted EventTarget pressure preflight](typescript-event-native-pressure.md)
+reclaims only physically retired owners before listener staging. Low-level
+native admission remains non-collecting, and the 64-owner ceiling is unchanged.
+
 ## Reentrancy and failures
 
 The pinned StarlingMonkey default DOMException factory looks up the constructor

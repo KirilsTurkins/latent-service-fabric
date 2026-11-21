@@ -12,6 +12,10 @@ using NativeObjectRecords = NativeRetirement<NativeOwner>;
 using NativeObjectLease = NativeLease<NativeObjectRecords>;
 using NativeObjectFrameLease = NativeFrameLease<NativeObjectRecords>;
 
+// May collect and acknowledge physically retired owners. Call only while all
+// JS inputs are rooted and before creating untraced captures or native cursors.
+// Admission below deliberately remains non-collecting for staged graph callers.
+bool prepare_native_object_allocation(JSContext*);
 bool admit_native_object(JSContext*, NativeObjectLease&);
 
 template<class T> using NativeContainer = OwnedNativeContainer<NativeObjectRecords,T>;

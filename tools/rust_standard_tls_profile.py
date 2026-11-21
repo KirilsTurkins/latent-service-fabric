@@ -22,8 +22,8 @@ ORIGINALS = {
     'std/src/rt.rs': 'f435576c645fb30eaca560e819c2a113b556452d79c0303f49ffd4487018c01f',
 }
 PINS = {
-    'wasmtime': ('48.0.8', 'a2afcadb2e7d0417cb8f3f322c66eff49338b288f22290c0ca0bd3e9570732aa'),
-    'wasmtime-environ': ('48.0.8', '2de252f4aedfff6c2054ea5bea2454878a931c56e2553c6356b581e5e30a7e4e'),
+    'wasmtime': ('48.0.9', '71cab574d3d3805d7ee7a791d4172fabab13fdee199101d51abc9c1c0d634018'),
+    'wasmtime-environ': ('48.0.9', 'c2de96dabe6eb1af4d667c097714b54b8299d8e7203f2a04cccaadb636224cec'),
     'wit-bindgen': ('0.63.0', 'b85a987ab61d365382d25c7d47e26edd48941b3bf6e3fbf76eff918bc71dab06'),
 }
 FORK_RECIPE = ('tools/host_codec_wasmtime.py',
