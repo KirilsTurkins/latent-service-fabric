@@ -1,0 +1,103 @@
+name: PR 2151 exact-head pressure validation
+on:
+  push:
+    branches: [diag/pr2151-native-pressure-20261121]
+    paths: [.github/workflows/pr2151-native-pressure-head-validation.yml]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: 866b886b67248998783693f50011d3ebb85d36a0
+          path: controls
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: fb0feebc63b302c63c0e37791da735ca476607c8
+          path: source
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - name: Run the immutable validation script against the exact PR-head documentation
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement source/tools/requirements.lock
+          python3 - <<'PY'
+          import pathlib, subprocess, yaml
+          control=pathlib.Path('controls/.github/workflows/pr2151-native-pressure-validation.yml')
+          doc=yaml.safe_load(control.read_text())
+          steps=doc['jobs']['validate']['steps']
+          apply=next(s['run'] for s in steps if s.get('name')=='Apply only the authenticated six-file repair')
+          # The other five preimages already matched the PR head. Preserve the
+          # unchanged authenticated patch and use its exact head-based README.
+          replacements={'359944fc26b9f388e4a3bf99605ac73d869ef3e3':'bab3d4b499c757f638301f2899d9fb9659b5c7e6',
+                        '68d59950a0e09541556e862309fef5dee188c080':'22d87de5fa630ae1816aaa0d1dc3b1a428f8a0ab'}
+          for old,new in replacements.items():
+              assert apply.count(old)==1
+              apply=apply.replace(old,new)
+          subprocess.run(['bash','-e','-o','pipefail','-c',apply],cwd='source',check=True)
+          names=['Run original source ownership and finite collector controls',
+                 'Run finite native graph controls with address and undefined-behavior sanitizers']
+          for name in names:
+              script=next(s['run'] for s in steps if s.get('name')==name)
+              subprocess.run(['bash','-e','-o','pipefail','-c',script],cwd='source',check=True)
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pressure-postimages
+          path: ${{ runner.temp }}/pressure-postimages
+          if-no-files-found: error
+          retention-days: 3
+      - if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pressure-validation-logs
+          path: ${{ runner.temp }}/pressure-*.log
+          if-no-files-found: warn
+          retention-days: 3
+  blobs:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: 866b886b67248998783693f50011d3ebb85d36a0
+          path: controls
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - run: python3 -m pip install PyYAML==6.0.3
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          name: pressure-postimages
+          path: postimages
+          digest-mismatch: error
+      - name: Publish only the exact validated blobs and no branch reference
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import pathlib, subprocess, yaml
+          doc=yaml.safe_load(pathlib.Path('controls/.github/workflows/pr2151-native-pressure-validation.yml').read_text())
+          script=next(s['run'] for s in doc['jobs']['blobs']['steps'] if s.get('name')=='Publish only validated Git blobs without moving any ref')
+          old='68d59950a0e09541556e862309fef5dee188c080'
+          assert script.count(old)==1
+          script=script.replace(old,'22d87de5fa630ae1816aaa0d1dc3b1a428f8a0ab')
+          subprocess.run(['bash','-e','-o','pipefail','-c',script],check=True)
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pressure-published-blobs
+          path: published-blobs.json
+          if-no-files-found: error
+          retention-days: 3
