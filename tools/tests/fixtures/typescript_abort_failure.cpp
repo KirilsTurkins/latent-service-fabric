@@ -37,6 +37,8 @@ struct State {
   bool fail_reserve = false, refuse_ack = false;
   bool premature_release = false, unowned = false, early_publication = false;
   int pending_entries = 0, active_roots = 0;
+  unsigned preparations = 0;
+  bool refuse_prepare = false;
   bool invalid_root_order = false;
   size_t limit = 64, admitted = 0, live = 0, peak = 0, acknowledged = 0;
   size_t reserve_attempts = 0, live_backings = 0;
@@ -67,6 +69,13 @@ static bool checkpoint(JSContext* cx) {
   });
 }
 namespace lsf::typescript::activation {
+// Finite preflight double; real collection/acknowledgement bodies are exercised
+// separately in typescript_native_object_pressure.cpp. No GC is invented here.
+bool prepare_native_object_allocation(JSContext* cx) {
+  ++state.preparations;
+  if (state.refuse_prepare || records.stopped()) { error(cx, 808, 8080); return false; }
+  return checkpoint(cx);
+}
 bool admit_native_object(JSContext* cx, NativeObjectLease& lease) {
   if (records.stopped()) { error(cx, 505, 5050); return false; }
   if (!checkpoint(cx)) return false;
@@ -336,6 +345,27 @@ static bool fanout_case(const char* name) {
     if (!checkpoint(context)) return false;
     return true;
   };
+  if (is("fanout-pressure-refusal")) {
+    state.refuse_prepare = true;
+    const bool ok = AbortSignal::abort(&cx, &graph.root, 0);
+    return !ok && cx.pending == 808 && cx.stack == 8080 && graph.unchanged() &&
+        state.preparations == 1 && !state.default_reasons && !state.reserve_attempts &&
+        !state.admitted && !state.dispatches && !state.destroyed;
+  }
+  if (is("fanout-entry-exception")) {
+    error(&cx, 909, 9090);
+    const bool ok = AbortSignal::abort(&cx, &graph.root, 0);
+    return !ok && cx.pending == 909 && cx.stack == 9090 && graph.unchanged() &&
+        !state.preparations && !state.default_reasons && !state.admitted && !state.dispatches;
+  }
+  if (is("fanout-aborted-no-preflight")) {
+    graph.root.aborted = true;
+    graph.root.reason = 93;
+    state.refuse_prepare = true;
+    return AbortSignal::abort(&cx, &graph.root, 0) && !cx.pending &&
+        graph.root.reason == 93 && !state.preparations && !state.default_reasons &&
+        !state.reserve_attempts && !state.admitted && !state.dispatches;
+  }
   if (is("fanout-refusal")) state.limit = 0;
   if (is("fanout-reserve-failure") || is("fanout-recovery")) state.fail_reserve = true;
   if (is("fanout-all-aborted")) {
