@@ -24,7 +24,7 @@ class CapturedClientCompilerCache(unittest.TestCase):
             root = Path(directory)
             selected = self.cache(root/'existing')
             output = root/'output'; output.mkdir()
-            with patch.object(gate, 'Compiler') as compiler, patch.object(gate, 'create') as creator:
+            with patch.object(gate, 'AcquisitionCompiler') as compiler, patch.object(gate, 'create') as creator:
                 actual = gate.compiler_cache(SimpleNamespace(deadline=time.monotonic()+10), root/'wasi', output, selected)
             self.assertEqual(actual, selected.resolve())
             compiler.assert_not_called(); creator.assert_not_called()
@@ -37,12 +37,15 @@ class CapturedClientCompilerCache(unittest.TestCase):
             root = Path(directory)
             compiler = Mock(directory=root/'compiler-acquisition')
             compiler.compile.side_effect = lambda *_args: self.cache(compiler.directory)
-            with patch.object(gate, 'Compiler', return_value=compiler) as owner, \
+            deadline = time.monotonic()+10
+            with patch.object(gate, 'AcquisitionCompiler', return_value=compiler) as owner, \
                     patch.object(gate, 'create', return_value=root/'compiler-source'):
-                actual = gate.compiler_cache(SimpleNamespace(deadline=time.monotonic()+10), root/'wasi', root, None)
+                actual = gate.compiler_cache(SimpleNamespace(deadline=deadline), root/'wasi', root, None)
             self.assertEqual(actual, compiler.directory/'gradle-home/caches/modules-2')
             self.assertGreater(owner.call_args.kwargs['timeout'], 0)
             self.assertLessEqual(owner.call_args.kwargs['timeout'], 10)
+            self.assertEqual(owner.call_args.kwargs['_deadline'], deadline)
+            self.assertEqual([call[0] for call in compiler.method_calls], ['compile', 'check_unchanged'])
             compiler.check_unchanged.assert_called_once_with()
             record = json.loads((root/'compiler-cache-selection.json').read_bytes())
             self.assertEqual(record['mode'], 'maintained-source-compiler-acquisition')
@@ -53,17 +56,32 @@ class CapturedClientCompilerCache(unittest.TestCase):
             root = Path(directory)
             compiler = Mock(directory=root/'compiler-acquisition')
             compiler.compile.side_effect = ValueError('registry-acquisition-failed')
-            with patch.object(gate, 'Compiler', return_value=compiler), \
+            with patch.object(gate, 'AcquisitionCompiler', return_value=compiler), \
                     patch.object(gate, 'create', return_value=root/'compiler-source'):
                 with self.assertRaisesRegex(ValueError, 'registry-acquisition-failed'):
                     gate.compiler_cache(SimpleNamespace(deadline=time.monotonic()+10), root/'wasi', root, None)
             self.assertFalse((root/'compiler-cache-selection.json').exists())
             compiler.check_unchanged.assert_not_called()
 
+    def test_changed_acquisition_cannot_emit_a_selected_cache_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            compiler = Mock(directory=root/'compiler-acquisition')
+            compiler.compile.side_effect = lambda *_args: self.cache(compiler.directory)
+            compiler.check_unchanged.side_effect = ValueError('compiler-inputs-changed')
+            with patch.object(gate, 'AcquisitionCompiler', return_value=compiler), \
+                    patch.object(gate, 'create', return_value=root/'compiler-source'), \
+                    patch.object(gate, 'read_only_dependency_cache') as select:
+                with self.assertRaisesRegex(ValueError, 'compiler-inputs-changed'):
+                    gate.compiler_cache(SimpleNamespace(deadline=time.monotonic()+10), root/'wasi', root, None)
+            self.assertEqual([call[0] for call in compiler.method_calls], ['compile', 'check_unchanged'])
+            select.assert_not_called()
+            self.assertFalse((root/'compiler-cache-selection.json').exists())
+
     def test_original_deadline_expiry_precedes_output_or_registry_access(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            with patch.object(gate, 'Compiler') as compiler, patch.object(gate, 'create') as creator:
+            with patch.object(gate, 'AcquisitionCompiler') as compiler, patch.object(gate, 'create') as creator:
                 with self.assertRaisesRegex(ValueError, 'original-deadline-expired'):
                     gate.compiler_cache(SimpleNamespace(deadline=time.monotonic()-1), root/'wasi', root, None)
             compiler.assert_not_called(); creator.assert_not_called()
@@ -73,7 +91,7 @@ class CapturedClientCompilerCache(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             selected = root/'modules-2'; selected.mkdir()
-            with patch.object(gate, 'Compiler') as compiler, patch.object(gate, 'create') as creator:
+            with patch.object(gate, 'AcquisitionCompiler') as compiler, patch.object(gate, 'create') as creator:
                 with self.assertRaisesRegex(ValueError, 'incomplete pinned read-only'):
                     gate.compiler_cache(SimpleNamespace(deadline=time.monotonic()+10), root/'wasi', root, selected)
             compiler.assert_not_called(); creator.assert_not_called()

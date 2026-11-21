@@ -310,6 +310,27 @@ class FailureRecordTests(unittest.TestCase):
 
 
 class DriftTests(unittest.TestCase):
+    def test_docs_installs_pinned_rust_before_required_native_controls(self) -> None:
+        from tools.ci_lane_inventory import workflow_model
+        workflow = workflow_model((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
+        steps = workflow["jobs"]["docs"]["steps"]
+        installs = [(index, step) for index, step in enumerate(steps)
+                    if step.get("uses", "").startswith("dtolnay/rust-toolchain@")]
+        self.assertEqual(len(installs), 1)
+        index, install = installs[0]
+        rust = next(step for step in workflow["jobs"]["rust"]["steps"]
+                    if step.get("uses", "").startswith("dtolnay/rust-toolchain@"))
+        self.assertEqual(install["uses"], rust["uses"])
+        self.assertEqual(install.get("with", {}).get("toolchain"),
+                         rust.get("with", {}).get("toolchain"))
+        self.assertNotIn("if", install)
+        self.assertFalse(install.get("continue-on-error", False))
+        native = next(i for i, step in enumerate(steps)
+                      if "tools.tests.test_local_tests" in step.get("run", ""))
+        self.assertLess(index, native)
+        self.assertIn("LSF_REQUIRE_NATIVE_PROCESS_TESTS=1", steps[native]["run"])
+        self.assertFalse(steps[native].get("continue-on-error", False))
+
     def test_documented_commands_parse_and_cover_three_workflows(self) -> None:
         guide = (ROOT / "docs/development/local-tests.md").read_text(encoding="utf-8")
         commands = [shlex.split(line.strip()) for line in guide.splitlines()
@@ -667,6 +688,9 @@ class NativeEntrypointTests(unittest.TestCase):
             command("git", "config", "user.name", "Fixture")
             command("git", "config", "user.email", "fixture@example.invalid")
             (repo / ".gitignore").write_text("/target/\n")
+            # The temporary workspace is outside ROOT and cannot inherit its pin.
+            # Do not let the runner default select a different Cargo artifact layout.
+            (repo / "rust-toolchain.toml").write_bytes((ROOT / "rust-toolchain.toml").read_bytes())
             (repo / "Cargo.toml").write_text('[workspace]\nmembers=["crates/latent-core"]\nresolver="2"\n')
             package = repo / "crates/latent-core"
             source = package / "src"

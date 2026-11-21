@@ -128,6 +128,17 @@ original activation's limits; they are separate from a claim of complete browser
 or Node API compatibility. Follow the existing signed runtime controls and their
 actual source identities for execution evidence.
 
+AbortSignal and EventTarget graph construction checks native-owner pressure at
+its rooted entry, before obtaining native pointers or allocating graph storage.
+This lets synchronous construction collect unreachable graphs even without an
+intervening Promise allocation. Individual graph admissions remain
+non-collecting so staged callbacks and weak-set iterators cannot be invalidated.
+Collection does not release reachable owners or expand the original limits:
+physical destruction and collection completion still precede host acknowledgement,
+and failed acknowledgement retains the ownership debt. Finite collector controls
+exercise this ordering; successful signed execution still requires the actual
+source-matched runtime qualification.
+
 After the guide's prerequisites, run from the checkout:
 
 ```sh
