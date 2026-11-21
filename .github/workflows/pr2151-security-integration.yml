@@ -1,0 +1,120 @@
+name: PR 2151 security integration validation
+on:
+  push:
+    branches: [diagnostic/pr2151-integration-fanout-20261121]
+    paths: [.github/workflows/pr2151-security-integration.yml]
+permissions:
+  contents: read
+concurrency:
+  group: pr2151-security-integration-validation
+  cancel-in-progress: false
+jobs:
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: 4a9e488359a7c40e0fc3309260c0d09c4a9d8f76
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - name: Integrate exact heads and preserve the Java regression superset
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=96 origin 4a9e488359a7c40e0fc3309260c0d09c4a9d8f76 7c830598ca437279a8eead344aae5945bffb5bcf
+          python3 - <<'PY'
+          import ast,json,os,subprocess
+          from pathlib import Path
+          a='4a9e488359a7c40e0fc3309260c0d09c4a9d8f76';b='7c830598ca437279a8eead344aae5945bffb5bcf';base='ce32c865a7f0870b488ea9d8651fddd68adbd1a4'
+          def git(*args):return subprocess.check_output(['git',*args],text=True).strip()
+          assert git('merge-base',a,b)==base
+          merge=subprocess.run(['git','merge-tree','--write-tree',a,b],text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+          Path(os.environ['RUNNER_TEMP'],'pr2151-merge-tree.txt').write_text(merge.stdout)
+          assert merge.returncode==1, (merge.returncode,merge.stderr)
+          lines=merge.stdout.splitlines();name='tools/tests/test_java_enum_guard.py'
+          entries=[line for line in lines[1:] if line.startswith('100644 ')]
+          assert entries==[
+              '100644 8754fc0a2e91502948e5435efe4ccf37eb92426c 1\t'+name,
+              '100644 3dd681d9abba55607f7ed3d055f09e9bbd845afb 2\t'+name,
+              '100644 34d178311ca81ff9ece20f874f2573ab9ebe9248 3\t'+name], entries
+          assert len([line for line in lines if line.startswith('CONFLICT ')])==1
+          left=ast.parse(git('show',a+':'+name));right=ast.parse(git('show',b+':'+name))
+          cls=next(node for node in left.body if isinstance(node,ast.ClassDef) and node.name=='EnumGuardControls')
+          extra=[node for node in cls.body if isinstance(node,ast.FunctionDef) and node.name=='test_managed_link_changes_select_both_signed_qualification_owners']
+          assert len(extra)==1
+          cls.body.remove(extra[0])
+          assert ast.dump(left,include_attributes=False)==ast.dump(right,include_attributes=False),'security regression must remain an exact AST subset'
+          git('read-tree',lines[0]);git('update-index','--cacheinfo','100644,3dd681d9abba55607f7ed3d055f09e9bbd845afb,'+name)
+          tree=git('write-tree')
+          git('config','user.name','LSF integration validation');git('config','user.email','lsf-integration@users.noreply.github.com')
+          message='Integrate Wasmtime 48.0.9 security prerequisite into cached handoff work\n\nRetain both exact parent histories. The only conflicted file is the Java\nlinker regression; preserve the Java branch\u0027s strict superset after checking\nall security-parent test ASTs remain byte-for-byte equivalent structurally.\nNo security exception, source guard, resource budget or guest assertion is\nrelaxed. Fresh full integration CI and signed TypeScript remain required.'
+          commit=git('commit-tree',tree,'-p',a,'-p',b,'-m',message)
+          git('checkout','--detach',commit)
+          assert not Path('.github/workflows/pr2151-integration-fanout-diagnostic.yml').exists()
+          assert not Path('.github/workflows/pr2151-security-integration.yml').exists()
+          git('diff','--check',a,commit)
+          changed={side:set(git('diff','--name-only',base,side).splitlines()) for side in (a,b)}
+          rows=[]
+          for path in sorted(changed[a]|changed[b]):
+              def blob(ref):
+                  r=subprocess.run(['git','rev-parse',ref+':'+path],text=True,capture_output=True)
+                  return r.stdout.strip() if r.returncode==0 else None
+              original=blob(base);left=blob(a);right=blob(b);combined=blob('HEAD')
+              if path not in changed[b]:assert combined==left,path
+              if path not in changed[a]:assert combined==right,path
+              if left==right:assert combined==left,path
+              rows.append({'path':path,'base':original,'java':left,'security':right,'combined':combined})
+          record={'parents':[a,b],'mergeBase':base,'commit':commit,'tree':tree,'resolvedConflict':name,'resolution':'retain Java source which is the strict AST superset','paths':rows,'validation':'pending','productionBranchUpdated':False}
+          Path(os.environ['RUNNER_TEMP'],'pr2151-integration.json').write_text(json.dumps(record,indent=2)+'\n')
+          Path(os.environ['RUNNER_TEMP'],'pr2151-integrated-commit.txt').write_text(commit+'\n')
+          print(json.dumps({k:v for k,v in record.items() if k!='paths'}))
+          PY
+      - name: Validate combined source controls with pinned JDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_java_compiler_acquisition tools.tests.test_java_dependency_suite tools.tests.test_java_resource_runtime tools.tests.test_java_standard_http_ownership tools.tests.test_java_teavm_failure_trace tools.tests.test_java_enum_guard tools.tests.test_java_date_link_guard -v 2>&1 | tee "$RUNNER_TEMP/pr2151-focused.log"
+          python3 -B -m unittest discover -s sdk/java-guest/tests -v 2>&1 | tee "$RUNNER_TEMP/pr2151-sdk.log"
+          python3 -B tools/validate_repository.py 2>&1 | tee "$RUNNER_TEMP/pr2151-repository.log"
+          python3 -B tools/ci_coverage.py --receipt "$RUNNER_TEMP/pr2151-inventory.json"
+          git diff --exit-code
+      - name: Publish only the validated exact-parent candidate on an isolated ref
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          commit="$(cat "$RUNNER_TEMP/pr2151-integrated-commit.txt")"
+          test "$(git rev-parse HEAD)" = "$commit"
+          git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push --force-with-lease=refs/heads/diagnostic/pr2151-integrated-tree-20261121: origin "$commit:refs/heads/diagnostic/pr2151-integrated-tree-20261121"
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          p=Path(os.environ['RUNNER_TEMP'],'pr2151-integration.json');r=json.loads(p.read_text());r['validation']='passed';r['publishedRef']='diagnostic/pr2151-integrated-tree-20261121';p.write_text(json.dumps(r,indent=2)+'\n')
+          print(json.dumps({k:v for k,v in r.items() if k!='paths'}))
+          PY
+      - name: Retain exact integration identities and validation output
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-integration-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pr2151-merge-tree.txt
+            ${{ runner.temp }}/pr2151-integrated-commit.txt
+            ${{ runner.temp }}/pr2151-integration.json
+            ${{ runner.temp }}/pr2151-focused.log
+            ${{ runner.temp }}/pr2151-sdk.log
+            ${{ runner.temp }}/pr2151-repository.log
+            ${{ runner.temp }}/pr2151-inventory.json
+          retention-days: 7
+          if-no-files-found: error
