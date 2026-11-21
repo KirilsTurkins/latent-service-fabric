@@ -172,6 +172,38 @@ async function recover(page, observed, expectedDisposition) {
   return value;
 }
 
+async function readOriginalEffects(page, original) {
+  const url = config.origin + '/drafts/alice/result';
+  assert.equal(original.effectIds.length, 2);
+  assert.equal(new Set(original.effectIds).size, 2);
+  const replies = original.effectIds.map(id => page.waitForResponse(response =>
+    response.url() === url && response.request().headers()['effect-id'] === id,
+  {timeout: 15000}));
+  const [responses] = await Promise.all([
+    Promise.all(replies),
+    page.locator('#check-effects').click(),
+  ]);
+  const dispositions = [];
+  for (const [index, response] of responses.entries()) {
+    assert.equal(response.status(), 200);
+    assert.equal(response.request().method(), 'GET');
+    assert.equal(response.request().headers()['idempotency-key'], original.key);
+    assert.equal(response.headers()['set-cookie'], undefined);
+    const body = await response.body();
+    assert.ok(body.length <= 192 * 1024);
+    assert.ok(forbidden.every(value => !body.includes(Buffer.from(value))));
+    const value = JSON.parse(body);
+    assert.equal(value.profile, 'transaction-http-v1');
+    assert.equal(value.disposition, 'effect');
+    assert.equal(value.effect['effect-id'], original.effectIds[index]);
+    dispositions.push(value.effect.disposition);
+  }
+  await status(page, 'committed');
+  const rendered = await page.locator('#effect-dispositions').textContent();
+  assert.equal(rendered.trim(), dispositions.join(', '));
+  return dispositions;
+}
+
 try {
   for (const backend of config.backends) {
     await nextBackend(backend.language);
@@ -185,7 +217,10 @@ try {
     await submit(a.page, 3); await status(a.page, 'committed');
     assert.equal(await revision(a.page), a.original + 1n);
     assert.equal(await a.page.locator('#draft-units').textContent(), 'Units 3');
-    assert.equal(await a.page.locator('#effect-status').textContent(), '2 original effects');
+    const effects = await a.page.locator('#effect-status').textContent();
+    assert.match(effects.trim(), /^2 original effects/);
+    const unchecked = await a.page.locator('#effect-dispositions').textContent();
+    assert.equal(unchecked.trim(), 'not checked, not checked');
 
     const lostRejection = await responseLoss(b.page, 'rejected');
     await submit(b.page, 4); await status(b.page, 'uncertain'); await lostRejection.close();
@@ -203,6 +238,7 @@ try {
     await submit(a.page, 6); await status(a.page, 'uncertain'); await lostCommit.close();
     await first.setExtraHTTPHeaders({Authorization: 'Bearer ' + alice.rotatedToken});
     await recover(a.page, lostCommit.observed, 'committed');
+    const originalEffectDispositions = await readOriginalEffects(a.page, lostCommit.observed);
     await a.page.locator('#query-draft').click(); await idle(a.page);
     assert.equal(await revision(a.page), a.original + 3n);
     assert.equal(await a.page.locator('#draft-units').textContent(), 'Units 6');
@@ -217,6 +253,14 @@ try {
     const refusal = await denied.body(); assert.ok(refusal.length <= 192 * 1024);
     assert.ok(!refusal.includes(Buffer.from(lostCommit.observed.commandId)));
     assert.equal(denied.headers()['set-cookie'], undefined);
+    const deniedEffect = await bob.request.get('http://127.0.0.1:19092/drafts/alice/result', {
+      headers: {host: new URL(config.origin).host, 'idempotency-key': lostCommit.observed.key,
+        'effect-id': lostCommit.observed.effectIds[0]},
+      maxRetries: 0, maxRedirects: 0, timeout: 15000});
+    assert.equal(deniedEffect.status(), 403);
+    const effectRefusal = await deniedEffect.body(); assert.ok(effectRefusal.length <= 192 * 1024);
+    assert.ok(!effectRefusal.includes(Buffer.from(lostCommit.observed.effectIds[0])));
+    assert.equal(deniedEffect.headers()['set-cookie'], undefined);
     observations.push({language: backend.language, backendInput: backend, ssrDigest: a.ssrDigest,
       revisions: [a.original.toString(), (a.original + 3n).toString()], commandPosts,
       lostCommit: {commandId: lostCommit.observed.commandId, clientKey: lostCommit.observed.key,
@@ -225,7 +269,8 @@ try {
       lostRejection: {commandId: lostRejection.observed.commandId, clientKey: lostRejection.observed.key,
         bodyDigest: lostRejection.observed.bodyDigest, resultDigest: lostRejection.observed.resultDigest,
         effectIds: lostRejection.observed.effectIds},
-      bobSsrDigest: own.ssrDigest, sameTenantForeignResultStatus: denied.status(), tokenRotationSameCommand: true});
+      originalEffectDispositions, bobSsrDigest: own.ssrDigest, sameTenantForeignResultStatus: denied.status(),
+      sameTenantForeignEffectStatus: deniedEffect.status(), tokenRotationSameCommand: true});
     for (const selected of [first, second, bob]) await selected.close();
     emit({event: 'complete', phase: 'backend-browser', language: backend.language,
       originalCommandIds: [lostCommit.observed.commandId, lostRejection.observed.commandId]});
