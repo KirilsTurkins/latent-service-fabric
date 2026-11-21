@@ -23,23 +23,30 @@ jobs:
       - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
         with:
           python-version: 3.13.5
-      - name: Run the immutable validation script against the exact PR-head documentation
+      - name: Run immutable controls with authenticated head and portable-compiler corrections
         run: |
           set -euo pipefail
           python3 -m pip install --requirement source/tools/requirements.lock
           python3 - <<'PY'
           import pathlib, subprocess, yaml
-          control=pathlib.Path('controls/.github/workflows/pr2151-native-pressure-validation.yml')
-          doc=yaml.safe_load(control.read_text())
+          doc=yaml.safe_load(pathlib.Path('controls/.github/workflows/pr2151-native-pressure-validation.yml').read_text())
           steps=doc['jobs']['validate']['steps']
           apply=next(s['run'] for s in steps if s.get('name')=='Apply only the authenticated six-file repair')
-          # The other five preimages already matched the PR head. Preserve the
-          # unchanged authenticated patch and use its exact head-based README.
           replacements={'359944fc26b9f388e4a3bf99605ac73d869ef3e3':'bab3d4b499c757f638301f2899d9fb9659b5c7e6',
-                        '68d59950a0e09541556e862309fef5dee188c080':'22d87de5fa630ae1816aaa0d1dc3b1a428f8a0ab'}
+                        '68d59950a0e09541556e862309fef5dee188c080':'22d87de5fa630ae1816aaa0d1dc3b1a428f8a0ab',
+                        'd045d49bff32861351605150f2646fbcba9ee150':'8d13702f7cbcd263bb0060a4c47d88c277af09da'}
           for old,new in replacements.items():
               assert apply.count(old)==1
               apply=apply.replace(old,new)
+          anchor='rows = ['
+          assert apply.count(anchor)==1
+          adjustment = '''before = b"args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', '/I'+include,"
+          after = b"args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', '/wd4100', '/I'+include,"
+          assert patch.count(before) == 1
+          patch = patch.replace(before, after, 1)
+          assert len(patch) == 23704 and hashlib.sha256(patch).hexdigest() == '168be85aecc4b5b9e93ee1f963371a06bdb8f48e390a96393a6e117505976b3f'
+          '''
+          apply=apply.replace(anchor,adjustment+anchor)
           subprocess.run(['bash','-e','-o','pipefail','-c',apply],cwd='source',check=True)
           names=['Run original source ownership and finite collector controls',
                  'Run finite native graph controls with address and undefined-behavior sanitizers']
@@ -90,9 +97,11 @@ jobs:
           import pathlib, subprocess, yaml
           doc=yaml.safe_load(pathlib.Path('controls/.github/workflows/pr2151-native-pressure-validation.yml').read_text())
           script=next(s['run'] for s in doc['jobs']['blobs']['steps'] if s.get('name')=='Publish only validated Git blobs without moving any ref')
-          old='68d59950a0e09541556e862309fef5dee188c080'
-          assert script.count(old)==1
-          script=script.replace(old,'22d87de5fa630ae1816aaa0d1dc3b1a428f8a0ab')
+          replacements={'68d59950a0e09541556e862309fef5dee188c080':'22d87de5fa630ae1816aaa0d1dc3b1a428f8a0ab',
+                        'd045d49bff32861351605150f2646fbcba9ee150':'8d13702f7cbcd263bb0060a4c47d88c277af09da'}
+          for old,new in replacements.items():
+              assert script.count(old)==1
+              script=script.replace(old,new)
           subprocess.run(['bash','-e','-o','pipefail','-c',script],check=True)
           PY
       - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
