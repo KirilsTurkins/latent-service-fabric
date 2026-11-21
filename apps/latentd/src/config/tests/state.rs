@@ -3,7 +3,7 @@ use latent_core::BudgetProfile;
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[test]
-fn incoming_configuration_requires_private_leaf_and_refuses_incomplete_installation() {
+fn incoming_configuration_requires_private_leaf_before_runtime_custody_check() {
     use std::os::unix::fs::PermissionsExt;
 
     let (directory, mut config) = configured();
@@ -40,12 +40,8 @@ fn incoming_configuration_requires_private_leaf_and_refuses_incomplete_installat
         }],
     });
     assert!(super::super::triggers::derive(&config).unwrap().is_some());
-    let Err(failure) = config.derive() else {
-        panic!("incomplete incoming startup was accepted");
-    };
-    assert!(failure
-        .message
-        .contains("transactionalTriggers.scopeCustodyUnavailable"));
+    // Deriving settings does not open the store or admit the input owner.
+    assert!(config.derive().unwrap().transactional_triggers.is_some());
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
     assert!(super::super::triggers::derive(&config).is_err());
 }
