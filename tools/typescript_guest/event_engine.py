@@ -375,6 +375,15 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'  if (!invoked || JS_IsExceptionPending(cx)) return false; // preserve the original failure\n'
         b'  rval.setBoolean(!Event::has_flag(event, EventFlag::Canceled));\n',
         'return-original-listener-error-after-dispatch-cleanup')
+    # Collect only before construction, with no raw object or native iterator
+    # in flight. init() is called with AbortSignal's newly published containers
+    # and must remain non-collecting, like every individual native admission.
+    for anchor in (b'JSObject *EventTarget::create(JSContext *cx) {\n',
+                   b'  CTOR_HEADER("EventTarget", 0);\n'):
+        source = replace_once(source, anchor, anchor +
+            b'  if (!lsf::typescript::activation::prepare_native_object_allocation(cx)) return '
+            + (b'nullptr;\n' if anchor.startswith(b'JSObject') else b'false;\n'),
+            'collect-before-event-graph-construction')
     # All three original list construction sites use exactly the same wrapper.
     for function, failing in [('create', b'nullptr'), ('init', b'false'), ('constructor', b'false')]:
         start = source.index(b'EventTarget::'+function.encode()+b'(')
@@ -531,6 +540,10 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
 
     name = 'StarlingMonkey/builtins/web/abort/abort-signal.cpp'
     source = timeout_source
+    source = replace_once(source, b'JSObject *AbortSignal::create(JSContext *cx) {\n',
+        b'JSObject *AbortSignal::create(JSContext *cx) {\n'
+        b'  if (!lsf::typescript::activation::prepare_native_object_allocation(cx)) return nullptr;\n',
+        'collect-before-abort-graph-construction')
     for typename in ('AlgorithmList', 'WeakIndexSet'):
         if typename == 'AlgorithmList':
             source = replace_once(source,
@@ -620,6 +633,8 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
         'checkedTimeoutSourceSha256':hashlib.sha256(timeout_source).hexdigest(),
         'derivedSource':identity(result),'nativeGraphAdmission':'before-physical-allocation',
         'nativeGraphRetirement':'destructor-then-collection-end-then-safe-host-ack',
+        'nativeGraphPressureCollection':'rooted-construction-entry-only-before-native-pointers',
+        'nativeGraphAdmissionCollects':False,
         'dispatchCloneAdmission':'before-backing-vector-growth',
         'dispatchCloneRetirement':'frame-destructor-then-safe-host-ack',
         'dispatchCloneOwner':'one-original-native-count-not-byte-accurate',

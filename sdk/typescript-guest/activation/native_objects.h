@@ -12,6 +12,10 @@ using NativeObjectRecords = NativeRetirement<NativeOwner>;
 using NativeObjectLease = NativeLease<NativeObjectRecords>;
 using NativeObjectFrameLease = NativeFrameLease<NativeObjectRecords>;
 
+// Only call at a rooted JSAPI construction boundary, before taking native
+// list/weak-set iterators or publishing partially initialized graph storage.
+// Admission itself deliberately remains non-collecting.
+bool prepare_native_object_allocation(JSContext*);
 bool admit_native_object(JSContext*, NativeObjectLease&);
 
 template<class T> using NativeContainer = OwnedNativeContainer<NativeObjectRecords,T>;
