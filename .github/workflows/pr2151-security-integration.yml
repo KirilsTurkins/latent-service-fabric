@@ -32,10 +32,13 @@ jobs:
           set -euo pipefail
           git fetch --no-tags --depth=96 origin 4a9e488359a7c40e0fc3309260c0d09c4a9d8f76 7c830598ca437279a8eead344aae5945bffb5bcf
           python3 - <<'PY'
-          import ast,json,os,subprocess
+          import ast,json,os,re,subprocess
           from pathlib import Path
           a='4a9e488359a7c40e0fc3309260c0d09c4a9d8f76';b='7c830598ca437279a8eead344aae5945bffb5bcf';base='ce32c865a7f0870b488ea9d8651fddd68adbd1a4'
           def git(*args):return subprocess.check_output(['git',*args],text=True).strip()
+          def blob(ref,path):
+              r=subprocess.run(['git','rev-parse',ref+':'+path],text=True,capture_output=True)
+              return r.stdout.strip() if r.returncode==0 else None
           assert git('merge-base',a,b)==base
           merge=subprocess.run(['git','merge-tree','--write-tree',a,b],text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
           Path(os.environ['RUNNER_TEMP'],'pr2151-merge-tree.txt').write_text(merge.stdout)
@@ -56,24 +59,39 @@ jobs:
           git('read-tree',lines[0]);git('update-index','--cacheinfo','100644,3dd681d9abba55607f7ed3d055f09e9bbd845afb,'+name)
           tree=git('write-tree')
           git('config','user.name','LSF integration validation');git('config','user.email','lsf-integration@users.noreply.github.com')
-          message='Integrate Wasmtime 48.0.9 security prerequisite into cached handoff work\n\nRetain both exact parent histories. The only conflicted file is the Java\nlinker regression; preserve the Java branch\u0027s strict superset after checking\nall security-parent test ASTs remain byte-for-byte equivalent structurally.\nNo security exception, source guard, resource budget or guest assertion is\nrelaxed. Fresh full integration CI and signed TypeScript remain required.'
+          message='Integrate Wasmtime 48.0.9 security prerequisite into cached handoff work\n\nRetain both exact parent histories. Preserve the Java linker regression\nsuperset without losing any security-parent checks. Keep authenticated\nupstream/vendor bytes and source guards unchanged; fresh integration and\nsigned TypeScript qualification remain required.'
           commit=git('commit-tree',tree,'-p',a,'-p',b,'-m',message)
           git('checkout','--detach',commit)
           assert not Path('.github/workflows/pr2151-integration-fanout-diagnostic.yml').exists()
           assert not Path('.github/workflows/pr2151-security-integration.yml').exists()
-          git('diff','--check',a,commit)
+          # Do not normalize checksum-bound vendor inputs merely for formatting.
+          # Newly introduced merge edits must be clean. Any A->merge warning must
+          # already occur in the exact B-parent file, with the same bytes/line.
+          whitespace=subprocess.run(['git','diff','--check',a,commit],text=True,capture_output=True)
+          print(whitespace.stdout,flush=True);print(whitespace.stderr,flush=True)
+          Path(os.environ['RUNNER_TEMP'],'pr2151-whitespace.log').write_text(whitespace.stdout+whitespace.stderr)
+          assert whitespace.returncode in (0,2) and not whitespace.stderr
+          baseline=subprocess.run(['git','diff','--check',base,b],text=True,capture_output=True)
+          headers=[line for line in whitespace.stdout.splitlines() if re.match(r'^.+:\d+: ',line)]
+          assert whitespace.returncode==0 or headers
+          inherited=[]
+          for line in headers:
+              match=re.fullmatch(r'(.+):(\d+): (trailing whitespace\.|new blank line at EOF\.)',line)
+              assert match,line
+              path=match[1]
+              assert blob(commit,path)==blob(b,path) and blob(b,path) is not None,path
+              assert line in baseline.stdout.splitlines(),line
+              inherited.append({'diagnostic':line,'unchangedSecurityBlob':blob(b,path)})
+          subprocess.run(['git','diff','--check',b,commit],check=True)
           changed={side:set(git('diff','--name-only',base,side).splitlines()) for side in (a,b)}
           rows=[]
           for path in sorted(changed[a]|changed[b]):
-              def blob(ref):
-                  r=subprocess.run(['git','rev-parse',ref+':'+path],text=True,capture_output=True)
-                  return r.stdout.strip() if r.returncode==0 else None
-              original=blob(base);left=blob(a);right=blob(b);combined=blob('HEAD')
+              original=blob(base,path);left=blob(a,path);right=blob(b,path);combined=blob('HEAD',path)
               if path not in changed[b]:assert combined==left,path
               if path not in changed[a]:assert combined==right,path
               if left==right:assert combined==left,path
               rows.append({'path':path,'base':original,'java':left,'security':right,'combined':combined})
-          record={'parents':[a,b],'mergeBase':base,'commit':commit,'tree':tree,'resolvedConflict':name,'resolution':'retain Java source which is the strict AST superset','paths':rows,'validation':'pending','productionBranchUpdated':False}
+          record={'parents':[a,b],'mergeBase':base,'commit':commit,'tree':tree,'resolvedConflict':name,'resolution':'retain Java source which is the strict AST superset','inheritedWhitespace':inherited,'paths':rows,'validation':'pending','productionBranchUpdated':False}
           Path(os.environ['RUNNER_TEMP'],'pr2151-integration.json').write_text(json.dumps(record,indent=2)+'\n')
           Path(os.environ['RUNNER_TEMP'],'pr2151-integrated-commit.txt').write_text(commit+'\n')
           print(json.dumps({k:v for k,v in record.items() if k!='paths'}))
@@ -112,6 +130,7 @@ jobs:
             ${{ runner.temp }}/pr2151-merge-tree.txt
             ${{ runner.temp }}/pr2151-integrated-commit.txt
             ${{ runner.temp }}/pr2151-integration.json
+            ${{ runner.temp }}/pr2151-whitespace.log
             ${{ runner.temp }}/pr2151-focused.log
             ${{ runner.temp }}/pr2151-sdk.log
             ${{ runner.temp }}/pr2151-repository.log
