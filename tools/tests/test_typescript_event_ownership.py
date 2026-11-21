@@ -341,6 +341,7 @@ class AbortFailureControls(unittest.TestCase):
         for case in ('success', 'dispatch-failure', 'event-failure', 'reason-failure',
                      'algorithm-failure', 'dependent-continuation', 'default-reason',
                      'explicit-reason', 'already-aborted', 'fanout-inline', 'fanout-heap',
+                     'fanout-pressure-refusal', 'fanout-entry-exception', 'fanout-aborted-no-preflight',
                      'fanout-all-aborted', 'fanout-refusal', 'fanout-reserve-failure',
                      'fanout-recovery', 'fanout-nested', 'fanout-nested-refusal',
                      'fanout-ack-refusal', 'fanout-repeated', 'fanout-first-error',

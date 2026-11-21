@@ -79,6 +79,21 @@ class NativeObjectPressureTests(unittest.TestCase):
                 self.assertEqual(json.loads(result.stdout),
                                  {'case': case, 'passed': True, 'engineQualified': False})
 
+    def test_abort_preflight_precedes_factory_weak_cursors_and_staged_captures(self):
+        source = derive()[0]['StarlingMonkey/builtins/web/abort/abort-signal.cpp']
+        start = source.index(b'bool AbortSignal::abort(')
+        end = source.index(b'bool AbortSignal::run_abort_steps(', start)
+        body = source[start:end]
+        preflight = body.index(b'prepare_native_object_allocation(cx)')
+        self.assertIn(b'HandleObject self, HandleValue reason)', body[:preflight])
+        self.assertLess(body.index(b'if (JS_IsExceptionPending(cx)) return false;'), preflight)
+        self.assertLess(body.index(b'if (is_aborted(self)) return true;'), preflight)
+        for marker in (b'RootedValue propagated_reason', b'NativeObjectFrameLease dependents_owner',
+                       b'JS::RootedObjectVector', b'auto *dep_signals = dependent_signals(self)'):
+            self.assertLess(preflight, body.index(marker))
+        self.assertEqual(body.count(b'prepare_native_object_allocation(cx)'), 1)
+        self.assertNotIn(b'collectNativePressure', body)
+
     def test_listener_preflight_has_rooted_inputs_and_no_staged_capture_or_iterator(self):
         source = derive()[0]['StarlingMonkey/builtins/web/event/event-target.cpp']
         start = source.index(b'bool EventTarget::add_listener(')

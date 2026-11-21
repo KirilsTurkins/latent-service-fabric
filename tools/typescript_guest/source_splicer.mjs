@@ -141,3 +141,136 @@ export function inlineExportTaskMeta(source, parse) {
   parse(source, {ecmaVersion: 'latest', sourceType: 'module'});
   return source;
 }
+
+// The private task's completion capability is not observed on the normal
+// export path until settlement. Create it at first observation or immediately
+// before the original settlement handlers, not while the application runs.
+// Keep the real intrinsic Promise: do not buffer results, emulate thenables,
+// omit rejection reporting, or release an owner while an object is reachable.
+export function lazyTaskCompletion(source, parse) {
+  const fail = () => { throw new Error('selected-runtime-task-completion-shape-drift'); };
+  let tree;
+  try { tree = parse(source, {ecmaVersion: 'latest', sourceType: 'module'}); }
+  catch { fail(); }
+  const classes = [];
+  function visit(node) {
+    if (!node || typeof node !== 'object') return;
+    if (node.type === 'ClassDeclaration' && node.id?.name === 'AsyncTask') classes.push(node);
+    for (const value of Object.values(node)) {
+      if (Array.isArray(value)) value.forEach(visit);
+      else if (value && typeof value === 'object') visit(value);
+    }
+  }
+  visit(tree);
+  if (!classes.length && !source.includes('AsyncTask')) return source;
+  if (classes.length !== 1 || source.includes('#completionCapability') ||
+      source.includes('#ensureCompletionPromise')) fail();
+  const task = classes[0];
+  if (task.superClass !== null) fail();
+  const members = task.body.body;
+  const select = (name, privateName = false) => {
+    const found = members.filter(node => node.key?.name === name &&
+      (node.key.type === 'PrivateIdentifier') === privateName);
+    if (found.length !== 1 || found[0].static || found[0].computed) fail();
+    return found[0];
+  };
+  // Compare only the rewritten ownership boundary. Unrelated generator bodies
+  // remain byte-for-byte original; whitespace and source offsets are irrelevant.
+  const shape = node => JSON.stringify(node, (key, value) =>
+    ['start', 'end', 'raw'].includes(key) ? undefined : value);
+  const expected = parse(`class AsyncTask {
+    #completionPromise = null;
+    #onResolveHandlers = [];
+    #errored = null;
+    #rejected = false;
+    constructor() {
+      const {promise: completionPromise, resolve: resolveCompletionPromise,
+        reject: rejectCompletionPromise} = promiseWithResolvers();
+      this.#completionPromise = completionPromise;
+      this.#onResolveHandlers.push((results) => {
+        if (this.#errored !== null) {
+          rejectCompletionPromise(this.#errored);
+          return;
+        } else if (this.#rejected) {
+          rejectCompletionPromise(results);
+          return;
+        }
+        resolveCompletionPromise(results);
+      });
+    }
+    completionPromise() { return this.#completionPromise; }
+    onResolve(taskValue) {
+      const handlers = this.#onResolveHandlers;
+      this.#onResolveHandlers = [];
+    }
+  }`, {ecmaVersion: 'latest', sourceType: 'module'}).body[0].body.body;
+  const field = select('completionPromise', true), getter = select('completionPromise');
+  const constructor = select('constructor'), settlement = select('onResolve');
+  const expectedConstructor = expected.find(node => node.kind === 'constructor');
+  const expectedGetter = expected.find(node => node.key.name === 'completionPromise' &&
+    node.key.type === 'Identifier');
+  const expectedSettlement = expected.find(node => node.key.name === 'onResolve');
+  if (shape(select('onResolveHandlers', true)) !== shape(expected[1]) ||
+      shape(select('errored', true)) !== shape(expected[2]) ||
+      shape(select('rejected', true)) !== shape(expected[3]) ||
+      shape(field) !== shape(expected[0]) || shape(getter) !== shape(expectedGetter) ||
+      constructor.kind !== 'constructor' || settlement.kind !== 'method' ||
+      settlement.value.async || settlement.value.generator ||
+      shape(settlement.value.params) !== shape(expectedSettlement.value.params) ||
+      shape(settlement.value.body.body.slice(0, 2)) !== shape(expectedSettlement.value.body.body)) fail();
+  const statements = constructor.value.body.body;
+  const pattern = expectedConstructor.value.body.body;
+  const matches = statements.map((node, index) => shape(node) === shape(pattern[0]) ? index : -1)
+    .filter(index => index !== -1);
+  if (matches.length !== 1) fail();
+  const index = matches[0], sequence = statements.slice(index, index + 3);
+  if (shape(sequence) !== shape(pattern)) fail();
+  const countName = (node, type, name) => {
+    let count = 0;
+    function countNode(value) {
+      if (!value || typeof value !== 'object') return;
+      if (value.type === type && value.name === name) ++count;
+      for (const child of Object.values(value)) {
+        if (Array.isArray(child)) child.forEach(countNode);
+        else if (child && typeof child === 'object') countNode(child);
+      }
+    }
+    countNode(node);
+    return count;
+  };
+  if (countName(task, 'PrivateIdentifier', 'completionPromise') !== 3) fail();
+  for (const name of ['completionPromise', 'resolveCompletionPromise', 'rejectCompletionPromise']) {
+    if (countName(constructor, 'Identifier', name) !==
+        countName(expectedConstructor, 'Identifier', name)) fail();
+  }
+  const handler = sequence[2].expression.arguments[0];
+  const originalHandler = source.slice(handler.body.start + 1, handler.body.end - 1);
+  const edits = [
+    {start: field.end, end: field.end, text: '\n  #completionCapability = null;'},
+    {start: sequence[0].start, end: sequence[2].end, text:
+      'this.#onResolveHandlers.push((results) => {\n' +
+      '  const {resolve: resolveCompletionPromise, reject: rejectCompletionPromise} = this.#completionCapability;\n' +
+      '  this.#completionCapability = null; // Drop captures after this original handler returns.\n' +
+      originalHandler + '\n});'},
+    {start: getter.start, end: getter.end, text:
+      'completionPromise() { this.#ensureCompletionPromise(); return this.#completionPromise; }\n' +
+      '  #ensureCompletionPromise() {\n' +
+      '    if (this.#completionPromise !== null) return;\n' +
+      '    const capability = promiseWithResolvers();\n' +
+      '    const promise = capability.promise;\n' +
+      '    this.#completionCapability = capability;\n' +
+      '    this.#completionPromise = promise;\n' +
+      '  }'},
+    {start: settlement.value.body.start + 1, end: settlement.value.body.start + 1,
+      text: '\n    this.#ensureCompletionPromise(); // Before detaching any original settlement handler.\n'},
+  ];
+  edits.sort((a, b) => b.start - a.start);
+  let previous = source.length;
+  for (const edit of edits) {
+    if (edit.end > previous) fail();
+    source = source.slice(0, edit.start) + edit.text + source.slice(edit.end);
+    previous = edit.start;
+  }
+  parse(source, {ecmaVersion: 'latest', sourceType: 'module'});
+  return source;
+}
