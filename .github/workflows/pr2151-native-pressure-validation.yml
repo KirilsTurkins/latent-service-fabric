@@ -1,0 +1,137 @@
+name: PR 2151 native graph pressure validation
+on:
+  push:
+    branches: [diag/pr2151-native-pressure-20261121]
+    paths: [.github/workflows/pr2151-native-pressure-validation.yml]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: fb0feebc63b302c63c0e37791da735ca476607c8
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - name: Apply only the authenticated six-file repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, gzip, hashlib, json, os, pathlib, subprocess
+          patch = gzip.decompress(base64.b64decode('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'.replace('JkoWYEl', 'JkoWEl'), validate=True))
+          assert len(patch) == 23693 and hashlib.sha256(patch).hexdigest() == '481b5ce00b0b14b85c18e4734eba890a338ec80f04e781ffd4741062d4012c85'
+          rows = [
+            ['sdk/typescript-guest/activation/native_engine.cpp','64bcb5c77a49ad34ccccc1bf61ea4a7d5c8e4244','07d02a6142c7c9d610717af7c5479c2724c11857'],
+            ['sdk/typescript-guest/activation/native_objects.h','0769f2b27b8a47dd9713e6bd899dc42f82fe65af','6760ce6d8d3c6869ead95b32f6c78354c3ae6225'],
+            ['tools/typescript_guest/event_engine.py','913cbf5cbebbb941f27913a6ec590c78ded712de','2f880bc37e46d715bd46f1c4781170244c780325'],
+            ['tools/tests/test_typescript_event_ownership.py','33839447fed52a7c1d0d1cb82157acaac9e004ad','d045d49bff32861351605150f2646fbcba9ee150'],
+            ['tools/tests/fixtures/typescript_graph_pressure.cpp',None,'e51b18e2b7e9d2ba1a04e706a22896411ef3794c'],
+            ['sdk/typescript-guest/README.md','359944fc26b9f388e4a3bf99605ac73d869ef3e3','68d59950a0e09541556e862309fef5dee188c080']]
+          def blob(p):
+              b = p.read_bytes()
+              return hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
+          assert subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip() == 'fb0feebc63b302c63c0e37791da735ca476607c8'
+          for name, before, after in rows:
+              p = pathlib.Path(name)
+              assert blob(p) == before if before else not p.exists(), name
+          subprocess.run(['git','apply','--check','-'], input=patch, check=True)
+          subprocess.run(['git','apply','-'], input=patch, check=True)
+          output = pathlib.Path(os.environ['RUNNER_TEMP'])/'pressure-postimages'
+          for name, before, after in rows:
+              p = pathlib.Path(name)
+              assert blob(p) == after, name
+              dest = output/name
+              dest.parent.mkdir(parents=True, exist_ok=True)
+              dest.write_bytes(p.read_bytes())
+          (output/'manifest.json').write_text(json.dumps(rows, indent=2)+'\n')
+          subprocess.run(['git','add','--',*[r[0] for r in rows]], check=True)
+          subprocess.run(['git','diff','--cached','--check'], check=True)
+          assert set(subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()) == {r[0] for r in rows}
+          print(json.dumps({'source':'fb0feebc63b302c63c0e37791da735ca476607c8','postimages':rows}))
+          PY
+      - name: Run original source ownership and finite collector controls
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_typescript_event_ownership tools.tests.test_typescript_abort_any_ownership tools.tests.test_typescript_record_retirement tools.tests.test_typescript_native_build -v 2>&1 | tee "$RUNNER_TEMP/pressure-focused.log"
+          python3 -B tools/validate_repository.py 2>&1 | tee "$RUNNER_TEMP/pressure-repository.log"
+      - name: Run finite native graph controls with address and undefined-behavior sanitizers
+        run: |
+          set -euo pipefail
+          printf '#!/bin/sh\nexec g++ -fsanitize=address,undefined -fno-omit-frame-pointer "$@"\n' > "$RUNNER_TEMP/pressure-cxx"
+          chmod +x "$RUNNER_TEMP/pressure-cxx"
+          LSF_TYPESCRIPT_RECORD_CXX="$RUNNER_TEMP/pressure-cxx" python3 -B -m unittest tools.tests.test_typescript_event_ownership.NativeGraphPressureControls -v 2>&1 | tee "$RUNNER_TEMP/pressure-sanitizers.log"
+      - name: Retain exact tested postimages
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pressure-postimages
+          path: ${{ runner.temp }}/pressure-postimages
+          if-no-files-found: error
+          retention-days: 3
+      - name: Retain validation logs
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pressure-validation-logs
+          path: ${{ runner.temp }}/pressure-*.log
+          if-no-files-found: warn
+          retention-days: 3
+  blobs:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          name: pressure-postimages
+          path: postimages
+          digest-mismatch: error
+      - name: Publish only validated Git blobs without moving any ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, urllib.request
+          expected = {
+            'sdk/typescript-guest/activation/native_engine.cpp':'07d02a6142c7c9d610717af7c5479c2724c11857',
+            'sdk/typescript-guest/activation/native_objects.h':'6760ce6d8d3c6869ead95b32f6c78354c3ae6225',
+            'tools/typescript_guest/event_engine.py':'2f880bc37e46d715bd46f1c4781170244c780325',
+            'tools/tests/test_typescript_event_ownership.py':'d045d49bff32861351605150f2646fbcba9ee150',
+            'tools/tests/fixtures/typescript_graph_pressure.cpp':'e51b18e2b7e9d2ba1a04e706a22896411ef3794c',
+            'sdk/typescript-guest/README.md':'68d59950a0e09541556e862309fef5dee188c080'}
+          root=pathlib.Path('postimages')
+          rows=json.loads((root/'manifest.json').read_text())
+          assert {p:h for p,_,h in rows} == expected and len(rows) == 6
+          material={}
+          for path, sha in expected.items():
+              p=root/path
+              assert p.is_file() and not p.is_symlink()
+              data=p.read_bytes()
+              assert len(data) < 100000
+              assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest() == sha
+              material[path]=data
+          observed=[]
+          for path,data in material.items():
+              request=urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs',data=json.dumps({'content':base64.b64encode(data).decode(),'encoding':'base64'}).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'},method='POST')
+              with urllib.request.urlopen(request,timeout=30) as response:
+                  result=json.load(response)
+              assert result['sha'] == expected[path]
+              observed.append({'path':path,'sha':result['sha']})
+          result={'source':'fb0feebc63b302c63c0e37791da735ca476607c8','blobs':observed,'refsMoved':False,'signedQualification':False}
+          pathlib.Path('published-blobs.json').write_text(json.dumps(result,indent=2)+'\n')
+          print(json.dumps(result))
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pressure-published-blobs
+          path: published-blobs.json
+          if-no-files-found: error
+          retention-days: 3
