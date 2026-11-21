@@ -86,7 +86,25 @@ async fn failed_dial_original_quota_survives_real_socket_retirement() {
         "original dial quota and lease must outlive the socket owner"
     );
     assert_eq!(metadata_during_drop, original_metadata);
-    assert!(setup.pools.snapshot().unwrap().metadata_bytes < original_metadata);
+    // The pool maintenance owner may hold its snapshot lock after the
+    // original socket has retired. Retry only that transient observation.
+    let snapshot = tokio::time::timeout(Duration::from_secs(2), async {
+        loop {
+            match setup.pools.snapshot() {
+                Ok(snapshot) => break snapshot,
+                Err(error)
+                    if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                        && error.message == "capability-busy" =>
+                {
+                    tokio::task::yield_now().await;
+                }
+                Err(error) => panic!("pool snapshot failed after dial retirement: {error:?}"),
+            }
+        }
+    })
+    .await
+    .expect("bounded pool snapshot after dial retirement");
+    assert!(snapshot.metadata_bytes < original_metadata);
     assert_eq!(client.core.connections.load(Ordering::Acquire), 0);
     assert_eq!(client.core.epoch.quarantined.load(Ordering::Acquire), 0);
     assert!(observer.is_quiescent());
