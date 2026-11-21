@@ -659,10 +659,18 @@ class NativeEntrypointTests(unittest.TestCase):
     def test_real_rust_independent_additions_merge_and_run_through_local_owner(self):
         import os
         import subprocess
+        import tomllib
+        # The fixture lives outside ROOT, so rustup does not inherit the
+        # repository's pin. Ambient Cargo 1.100 uses a different build layout
+        # from the pinned preparation/consumer contract. Pin both preparation
+        # and execution; never relax the consumer's artifact containment.
+        toolchain = tomllib.loads((ROOT / "rust-toolchain.toml").read_text())["toolchain"]["channel"]
+        env = dict(os.environ, RUSTUP_TOOLCHAIN=toolchain, CARGO_NET_OFFLINE="true")
         with tempfile.TemporaryDirectory() as directory:
             repo = Path(directory)
             def command(*args):
-                return subprocess.check_output(args, cwd=repo, stderr=subprocess.STDOUT, text=True).strip()
+                return subprocess.check_output(args, cwd=repo, env=env,
+                                               stderr=subprocess.STDOUT, text=True).strip()
             command("git", "init", "-q")
             command("git", "config", "user.name", "Fixture")
             command("git", "config", "user.email", "fixture@example.invalid")
@@ -694,12 +702,13 @@ class NativeEntrypointTests(unittest.TestCase):
             target = repo / "target"
             target.mkdir()
             inventory = target / "test.jsonl"
-            env = dict(os.environ, CARGO_TARGET_DIR=str(target), CARGO_NET_OFFLINE="true")
+            env["CARGO_TARGET_DIR"] = str(target)
             built = subprocess.run(["cargo", "test", "-p", "latent-core", "--lib", "--all-features", "--locked",
                                     "--no-run", "--message-format=json,json-render-diagnostics"],
                                    cwd=repo, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
             inventory.write_bytes(built.stdout)
             with patch.dict(os.environ, {"CARGO_TARGET_DIR": str(target), "CARGO_NET_OFFLINE": "true",
+                                         "RUSTUP_TOOLCHAIN": toolchain,
                                          "GITHUB_SHA": command("git", "rev-parse", "HEAD")}):
                 prepared, prep = invoke(["prepare", "--suite", CORE, "--inventory", str(inventory)], repo)
                 checked, status = invoke(["check", "--suite", CORE, "--inventory", str(inventory)], repo)
@@ -718,6 +727,7 @@ class NativeEntrypointTests(unittest.TestCase):
             catalog_data["suites"] = [row for row in catalog_data["suites"] if row["id"] == CORE]
             catalog_data["selections"] = {}
             with patch.dict(os.environ, {"GITHUB_SHA": command("git", "rev-parse", "HEAD"),
+                                         "RUSTUP_TOOLCHAIN": toolchain,
                                          "CARGO_TARGET_DIR": str(target)}):
                 discovered = ci_suite_discovery.discover(repo, inventory, catalog_data)
             ran = subprocess.run(["cargo", "test", "-p", "latent-core", "--lib", "--all-features", "--locked",

@@ -30,6 +30,20 @@ class TypeScriptNativeTaskMetaTests(unittest.TestCase):
         imports += f"const bindingMaterial=JSON.parse(await readFile(new URL({json.dumps((ROOT/'tools/tests/fixtures/typescript_native_open_binding.json').as_uri())}),'utf8'));\n"
         imports += "const prefix=prefixMaterial.source;let binding=bindingMaterial.source;assert.equal(createHash('sha256').update(prefix).digest('hex'),prefixMaterial.prefixSha256);assert.equal(createHash('sha256').update(binding).digest('hex'),bindingMaterial.sourceSha256);binding=binding.replace('\\n  try {','\\n  /* lsf-owned-result-transfer:wit-result */\\n  try {');\n"
         imports += "const original=fuseNativeImportAwaits(directIdleTaskSlots(prefix+binding),parse);\n"
+        imports += f"import {{lazyTaskCompletion}} from {json.dumps((ROOT/'tools/typescript_guest/source_splicer.mjs').as_uri())};\n"
+        imports += r"""
+function completionRuntime(source) {
+ const control={allocations:0,fail:false,reason:new Error('original-native-admission-refusal')};
+ const ctx=vm.createContext({$bindings:Array(14).fill(null),
+  contentGlobal:{TextEncoder,TextDecoder,Promise,__lsfAsyncImportBridge:{}},defineBuiltinModule(){},
+  allocation(){if(control.fail)throw control.reason;++control.allocations;}});
+ vm.runInContext(`const originalWithResolvers=Promise.withResolvers;
+  Promise.withResolvers=function(){allocation();return Reflect.apply(originalWithResolvers,this,[]);};`,ctx);
+ const runtime=vm.runInContext(source+';({AsyncTask,createNewCurrentTask,getOrCreateAsyncState});',ctx);
+ return {control,runtime,fresh:()=>runtime.createNewCurrentTask({componentIdx:-1,isAsync:false,
+  entryFnName:'completion-control',callingWasmExport:false})[0]};
+}
+"""
         result = subprocess.run([node, '--input-type=module', '-e', imports+source],
                                 capture_output=True, text=True, timeout=20)
         self.assertEqual(result.returncode, 0, result.stdout+result.stderr)
@@ -62,7 +76,9 @@ async function execute(source,mode) {
  return events;
 }
 for(const mode of ['success','native-failure','typed-failure','lift-failure']) {
- assert.deepEqual(await execute(original,mode),await execute(inlineNativeTaskMeta(original,parse),mode));
+ const before=await execute(original,mode);
+ assert.deepEqual(before,await execute(inlineNativeTaskMeta(original,parse),mode));
+ assert.deepEqual(before,await execute(lazyTaskCompletion(inlineNativeTaskMeta(original,parse),parse),mode));
 }
 """)
 
@@ -84,6 +100,7 @@ async function execute(source) {
  assert.equal(runtime.meta(),null);assert.equal(runtime.state().isExclusivelyLocked(),false);
 }
 await execute(original);await execute(inlineNativeTaskMeta(original,parse));
+await execute(lazyTaskCompletion(inlineNativeTaskMeta(original,parse),parse));
 """)
 
     def test_unknown_wrapper_unfused_calls_and_local_capture_are_refused(self):
@@ -106,6 +123,145 @@ assert.throws(()=>inlineNativeTaskMeta(prefix+binding,parse),/task-meta-shape-dr
 const next=inlineNativeTaskMeta(original,parse);parse(next,{ecmaVersion:'latest',sourceType:'module'});
 assert.equal(next.includes('fn: () => __lsfAwaitImport'),true);
 assert.throws(()=>inlineNativeTaskMeta(next,parse),/task-meta-shape-drift/);
+""")
+
+
+    def test_completion_capability_is_lazy_but_identity_and_multiple_observers_are_preserved(self):
+        self.javascript(r"""
+for(const [source,initial] of [[prefix,2],[lazyTaskCompletion(prefix,parse),1]]) {
+ const {fresh,control}=completionRuntime(source),task=fresh();
+ assert.equal(control.allocations,initial); // Actual capability factories, not an LSF owner count.
+ const first=task.completionPromise();
+ assert.equal(control.allocations,2);assert.equal(first,task.completionPromise());
+ let settled=false;const seen=[];
+ first.then(value=>{settled=true;seen.push(['first',value]);});
+ task.completionPromise().then(value=>seen.push(['second',value]));
+ await Promise.resolve();assert.equal(settled,false);
+ task.resolve([42]);assert.equal(settled,false);
+ assert.equal(task.completionPromise(),first);assert.equal(await first,42);
+ assert.deepEqual(seen,[['first',42],['second',42]]);assert.equal(control.allocations,2);
+ task.exit();
+}
+""")
+
+    def test_unobserved_completion_settles_real_promise_and_assimilates_thenables_in_original_order(self):
+        self.javascript(r"""
+for(const source of [prefix,lazyTaskCompletion(prefix,parse)]) {
+ for(const mode of ['value','thenable','throwing-getter']) {
+  const {fresh,control}=completionRuntime(source),task=fresh(),events=[];
+  const reason=new Error('original-then-getter');
+  const value=mode==='value'?42:Object.defineProperty({},'then',{get(){
+   events.push('get');if(mode==='throwing-getter')throw reason;
+   return resolve=>{events.push('then');resolve(42);};}});
+  task.registerOnResolveHandler(()=>events.push('handler'));
+  task.resolve([value]);
+  assert.equal(control.allocations,2); // Allocate on settlement even with no prior observer.
+  assert.deepEqual(events,mode==='value'?['handler']:['get','handler']);
+  const completion=task.completionPromise();assert.equal(control.allocations,2);
+  if(mode==='throwing-getter')await assert.rejects(completion,e=>e===reason);
+  else assert.equal(await completion,42);
+  assert.deepEqual(events,mode==='thenable'?['get','handler','then']:
+   mode==='value'?['handler']:['get','handler']);
+  assert.equal(completion,task.completionPromise());task.exit();
+ }
+}
+""")
+
+    def test_early_rejection_and_unobserved_rejection_keep_original_failure_reporting(self):
+        self.javascript(r"""
+const unhandled=[],handled=[];
+const onUnhandled=(reason,promise)=>unhandled.push({reason,promise});
+const onHandled=promise=>handled.push(promise);
+process.on('unhandledRejection',onUnhandled);process.on('rejectionHandled',onHandled);
+try {
+ for(const source of [prefix,lazyTaskCompletion(prefix,parse)]) {
+  for(const observe of [true,false]) {
+   const {fresh,control}=completionRuntime(source),task=fresh();
+   const reason=new Error('original-task-rejection');
+   const early=observe?task.completionPromise():null;
+   const checked=early?assert.rejects(early,e=>e===reason):null;
+   const before=unhandled.length;
+   task.setErrored(reason);task.reject(reason);
+   assert.equal(control.allocations,2);
+   await new Promise(resolve=>setImmediate(resolve));
+   const completion=task.completionPromise();
+   if(observe){assert.equal(completion,early);await checked;assert.equal(unhandled.length,before);}
+   else {
+    assert.equal(unhandled.length,before+1);assert.equal(unhandled.at(-1).reason,reason);
+    assert.equal(unhandled.at(-1).promise,completion);await assert.rejects(completion,e=>e===reason);
+   }
+   task.exit();await new Promise(resolve=>setImmediate(resolve));
+  }
+ }
+ assert.equal(handled.length,2);
+} finally {process.off('unhandledRejection',onUnhandled);process.off('rejectionHandled',onHandled);}
+""")
+
+    def test_refused_factory_publishes_nothing_and_keeps_original_settlement_handlers(self):
+        self.javascript(r"""
+const {fresh,control}=completionRuntime(lazyTaskCompletion(prefix,parse)),task=fresh();
+assert.equal(control.allocations,1);
+let called=0;task.registerOnResolveHandler(()=>++called);
+control.fail=true;
+assert.throws(()=>task.completionPromise(),e=>e===control.reason);
+assert.throws(()=>task.onResolve(42),e=>e===control.reason);
+assert.equal(control.allocations,1);assert.equal(called,0);
+control.fail=false;
+const completion=task.completionPromise();assert.equal(control.allocations,2);
+task.resolve([42]);assert.equal(called,1);assert.equal(await completion,42);
+assert.equal(task.completionPromise(),completion);task.exit();
+""")
+
+    def test_lazy_completion_preserves_pending_entry_queue_and_reentrant_observation(self):
+        self.javascript(r"""
+for(const source of [directIdleTaskSlots(prefix),lazyTaskCompletion(directIdleTaskSlots(prefix),parse)]) {
+ const {fresh}=completionRuntime(source),first=fresh(),second=fresh(),events=[];
+ await first.enter();let entered=false;
+ const pending=second.enter().then(()=>{entered=true;events.push('entered');});
+ for(let i=0;i<4;++i)await Promise.resolve();assert.equal(entered,false);
+ first.registerOnResolveHandler(()=>{
+  const completion=first.completionPromise();
+  assert.equal(completion,first.completionPromise());completion.then(value=>events.push(value));
+ });
+ first.resolve([42]);assert.equal(entered,false);first.exit();await pending;
+ assert.equal(entered,true);assert.deepEqual(events,[42,'entered']);second.resolve([]);second.exit();
+}
+""")
+
+    def test_unreviewed_completion_shape_and_extra_private_uses_are_rejected(self):
+        self.javascript(r"""
+const adapted=lazyTaskCompletion(prefix,parse);
+for(const [before,after] of [
+ ['class AsyncTask {','class AsyncTask extends OtherTask {'],
+ ['#onResolveHandlers = [];','#onResolveHandlers = customHandlers;'],
+ ['#completionPromise = null;','#completionPromise = undefined;'],
+ ['completionPromise() { return this.#completionPromise; }','completionPromise() { return Promise.resolve(); }'],
+ ['this.#completionPromise = completionPromise;','this.#completionPromise = exitPromise;'],
+ ['rejectCompletionPromise(this.#errored);','rejectCompletionPromise(results);'],
+ ['const handlers = this.#onResolveHandlers;','const handlers = [...this.#onResolveHandlers];'],
+ ['this.#onResolveHandlers = [];','this.#onResolveHandlers.length = 0;'],
+ ['taskState() { return this.#state; }','taskState() { return this.#completionPromise; }'],
+ ['this.#completionPromise = completionPromise;','this.#completionPromise = completionPromise; resolveCompletionPromise(42);'],
+ ]) {
+  assert.notEqual(prefix.replace(before,after),prefix);
+  assert.throws(()=>lazyTaskCompletion(prefix.replaceAll(before,after),parse),/task-completion-shape-drift/);
+}
+assert.throws(()=>lazyTaskCompletion(adapted,parse),/task-completion-shape-drift/);
+assert.throws(()=>lazyTaskCompletion(prefix+'\n// #completionCapability',parse),/task-completion-shape-drift/);
+assert.equal(lazyTaskCompletion('export const scalar=42;',parse),'export const scalar=42;');
+const shape=value=>JSON.stringify(value,(key,value)=>['start','end','raw'].includes(key)?undefined:typeof value==='bigint'?{bigint:String(value)}:value);
+function taskClass(source) {
+ let result;function walk(node){if(!node||typeof node!=='object')return;
+  if(node.type==='ClassDeclaration'&&node.id.name==='AsyncTask')result=node;
+  for(const value of Object.values(node)){if(Array.isArray(value))value.forEach(walk);else walk(value);}}
+ walk(parse(source,{ecmaVersion:'latest',sourceType:'module'}));return result;
+}
+const before=taskClass(prefix),after=taskClass(adapted);
+for(const member of before.body.body) {
+ if(['constructor','completionPromise','onResolve'].includes(member.key.name))continue;
+ const matching=after.body.body.filter(value=>shape(value)===shape(member));assert.equal(matching.length,1);
+}
+assert(adapted.includes('this.#completionCapability = null; // Drop captures'));
 """)
 
 

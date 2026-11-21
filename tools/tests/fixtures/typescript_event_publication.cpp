@@ -36,7 +36,12 @@ public:
   T* get() const { return value_.get(); }
 };
 namespace lsf::typescript::activation {
-inline unsigned admissions = 0, live = 0, deny_at = 0;
+inline unsigned admissions = 0, live = 0, deny_at = 0, preparations = 0;
+inline bool refuse_prepare = false;
+bool prepare_native_object_allocation(JSContext*) {
+  ++preparations;
+  return !refuse_prepare;
+}
 struct NativeObjectLease {
   bool accepted = false;
   NativeObjectLease() = default;
@@ -146,7 +151,20 @@ int main(int argc, char** argv) {
   const Value with_signal{0, &signal};
   const char* name = argv[1];
   bool passed = false;
-  if (!std::strcmp(name, "native-refusal-before-listener-publication")) {
+  if (!std::strcmp(name, "pressure-refusal-before-listener-publication")) {
+    refuse_prepare = true;
+    passed = !emitted_body(&cx, &list, callback, with_signal) && list.size == 0 &&
+             signal.algorithms.empty() && live == 0 && admissions == 0 && preparations == 1;
+  } else if (!std::strcmp(name, "pressure-refusal-keeps-removed-listener")) {
+    auto first = existing(1, true);
+    auto second = existing(2, false);
+    if (!list.append(first) || !list.append(second)) return 3;
+    refuse_prepare = true;
+    passed = !emitted_body(&cx, &list, callback, with_signal) && list.size == 2 &&
+             list.values[0].get() == first.get() && list.values[1].get() == second.get() &&
+             first->removed && signal.algorithms.empty() && live == 0 && admissions == 0 &&
+             preparations == 1;
+  } else if (!std::strcmp(name, "native-refusal-before-listener-publication")) {
     deny_at = 2;
     passed = !emitted_body(&cx, &list, callback, with_signal) && list.size == 0 &&
              signal.algorithms.empty() && live == 0 && admissions == 2;
@@ -174,7 +192,7 @@ int main(int argc, char** argv) {
     deny_at = 1;
     passed = emitted_body(&cx, &list, callback, with_signal) && list.size == 1 &&
              list.values[0].get() == first.get() && !first->removed &&
-             signal.algorithms.empty() && admissions == 0 && live == 0;
+             signal.algorithms.empty() && admissions == 0 && live == 0 && preparations == 0;
   } else if (!std::strcmp(name, "reactivation-refusal-keeps-existing-listener")) {
     auto first = existing(1, true);
     auto second = existing(2, false);
