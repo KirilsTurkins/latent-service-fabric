@@ -271,6 +271,22 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
   list->infallibleAppend(staged);
 ''', 'listener-and-abort-publication-after-admission')
     source = replace_once(source,
+        b'  const bool replacing_removed = it != list->end();\n',
+        b'  const bool replacing_removed = it != list->end();\n'
+        b'  const size_t removed_index = replacing_removed ? size_t(it - list->begin()) : 0;\n'
+        b'  it = nullptr; // discard the cursor before possible collection\n'
+        b'  // Inputs are Handles/RootedValues; self retains this non-moving native\n'
+        b'  // list. Only the removed index, not a cursor or staged capture, is kept.\n'
+        b'  if (!lsf::typescript::activation::prepare_native_object_allocation(cx)) return false;\n',
+        'collect-only-at-rooted-listener-allocation-boundary')
+    source = replace_once(source,
+        b'  // No fallible listener-vector growth can follow abort registration. reserve\n'
+        b'  // can invalidate `it`, so retain only the index of an old removed record.\n'
+        b'  const size_t removed_index = replacing_removed ? size_t(it - list->begin()) : 0;\n',
+        b'  // All subsequent admission remains non-collecting. Reserve before\n'
+        b'  // abort registration; a removed record keeps its original identity.\n',
+        'staged-listener-captures-never-cross-pressure-collection')
+    source = replace_once(source,
         b'  auto *list = listeners(target);\n'
         b'  JS::RootedVector<ListenerRef> list_clone(cx);\n'
         b'  if (!list_clone.reserve(list->length())) {\n',
@@ -619,6 +635,7 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
         'starlingCommit':STARLING_COMMIT,'originalSource':identity(original),
         'checkedTimeoutSourceSha256':hashlib.sha256(timeout_source).hexdigest(),
         'derivedSource':identity(result),'nativeGraphAdmission':'before-physical-allocation',
+        'listenerPressureCollection':'rooted-inputs-before-staging-no-live-cursor',
         'nativeGraphRetirement':'destructor-then-collection-end-then-safe-host-ack',
         'dispatchCloneAdmission':'before-backing-vector-growth',
         'dispatchCloneRetirement':'frame-destructor-then-safe-host-ack',
