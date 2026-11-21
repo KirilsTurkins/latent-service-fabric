@@ -94,9 +94,9 @@ refunding still-live Promises would conceal this boundary.
 The selected source-splicer path now derives a lazy **private task completion
 capability**. Construction retains the original exit capability, task queues,
 metadata, and settlement handler. The completion Promise and its resolving
-functions are created on the first `completionPromise()` observation, or at
-`onResolve` entry before detaching any original handler. The same real Promise
-is retained thereafter. Settlement creates it even without observers, preserving
+functions are created on the first `completionPromise()` observation, or when
+settlement is admitted before terminal-state changes, child rejection, or
+handler detachment. The same real Promise is retained thereafter. Settlement creates it even without observers, preserving
 thenable assimilation and unhandled-rejection reporting rather than buffering
 results or substituting a custom Promise implementation. The factory must
 succeed before publishing either field. The original completion handler drops
@@ -127,6 +127,35 @@ other non-network event, abort and combinator cases also retain their original
 results. These are diagnostic broker observations, not signed-node or original
 activation-ledger qualification. The guest probe, same-root retry, positive
 filler, budgets, deadlines and strict signed-result assertions are unchanged.
+
+## Admission before terminal task state
+
+A follow-up failure control calls the real generated task's `resolve`, rather
+than only `onResolve`, with the completion capability factory refusing. The
+old lazy derivation leaves the task marked `RESOLVED` before allocating its
+completion capability. Its handlers remain attached, but a retry cannot reach
+them because `resolve` now rejects the already-resolved task. The rejection
+path similarly publishes its rejection/cancellation flags before the factory
+can refuse; a repeated `reject` becomes a no-op.
+
+The selected derivation prepares completion after each entry's original
+validation/no-op guards and before terminal publication: before `resolve`
+changes state, before `reject` visits children or changes rejection flags, and
+before `cancel` sets its cancelled flag. The `onResolve` preflight remains for
+direct callers. The stable capability makes these checks allocation-free once
+completion exists. A refused factory changes neither terminal state nor
+handlers and performs no child rejection. It does not refund a live owner or
+replay accepted application work.
+
+Closed AST prefix checks bind the original guards and transition points.
+Controls exercise repeated refusal followed by successful settlement of the
+same task, all three terminal paths, original error identity, validation before
+allocation, already-terminal no-ops, and exact preservation of each transition
+body apart from its one preflight. The direct cancellation control reaches the
+real delivered-cancel state by temporarily selecting the initial state in the
+public enum; it is not signed cancellation qualification. The tests execute the
+actual generated class with real intrinsic Promises and a finite factory
+failure control, not the signed node or resource ledger.
 
 ## Reproduction and evidence limits
 
