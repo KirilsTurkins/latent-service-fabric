@@ -106,7 +106,7 @@ struct AlgorithmList : std::vector<std::unique_ptr<Algorithm>> {
 };
 struct Signal {
   int id = 0, reason = 0;
-  bool aborted = false;
+  bool aborted = false, algorithm_storage_absent = false;
   WeakIndexSet dependents;
   AlgorithmList algorithms;
 };
@@ -285,7 +285,9 @@ struct AbortSignal {
   }
   static int reason(Signal* signal) { return signal->reason; }
   static WeakIndexSet* dependent_signals(Signal* signal) { return &signal->dependents; }
-  static AlgorithmList* algorithms(Signal* signal) { return &signal->algorithms; }
+  static AlgorithmList* algorithms(Signal* signal) {
+    return signal->algorithm_storage_absent ? nullptr : &signal->algorithms;
+  }
   static bool abort(JSContext*, HandleObject, HandleValue);
   static bool run_abort_steps(JSContext*, HandleObject);
 };
@@ -328,6 +330,12 @@ static bool fanout_case(const char* name) {
   JSContext cx;
   Graph graph(is("fanout-inline") || is("fanout-default-reentry") ? 3 : 12);
   state.before_growth = &graph.root;
+  if (is("fanout-empty-algorithms")) {
+    graph.root.algorithms.clear(); graph.root.algorithm_storage_absent = true;
+    for (auto& signal : graph.dependents) {
+      signal.algorithms.clear(); signal.algorithm_storage_absent = true;
+    }
+  }
   bool callback_checked = false, all_ready = true;
   state.on_dispatch = [&](JSContext* context, Signal*) {
     callback_checked = true;
@@ -422,7 +430,7 @@ static bool fanout_case(const char* name) {
   } else if (is("fanout-trap") || is("fanout-error-then-trap")) {
     verified = !ok && cx.trapped && !cx.pending && !cx.stack && !cx.status &&
                state.dispatches == (is("fanout-trap") ? 1 : 2) && graph.reasons(7) && !state.pending_entries;
-  } else if (is("fanout-inline") || is("fanout-heap") || is("fanout-ack-refusal")) {
+  } else if (is("fanout-inline") || is("fanout-heap") || is("fanout-ack-refusal") || is("fanout-empty-algorithms")) {
     verified = ok && !cx.pending && callback_checked && all_ready && graph.reasons(7) &&
                state.dispatches == static_cast<int>(graph.count + 1) &&
                state.admitted == (is("fanout-inline") ? 0U : 1U);

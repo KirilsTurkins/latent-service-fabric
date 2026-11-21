@@ -103,3 +103,63 @@ component build and signed programme remain separate mandatory steps.
 LSF_TYPESCRIPT_FRONTEND=/path/to/installed-tools \
   python3 -m tools.tests.test_typescript_abort_declarations
 ```
+
+## Recovery checkpoint: avoid allocating empty algorithm storage
+
+The strict signed run `44701639483` on `ce9b3706` passed ordinary fan-out,
+then returned `diagnostic:abort-fanout:checkpoint:native-admission` in the
+refusal case. Artifact `14617568494` has SHA-256
+`4bafd057f3fd13efd1c87f94fe2a54e7ab8ae508a35ee1f03f95128f63fec9e2`;
+its component has SHA-256
+`d434749032a6e986e384f38bff38181c4dda33e9a78dc9d3d18efd0c0bbcec8e`.
+The hosted failure observation does not prove physical retirement.
+
+A separate replay of the unchanged main core with finite diagnostic imports
+reproduces that exact diagnostic at the unchanged 64-owner limit. It records
+the filler listener's original token being acknowledged (64 to 63), followed
+by a Promise allocation (63 to 64), then refusal of the await reaction.
+Thus the replay narrows the earlier suspected removal leak: the single freed
+slot is insufficient for the normal continuation while the graph remains live.
+These diagnostic imports are not the signed host or its original ledger.
+
+The production derivation now leaves `Slots::Algorithms` undefined until the
+first actual algorithm is attached. Creating a signal no longer allocates an
+empty native algorithm-list wrapper or its tracking record. Both weak sets and
+the EventTarget listener list retain their separate allocations and original
+owner reservations. No existing physical allocation becomes uncharged, and
+owners are not bundled or refunded early. An allocated algorithm list retains
+its charge even when its elements have drained, until actual finalization.
+
+First insertion uses the same non-collecting admission function to reserve a
+separate container owner, allocates its backing, and appends the separately
+owned algorithm before publishing the slot. Admission/allocation/append failure
+leaves the signal unchanged. The rooted context is passed by every native
+caller; staged callback captures never cross a newly introduced collection.
+An absent list is handled by the getter, abort drain, trace hook and finalizer;
+abort events still dispatch normally. Listener registration preserves the
+original pending native-admission failure rather than replacing it with OOM.
+
+The ten-signal fixture consequently avoids ten actual empty container and
+tracking allocations. This is a storage reduction, not a raised owner ceiling
+or a changed Promise checkpoint. The signed fixture, both refusals, positive
+filler count, nine dependents, original-root retry, event/reason ordering, fresh
+state, networking and cleanup checks remain unchanged.
+
+Run the additional compiler/lifetime controls with:
+
+```sh
+python3 -m unittest tools.tests.test_typescript_abort_lazy_algorithms
+```
+
+They compile the actual emitted create/getter/insertion/finalizer functions and
+the unchanged production container factory/retirement classes. Finite doubles
+cover independent first-use ownership, reuse, native refusal, allocation and
+append failure, original exceptions, partial initialization, delayed collection
+completion, backing deallocation and acknowledgement refusal. Reintroducing the
+eager allocation reproduces the recovery-capacity failure. The ordinary abort
+controls additionally exercise a fan-out with absent algorithm lists.
+
+These C++ controls and the diagnostic replay do not establish fresh signed
+execution, SpiderMonkey compaction, or byte-accurate whole-runtime accounting.
+The existing source-bound engine build and unchanged signed Fetch programme
+must still qualify this source; no diagnostic binary is a production input.
