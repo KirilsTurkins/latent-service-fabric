@@ -44,6 +44,10 @@ jobs:
                   old="git('checkout','--detach',commit)"
                   assert script.count(old)==1
                   script=script.replace(old,"git('checkout','--detach','--force',commit)\n"+"git('diff','--exit-code')")
+              if key=='validate':
+                  old='python3 -B tools/ci_coverage.py --receipt "$RUNNER_TEMP/pr2151-inventory.json"'
+                  assert script.count(old)==1
+                  script=script.replace(old, 'python3 -B tools/ci_coverage.py --receipt target/ci/pr2151-inventory.json\ncp target/ci/pr2151-inventory.json "$RUNNER_TEMP/pr2151-inventory.json"')
               Path(os.environ['RUNNER_TEMP'],'pr2151-'+key+'.sh').write_text(script)
           PY
       - name: Materialize and authenticate the complete resolved integration worktree
