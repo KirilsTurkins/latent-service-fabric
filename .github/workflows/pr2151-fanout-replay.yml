@@ -1,0 +1,136 @@
+name: PR 2151 authenticated fanout replay
+on:
+  push:
+    branches: [diagnostic/pr2151-integration-fanout-20261121]
+    paths: [.github/workflows/pr2151-fanout-replay.yml]
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: pr2151-authenticated-fanout-replay
+  cancel-in-progress: false
+jobs:
+  replay:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: true
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: true
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: true
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: true
+      PYTHONDONTWRITEBYTECODE: 1
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: 41e3152062e077986283b83e80ab072746f5b5bb
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          toolchain: 1.97.1
+      - uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          save-if: false
+      - name: Install existing private observer prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          sudo apt-get update
+          sudo apt-get install --yes bubblewrap
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          artifact-ids: 14579171039
+          run-id: 44609932406
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/fanout-failure
+          merge-multiple: true
+          digest-mismatch: error
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          artifact-ids: 14577653153
+          run-id: 44609932406
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/fanout-native
+          merge-multiple: true
+          digest-mismatch: error
+      - name: Reuse the exact reviewed input adapter without changing checked-out source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin ef843cbed60798d06da904df464a5cf45850c56d
+          python3 - <<'PY'
+          import os,subprocess,yaml
+          from pathlib import Path
+          raw=subprocess.check_output(['git','show','ef843cbed60798d06da904df464a5cf45850c56d:.github/workflows/pr2151-integration-fanout-diagnostic.yml'])
+          model=yaml.safe_load(raw)
+          scripts=[s['run'] for s in model['jobs']['fanout-frames']['steps'] if s.get('name')=='Bind the existing numeric observer to this exact retained failure']
+          assert len(scripts)==1
+          subprocess.run(['bash','-euo','pipefail','-c',scripts[0]],check=True)
+          p=Path(os.environ['RUNNER_TEMP'],'diagnose-pr2151-fanout.py')
+          source=p.read_text()
+          old='def replay(artifact: Path, binaries: dict, output: Path) -> dict:'
+          new='def replay(artifact: Path, binaries: dict, output: Path, mode: int = 31) -> dict:'
+          assert source.count(old)==1;source=source.replace(old,new)
+          old='[31, f"http://';new='[mode, f"http://'
+          assert source.count(old)==1;source=source.replace(old,new)
+          old="        record.update(status='observed', stage='complete')"
+          new="        record['refusalDiagnostic'] = replay(artifact, originals, output/'refusal-node', mode=32)\n"+old
+          assert source.count(old)==1;source=source.replace(old,new)
+          anchor="TESTED = '41e3152062e077986283b83e80ab072746f5b5bb'"
+          fix='''def typed_private_backtrace_source(text):
+              anchor = host.backtrace_call(text)
+              if anchor == 'wasm_backtrace_max_frames(backtrace_limit)':
+                  return host.once(text, anchor,
+                      'wasm_backtrace_max_frames({ let _: Option<std::num::NonZeroUsize> = backtrace_limit; std::num::NonZeroUsize::new(32) })')
+              return host.once(text, anchor, 'wasm_backtrace_max_frames(std::num::NonZeroUsize::new(32))')
+          host.private_backtrace_source = typed_private_backtrace_source
+
+          '''
+          assert source.count(anchor)==1;source=source.replace(anchor,fix+anchor)
+          compile(source,str(p),'exec');p.write_text(source)
+          PY
+          git diff --exit-code
+      - name: Prepare exact ordinary host dependencies
+        run: cargo --config .cargo/managed-guest.toml build --locked -p latentd --bin latentd
+      - name: Replay the unchanged failed component and original refusal probe
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B "$RUNNER_TEMP/diagnose-pr2151-fanout.py" --attempt "$RUNNER_TEMP/fanout-failure" --native "$RUNNER_TEMP/fanout-native" --output "$RUNNER_TEMP/fanout-frames"
+          git diff --exit-code
+          python3 - <<'PY'
+          import json,os
+          from pathlib import Path
+          r=json.loads(Path(os.environ['RUNNER_TEMP'],'fanout-frames/observation.json').read_text())
+          assert r['status']=='observed' and r['stage']=='complete',r
+          assert r['originalSourceUnchanged'] and r['originalComponentAndPackageUnchanged'] and r['frozenBinariesUnchanged']
+          assert r['qualification'] is False
+          PY
+      - name: Retain closed observations only
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-fanout-replay-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/fanout-frames/observation.json
+            ${{ runner.temp }}/fanout-frames/node/observation.json
+            ${{ runner.temp }}/fanout-frames/node/controls/*.json
+            ${{ runner.temp }}/fanout-frames/refusal-node/observation.json
+            ${{ runner.temp }}/fanout-frames/refusal-node/controls/*.json
+          retention-days: 7
+          if-no-files-found: warn
