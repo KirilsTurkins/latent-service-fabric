@@ -16,7 +16,7 @@ assert text('merge-base', H, D) == B
 patch = pathlib.Path('input/.github/pr2151-resolution.patch').read_bytes()
 assert hashlib.sha256(patch).hexdigest() == 'bd3881adfdda6b045c700743d44718a156f848b852add69de95b92e6e2246b25'
 rows = '''H sdk/java-guest/README.md 5e61426b330274724fe2b9ddb93fbe380cd71227 9fb2375f680e8f44120be28530b24a4a4537f609
-H sdk/typescript-guest/README.md 68d59950a0e09541556e862309fef5dee188c080 8328d7aea0e8b04ea25aa59d345a2563c2e37ad3
+M sdk/typescript-guest/README.md 68d59950a0e09541556e862309fef5dee188c080 8328d7aea0e8b04ea25aa59d345a2563c2e37ad3
 H sdk/typescript-guest/activation/native_engine.cpp 07d02a6142c7c9d610717af7c5479c2724c11857 07d02a6142c7c9d610717af7c5479c2724c11857
 D sdk/typescript-guest/activation/native_objects.h ea0fd0215b2edfd6ae1a5050f2c253b7e3ca6f49 ea0fd0215b2edfd6ae1a5050f2c253b7e3ca6f49
 H tools/java_guest/date_link_guard.py 74354dd0655050b29ad819d54e1ec65bea28cd05 d31c359c1e7599846fd769564c8414e892e61cd1
@@ -41,7 +41,7 @@ assert text('rev-parse', 'MERGE_HEAD') == D
 conflicts = set(text('diff', '--name-only', '--diff-filter=U').splitlines())
 assert conflicts <= paths, sorted(conflicts - paths)
 for label, path, before, after in plan:
-    raw = git('show', {'H':H, 'D':D}[label] + ':' + path).stdout
+    raw = git('show', {'H':H, 'D':D, 'M':'3aabc54bf09040919f4b306f0009b5bcc1b5fb88'}[label] + ':' + path).stdout
     assert blob(raw) == before, path
     target = root / path
     assert not target.is_symlink()
