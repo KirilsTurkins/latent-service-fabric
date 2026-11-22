@@ -6,105 +6,62 @@ on:
 permissions:
   contents: read
 jobs:
-  validate:
+  capture:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
-    outputs:
-      manifest_sha256: ${{ steps.validate.outputs.manifest_sha256 }}
-      tree: ${{ steps.validate.outputs.tree }}
-    env:
-      PYTHONDONTWRITEBYTECODE: '1'
+    timeout-minutes: 12
     steps:
       - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
         with:
           ref: f881e760dfb527e341b2b43b60d99f217ad2d8ae
           fetch-depth: 0
           persist-credentials: false
-      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
-        with:
-          python-version: '3.13.5'
-      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
-        with:
-          distribution: temurin
-          java-version: '25.0.4+101.0.LTS'
-      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
-      - name: Install locked validator prerequisites
-        run: python3 -m pip install --requirement tools/requirements.lock
-      - name: Merge exact parents and validate source
-        id: validate
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Capture three immutable trees and actual conflict stages
         shell: python {0}
         run: |
-          import base64, hashlib, json, os, pathlib, runpy, textwrap, urllib.request
-          blob = '55cd01c50fc1ff25ca0bc89bca359a87e7dff64a'
-          request = urllib.request.Request(
-              'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs/' + blob,
-              headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
-          with urllib.request.urlopen(request, timeout=60) as response:
-              data = json.load(response)
-          raw = base64.b64decode(data['content'])
-          assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == blob
-          assert hashlib.sha256(raw).hexdigest() == 'b2f2abf19284d7895961620759a644310d7cea54d9a87fcc491f6e031444e8c7'
-          body = raw.decode().split('      - name: Merge exact parents and validate source\n', 1)[1]
-          body = body.split('        run: |\n', 1)[1].split('      - name: Retain merge and validation evidence', 1)[0]
-          source = textwrap.dedent(body).encode()
-          assert hashlib.sha256(source).hexdigest() == 'ba6b6012fabf694eec6c72087de56549c13a51a34c533d2bdb273f0cb3741938'
-          old = b"[sys.executable, '-B', 'tools/ci_coverage.py']"
-          new = b"[sys.executable, '-B', 'tools/ci_coverage.py', '--receipt', str(out / 'ci-inventory.json')]"
-          assert source.count(old) == 1
-          source = source.replace(old, new)
-          assert hashlib.sha256(source).hexdigest() == 'd5d1ef24e80410330bb247431c1302efd47a5857040e6b7d93e282d6bd91cc6e'
-          path = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr2151-validate.py'
-          path.write_bytes(source)
-          runpy.run_path(str(path), run_name='__main__')
-      - name: Retain merge and validation evidence
-        if: always()
+          import hashlib, json, os, pathlib, subprocess
+          head = 'f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          dev = '5569a03df63cac133146eee2680223ea3a1a3dc7'
+          base = '57d4a349dbb70c2511be1cd15f41e5915d6ba5b9'
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr2151-exact-inputs'
+          out.mkdir()
+          def git(*args):
+              return subprocess.check_output(['git', *args])
+          assert git('rev-parse', 'HEAD').decode().strip() == head
+          assert git('merge-base', head, dev).decode().strip() == base
+          refs = {}
+          for label, commit in [('head',head),('development',dev),('base',base)]:
+              tree = git('rev-parse', commit + '^{tree}').decode().strip()
+              raw = git('cat-file','commit',commit)
+              assert hashlib.sha1(b'commit '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == commit
+              (out / (label+'.commit')).write_bytes(raw)
+              refs[label] = {'commit':commit,'tree':tree}
+          with (out/'trees.pack').open('wb') as file:
+              subprocess.run(['git','pack-objects','--stdout','--revs'],
+                  input=('\n'.join(row['tree'] for row in refs.values())+'\n').encode(),
+                  stdout=file, check=True, timeout=300)
+          subprocess.run(['git','config','user.name','LSF merge input capture'],check=True)
+          subprocess.run(['git','config','user.email','capture@localhost'],check=True)
+          merge = subprocess.run(['git','merge','--no-commit','--no-ff',dev],capture_output=True)
+          assert merge.returncode in (0,1)
+          assert git('rev-parse','MERGE_HEAD').decode().strip() == dev
+          (out/'merge.log').write_bytes(merge.stdout+merge.stderr)
+          conflicts = git('ls-files','--unmerged','-z')
+          (out/'conflicts.index').write_bytes(conflicts)
+          (out/'merge-index.txt').write_bytes(git('ls-files','--stage','-z'))
+          print((merge.stdout+merge.stderr).decode(errors='replace'))
+          manifest={'schema':1,'refs':refs,'gitVersion':git('--version').decode().strip(),'files':{}}
+          for path in sorted(out.iterdir()):
+              h=hashlib.sha256()
+              with path.open('rb') as file:
+                  for block in iter(lambda:file.read(1024*1024),b''):h.update(block)
+              manifest['files'][path.name]={'bytes':path.stat().st_size,'sha256':h.hexdigest()}
+          (out/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          print(json.dumps(manifest),flush=True)
+      - name: Retain exact source objects only
         uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
         with:
-          name: pr2151-exact-merge
-          path: ${{ runner.temp }}/pr2151-validation/
-          retention-days: 7
-          if-no-files-found: error
-  publish-tree:
-    needs: validate
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    permissions:
-      contents: write
-      actions: read
-    steps:
-      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
-        with:
-          name: pr2151-exact-merge
-          path: ${{ runner.temp }}/pr2151-publication
-      - name: Authenticate and publish only Git objects without executing repository code
-        shell: python {0}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          EXPECTED_MANIFEST: ${{ needs.validate.outputs.manifest_sha256 }}
-          EXPECTED_TREE: ${{ needs.validate.outputs.tree }}
-        run: |
-          import base64, hashlib, json, os, pathlib, runpy, textwrap, urllib.request
-          blob = '55cd01c50fc1ff25ca0bc89bca359a87e7dff64a'
-          request = urllib.request.Request(
-              'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/blobs/' + blob,
-              headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
-          with urllib.request.urlopen(request, timeout=60) as response:
-              data = json.load(response)
-          raw = base64.b64decode(data['content'])
-          assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == blob
-          assert hashlib.sha256(raw).hexdigest() == 'b2f2abf19284d7895961620759a644310d7cea54d9a87fcc491f6e031444e8c7'
-          body = raw.decode().split('      - name: Authenticate and publish only Git objects without executing repository code\n', 1)[1]
-          body = body.split('        run: |\n', 1)[1].split('      - uses: KirilsTurkins/lsf-upload-artifact', 1)[0]
-          source = textwrap.dedent(body).encode()
-          assert hashlib.sha256(source).hexdigest() == 'd1ad7525db2d1862af31380e03cee31363335c8267fb3eb07959ea53e740a39e'
-          path = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr2151-publish-tree.py'
-          path.write_bytes(source)
-          runpy.run_path(str(path), run_name='__main__')
-      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
-        with:
-          name: pr2151-published-tree
-          path: ${{ runner.temp }}/pr2151-publication/published-tree.json
-          retention-days: 7
+          name: pr2151-exact-inputs
+          path: ${{ runner.temp }}/pr2151-exact-inputs/
+          compression-level: 0
+          retention-days: 3
           if-no-files-found: error
