@@ -1,0 +1,224 @@
+name: Isolated PR 2151 merge preparation
+on:
+  push:
+    branches: ['maintenance/pr2151-merge-publication-20261122']
+    paths: ['.github/workflows/pr2151-merge-publication.yml']
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      LSF_PYTHON_POLICY_BASE: 702bd725f259a241a9b92aecde9b1a5787b94f94
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: f881e760dfb527e341b2b43b60d99f217ad2d8ae
+          fetch-depth: 100
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: '3.13.5'
+      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
+        with:
+          distribution: temurin
+          java-version: '25.0.4+101.0.LTS'
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a
+        with:
+          node-version: '24.19.0'
+          package-manager-cache: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Install existing validator dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Fetch exact merge parent
+        run: git fetch --no-tags --depth=100 origin 702bd725f259a241a9b92aecde9b1a5787b94f94
+      - name: Resolve authenticated inputs and validate complete checkout
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess, sys
+          HEAD = 'f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          DEV = '702bd725f259a241a9b92aecde9b1a5787b94f94'
+          BASE = '57d4a349dbb70c2511be1cd15f41e5915d6ba5b9'
+          OUT = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr2151-prepared'
+          OUT.mkdir()
+          def git(*args, check=True):
+              return subprocess.run(['git', *args], check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+          def text(*args):
+              return git(*args).stdout.decode().strip()
+          def blob(raw):
+              return hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+          assert text('rev-parse', 'HEAD') == HEAD
+          assert text('merge-base', HEAD, DEV) == BASE
+          assert not text('status', '--porcelain')
+          git('config', 'user.name', 'Kirils Turkins')
+          git('config', 'user.email', 'turkinskirils@gmail.com')
+          result = git('merge', '--no-commit', '--no-ff', DEV, check=False)
+          (OUT / 'merge.log').write_bytes(result.stdout + result.stderr)
+          assert result.returncode in (0, 1), result.stderr.decode()
+          assert text('rev-parse', 'MERGE_HEAD') == DEV
+          rows = json.loads(r'''[
+            {"path":"sdk/java-guest/README.md","base":"f881e760dfb527e341b2b43b60d99f217ad2d8ae","preimage":"5e61426b330274724fe2b9ddb93fbe380cd71227","postimage":"9fb2375f680e8f44120be28530b24a4a4537f609","edits":[[44,54,"Managed activation builds retain the **64 KiB C stack at the start of linear\nmemory**, including the guarded Date link path. Before preprocessing and sealing,\nthe compiler authenticates TeaVM's exception header and reuses automatic exception\ndescriptors only across disjoint handler lifetimes. Nested and recursive handlers\nkeep independent storage; setjmp, catch, restore and rethrow semantics are unchanged.\nThis replaces the earlier 128 KiB backing workaround without a larger caller grant.\nPlacing the downward-growing stack below static data prevents its underflow from\nsilently overwriting activation-owner registries; an out-of-bounds access traps the\nactivation instead. The 64 MiB linker maximum, Java heap limits and host ownership\nbudgets are unchanged, as is the non-fiber compiler command. See the\n[exception-slot lifetime controls](../../docs/testing/java-exception-slot-lifetimes.md).\nFinite regression controls do not promise arbitrary recursion or every library fits;\nsigned execution and physical cleanup still require source-matched qualification.\n"]]},
+            {"path":"sdk/typescript-guest/README.md","base":"f881e760dfb527e341b2b43b60d99f217ad2d8ae","preimage":"68d59950a0e09541556e862309fef5dee188c080","postimage":"8328d7aea0e8b04ea25aa59d345a2563c2e37ad3","edits":[[133,135,"intervening Promise allocation. Listener insertion uses the same checkpoint while\nits inputs are rooted, after discarding its lookup cursor and before staging any\ncaptures. Individual graph\nadmissions remain non-collecting so staged callbacks and weak-set iterators cannot\nbe invalidated. Empty AbortSignal algorithm-list storage is allocated only on first\nuse, with independent container and algorithm ownership before publication.\n"]]},
+            {"path":"sdk/typescript-guest/activation/native_engine.cpp","base":"f881e760dfb527e341b2b43b60d99f217ad2d8ae","preimage":"07d02a6142c7c9d610717af7c5479c2724c11857","postimage":"07d02a6142c7c9d610717af7c5479c2724c11857","edits":[]},
+            {"path":"sdk/typescript-guest/activation/native_objects.h","base":"702bd725f259a241a9b92aecde9b1a5787b94f94","preimage":"ea0fd0215b2edfd6ae1a5050f2c253b7e3ca6f49","postimage":"ea0fd0215b2edfd6ae1a5050f2c253b7e3ca6f49","edits":[]},
+            {"path":"tools/java_guest/date_link_guard.py","base":"f881e760dfb527e341b2b43b60d99f217ad2d8ae","preimage":"74354dd0655050b29ad819d54e1ec65bea28cd05","postimage":"d31c359c1e7599846fd769564c8414e892e61cd1","edits":[[109,109,"    # Keep the fixed downward-growing C stack below static data. An overflow\n    # must trap at the memory boundary, not overwrite allocator/bridge state.\n"]]},
+            {"path":"tools/java_guest/enum_guard.py","base":"702bd725f259a241a9b92aecde9b1a5787b94f94","preimage":"8ce4ad27744c082481ed4389ac62ecbcc233c377","postimage":"7a4f9edbd67135157a45a2eb3efbdd60a780cbf2","edits":[[18,18,"# Reuse disjoint TeaVM exception descriptors before sealing generated input.\n# Retain the original 64 KiB stack, below static data so downward overflow\n# cannot overwrite activation-owner registries.\nACTIVATION_C_STACK_BYTES = 64 * 1024\nACTIVATION_C_STACK_FLAGS = ('-Wl,--stack-first', f'-Wl,-z,stack-size={ACTIVATION_C_STACK_BYTES}')\n"],[452,453,"            '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory', *ACTIVATION_C_STACK_FLAGS,\n"],[460,460,"    receipt['cStack'] = {'bytes': ACTIVATION_C_STACK_BYTES, 'layout': 'stack-first'}\n"]]},
+            {"path":"tools/tests/fixtures/typescript_abort_lazy_algorithms.cpp","base":"702bd725f259a241a9b92aecde9b1a5787b94f94","preimage":"e1938901b71f57a5bc31df4e6c7a04507eb933c0","postimage":"a95c7e412cbdfe8f8afce6e89f25392145114525","edits":[[80,80,"}\n// Construction preflight is a finite, non-collecting double here; the exact\n// production collector and constructor combination runs in NativeGraphPressureControls.\n// This fixture isolates lazy storage and never refunds an owner's capacity.\nbool prepare_native_object_allocation(JSContext* cx) {\n  if (JS_IsExceptionPending(cx)) return false;\n  if (records.stopped()) { cx->error = \"retirement-denied\"; return false; }\n  return true;\n"]]},
+            {"path":"tools/tests/fixtures/typescript_graph_pressure.cpp","base":"f881e760dfb527e341b2b43b60d99f217ad2d8ae","preimage":"e51b18e2b7e9d2ba1a04e706a22896411ef3794c","postimage":"69c8c747fb01335990c816ca559908d7b0259d8e","edits":[[159,160,"    passed = make_graphs(&cx, 9, false) && make_graphs(&cx, 10, true);\n"],[165,166,"    passed = passed && native::promise_accounting.live == 45 && collections > 0;\n"],[167,168,"    // Three physical containers per empty signal plus this independent\n    // retained owner reach the unchanged 64-owner ceiling exactly.\n    auto filler = native::make_native_container<Body>(&cx);\n    passed = filler && make_graphs(&cx, 21, true) && !AbortSignal::create(&cx) &&\n"],[177,178,"    // Three physical containers per empty signal plus this independent\n    // retained owner reach the unchanged 64-owner ceiling exactly.\n    auto filler = native::make_native_container<Body>(&cx);\n    passed = filler && make_graphs(&cx, 21, true);\n"],[183,184,"    passed = make_graphs(&cx, 11, true);\n"],[191,192,"    passed = make_graphs(&cx, 11, true);\n"],[196,197,"      native::promise_accounting.live == 33 && native::native_objects.stopped();\n"],[201,202,"    // Three physical containers per empty signal plus this independent\n    // retained owner reach the unchanged 64-owner ceiling exactly.\n    auto filler = native::make_native_container<Body>(&cx);\n    passed = filler && make_graphs(&cx, 21, true);\n"],[205,206,"      native::promise_accounting.acknowledged == 0 && bodies == 1;\n"]]},
+            {"path":"tools/tests/test_java_date_link_guard.py","base":"702bd725f259a241a9b92aecde9b1a5787b94f94","preimage":"a3786c1d8729f20b1579b4b869143ccbd75b0d7d","postimage":"a3786c1d8729f20b1579b4b869143ccbd75b0d7d","edits":[]},
+            {"path":"tools/tests/test_java_enum_guard.py","base":"702bd725f259a241a9b92aecde9b1a5787b94f94","preimage":"ce6fde5d99a75be4b936bc068c689f8f7a210ba2","postimage":"fa52cdbb7a54a6328def501d68c43697ca0b3f15","edits":[[112,112,"        self.assertEqual(receipt['cStack'], {'bytes': 65536, 'layout': 'stack-first'})\n"],[127,127,"\n    def test_managed_link_changes_select_both_signed_qualification_owners(self):\n        import json\n        from tools import ci_lane_inventory as lanes\n        root = Path(__file__).resolve().parents[2]\n        for name in ('java-scheduled-library.yml', 'java-scheduled-development.yml'):\n            with self.subTest(workflow=name):\n                model = lanes.workflow_model((root / '.github/workflows' / name).read_text())\n                contract = json.loads((root / 'tools/ci/contracts/workflows' / name / 'workflow.json').read_text())\n                self.assertEqual(model['on'], contract['policy']['on'])\n                for source in ('tools/java_guest/enum_guard.py', 'tools/java_guest/date_link_guard.py'):\n                    self.assertIn(source, model['on']['push']['paths'])\n"]]},
+            {"path":"tools/tests/test_java_exception_slots.py","base":"702bd725f259a241a9b92aecde9b1a5787b94f94","preimage":"34279dbc5fc2cbff2b9b498dd3298b2949bac09c","postimage":"cae27ebe75e07b172a8f424ea431591bdf031063","edits":[[193,193,"                self.assertEqual(result['cStack'], {'bytes': 65536, 'layout': 'stack-first'})\n"]]},
+            {"path":"tools/tests/test_java_linear_stack.py","base":"702bd725f259a241a9b92aecde9b1a5787b94f94","preimage":"94fef0a9348bdc816439c9ac7756242942171054","postimage":"21135d2db0bca576bdd42ed99c937b8c444bc9fe","edits":[[7,7,"from tools.java_guest import enum_guard\n"],[22,24,"                flags = []\n                shared = 0\n                for node in calls[0].args:\n                    if isinstance(node, ast.Constant) and isinstance(node.value, str):\n                        flags.append(node.value)\n                    elif isinstance(node, ast.Starred) and isinstance(node.value, ast.Name) \\\n                            and node.value.id == 'ACTIVATION_C_STACK_FLAGS':\n                        flags.extend(enum_guard.ACTIVATION_C_STACK_FLAGS)\n                        shared += 1\n                self.assertEqual(shared, 1, 'both production links use the shared reviewed stack flags')\n"]]},
+            {"path":"tools/tests/test_local_tests.py","base":"f881e760dfb527e341b2b43b60d99f217ad2d8ae","preimage":"b604611fcab27a6845a53d13c52067072f7ce4a3","postimage":"033dd84285294fb7a8d3af920b69d3157be24123","edits":[[682,682,"        import tomllib\n        # The fixture lives outside ROOT, so rustup does not inherit the\n        # repository's pin. Ambient Cargo 1.100 uses a different build layout\n        # from the pinned preparation/consumer contract. Pin both preparation\n        # and execution; never relax the consumer's artifact containment.\n        toolchain = tomllib.loads((ROOT / \"rust-toolchain.toml\").read_text())[\"toolchain\"][\"channel\"]\n        env = dict(os.environ, RUSTUP_TOOLCHAIN=toolchain, CARGO_NET_OFFLINE=\"true\")\n"],[685,686,"                return subprocess.check_output(args, cwd=repo, env=env,\n                                               stderr=subprocess.STDOUT, text=True).strip()\n"],[690,692,"            # This workspace is outside ROOT: retain the repository toolchain\n            # rather than silently using the runner's unrelated Cargo layout.\n"],[720,721,"            env[\"CARGO_TARGET_DIR\"] = str(target)\n"],[726,726,"                                         \"RUSTUP_TOOLCHAIN\": toolchain,\n"],[744,744,"                                         \"RUSTUP_TOOLCHAIN\": toolchain,\n"]]},
+            {"path":"tools/tests/test_typescript_event_ownership.py","base":"f881e760dfb527e341b2b43b60d99f217ad2d8ae","preimage":"8d13702f7cbcd263bb0060a4c47d88c277af09da","postimage":"24524a9896499f7e166a4192f0c38243e4a7b67f","edits":[[32,32,"    def test_graph_pressure_controls_fail_instead_of_skipping_without_a_compiler(self):\n        from unittest.mock import patch\n        with patch.dict(os.environ, {}, clear=True), patch.object(shutil, 'which', return_value=None):\n            with self.assertRaisesRegex(RuntimeError, r'C\+\+ compiler is required'):\n                NativeGraphPressureControls.setUpClass()\n\n"],[52,54,"        for signature in (b'bool EventTarget::init(', b'bool EventTarget::invoke_listeners('):\n"],[65,66,"                         'rooted-construction-and-listener-boundaries-before-staging')\n"],[67,68,"    def test_abort_weak_containers_are_admitted_before_publication_and_algorithms_stay_absent(self):\n"],[73,75,"        self.assertEqual(body.count(b'make_native_container<'), 2)\n        self.assertLess(body.index(b'if (!dependents) return nullptr;'), body.index(b'sources.release()'))\n        self.assertNotIn(b'make_native_container<AlgorithmList>', body)\n        self.assertIn(b'Slots::Algorithms), JS::UndefinedValue()', body)\n"],[106,107,"        self.assertIn(b'if (!AbortSignal::add_algorithm(cx, signal, std::move(terminator))) {', source)\n"],[109,110,"        self.assertLess(source.index(b'if (!AbortSignal::add_algorithm(cx, signal, std::move(terminator)))'),\n"],[145,146,"        publication = source.index(b'if (!AbortSignal::add_algorithm(cx, signal, std::move(algorithm))) return false;', allocation)\n"],[168,169,"        self.assertIn(b'if (!AbortSignal::add_algorithm(cx, signal, std::move(algorithm))) return false;', source)\n"],[252,253,"        # Empty algorithm storage is the only change to the selected drain.\n        nullable = b'algorithms && next < algorithms->length()'\n        self.assertEqual(changed_abort.count(nullable), 1)\n        self.assertEqual(changed_abort.replace(nullable, b'next < algorithms->length()', 1), before_event)\n"],[371,371,"                     'fanout-empty-algorithms', 'fanout-empty-algorithms-pressure-refusal',\n                     'fanout-pressure-refusal', 'fanout-entry-exception', 'fanout-aborted-no-preflight',\n"],[626,626,"            'lazy-algorithm-refusal-preserves-error',\n"],[905,907,""],[972,973,"    def test_previous_constructors_cannot_reclaim_dead_graph_capacity(self):\n"]]},
+            {"path":"tools/typescript_guest/event_engine.py","base":"702bd725f259a241a9b92aecde9b1a5787b94f94","preimage":"988edcd201aaa7f9306d3984e7284035a6b957c4","postimage":"b474676e6d8f14c1632222bd0953684a47fc3531","edits":[[398,398,"    # Collect only before construction, with no raw object or native iterator\n    # in flight. init() is called with AbortSignal's newly published containers\n    # and must remain non-collecting, like every individual native admission.\n    for anchor in (b'JSObject *EventTarget::create(JSContext *cx) {\\n',\n                   b'  CTOR_HEADER(\"EventTarget\", 0);\\n'):\n        source = replace_once(source, anchor, anchor +\n            b'  if (!lsf::typescript::activation::prepare_native_object_allocation(cx)) return '\n            + (b'nullptr;\\n' if anchor.startswith(b'JSObject') else b'false;\\n'),\n            'collect-before-event-graph-construction')\n"],[554,554,"    source = replace_once(source, b'JSObject *AbortSignal::create(JSContext *cx) {\\n',\n        b'JSObject *AbortSignal::create(JSContext *cx) {\\n'\n        b'  if (!lsf::typescript::activation::prepare_native_object_allocation(cx)) return nullptr;\\n',\n        'collect-before-abort-graph-construction')\n"],[678,678,"        'nativeGraphPressureCollection':'rooted-construction-and-listener-boundaries-before-staging',\n        'nativeGraphAdmissionCollects':False,\n"]]}
+          ]''')
+          allowed = {row['path'] for row in rows}
+          conflicts = set(text('diff', '--name-only', '--diff-filter=U').splitlines())
+          assert conflicts <= allowed, sorted(conflicts - allowed)
+          for row in rows:
+              raw = git('show', row['base'] + ':' + row['path']).stdout
+              assert blob(raw) == row['preimage'], ('preimage', row['path'], blob(raw))
+              lines = raw.decode().splitlines(True)
+              for start, end, replacement in reversed(row['edits']):
+                  lines[start:end] = [replacement]
+              output = ''.join(lines).encode()
+              assert blob(output) == row['postimage'], ('postimage', row['path'], blob(output))
+              path = pathlib.Path(row['path'])
+              assert not path.is_symlink()
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_bytes(output)
+          git('add', '--', *sorted(allowed))
+          assert not text('diff', '--name-only', '--diff-filter=U')
+          ours_changed = set(text('diff', '--name-only', BASE, HEAD).splitlines())
+          dev_changed = set(text('diff', '--name-only', BASE, DEV).splitlines())
+          for path in dev_changed - ours_changed - allowed:
+              assert git('show', ':' + path).stdout == git('show', DEV + ':' + path).stdout, ('lost development', path)
+          protected = ['sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ManagedExecutor.java', 'sdk/java-guest/fibers/conformance/shutdown-now/Capsule.java', 'tools/java_guest/field_read_patch.py', 'tools/java_guest/coroutine_patch.py', 'tools/java_standard_http_library.py', 'tools/qualify_java_dependency_suite.py']
+          for path in protected:
+              assert git('show', ':' + path).stdout == git('show', HEAD + ':' + path).stdout, ('lost handoff', path)
+          for path in ['Cargo.lock', 'crates/vendor/wasmtime/UPSTREAM.latent.json', 'tools/java_guest/exception_slots.py', 'tools/typescript_guest/abort_engine.py', 'tools/typescript_guest/source_splicer.mjs', 'sdk/typescript-guest/activation/runtime-globals.d.ts', 'sdk/typescript-guest/probes/fetch-runtime/main.ts']:
+              assert git('show', ':' + path).stdout == git('show', DEV + ':' + path).stdout, ('lost current runtime', path)
+          git('diff', '--cached', '--check')
+          tree = text('write-tree')
+          commit = text('commit-tree', tree, '-p', HEAD, '-p', DEV, '-m', 'Exact-parent PR 2151 merge validation input')
+          git('reset', '--soft', commit)
+          git('update-ref', '-d', 'MERGE_HEAD')
+          def unchanged():
+              assert text('rev-parse', 'HEAD') == commit
+              assert text('write-tree') == tree
+              assert not text('status', '--porcelain', '--untracked-files=all'), 'source changed during validation'
+          unchanged()
+          from tools.ci_python_policy import require_no_new_controls
+          for name in text('diff', '--name-only', '--diff-filter=AM', DEV, commit).splitlines():
+              path = pathlib.Path(name)
+              if path.name.startswith('test_') and path.suffix == '.py':
+                  old = git('show', DEV + ':' + name, check=False)
+                  require_no_new_controls(old.stdout.decode() if old.returncode == 0 else '', path.read_text())
+          groups = [
+              ['tools.tests.test_java_enum_guard','tools.tests.test_java_date_link_guard','tools.tests.test_java_exception_slots','tools.tests.test_java_linear_stack','tools.tests.test_typescript_event_ownership','tools.tests.test_typescript_abort_lazy_algorithms','tools.tests.test_typescript_native_object_pressure','tools.tests.test_typescript_native_task_meta','tools.tests.test_native_fixture_toolchain'],
+              ['tools.tests.test_java_compiler_acquisition','tools.tests.test_java_dependency_suite','tools.tests.test_java_resource_runtime','tools.tests.test_java_standard_http_ownership','tools.tests.test_java_teavm_failure_trace','tools.tests.test_typescript_abort_any_ownership','tools.tests.test_typescript_abort_stack_integration','tools.tests.test_typescript_record_retirement','tools.tests.test_typescript_abort_declarations'],
+              ['tools.tests.test_java_checkpoint_context','tools.tests.test_java_future_cancel_interrupt','tools.tests.test_java_http_fibers','tools.tests.test_java_owner_admission','tools.tests.test_java_scheduled_library'],
+              ['tools.tests.test_java_exception_frames','tools.tests.test_runtime_merge_integration']
+          ]
+          commands = [[sys.executable,'-B','-m','unittest',*group,'-v'] for group in groups]
+          commands += [[sys.executable,'-B','-m','unittest','discover','-s','sdk/java-guest/tests','-v'],[sys.executable,'-B','tools/validate_repository.py'],[sys.executable,'-B','tools/ci_coverage.py','--receipt','target/ci/pr2151-inventory.json']]
+          for index, command in enumerate(commands):
+              unchanged()
+              print('VALIDATE', index, command, flush=True)
+              with (OUT / ('validation-%d.log' % index)).open('wb') as log:
+                  check = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, timeout=900)
+              print((OUT / ('validation-%d.log' % index)).read_text(errors='replace')[-2500:], flush=True)
+              assert check.returncode == 0, ('validation failed', index)
+              unchanged()
+          (OUT / 'changes.diff').write_bytes(git('diff', DEV, commit).stdout)
+          (OUT / 'changes.stat').write_bytes(git('diff', '--stat', DEV, commit).stdout)
+          (OUT / 'blobs').mkdir()
+          entries = []
+          for path in text('diff','--name-only',DEV,commit).splitlines():
+              mode, kind, sha = text('ls-tree',commit,'--',path).split('\t')[0].split()
+              assert kind == 'blob' and mode in ('100644','100755'), path
+              raw = git('show',commit+':'+path).stdout
+              assert blob(raw) == sha
+              (OUT / 'blobs' / sha).write_bytes(raw)
+              entries.append({'path':path,'mode':mode,'type':'blob','sha':sha,'sha256':hashlib.sha256(raw).hexdigest()})
+          manifest = {'head':HEAD,'development':DEV,'baseTree':text('rev-parse',DEV+'^{tree}'),'tree':tree,'entries':entries,'validationCommands':commands,'status':'passed','productionRefsChanged':False}
+          (OUT / 'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          print(json.dumps({'tree':tree,'files':len(entries),'status':'passed'}),flush=True)
+          PY
+      - name: Retain validation and exact merge products
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-merge-prepared-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2151-prepared
+          if-no-files-found: error
+          retention-days: 3
+  store-objects:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          name: pr2151-merge-prepared-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2151-prepared
+      - name: Authenticate and store Git objects only, without checkout or ref mutation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, re, urllib.request
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr2151-prepared'
+          manifest = json.loads((root / 'manifest.json').read_text())
+          assert manifest['status'] == 'passed' and manifest['productionRefsChanged'] is False
+          assert manifest['head'] == 'f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          assert manifest['development'] == '702bd725f259a241a9b92aecde9b1a5787b94f94'
+          assert manifest['baseTree'] == 'eae3ea23ff1253a50b83c5de95d6f6b3daa880c9'
+          assert re.fullmatch('[0-9a-f]{40}', manifest['tree'])
+          entries = manifest['entries']
+          assert 0 < len(entries) <= 100
+          assert len({e['path'] for e in entries}) == len(entries)
+          total = 0
+          for entry in entries:
+              path = pathlib.PurePosixPath(entry['path'])
+              assert not path.is_absolute() and '..' not in path.parts
+              assert entry['mode'] in ('100644','100755') and entry['type'] == 'blob'
+              assert re.fullmatch('[0-9a-f]{40}', entry['sha'])
+              source = root / 'blobs' / entry['sha']
+              assert source.is_file() and not source.is_symlink()
+              raw = source.read_bytes(); total += len(raw)
+              assert total <= 8 * 1024 * 1024
+              assert hashlib.sha256(raw).hexdigest() == entry['sha256']
+              assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == entry['sha']
+          def post(endpoint, data):
+              request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/'+endpoint,data=json.dumps(data).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'},method='POST')
+              with urllib.request.urlopen(request,timeout=60) as response:
+                  return json.load(response)
+          for entry in entries:
+              raw = (root / 'blobs' / entry['sha']).read_bytes()
+              result = post('blobs',{'content':base64.b64encode(raw).decode(),'encoding':'base64'})
+              assert result['sha'] == entry['sha']
+          tree = post('trees',{'base_tree':manifest['baseTree'],'tree':[{k:e[k] for k in ('path','mode','type','sha')} for e in entries]})
+          assert tree['sha'] == manifest['tree'], (tree['sha'],manifest['tree'])
+          result = {'tree':tree['sha'],'head':manifest['head'],'development':manifest['development'],'files':len(entries),'status':'stored','productionRefsChanged':False}
+          (root / 'stored-tree.json').write_text(json.dumps(result,indent=2)+'\n')
+          print(json.dumps(result))
+          PY
+      - name: Retain authenticated stored tree identity
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-merge-tree-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2151-prepared/stored-tree.json
+          if-no-files-found: error
+          retention-days: 3
