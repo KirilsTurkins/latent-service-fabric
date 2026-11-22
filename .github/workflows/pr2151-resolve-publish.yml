@@ -1,0 +1,185 @@
+name: PR 2151 exact merge validation
+on:
+  push:
+    branches: [diagnostic/pr2151-merge-20261122]
+    paths: [.github/workflows/pr2151-resolve-publish.yml]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      LSF_PYTHON_POLICY_BASE: 8f87f81f8c987f8f39f34bec693c8cb3e08ecb75
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: 9cbb07a980993bbbf9d9691e0d3219664a73b7e1
+          path: carrier
+          sparse-checkout: .github/pr2151-carrier
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: f881e760dfb527e341b2b43b60d99f217ad2d8ae
+          path: source
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: 3.13.5
+      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
+        with:
+          distribution: temurin
+          java-version: 25.0.4+101.0.LTS
+      - name: Authenticate all preimages and reconstruct the exact reviewed tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -C source fetch --no-tags origin 8f87f81f8c987f8f39f34bec693c8cb3e08ecb75
+          python3 - <<'PY'
+          import base64, gzip, hashlib, json, os, pathlib, subprocess
+          root = pathlib.Path.cwd()
+          repo = root/'source'
+          out = pathlib.Path(os.environ['RUNNER_TEMP'])/'pr2151-reviewed'
+          out.mkdir()
+          stage = out/'postimages'
+          stage.mkdir()
+          encoded = ''.join((root/'carrier/.github/pr2151-carrier'/f'part{i}.txt').read_text().strip() for i in range(4))
+          raw = gzip.decompress(base64.b64decode(encoded, validate=True))
+          assert hashlib.sha256(raw).hexdigest() == 'e40260131f7f5a104ed524f70fdceb2c113922c2559acf21fbb085dbd909f504'
+          plan = json.loads(raw)
+          assert plan['head'] == 'f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          assert plan['development'] == '8f87f81f8c987f8f39f34bec693c8cb3e08ecb75'
+          assert plan['baseTree'] == '234faee95d9cc622c7d27ee1be1a597d406c82e9'
+          assert plan['tree'] == '6a2df156692110ba9df29e08f37a3906e9241b13'
+          def git(*args):
+              return subprocess.check_output(['git', *args], cwd=repo)
+          def blob(data):
+              return hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+          assert git('rev-parse', 'HEAD^{tree}').decode().strip() == plan['baseTree']
+          assert len(plan['entries']) == 87
+          assert len({row['path'] for row in plan['entries']}) == 87
+          for row in plan['entries']:
+              path = pathlib.PurePosixPath(row['path'])
+              assert not path.is_absolute() and '..' not in path.parts and '.git' not in path.parts
+              assert row['mode'] == '100644'
+              if 'baseRef' in row:
+                  assert row['baseRef'] in (plan['head'], plan['development'])
+                  data = git('show', row['baseRef']+':'+row['path'])
+                  assert blob(data) == row['baseBlob']
+                  target = stage/row['path']
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(data)
+          patch = out/'postimages.patch'
+          patch.write_text(plan['patch'])
+          subprocess.run(['git','apply','--check',str(patch)],cwd=stage,check=True)
+          subprocess.run(['git','apply',str(patch)],cwd=stage,check=True)
+          git('read-tree', plan['head'])
+          fresh = 0
+          for row in plan['entries']:
+              if 'baseRef' in row:
+                  data = (stage/row['path']).read_bytes()
+                  assert blob(data) == row['sha'], row['path']
+                  assert git('hash-object','-w',str(stage/row['path'])).decode().strip() == row['sha']
+                  fresh += 1
+              git('update-index','--add','--cacheinfo',row['mode'],row['sha'],row['path'])
+          assert fresh == 11
+          assert git('write-tree').decode().strip() == plan['tree']
+          git('checkout-index','--all','--force')
+          git('diff','--exit-code')
+          git('diff','--cached','--check')
+          assert not (repo/'.github/workflows/pr2151-resolve-publish.yml').exists()
+          (out/'carrier.json').write_bytes(raw)
+          print(json.dumps({'tree':plan['tree'],'head':plan['head'],'development':plan['development'],'freshBlobs':fresh}))
+          PY
+      - name: Run required combined source and regression controls without suppressions
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          out="$RUNNER_TEMP/pr2151-reviewed"
+          python3 -B -m unittest tools.tests.test_typescript_event_ownership tools.tests.test_typescript_native_object_pressure tools.tests.test_typescript_abort_lazy_algorithms tools.tests.test_java_enum_guard tools.tests.test_java_date_link_guard tools.tests.test_java_exception_slots tools.tests.test_java_linear_stack -v 2>&1 | tee "$out/focused.log"
+          python3 -B -m unittest tools.tests.test_typescript_abort_any_ownership tools.tests.test_typescript_fetch_runtime tools.tests.test_typescript_fetch_boundaries tools.tests.test_java_compiler_acquisition tools.tests.test_java_dependency_suite tools.tests.test_java_resource_runtime tools.tests.test_java_standard_http_ownership tools.tests.test_java_teavm_failure_trace tools.tests.test_java_dependency_diagnostics tools.tests.test_ci_python_policy -v 2>&1 | tee "$out/broad.log"
+          python3 -B -m unittest discover -s sdk/java-guest/tests -v 2>&1 | tee "$out/sdk.log"
+          python3 -B tools/validate_repository.py 2>&1 | tee "$out/repository.log"
+          python3 -B tools/ci_coverage.py --receipt target/ci/pr2151-merged-inventory.json 2>&1 | tee "$out/coverage.log"
+          cp target/ci/pr2151-merged-inventory.json "$out/observed-inventory.json"
+          git diff --exit-code
+          git diff --cached --check
+          test "$(git write-tree)" = 6a2df156692110ba9df29e08f37a3906e9241b13
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          out = pathlib.Path(os.environ['RUNNER_TEMP'])/'pr2151-reviewed'
+          (out/'validation.json').write_text(json.dumps({'status':'passed','tree':'6a2df156692110ba9df29e08f37a3906e9241b13','baseline':'8f87f81f8c987f8f39f34bec693c8cb3e08ecb75','scopes':['focused','broad','sdk','repository','coverage'],'signedExecution':'not-run','jdk':subprocess.check_output(['java','-version'],stderr=subprocess.STDOUT,text=True)})+'\n')
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        if: always()
+        with:
+          name: pr2151-reviewed-merge-postimages
+          path: ${{ runner.temp }}/pr2151-reviewed
+          if-no-files-found: error
+          retention-days: 3
+  publish-objects:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          name: pr2151-reviewed-merge-postimages
+          path: ${{ runner.temp }}/reviewed
+      - name: Publish only exact validated blobs tree and two-parent commit without moving refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, urllib.request
+          root = pathlib.Path(os.environ['RUNNER_TEMP'])/'reviewed'
+          raw = (root/'carrier.json').read_bytes()
+          assert hashlib.sha256(raw).hexdigest() == 'e40260131f7f5a104ed524f70fdceb2c113922c2559acf21fbb085dbd909f504'
+          plan = json.loads(raw)
+          validation = json.loads((root/'validation.json').read_text())
+          assert validation['status'] == 'passed' and validation['tree'] == plan['tree']
+          assert validation['baseline'] == plan['development']
+          assert plan['tree'] == '6a2df156692110ba9df29e08f37a3906e9241b13'
+          def post(endpoint, body):
+              url = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/'+endpoint
+              request = urllib.request.Request(url, data=json.dumps(body).encode(), headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json','X-GitHub-Api-Version':'2022-11-28'}, method='POST')
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  return json.load(response)
+          entries = []
+          for row in plan['entries']:
+              path = pathlib.PurePosixPath(row['path'])
+              assert not path.is_absolute() and '..' not in path.parts and '.git' not in path.parts
+              if 'baseRef' in row:
+                  file = root/'postimages'/row['path']
+                  assert file.is_file() and not file.is_symlink()
+                  data = file.read_bytes()
+                  assert len(data) <= 1024*1024
+                  assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest() == row['sha']
+                  created = post('blobs', {'encoding':'base64','content':base64.b64encode(data).decode()})
+                  assert created['sha'] == row['sha']
+              entries.append({'path':row['path'],'mode':row['mode'],'type':'blob','sha':row['sha']})
+          tree = post('trees', {'base_tree':plan['baseTree'],'tree':entries})
+          assert tree['sha'] == plan['tree']
+          message = 'Merge development and preserve combined Java and native graph repairs\n\nResolve seven conflicts against 8f87f81 without discarding cached-handoff\nsemantics, original deadlines, the shared 128 KiB managed C stack, or the\nunchanged 64 MiB memory ceiling. Combine rooted construction pressure with\nrooted listener pressure and lazy AbortSignal algorithm storage. Preserve\nthe real refusal/recovery checks and original 64-owner ceiling.\n\nAdapt finite graph fixtures to independent lazy owners, retain exception-slot\nstaging in both compiler custody and receipts, and remove the new compiler\nprerequisite skip instead of waiving Python suppression policy. Missing\ncompiler prerequisites fail on every platform. Update both linker controls\nand stack-layout documentation for the integrated internal reservation.\n\nExact-tree hosted focused, broader, complete Java SDK, repository and CI\ninventory controls passed with pinned JDK 25. These are source/native controls,\nnot a new signed SpiderMonkey or Java component qualification. Fresh complete\nCI and signed execution remain required. No temporary workflow enters this tree.'
+          commit = post('commits', {'message':message,'tree':tree['sha'],'parents':[plan['head'],plan['development']]})
+          receipt = {'commit':commit['sha'],'tree':tree['sha'],'parents':[plan['head'],plan['development']],'sourceCarrierSha256':hashlib.sha256(raw).hexdigest(),'validation':validation,'productionRefMoved':False}
+          out = pathlib.Path(os.environ['RUNNER_TEMP'])/'publication'
+          out.mkdir()
+          (out/'publication.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          print(json.dumps(receipt))
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-merge-publication
+          path: ${{ runner.temp }}/publication/publication.json
+          if-no-files-found: error
+          retention-days: 3
