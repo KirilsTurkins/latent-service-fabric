@@ -1,3 +1,0 @@
-package examples:recovery@1.0.0;
-interface api { run: func(which: u32) -> u32; }
-world service { export api; }

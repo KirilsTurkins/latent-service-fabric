@@ -1,8 +1,0 @@
-{
-  "schemaVersion": "latent.ci.contracts.v1",
-  "kind": "owner",
-  "reviewReason": "Build and run the bounded standalone allocator observer for the actual original-activation stream scope.",
-  "path": "tools/stream_scope_retirement_witness.py",
-  "sha256": "ed972be7e469478c964276617d0c948bb4397dbb0a188d5d2e6612febd999833",
-  "reviewBoundary": "committed-fingerprint"
-}

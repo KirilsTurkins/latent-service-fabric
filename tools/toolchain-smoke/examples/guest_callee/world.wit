@@ -1,3 +1,0 @@
-package tests:local@1.0.0;
-interface api { answer: func() -> u32; fail: func() -> result<u32, string>; spin: func() -> u32; }
-world service { export api; }

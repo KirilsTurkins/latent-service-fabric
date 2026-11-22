@@ -1,3 +1,0 @@
-# Preserve exact process output bytes, including libtest's final blank line.
-*.stdout -text whitespace=-blank-at-eof
-*.stderr -text

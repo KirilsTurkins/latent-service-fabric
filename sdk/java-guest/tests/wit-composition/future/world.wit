@@ -1,3 +1,0 @@
-package examples:future-values@1.0.0;
-interface api { run: func() -> future<string>; }
-world service { export api; }

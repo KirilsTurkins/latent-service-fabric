@@ -1,4 +1,0 @@
-name = "state-throughput"
-status = "specified"
-iterations = 30
-warmup_iterations = 5

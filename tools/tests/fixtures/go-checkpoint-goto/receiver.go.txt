@@ -1,4 +1,0 @@
-package directivecheck
-type T struct{}
-func (T) //go:nosplit
-Method() {}

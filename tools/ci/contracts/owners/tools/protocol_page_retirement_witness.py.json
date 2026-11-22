@@ -1,8 +1,0 @@
-{
-  "schemaVersion": "latent.ci.contracts.v1",
-  "kind": "owner",
-  "reviewReason": "Run the source-matched protocol page and native-capacity allocation witnesses against their original owners.",
-  "path": "tools/protocol_page_retirement_witness.py",
-  "sha256": "b6917a23394c660c6926c7e2248360c219a22f079abaeac19a273edece2023e3",
-  "reviewBoundary": "committed-fingerprint"
-}

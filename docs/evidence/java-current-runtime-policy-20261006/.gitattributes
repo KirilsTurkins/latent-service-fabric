@@ -1,3 +1,0 @@
-*.json -text whitespace=cr-at-eol
-*.log -text whitespace=-blank-at-eof,cr-at-eol
-*.txt -text whitespace=cr-at-eol

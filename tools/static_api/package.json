@@ -1,8 +1,0 @@
-{
-  "name": "@latent-service-fabric/static-api-qualification",
-  "version": "0.0.0",
-  "private": true,
-  "dependencies": {
-    "playwright-core": "1.63.0"
-  }
-}

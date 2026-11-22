@@ -1,5 +1,0 @@
-* whitespace=blank-at-eol,space-before-tab,cr-at-eol,-blank-at-eof
-*.json -text
-*.csv -text
-*.log -text
-*.sha256 -text

@@ -1,3 +1,0 @@
-package examples:malformed@1.0.0;
-interface api { run: func() -> string }
-world service { export api; }

@@ -1,4 +1,0 @@
-dev.latent.guest.facilities.compiler.EntropyPlugin
-dev.latent.guest.facilities.compiler.LoggingPlugin
-dev.latent.guest.facilities.compiler.ClosedFilesystemPlugin
-dev.latent.guest.facilities.compiler.ReachabilityPlugin

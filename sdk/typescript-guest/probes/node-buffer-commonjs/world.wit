@@ -1,3 +1,0 @@
-package examples:typescript-buffer@1.0.0;
-interface api { run: func(which: u32) -> string; }
-world service { export api; }
