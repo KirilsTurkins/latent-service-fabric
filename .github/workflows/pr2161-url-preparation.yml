@@ -71,13 +71,17 @@ jobs:
               assert old[key] == new[key], key
           assert new['url@2.5.9']['checksum'] == 'f00cd2407bb42c0ef17be88d4cf020f5cceffd121665bac9b8b9493a369b3b1a'
           assert new['form_urlencoded@1.2.3']['checksum'] == 'afa489199eaffb1211795df1c6236ce1ad0d41a6fa45250add73e3b02420f06e'
+          for name, previous, current in (('url', '2.5.8', '2.5.9'), ('form_urlencoded', '1.2.2', '1.2.3')):
+              expected = dict(old[name + '@' + previous])
+              expected.update(version=current, checksum=new[name + '@' + current]['checksum'])
+              assert expected == new[name + '@' + current], name
           digest = hashlib.sha256(raw).hexdigest()
           blob = hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
           report = {'source': os.environ['GITHUB_SHA'], 'sha256': digest, 'gitBlob': blob, 'bytes': len(raw), 'packages': len(after['package'])}
           Path(os.environ['RUNNER_TEMP'], 'url-preparation', 'lock-identity.json').write_text(json.dumps(report, indent=2) + '\n')
           print(json.dumps(report))
-          assert digest == 'a51f90f3f00e5dc21fa2b6f494794a03dea086cb9379a469a35d5b0538795f1d'
-          assert blob == '891642ee1454d90ee4ef98193bf35a6c961b9014'
+          assert digest == '60508c03d66494b72ce74b5c4fea903b7cd2bbc61d9162b50e3d1d3c10f3ecc5'
+          assert blob == 'acfbd75288fd28e0d567e7bf1bdf3c55a23ff6d4'
           PY
       - name: Check formatting and execute actual HTTP provider unit tests
         shell: bash
@@ -103,7 +107,7 @@ jobs:
       actions: read
       contents: write
     steps:
-      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # v5.0.0 + LSF fixes
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389 # pinned LSF artifact reader
         with:
           name: pr2161-url-preparation-${{ github.run_id }}
           path: ${{ runner.temp }}/url-preparation
@@ -118,9 +122,9 @@ jobs:
           from pathlib import Path
           import hashlib, json
           raw = Path('Cargo.lock').read_bytes()
-          assert len(raw) == 113093
-          assert hashlib.sha256(raw).hexdigest() == 'a51f90f3f00e5dc21fa2b6f494794a03dea086cb9379a469a35d5b0538795f1d'
-          assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == '891642ee1454d90ee4ef98193bf35a6c961b9014'
+          assert len(raw) == 113076
+          assert hashlib.sha256(raw).hexdigest() == '60508c03d66494b72ce74b5c4fea903b7cd2bbc61d9162b50e3d1d3c10f3ecc5'
+          assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == 'acfbd75288fd28e0d567e7bf1bdf3c55a23ff6d4'
           Path('payload.json').write_text(json.dumps({'content': raw.decode('utf-8'), 'encoding': 'utf-8'}))
           PY
           gh api --method POST repos/KirilsTurkins/latent-service-fabric/git/blobs --input payload.json > blob.json
@@ -129,6 +133,6 @@ jobs:
           import json
           from pathlib import Path
           result = json.loads(Path('blob.json').read_text())
-          assert result['sha'] == '891642ee1454d90ee4ef98193bf35a6c961b9014'
+          assert result['sha'] == 'acfbd75288fd28e0d567e7bf1bdf3c55a23ff6d4'
           print(json.dumps({'storedBlob': result['sha'], 'refsChanged': False}))
           PY
