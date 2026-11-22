@@ -68,7 +68,8 @@ jobs:
           python3 -B -m unittest tools.tests.test_java_compiler_acquisition tools.tests.test_java_dependency_suite tools.tests.test_java_resource_runtime tools.tests.test_java_standard_http_ownership tools.tests.test_java_teavm_failure_trace tools.tests.test_typescript_abort_any_ownership tools.tests.test_typescript_abort_stack_integration tools.tests.test_typescript_record_retirement tools.tests.test_typescript_abort_declarations tools.tests.test_typescript_native_task_meta tools.tests.test_native_fixture_toolchain -v 2>&1 | tee "$RUNNER_TEMP/pr2151-integration/adjacent.log"
           python3 -B -m unittest discover -s sdk/java-guest/tests -v 2>&1 | tee "$RUNNER_TEMP/pr2151-integration/sdk.log"
           python3 -B tools/validate_repository.py 2>&1 | tee "$RUNNER_TEMP/pr2151-integration/repository.log"
-          python3 -B tools/ci_coverage.py --receipt "$RUNNER_TEMP/pr2151-integration/ci-inventory.json" 2>&1 | tee "$RUNNER_TEMP/pr2151-integration/ci.log"
+          python3 -B tools/ci_coverage.py --receipt target/ci/pr2151-inventory.json 2>&1 | tee "$RUNNER_TEMP/pr2151-integration/ci.log"
+          cp target/ci/pr2151-inventory.json "$RUNNER_TEMP/pr2151-integration/ci-inventory.json"
           git diff --exit-code
           git diff --cached --check
           test "$(git write-tree)" = "$(cat "$RUNNER_TEMP/pr2151-integration/candidate-tree.txt")"
