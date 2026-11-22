@@ -1,0 +1,226 @@
+name: Isolated PR 2151 exact merge validation
+on:
+  push:
+    branches: ['work/pr2151-merge-qualification-20261122']
+    paths: ['.github/workflows/pr2151-merge-validation.yml']
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    outputs:
+      manifest_sha256: ${{ steps.validate.outputs.manifest_sha256 }}
+      tree: ${{ steps.validate.outputs.tree }}
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: f881e760dfb527e341b2b43b60d99f217ad2d8ae
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: '3.13.5'
+      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
+        with:
+          distribution: temurin
+          java-version: '25.0.4+101.0.LTS'
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Install locked validator prerequisites
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Merge exact parents and validate source
+        id: validate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: python
+        run: |
+          import base64, hashlib, json, os, pathlib, subprocess, sys, urllib.request, zlib
+          repo = 'KirilsTurkins/latent-service-fabric'
+          head = 'f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          dev = '5569a03df63cac133146eee2680223ea3a1a3dc7'
+          root = pathlib.Path.cwd()
+          out = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr2151-validation'
+          out.mkdir()
+          encoded = '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'
+          raw = zlib.decompress(base64.b64decode(encoded, validate=True))
+          assert hashlib.sha256(raw).hexdigest() == '74246b21c81a4cbe24504d86926222b478745c412ee4eb7fd0c62111194ea56a'
+          data = json.loads(raw)
+          assert data['head'] == head and data['development'] == dev
+          (out / 'resolution.json').write_bytes(raw)
+          def git(*args, check=True):
+              return subprocess.run(['git', *args], check=check, capture_output=True).stdout
+          def digest(raw):
+              return hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest()
+          def current(branch):
+              request = urllib.request.Request('https://api.github.com/repos/' + repo + '/git/ref/heads/' + branch,
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.load(response)['object']['sha']
+          assert current('fix/sdk-java-cached-idle-handoff-20261117') == head
+          assert current('development') == dev
+          assert git('rev-parse', 'HEAD').decode().strip() == head
+          assert git('merge-base', head, dev).decode().strip() == data['commonAncestor']
+          subprocess.run(['git', 'config', 'user.name', 'LSF merge validation'], check=True)
+          subprocess.run(['git', 'config', 'user.email', 'validation@localhost'], check=True)
+          merge = subprocess.run(['git', 'merge', '--no-commit', '--no-ff', dev], capture_output=True)
+          (out / 'merge.log').write_bytes(merge.stdout + merge.stderr)
+          print(merge.stdout.decode(errors='replace'), flush=True)
+          assert merge.returncode in (0, 1), merge.stderr.decode(errors='replace')
+          assert git('rev-parse', 'MERGE_HEAD').decode().strip() == dev
+          conflicts = set(git('diff', '--name-only', '--diff-filter=U').decode().splitlines())
+          assert conflicts <= set(data['resolvedConflicts']), sorted(conflicts)
+          for entry in data['entries']:
+              name = entry['path']
+              path = pathlib.PurePosixPath(name)
+              assert not path.is_absolute() and '..' not in path.parts
+              assert entry['ref'] in (head, dev)
+              before = git('show', entry['ref'] + ':' + name)
+              assert digest(before) == entry['pre'], ('preimage', name, digest(before))
+              lines = before.splitlines(keepends=True)
+              offset, pieces = 0, []
+              for start, end, encoded_insert in entry['ops']:
+                  assert offset <= start <= end <= len(lines)
+                  pieces += lines[offset:start]
+                  pieces.append(base64.b64decode(encoded_insert, validate=True))
+                  offset = end
+              after = b''.join(pieces + lines[offset:])
+              assert digest(after) == entry['post'], ('postimage', name)
+              assert hashlib.sha256(after).hexdigest() == entry['sha256']
+              target = root / name
+              assert target.resolve().is_relative_to(root) and not target.is_symlink()
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(after)
+              git('add', '--', name)
+          assert not git('diff', '--name-only', '--diff-filter=U').strip()
+          for key, ref in [('preserveOurs', head), ('preserveDevelopment', dev)]:
+              for name in data[key]:
+                  assert (root / name).read_bytes() == git('show', ref + ':' + name), ('protected', name)
+          git('diff', '--cached', '--check')
+          (out / 'merge.patch').write_bytes(git('diff', '--cached', dev))
+          expected_tree = git('write-tree').decode().strip()
+          git('commit', '-m', 'Local exact-parent PR 2151 merge validation; not a production publication')
+          assert git('show', '-s', '--format=%P', 'HEAD').decode().split() == [head, dev]
+          assert git('rev-parse', 'HEAD^{tree}').decode().strip() == expected_tree
+          os.environ['LSF_PYTHON_POLICY_BASE'] = dev
+          for index, command in enumerate(data['validationCommands'] + [
+                  [sys.executable, '-B', 'tools/validate_repository.py'],
+                  [sys.executable, '-B', 'tools/ci_coverage.py']]):
+              argv = [sys.executable if value == '{python}' else value for value in command]
+              print('VALIDATION', index, argv[:6], flush=True)
+              with (out / ('validation-%02d.log' % index)).open('wb') as log:
+                  result = subprocess.run(argv, stdout=log, stderr=subprocess.STDOUT, timeout=600)
+              text = (out / ('validation-%02d.log' % index)).read_text(errors='replace')
+              print(text[-5000:], flush=True)
+              assert result.returncode == 0, ('validation-failed', index)
+              if index in (1, 2, 3):
+                  assert 'skipped=' not in text, ('unexpected-skip', index)
+          assert not git('diff', 'HEAD', '--').strip(), 'source changed during validation'
+          assert current('fix/sdk-java-cached-idle-handoff-20261117') == head
+          assert current('development') == dev
+          entries = []
+          changed = git('diff', '--name-only', '--no-renames', '-z', dev, 'HEAD').split(b'\0')
+          for raw_name in changed:
+              if not raw_name:
+                  continue
+              name = raw_name.decode()
+              rows = git('ls-tree', 'HEAD', '--', name).decode().splitlines()
+              if not rows:
+                  entries.append({'path': name, 'mode': '100644', 'type': 'blob', 'sha': None})
+                  continue
+              mode, kind, sha = rows[0].split('\t')[0].split()
+              assert kind == 'blob' and mode in ('100644', '100755')
+              content = git('show', 'HEAD:' + name)
+              assert digest(content) == sha
+              entries.append({'path': name, 'mode': mode, 'type': kind, 'sha': sha,
+                  'bytes': len(content), 'sha256': hashlib.sha256(content).hexdigest(),
+                  'content': base64.b64encode(content).decode()})
+          publication = {'schema': 1, 'head': head, 'development': dev,
+              'baseTree': git('rev-parse', dev + '^{tree}').decode().strip(),
+              'expectedTree': expected_tree, 'entries': entries, 'conflicts': sorted(conflicts)}
+          wire = json.dumps(publication, separators=(',', ':')).encode()
+          (out / 'publication.json').write_bytes(wire)
+          print('VALIDATED_PUBLICATION', json.dumps({'tree': expected_tree, 'entries': len(entries),
+              'bytes': len(wire), 'sha256': hashlib.sha256(wire).hexdigest(), 'conflicts': sorted(conflicts)}), flush=True)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              print('manifest_sha256=' + hashlib.sha256(wire).hexdigest(), file=output)
+              print('tree=' + expected_tree, file=output)
+      - name: Retain merge and validation evidence
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-exact-merge
+          path: ${{ runner.temp }}/pr2151-validation/
+          retention-days: 7
+          if-no-files-found: error
+  publish-tree:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          name: pr2151-exact-merge
+          path: ${{ runner.temp }}/pr2151-publication
+      - name: Authenticate and publish only Git objects without executing repository code
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_MANIFEST: ${{ needs.validate.outputs.manifest_sha256 }}
+          EXPECTED_TREE: ${{ needs.validate.outputs.tree }}
+        run: |
+          import base64, hashlib, json, os, pathlib, urllib.request
+          repo = 'KirilsTurkins/latent-service-fabric'
+          path = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr2151-publication' / 'publication.json'
+          raw = path.read_bytes()
+          assert len(raw) < 2000000
+          assert hashlib.sha256(raw).hexdigest() == os.environ['EXPECTED_MANIFEST']
+          data = json.loads(raw)
+          assert data['head'] == 'f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          assert data['development'] == '5569a03df63cac133146eee2680223ea3a1a3dc7'
+          assert data['expectedTree'] == os.environ['EXPECTED_TREE']
+          assert data['baseTree'] == '4ec97c17c33c01fe5ff723945765d57a2b85d67a'
+          assert 1 <= len(data['entries']) <= 160
+          api = 'https://api.github.com/repos/' + repo
+          def call(endpoint, value=None):
+              request = urllib.request.Request(api + endpoint,
+                  data=None if value is None else json.dumps(value).encode(),
+                  headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+                           'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'})
+              with urllib.request.urlopen(request, timeout=60) as response:
+                  return json.load(response)
+          assert call('/git/ref/heads/fix/sdk-java-cached-idle-handoff-20261117')['object']['sha'] == data['head']
+          assert call('/git/ref/heads/development')['object']['sha'] == data['development']
+          seen, tree = set(), []
+          for row in data['entries']:
+              name = row['path']; p = pathlib.PurePosixPath(name)
+              assert not p.is_absolute() and '..' not in p.parts and name not in seen
+              seen.add(name)
+              assert row['type'] == 'blob' and row['mode'] in ('100644', '100755')
+              if row['sha'] is not None:
+                  content = base64.b64decode(row['content'], validate=True)
+                  assert len(content) == row['bytes'] and len(content) < 500000
+                  assert hashlib.sha256(content).hexdigest() == row['sha256']
+                  expected = hashlib.sha1(b'blob ' + str(len(content)).encode() + b'\0' + content).hexdigest()
+                  assert expected == row['sha']
+                  actual = call('/git/blobs', {'content': row['content'], 'encoding': 'base64'})['sha']
+                  assert actual == expected
+              tree.append({k: row[k] for k in ('path', 'mode', 'type', 'sha')})
+          result = call('/git/trees', {'base_tree': data['baseTree'], 'tree': tree})
+          assert result['sha'] == data['expectedTree'], ('tree mismatch', result['sha'])
+          receipt = {k: data[k] for k in ('head','development','baseTree','expectedTree','conflicts')}
+          receipt['entries'] = tree
+          receipt['manifestSha256'] = os.environ['EXPECTED_MANIFEST']
+          receipt['productionRefMoved'] = False
+          path.with_name('published-tree.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print('PUBLISHED_EXACT_TREE', json.dumps(receipt), flush=True)
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-published-tree
+          path: ${{ runner.temp }}/pr2151-publication/published-tree.json
+          retention-days: 7
+          if-no-files-found: error
