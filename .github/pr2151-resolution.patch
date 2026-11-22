@@ -1,0 +1,443 @@
+--- a/sdk/java-guest/README.md
++++ b/sdk/java-guest/README.md
+@@ -42,16 +42,19 @@
+ the [runtime profile](../../docs/runtime/java-activation-fibers.md) records that
+ remaining reference-runtime difference.
+ 
+-Managed activation builds reserve a **128 KiB C stack at the start of linear
+-memory**, including the guarded Date link path. TeaVM/SjLj worker startup can
+-exceed the ordinary 64 KiB C stack. Placing the downward-growing stack below
+-static data prevents its underflow from silently overwriting activation-owner
+-registries; an out-of-bounds access traps the activation instead. This is an
+-internal backing reservation, not a larger caller grant: the 64 MiB linker
+-maximum, Java heap limits, and host admission/ownership budgets are unchanged.
+-The non-fiber compiler command is unchanged. This finite reservation does not
+-promise that arbitrary Java recursion or every library fits; successful signed
+-execution and physical cleanup still require source-matched qualification.
++Managed activation builds retain the **64 KiB C stack at the start of linear
++memory**, including the guarded Date link path. Before preprocessing and sealing,
++the compiler authenticates TeaVM's exception header and reuses automatic exception
++descriptors only across disjoint handler lifetimes. Nested and recursive handlers
++keep independent storage; setjmp, catch, restore and rethrow semantics are unchanged.
++This replaces the earlier 128 KiB backing workaround without a larger caller grant.
++Placing the downward-growing stack below static data prevents its underflow from
++silently overwriting activation-owner registries; an out-of-bounds access traps the
++activation instead. The 64 MiB linker maximum, Java heap limits and host ownership
++budgets are unchanged, as is the non-fiber compiler command. See the
++[exception-slot lifetime controls](../../docs/testing/java-exception-slot-lifetimes.md).
++Finite regression controls do not promise arbitrary recursion or every library fits;
++signed execution and physical cleanup still require source-matched qualification.
+ 
+ Edit `src/dev/latent/app/Capsule.java` and `wit/world.wit` in the created project.
+ The entry class implements generated `dev.latent.generated.Bindings.Exports`.
+--- a/sdk/typescript-guest/README.md
++++ b/sdk/typescript-guest/README.md
+@@ -131,8 +131,12 @@
+ AbortSignal and EventTarget graph construction checks native-owner pressure at
+ its rooted entry, before obtaining native pointers or allocating graph storage.
+ This lets synchronous construction collect unreachable graphs even without an
+-intervening Promise allocation. Individual graph admissions remain
+-non-collecting so staged callbacks and weak-set iterators cannot be invalidated.
++intervening Promise allocation. Listener insertion uses the same checkpoint while
++its inputs are rooted, after discarding its lookup cursor and before staging any
++captures. Individual graph
++admissions remain non-collecting so staged callbacks and weak-set iterators cannot
++be invalidated. Empty AbortSignal algorithm-list storage is allocated only on first
++use, with independent container and algorithm ownership before publication.
+ Collection does not release reachable owners or expand the original limits:
+ physical destruction and collection completion still precede host acknowledgement,
+ and failed acknowledgement retains the ownership debt. Finite collector controls
+--- a/tools/java_guest/date_link_guard.py
++++ b/tools/java_guest/date_link_guard.py
+@@ -107,6 +107,8 @@
+             need(read_file(owned / name, MAX_INPUT) == data, 'owned-drift')
+ 
+     recheck()
++    # Keep the fixed downward-growing C stack below static data. An overflow
++    # must trap at the memory boundary, not overwrite allocator/bridge state.
+     c_failure_context.run(compiler, generated, selected, '-target', 'wasm32-wasip1', '-nostdlib',
+         '-mexec-model=reactor', owned / 'crt1-reactor.o', '-Wl,--entry=_initialize', owned / 'libsetjmp.a',
+         '-Wl,--no-entry', '-Wl,--export-memory', *ACTIVATION_C_STACK_FLAGS,
+--- a/tools/java_guest/enum_guard.py
++++ b/tools/java_guest/enum_guard.py
+@@ -16,6 +16,11 @@
+ MAX_SLOTS_PER_CLASS = 256
+ MAX_SLOTS = 4096
+ MAX_GUARD = 1024 * 1024
++# Reuse disjoint TeaVM exception descriptors before sealing generated input.
++# Retain the original 64 KiB stack, below static data so downward overflow
++# cannot overwrite activation-owner registries.
++ACTIVATION_C_STACK_BYTES = 64 * 1024
++ACTIVATION_C_STACK_FLAGS = ('-Wl,--stack-first', f'-Wl,-z,stack-size={ACTIVATION_C_STACK_BYTES}')
+ _SPACE = frozenset(b'\t\n\r\f ')
+ _FIRST = frozenset(b'ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz')
+ _IDENT = _FIRST | frozenset(b'0123456789')
+@@ -450,7 +455,7 @@
+         c_failure_context.run(compiler, generated, selected, '-target', 'wasm32-wasip1', '-std=c11', '-O2',
+             '-DLSF_JAVA_ACTIVATION_PROFILE=1', '-DLSF_TEAVM_WASM=1', '-DTEAVM_CUSTOM_LOG=1',
+             '-mllvm', '-wasm-enable-sjlj', '-lsetjmp', '-mllvm', '-wasm-use-legacy-eh=false',
+-            '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory', '-Wl,--stack-first', '-Wl,-z,stack-size=65536',
++            '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory', *ACTIVATION_C_STACK_FLAGS,
+             '-Wl,--max-memory=67108864', '-include', sdk / 'runtime/native.h',
+             '-I', bindings, '-I', sdk / 'runtime', '-iquote', generated,
+             '-x', 'cpp-output', '-', '-x', 'none', bindings / 'bridge.c', sdk / 'feasibility/platform.c',
+@@ -458,6 +463,7 @@
+     need(original == _bindings_identity(bindings), 'bindings-drift')
+     need(index == read_file(index_path, MAX_INDEX), 'index-drift')
+     need(date_index == read_file(date_index_path, 32), 'date-index-drift')
++    receipt['cStack'] = {'bytes': ACTIVATION_C_STACK_BYTES, 'layout': 'stack-first'}
+     receipt['exceptionSlots'] = exception_slots
+     receipt['dateGraph'] = graph_receipt
+     receipt['bindings'] = original
+--- a/tools/tests/fixtures/typescript_abort_lazy_algorithms.cpp
++++ b/tools/tests/fixtures/typescript_abort_lazy_algorithms.cpp
+@@ -78,6 +78,14 @@
+   NativeObjectRecords::Record* record = nullptr;
+   if (!records.track(owner, record)) { JS_ReportOutOfMemory(cx); return false; }
+   return lease.bind(record);
++}
++// Construction preflight is a finite, non-collecting double here; the exact
++// production collector and constructor combination runs in NativeGraphPressureControls.
++// This fixture isolates lazy storage and never refunds an owner's capacity.
++bool prepare_native_object_allocation(JSContext* cx) {
++  if (JS_IsExceptionPending(cx)) return false;
++  if (records.stopped()) { cx->error = "retirement-denied"; return false; }
++  return true;
+ }
+ // INSERT_NATIVE_CONTAINER_FACTORY
+ }
+--- a/tools/tests/fixtures/typescript_graph_pressure.cpp
++++ b/tools/tests/fixtures/typescript_graph_pressure.cpp
+@@ -157,15 +157,18 @@
+   } else if (!std::strcmp(mode, "fanout-after-dead-graphs")) {
+     std::vector<std::unique_ptr<native::NativeContainer<Body>>> retained;
+     for (unsigned i = 0; i < 4; ++i) retained.push_back(native::make_native_container<Body>(&cx));
+-    passed = make_graphs(&cx, 5, false) && make_graphs(&cx, 10, true);
++    passed = make_graphs(&cx, 9, false) && make_graphs(&cx, 10, true);
+     for (unsigned i = 0; i < 11 && passed; ++i) {
+       auto owner = native::make_native_container<Body>(&cx);
+       passed = owner != nullptr;
+       retained.push_back(std::move(owner));
+     }
+-    passed = passed && native::promise_accounting.live == 55 && collections > 0;
++    passed = passed && native::promise_accounting.live == 45 && collections > 0;
+   } else if (!std::strcmp(mode, "all-reachable-remains-exhausted")) {
+-    passed = make_graphs(&cx, 16, true) && !AbortSignal::create(&cx) &&
++    // Three physical containers per empty signal plus this independent
++    // retained owner reach the unchanged 64-owner ceiling exactly.
++    auto filler = native::make_native_container<Body>(&cx);
++    passed = filler && make_graphs(&cx, 21, true) && !AbortSignal::create(&cx) &&
+       native::promise_accounting.live == 64 && native::promise_accounting.acknowledged == 0;
+   } else if (!std::strcmp(mode, "event-construction-collects")) {
+     for (unsigned i = 0; i < 100; ++i) {
+@@ -175,13 +178,16 @@
+       passed = i == 99 && collections > 0;
+     }
+   } else if (!std::strcmp(mode, "admission-does-not-collect")) {
+-    passed = make_graphs(&cx, 16, true);
++    // Three physical containers per empty signal plus this independent
++    // retained owner reach the unchanged 64-owner ceiling exactly.
++    auto filler = native::make_native_container<Body>(&cx);
++    passed = filler && make_graphs(&cx, 21, true);
+     for (auto& object : objects) if (object) object->reachable = false;
+     const unsigned before = collections;
+     auto refused = native::make_native_container<Body>(&cx);
+     passed = passed && !refused && collections == before && native::promise_accounting.live == 64;
+   } else if (!std::strcmp(mode, "entry-pending") || !std::strcmp(mode, "snapshot")) {
+-    passed = make_graphs(&cx, 8, true);
++    passed = make_graphs(&cx, 11, true);
+     const unsigned before = allocations, gc = collections, live = native::promise_accounting.live;
+     const bool pending = !std::strcmp(mode, "entry-pending");
+     if (pending) cx.error = "original-error"; else initialized = false;
+@@ -189,21 +195,24 @@
+       collections == gc && native::promise_accounting.live == live &&
+       (!pending || !std::strcmp(cx.error, "original-error"));
+   } else if (!std::strcmp(mode, "acknowledgement-failure")) {
+-    passed = make_graphs(&cx, 8, true);
++    passed = make_graphs(&cx, 11, true);
+     for (auto& object : objects) if (object) object->reachable = false;
+     refuse_ack = true;
+     const unsigned before = allocations;
+     passed = passed && !AbortSignal::create(&cx) && allocations == before &&
+-      native::promise_accounting.live == 32 && native::native_objects.stopped();
++      native::promise_accounting.live == 33 && native::native_objects.stopped();
+     const unsigned gc = collections;
+     cx.error = nullptr;
+     passed = passed && !EventTarget::create(&cx) && collections == gc && allocations == before;
+   } else if (!std::strcmp(mode, "no-release-before-collection-end")) {
+-    passed = make_graphs(&cx, 16, true);
++    // Three physical containers per empty signal plus this independent
++    // retained owner reach the unchanged 64-owner ceiling exactly.
++    auto filler = native::make_native_container<Body>(&cx);
++    passed = filler && make_graphs(&cx, 21, true);
+     for (auto& object : objects) if (object) object->reachable = false;
+     finish_collection = false;
+     passed = passed && !AbortSignal::create(&cx) && native::promise_accounting.live == 64 &&
+-      native::promise_accounting.acknowledged == 0 && bodies == 0;
++      native::promise_accounting.acknowledged == 0 && bodies == 1;
+   } else return 2;
+   initialized = true; refuse_ack = false; finish_collection = true; cx.error = nullptr;
+   for (auto& object : objects) if (object) object->reachable = false;
+--- a/tools/tests/test_java_enum_guard.py
++++ b/tools/tests/test_java_enum_guard.py
+@@ -110,6 +110,7 @@
+                          ['-Wl,-z,stack-size=65536'])
+         self.assertEqual([arg for arg in args if str(arg).startswith('-Wl,--max-memory=')],
+                          ['-Wl,--max-memory=67108864'])
++        self.assertEqual(receipt['cStack'], {'bytes': 65536, 'layout': 'stack-first'})
+         self.assertEqual(receipt['exceptionSlots']['schemaVersion'], 'latent.java.exception-slots.v1')
+         self.assertEqual(receipt['exceptionSlots']['regions'], 2)
+         self.assertEqual(receipt['exceptionSlots']['slots'], 1)
+@@ -125,6 +126,18 @@
+         with self.assertRaises(RuntimeError) as caught:
+             enum_guard.run(compiler, generated, (), destination, destination / 'core.wasm')
+         self.assertIs(caught.exception, failure)
++
++    def test_managed_link_changes_select_both_signed_qualification_owners(self):
++        import json
++        from tools import ci_lane_inventory as lanes
++        root = Path(__file__).resolve().parents[2]
++        for name in ('java-scheduled-library.yml', 'java-scheduled-development.yml'):
++            with self.subTest(workflow=name):
++                model = lanes.workflow_model((root / '.github/workflows' / name).read_text())
++                contract = json.loads((root / 'tools/ci/contracts/workflows' / name / 'workflow.json').read_text())
++                self.assertEqual(model['on'], contract['policy']['on'])
++                for source in ('tools/java_guest/enum_guard.py', 'tools/java_guest/date_link_guard.py'):
++                    self.assertIn(source, model['on']['push']['paths'])
+ 
+     def test_unmodified_nonfiber_clang_command_and_frozen_diagnostics(self):
+         # The non-fiber command retains every flag and positional input from
+--- a/tools/tests/test_java_exception_slots.py
++++ b/tools/tests/test_java_exception_slots.py
+@@ -191,6 +191,7 @@
+                         patch.object(enum_guard.c_failure_context, 'run', return_value='') as link, \
+                         patch.object(date_link_guard, 'run', return_value={'test': 'date'}) as date_link:
+                     result = enum_guard.run(compiler, generated, (), output, output / 'core.wasm')
++                self.assertEqual(result['cStack'], {'bytes': 65536, 'layout': 'stack-first'})
+                 self.assertEqual(result['exceptionSlots']['slots'], 1)
+                 self.assertEqual(result['exceptionSlots']['regions'], 2)
+                 seal.assert_called_once()
+--- a/tools/tests/test_java_linear_stack.py
++++ b/tools/tests/test_java_linear_stack.py
+@@ -5,6 +5,7 @@
+ from unittest.mock import patch
+ 
+ from tools import java_capsule_build, qualify_java_fibers
++from tools.java_guest import enum_guard
+ 
+ ROOT = Path(__file__).resolve().parents[2]
+ LINK_OWNERS = ('tools/java_guest/enum_guard.py', 'tools/java_guest/date_link_guard.py')
+@@ -20,8 +21,16 @@
+                          and isinstance(node.func.value, ast.Name)
+                          and node.func.value.id == 'c_failure_context']
+                 self.assertEqual(len(calls), 1, 'inspect the actual guarded-link command')
+-                flags = [node.value for node in calls[0].args if isinstance(node, ast.Constant)
+-                         and isinstance(node.value, str)]
++                flags = []
++                shared = 0
++                for node in calls[0].args:
++                    if isinstance(node, ast.Constant) and isinstance(node.value, str):
++                        flags.append(node.value)
++                    elif isinstance(node, ast.Starred) and isinstance(node.value, ast.Name) \
++                            and node.value.id == 'ACTIVATION_C_STACK_FLAGS':
++                        flags.extend(enum_guard.ACTIVATION_C_STACK_FLAGS)
++                        shared += 1
++                self.assertEqual(shared, 1, 'both production links use the shared reviewed stack flags')
+                 self.assertEqual(flags.count('-Wl,--stack-first'), 1)
+                 self.assertEqual([flag for flag in flags if 'stack-size=' in flag],
+                                  ['-Wl,-z,stack-size=65536'])
+--- a/tools/tests/test_local_tests.py
++++ b/tools/tests/test_local_tests.py
+@@ -310,6 +310,27 @@
+ 
+ 
+ class DriftTests(unittest.TestCase):
++    def test_docs_installs_pinned_rust_before_required_native_controls(self) -> None:
++        from tools.ci_lane_inventory import workflow_model
++        workflow = workflow_model((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
++        steps = workflow["jobs"]["docs"]["steps"]
++        installs = [(index, step) for index, step in enumerate(steps)
++                    if step.get("uses", "").startswith("dtolnay/rust-toolchain@")]
++        self.assertEqual(len(installs), 1)
++        index, install = installs[0]
++        rust = next(step for step in workflow["jobs"]["rust"]["steps"]
++                    if step.get("uses", "").startswith("dtolnay/rust-toolchain@"))
++        self.assertEqual(install["uses"], rust["uses"])
++        self.assertEqual(install.get("with", {}).get("toolchain"),
++                         rust.get("with", {}).get("toolchain"))
++        self.assertNotIn("if", install)
++        self.assertFalse(install.get("continue-on-error", False))
++        native = next(i for i, step in enumerate(steps)
++                      if "tools.tests.test_local_tests" in step.get("run", ""))
++        self.assertLess(index, native)
++        self.assertIn("LSF_REQUIRE_NATIVE_PROCESS_TESTS=1", steps[native]["run"])
++        self.assertFalse(steps[native].get("continue-on-error", False))
++
+     def test_documented_commands_parse_and_cover_three_workflows(self) -> None:
+         guide = (ROOT / "docs/development/local-tests.md").read_text(encoding="utf-8")
+         commands = [shlex.split(line.strip()) for line in guide.splitlines()
+--- a/tools/tests/test_typescript_event_ownership.py
++++ b/tools/tests/test_typescript_event_ownership.py
+@@ -30,6 +30,12 @@
+ 
+ 
+ class TypeScriptEventOwnershipTests(unittest.TestCase):
++    def test_graph_pressure_controls_fail_instead_of_skipping_without_a_compiler(self):
++        from unittest.mock import patch
++        with patch.dict(os.environ, {}, clear=True), patch.object(shutil, 'which', return_value=None):
++            with self.assertRaisesRegex(RuntimeError, r'C\+\+ compiler is required'):
++                NativeGraphPressureControls.setUpClass()
++
+     def test_original_declaration_or_native_source_drift_is_rejected(self):
+         value = originals()
+         for name in value:
+@@ -50,8 +56,7 @@
+             body = source[start:source.index(b'\n}', start)]
+             self.assertLess(body.index(b'prepare_native_object_allocation(cx)'), body.index(allocation))
+         source = derived['StarlingMonkey/builtins/web/event/event-target.cpp']
+-        for signature in (b'bool EventTarget::init(', b'bool EventTarget::add_listener(',
+-                          b'bool EventTarget::invoke_listeners('):
++        for signature in (b'bool EventTarget::init(', b'bool EventTarget::invoke_listeners('):
+             start = source.index(signature)
+             body = source[start:source.index(b'\n}', start)]
+             self.assertNotIn(b'prepare_native_object_allocation', body)
+@@ -63,16 +68,18 @@
+         self.assertNotIn(b'collect_before_native_allocation', body)
+         self.assertFalse(receipt['nativeGraphAdmissionCollects'])
+         self.assertEqual(receipt['nativeGraphPressureCollection'],
+-                         'rooted-construction-entry-only-before-native-pointers')
+-
+-    def test_each_abort_container_is_admitted_before_publication(self):
++                         'rooted-construction-and-listener-boundaries-before-staging')
++
++    def test_abort_weak_containers_are_admitted_before_publication_and_algorithms_stay_absent(self):
+         derived, _ = derive()
+         source = derived[abort_engine.PATH]
+         start = source.index(b'JSObject *AbortSignal::create(')
+         end = source.index(b'// https://dom.spec.whatwg.org/#dom-abortsignal-abort', start)
+         body = source[start:end]
+-        self.assertEqual(body.count(b'make_native_container<'), 3)
+-        self.assertLess(body.index(b'if (!dependents) return nullptr;'), body.index(b'algorithms.release()'))
++        self.assertEqual(body.count(b'make_native_container<'), 2)
++        self.assertLess(body.index(b'if (!dependents) return nullptr;'), body.index(b'sources.release()'))
++        self.assertNotIn(b'make_native_container<AlgorithmList>', body)
++        self.assertIn(b'Slots::Algorithms), JS::UndefinedValue()', body)
+         self.assertNotIn(b'new AlgorithmList', source)
+         self.assertNotIn(b'new WeakIndexSet', source)
+ 
+@@ -104,10 +111,10 @@
+         self.assertLess(source.rindex(b'admit_native_object(cx, listener_owner)', 0, listener), listener)
+         terminator = source.index(b'js::MakeUnique<Terminator>(')
+         self.assertLess(source.rindex(b'admit_native_object(cx, accepted)', 0, terminator), terminator)
+-        self.assertIn(b'if (!AbortSignal::add_algorithm(signal, std::move(terminator))) {', source)
++        self.assertIn(b'if (!AbortSignal::add_algorithm(cx, signal, std::move(terminator))) {', source)
+         self.assertLess(source.index(b'if (!list->reserve(list->length() + (replacing_removed ? 0 : 1)))'), terminator)
+         self.assertLess(terminator, source.index(b'list->infallibleAppend(staged);', terminator))
+-        self.assertLess(source.index(b'if (!AbortSignal::add_algorithm(signal, std::move(terminator)))'),
++        self.assertLess(source.index(b'if (!AbortSignal::add_algorithm(cx, signal, std::move(terminator)))'),
+                         source.index(b'staged->callback = callback_val;'))
+ 
+     def test_all_original_abort_subclasses_transfer_ownership_and_keep_callback_bodies(self):
+@@ -143,7 +150,7 @@
+         self.assertIn(b'js::MakeUnique<Terminator>(std::move(abort_owner), weak)', source)
+         allocation = source.index(b'auto algorithm = js::MakeUnique<Terminator>')
+         failure = source.index(b'if (!algorithm) { JS_ReportOutOfMemory(cx); return false; }', allocation)
+-        publication = source.index(b'if (!AbortSignal::add_algorithm(signal, std::move(algorithm))) return false;', allocation)
++        publication = source.index(b'if (!AbortSignal::add_algorithm(cx, signal, std::move(algorithm))) return false;', allocation)
+         self.assertLess(allocation, failure)
+         self.assertLess(failure, publication)
+         # Original accepted response work remains owned by its engine queue.
+@@ -166,7 +173,7 @@
+                       b'      !lsf::typescript::activation::admit_native_object(cx, abort_owner)) return false;', source)
+         self.assertIn(b'std::move(abort_owner), response_promise, response_obj, signal', source)
+         self.assertIn(b'if (!algorithm) { JS_ReportOutOfMemory(cx); return false; }', source)
+-        self.assertIn(b'if (!AbortSignal::add_algorithm(signal, std::move(algorithm))) return false;', source)
++        self.assertIn(b'if (!AbortSignal::add_algorithm(cx, signal, std::move(algorithm))) return false;', source)
+ 
+     def test_original_listener_order_callback_once_and_abort_reason_bodies_are_unchanged(self):
+         before = originals()
+@@ -250,7 +257,10 @@
+         ending = b'JSObject *AbortSignal::create('
+         before_event = selected_abort[selected_abort.index(begin):selected_abort.index(ending)]
+         changed_abort = derived[abort_engine.PATH][derived[abort_engine.PATH].index(begin):derived[abort_engine.PATH].index(ending)]
+-        self.assertEqual(changed_abort, before_event)
++        # Empty algorithm storage is the only change to the selected drain.
++        nullable = b'algorithms && next < algorithms->length()'
++        self.assertEqual(changed_abort.count(nullable), 1)
++        self.assertEqual(changed_abort.replace(nullable, b'next < algorithms->length()', 1), before_event)
+ 
+     def test_owned_graph_changes_remain_unqualified_and_snapshot_mutation_is_denied(self):
+         _, receipt = derive()
+@@ -369,6 +379,8 @@
+         for case in ('success', 'dispatch-failure', 'event-failure', 'reason-failure',
+                      'algorithm-failure', 'dependent-continuation', 'default-reason',
+                      'explicit-reason', 'already-aborted', 'fanout-inline', 'fanout-heap',
++                     'fanout-empty-algorithms', 'fanout-empty-algorithms-pressure-refusal',
++                     'fanout-pressure-refusal', 'fanout-entry-exception', 'fanout-aborted-no-preflight',
+                      'fanout-all-aborted', 'fanout-refusal', 'fanout-reserve-failure',
+                      'fanout-recovery', 'fanout-nested', 'fanout-nested-refusal',
+                      'fanout-ack-refusal', 'fanout-repeated', 'fanout-first-error',
+@@ -624,6 +636,7 @@
+ 
+     def test_registration_and_reactivation_failure_boundaries(self):
+         for case in (
++            'lazy-algorithm-refusal-preserves-error',
+             'native-refusal-before-listener-publication',
+             'algorithm-refusal-before-listener-publication',
+             'vector-refusal-before-algorithm-publication',
+@@ -903,8 +916,6 @@
+     def setUpClass(cls):
+         compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('cl')
+         if not compiler:
+-            if os.name == 'nt':
+-                raise unittest.SkipTest('A C++ compiler is required for graph pressure controls')
+             raise RuntimeError('C++ compiler is required for graph pressure controls')
+         cls.temporary = tempfile.TemporaryDirectory()
+         cls.addClassCleanup(cls.temporary.cleanup)
+@@ -970,7 +981,7 @@
+             with self.subTest(case=case):
+                 self.check_case(self.selected_binary, case)
+ 
+-    def test_previous_constructors_exhaust_before_native_graph_turnover(self):
++    def test_previous_constructors_cannot_reclaim_dead_graph_capacity(self):
+         for case in ('synchronous-turnover', 'fanout-after-dead-graphs', 'event-construction-collects'):
+             with self.subTest(case=case):
+                 self.check_case(self.previous_binary, case, False)
+--- a/tools/typescript_guest/event_engine.py
++++ b/tools/typescript_guest/event_engine.py
+@@ -396,6 +396,15 @@
+         b'  if (!invoked || JS_IsExceptionPending(cx)) return false; // preserve the original failure\n'
+         b'  rval.setBoolean(!Event::has_flag(event, EventFlag::Canceled));\n',
+         'return-original-listener-error-after-dispatch-cleanup')
++    # Collect only before construction, with no raw object or native iterator
++    # in flight. init() is called with AbortSignal's newly published containers
++    # and must remain non-collecting, like every individual native admission.
++    for anchor in (b'JSObject *EventTarget::create(JSContext *cx) {\n',
++                   b'  CTOR_HEADER("EventTarget", 0);\n'):
++        source = replace_once(source, anchor, anchor +
++            b'  if (!lsf::typescript::activation::prepare_native_object_allocation(cx)) return '
++            + (b'nullptr;\n' if anchor.startswith(b'JSObject') else b'false;\n'),
++            'collect-before-event-graph-construction')
+     # All three original list construction sites use exactly the same wrapper.
+     for function, failing in [('create', b'nullptr'), ('init', b'false'), ('constructor', b'false')]:
+         start = source.index(b'EventTarget::'+function.encode()+b'(')
+@@ -552,6 +561,10 @@
+ 
+     name = 'StarlingMonkey/builtins/web/abort/abort-signal.cpp'
+     source = timeout_source
++    source = replace_once(source, b'JSObject *AbortSignal::create(JSContext *cx) {\n',
++        b'JSObject *AbortSignal::create(JSContext *cx) {\n'
++        b'  if (!lsf::typescript::activation::prepare_native_object_allocation(cx)) return nullptr;\n',
++        'collect-before-abort-graph-construction')
+     for typename in ('AlgorithmList', 'WeakIndexSet'):
+         if typename == 'AlgorithmList':
+             source = replace_once(source,
+@@ -676,6 +689,8 @@
+         'derivedSource':identity(result),'nativeGraphAdmission':'before-physical-allocation',
+         'listenerPressureCollection':'rooted-inputs-before-staging-no-live-cursor',
+         'nativeGraphRetirement':'destructor-then-collection-end-then-safe-host-ack',
++        'nativeGraphPressureCollection':'rooted-construction-and-listener-boundaries-before-staging',
++        'nativeGraphAdmissionCollects':False,
+         'abortAlgorithmStorage':'lazy-independent-owner-before-first-publication',
+         'dispatchCloneAdmission':'before-backing-vector-growth',
+         'dispatchCloneRetirement':'frame-destructor-then-safe-host-ack',
