@@ -44,9 +44,9 @@ Acknowledgement follows the installed trigger's delivery contract. The generic
 `TriggerEvent` declaration has an optional idempotency key; it does not supply
 deduplication. The ordinary NATS adapter starts fresh stateless activations with
 no host command key. Applications needing duplicate protection must retain
-their own stable input identity or use the separately installed transactional
-inbox contract. A broker's durable consumer position provides neither an LSF
-state/effect transaction nor exactly-once external execution.
+their own stable input identity. The standalone node currently refuses the
+transactional inbox configuration. A broker may redeliver a message whose
+activation completed before its acknowledgement reached the broker.
 
 ## Transaction ingress and acknowledgement
 
@@ -59,10 +59,12 @@ A lost HTTP reply cannot undo a committed command or authorize a new key.
 
 The ordinary [NATS trigger](../runtime/nats-triggers.md) is a stateless delivery
 profile and does not itself install transactional inbox/outbox semantics.
-Transactional incoming identity and acknowledgement use their separately
-installed [inbox owner](state-and-effects.md#incoming-identity-formats-and-linked-retention).
-Neither a trigger acknowledgement nor an HTTP status proves deferred effect
-delivery. Query/result reads start no outbox dispatch.
+The [inbox design](state-and-effects.md#incoming-identity-formats-and-linked-retention)
+ties acknowledgement to a committed outcome or durable rejection. Its
+[standalone installation gate](../runtime/nats-triggers.md#transactional-inbox-status)
+remains closed. On the outbound path, a signed command may stage a
+[deferred JetStream publication](../development/deferred-jetstream.md).
+Inspect the original effect to learn whether the broker acknowledged it.
 
 ## Planned durable timers
 

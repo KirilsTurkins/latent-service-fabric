@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 1008" role="img" aria-labelledby="transaction-command-recovery-title transaction-command-recovery-description">
   <title id="transaction-command-recovery-title">Host-owned atomic command commitment and original-identity recovery</title>
-  <desc id="transaction-command-recovery-description">The optional Development Phase 4 profile admits an original command key and namespace scope under current authority and finite budgets. A fresh guest reads one view and stages bounded writes and logical effect intents. The host validates output, authorization and the optimistic-concurrency fence, then seals an eligible commit plan. One physical durable envelope contains state changes, outbox intents, the original command outcome and applicable inbox facts. Reply or original-result recovery is separate from deferred effect dispatch. Lookup requires current result-read authority and does not rerun the guest. Dispatch has its own worker, authority and acknowledged, rejected or uncertain provider outcome. A lost reply or cancellation is not abort proof; local commit is not atomic remote execution.</desc>
+  <desc id="transaction-command-recovery-description">The optional Development Phase 4 profile admits an original command key and namespace scope under current authority and finite budgets. A fresh guest reads one view and stages bounded writes and logical effect intents. The host validates output, authorization and the optimistic-concurrency fence, then seals an eligible commit plan. One durable envelope contains state changes, outbox intents, the original command outcome and applicable inbox facts. Standalone transactional input remains gated on source custody. With current result-read authority a caller can recover the original command after losing its reply. The dispatcher sends the recorded intent under its own authority. Inspecting that effect requires the original command association and current inspect-effect permission. Broker acknowledgement records acceptance by the broker.</desc>
   <defs>
     <marker id="transaction-command-recovery-arrow" viewBox="0 0 12 12" refX="10" refY="6" markerWidth="8" markerHeight="8" orient="auto">
       <path d="M 1 1 L 11 6 L 1 11 z" fill="#F2CA68"/>
@@ -69,14 +69,14 @@
   <text x="104" y="748" class="title">Reply or recover the original outcome</text>
   <text x="104" y="786" class="copy">Lost reply? Look up the original command identity.</text>
   <text x="104" y="822" class="note">Lookup needs current result-read authority.</text>
-  <text x="104" y="856" class="note">Unknown stays unknown; never infer an abort.</text>
+  <text x="104" y="856" class="note">A missing outcome leaves the command uncertain.</text>
   </g>
   <g data-card="Dispatch the recorded effect">
   <rect x="744" y="704" width="624" height="184" rx="24" fill="#191812" stroke="#9F8C62" stroke-width="2"/>
   <text x="776" y="748" class="title">Dispatch the recorded effect</text>
   <text x="776" y="786" class="copy">Separate worker and current effect authority.</text>
-  <text x="776" y="822" class="note">Provider result: acknowledged, rejected or uncertain.</text>
-  <text x="776" y="856" class="note">Provider uncertainty does not roll back the commit.</text>
+  <text x="776" y="822" class="note">Inspect the original effect with current permission.</text>
+  <text x="776" y="856" class="note">A broker acknowledgement records broker acceptance.</text>
   </g>
-  <text x="72" y="936" class="note">Local commit does not make remote work atomic; response loss or cancellation cannot establish abort.</text>
+  <text x="72" y="936" class="note">Standalone accepts signed outbound effects. Transactional incoming triggers still require durable source custody.</text>
 </svg>

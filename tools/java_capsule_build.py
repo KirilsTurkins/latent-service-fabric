@@ -40,6 +40,7 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
           "tools/java_guest/compiler.py", "tools/java_guest/resources.py", "tools/java_guest/class_origin.py", "tools/java_guest/bindings.py", "tools/java_guest/model.py",
           "tools/java_guest/compiler_diagnostics.py", "tools/java_guest/c_failure_context.py", "tools/java_guest/coroutine_patch.py",
           "tools/java_guest/enum_guard.py", "tools/java_guest/enum_inventory.py",
+          "tools/java_guest/exception_slots.py",
           "tools/java_guest/date_guard.py", "tools/java_guest/date_link_guard.py",
           "tools/c_application_dependencies.py", "tools/c_static_symbols.py",
           "tools/java_guest/reachability.py",

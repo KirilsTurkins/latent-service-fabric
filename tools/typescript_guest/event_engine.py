@@ -147,6 +147,11 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
         b'  static bool onabort_set(JSContext *cx, unsigned argc, JS::Value *vp);\n'
         b'  static bool onabort_invoke(JSContext *cx, unsigned argc, JS::Value *vp);\n',
         'stable-native-handler-invoker')
+    source = replace_once(source,
+        b'  static bool add_algorithm(JSObject *self, js::UniquePtr<AbortAlgorithm> algorithm);\n',
+        b'  static bool add_algorithm(JSContext *cx, HandleObject self,\n'
+        b'                            js::UniquePtr<AbortAlgorithm> algorithm);\n',
+        'rooted-context-for-lazy-algorithm-container-admission')
     result[name] = source
 
     name = 'StarlingMonkey/builtins/web/event/event-target.cpp'
@@ -256,8 +261,8 @@ def derive_event_ownership(original: dict[str, bytes], timeout_source: bytes) ->
     if (!lsf::typescript::activation::admit_native_object(cx, accepted)) return false;
     auto terminator = js::MakeUnique<Terminator>(std::move(accepted), self, staged);
     if (!terminator) { JS_ReportOutOfMemory(cx); return false; }
-    if (!AbortSignal::add_algorithm(signal, std::move(terminator))) {
-      JS_ReportOutOfMemory(cx);
+    if (!AbortSignal::add_algorithm(cx, signal, std::move(terminator))) {
+      if (!JS_IsExceptionPending(cx)) JS_ReportOutOfMemory(cx);
       return false;
     }
   }
@@ -503,7 +508,7 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
         b'    AbortSignal::add_algorithm(signal, js::MakeUnique<Terminator>(weak));\n',
         b'    auto algorithm = js::MakeUnique<Terminator>(std::move(abort_owner), weak);\n'
         b'    if (!algorithm) { JS_ReportOutOfMemory(cx); return false; }\n'
-        b'    if (!AbortSignal::add_algorithm(signal, std::move(algorithm))) return false;\n',
+        b'    if (!AbortSignal::add_algorithm(cx, signal, std::move(algorithm))) return false;\n',
         'fetch-terminator-allocation-and-publication-results')
     publication = (b'  SetReservedSlot(request_obj, static_cast<uint32_t>(Request::Slots::ResponsePromise),\n'
                    b'                  ObjectValue(*response_promise));\n'
@@ -541,7 +546,7 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
         b'    auto algorithm = js::MakeUnique<ResponseAborter>(\n'
         b'        std::move(abort_owner), response_promise, response_obj, signal);\n'
         b'    if (!algorithm) { JS_ReportOutOfMemory(cx); return false; }\n'
-        b'    if (!AbortSignal::add_algorithm(signal, std::move(algorithm))) return false;\n',
+        b'    if (!AbortSignal::add_algorithm(cx, signal, std::move(algorithm))) return false;\n',
         'response-aborter-allocation-and-publication-results')
     result[name] = source
 
@@ -551,7 +556,9 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
         if typename == 'AlgorithmList':
             source = replace_once(source,
                 b'  return static_cast<AlgorithmList *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Algorithms)).toPrivate());',
-                b'  return &static_cast<OwnedAlgorithmList *>(JS::GetReservedSlot(self, std::to_underlying(Slots::Algorithms)).toPrivate())->value;',
+                b'  const auto slot = JS::GetReservedSlot(self, std::to_underlying(Slots::Algorithms));\n'
+                b'  if (slot.isNullOrUndefined()) return nullptr; // no native allocation for an empty list\n'
+                b'  return &static_cast<OwnedAlgorithmList *>(slot.toPrivate())->value;',
                 'owned-algorithm-original-vector-view')
         else:
             source = replace_once(source,
@@ -562,12 +569,44 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
                 b'  return static_cast<WeakIndexSet *>(\n      JS::GetReservedSlot(self, std::to_underlying(Slots::DependentSignals)).toPrivate());',
                 b'  return &static_cast<OwnedWeakSet *>(\n      JS::GetReservedSlot(self, std::to_underlying(Slots::DependentSignals)).toPrivate())->value;',
                 'owned-dependent-weak-set-original-view')
-    # Allocate every charged native container before attaching any pointer to
-    # the JS graph. Partial failures destroy exact previous wrappers by RAII.
+    start = source.index(b'bool AbortSignal::add_algorithm(')
+    end = source.index(b'bool AbortSignal::is_dependent(', start)
+    source = replace_once(source, source[start:end], b'''bool AbortSignal::add_algorithm(JSContext *cx, HandleObject self,
+                                js::UniquePtr<AbortAlgorithm> algorithm) {
+  MOZ_ASSERT(is_instance(self));
+  if (JS_IsExceptionPending(cx)) return false;
+  if (is_aborted(self)) return false;
+
+  auto *list = algorithms(self);
+  if (list) {
+    if (!list->append(std::move(algorithm))) { JS_ReportOutOfMemory(cx); return false; }
+    return true;
+  }
+
+  // Empty signals own no algorithm-list allocation. First use still admits
+  // its own original native owner before allocation, independently of the
+  // algorithm's owner. This path cannot collect over the staged captures.
+  auto staged = lsf::typescript::activation::make_native_container<AlgorithmList>(cx);
+  if (!staged) return false;
+  if (!staged->value.append(std::move(algorithm))) {
+    JS_ReportOutOfMemory(cx);
+    return false;
+  }
+  // Publish only after both owner admission and append succeed. Failure leaves
+  // the signal unchanged; RAII retains retirement debt until the normal GC/ack.
+  JS::SetReservedSlot(self, std::to_underlying(Slots::Algorithms), JS::PrivateValue(staged.release()));
+  return true;
+}
+
+''', 'lazy-independent-algorithm-owner-and-atomic-first-publication')
+    source = replace_once(source,
+        b'  for (size_t next = 0; next < algorithms->length(); ++next) {\n',
+        b'  for (size_t next = 0; algorithms && next < algorithms->length(); ++next) {\n',
+        'empty-algorithm-slot-still-dispatches-the-abort-event')
+    # Admit both weak-set containers before attaching either pointer to the JS
+    # graph. Algorithm storage remains absent until its first actual insertion.
     anchor = b'  // An AbortSignal object has an associated abort reason, which is initially undefined.\n'
     source = replace_once(source, anchor,
-        b'  auto algorithms = lsf::typescript::activation::make_native_container<AlgorithmList>(cx);\n'
-        b'  if (!algorithms) return nullptr;\n'
         b'  auto sources = lsf::typescript::activation::make_native_container<WeakIndexSet>(cx);\n'
         b'  if (!sources) return nullptr;\n'
         b'  auto dependents = lsf::typescript::activation::make_native_container<WeakIndexSet>(cx);\n'
@@ -575,7 +614,7 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
         b'  sources->value.init(cx);\n'
         b'  dependents->value.init(cx);\n'+anchor, 'all-abort-containers-before-graph-publication')
     for old,new,label in [
-        (b'JS::PrivateValue(new AlgorithmList)',b'JS::PrivateValue(algorithms.release())','owned-algorithm-publication'),
+        (b'JS::PrivateValue(new AlgorithmList)',b'JS::UndefinedValue()','no-eager-empty-algorithm-allocation'),
         (b'JS::PrivateValue(new WeakIndexSet)',b'JS::PrivateValue(sources.release())','owned-source-set-publication')]:
         if old==b'JS::PrivateValue(new WeakIndexSet)':
             assert source.count(old)==2
@@ -637,6 +676,7 @@ bool DOMException::constructor(JSContext *cx, unsigned argc, JS::Value *vp) {
         'derivedSource':identity(result),'nativeGraphAdmission':'before-physical-allocation',
         'listenerPressureCollection':'rooted-inputs-before-staging-no-live-cursor',
         'nativeGraphRetirement':'destructor-then-collection-end-then-safe-host-ack',
+        'abortAlgorithmStorage':'lazy-independent-owner-before-first-publication',
         'dispatchCloneAdmission':'before-backing-vector-growth',
         'dispatchCloneRetirement':'frame-destructor-then-safe-host-ack',
         'dispatchCloneOwner':'one-original-native-count-not-byte-accurate',

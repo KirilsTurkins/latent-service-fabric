@@ -316,10 +316,12 @@ retains the [unchanged published Commons Lang/Hutool default-worker programmes](
 Each linked receipt keeps its actual source, component, native tuple and finite
 limits; none requalifies every later integration or the whole runtime profile.
 
-Work-stealing/virtual-thread factories and scheduled executors remain explicitly
-outside the selected supported subset; #741 does not require universal JVM
-coverage. Remaining acceptance concerns all observables and combinations of the
-named supported subset: full interruption and wait/notify races, broader
+The October programmes above exclude scheduled executors. The current
+[Java guest profile](../../sdk/java-guest/README.md) also implements bounded
+scheduled pools, orders equal deadlines by original task admission and retains
+queued tasks across worker-factory refusal. Work-stealing and virtual-thread
+factories remain outside this profile. Remaining acceptance includes full
+interruption and wait/notify races, broader
 cached/reset/duration behavior, dependency checkpoint coverage and
 non-suspendable initialization/CPU boundaries, measured active/parked ownership
 costs, supported stream integration with distinct authority, and lifecycle or

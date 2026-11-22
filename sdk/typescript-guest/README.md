@@ -11,7 +11,11 @@ renderer. It does not embed Node, a browser, or application-owned host threads.
 
 The explicit source-owned async-import runtime can automatically install the
 [buffered fetch candidate](../../docs/component-development/typescript-fetch-candidate.md)
-under ordinary dependency global lookups when streaming HTTP is declared.
+under ordinary dependency global lookups. Select `latent:http/streaming@0.3.0`
+for the buffered v1 port, or `latent:http/phase-timing@0.4.0` for the phase
+port with observed response status text. The latter imports the original
+upload/body/chunk types and uses its own provider and grant. Both resolve
+Fetch after bounded body buffering. [Phase project setup](../../docs/component-development/typescript-fetch-profiles.md#select-the-phase-contract-for-a-new-project)
 The [runtime capability matrix](../../docs/component-development/runtime-capabilities.md)
 links the finite signed Fetch-client and runtime programmes. Each retains its
 original source and provider identities; it does not qualify every dependency

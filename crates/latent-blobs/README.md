@@ -15,9 +15,10 @@ local payloads through [latent-local-blobs](../latent-local-blobs/README.md).
 That crate owns the original local implementation and affine captured session;
 this facade re-exports its types. S3 references do not acquire the local retention
 guarantee, and this does not install a guest reference-dispatch path.
-Standalone startup rejects required durable payload references until its
-physical blob inventory is installed; logical records alone cannot prove bytes
-are present.
+On Linux, protected standalone startup opens the matching durable local root
+and verifies the files named by required references before publishing the
+provider. A missing, corrupt or foreign payload blocks startup.
+[Startup inventory](../../docs/architecture/blob-model.md#ownership-and-retention)
 
 ## Responsibilities and architecture
 

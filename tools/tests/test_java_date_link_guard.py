@@ -65,7 +65,7 @@ class DateLinkGuardTests(unittest.TestCase):
             self.assertEqual(args[:2], ('c-to-wasm', 'clang'))
             self.assertIn('-Wl,--stack-first', args)
             self.assertEqual([arg for arg in args if str(arg).startswith('-Wl,-z,stack-size=')],
-                             ['-Wl,-z,stack-size=131072'])
+                             ['-Wl,-z,stack-size=65536'])
             self.assertEqual([arg for arg in args if str(arg).startswith('-Wl,--max-memory=')],
                              ['-Wl,--max-memory=67108864'])
             self.assertEqual(set(receipt['objects']), set(OBJECTS))
