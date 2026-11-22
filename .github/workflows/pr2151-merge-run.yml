@@ -41,7 +41,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import ast, hashlib, json, subprocess, yaml
+          import ast, hashlib, json, os, pathlib, subprocess, traceback, yaml
           raw = subprocess.check_output(['git','show','138b7618554def0222b03a73796ed0a6a297436d:.github/workflows/pr2151-merge-publication.yml'])
           assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == '41a2abca594c25e4428c53f15aac2595e621f23b'
           plan = yaml.safe_load(raw)
@@ -50,9 +50,10 @@ jobs:
           module = ast.parse(source)
           assignment = next(n for n in module.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id == 'rows' for t in n.targets))
           encoded = ast.literal_eval(assignment.value.args[0])
-          # Correct only the JSON serialization of the literal regex; every
-          # reconstructed source still has to match its original expected blob.
           records = json.loads(encoded.replace('\\+', '\\\\+'))
+          # Only the provenance comment differs between these validator versions;
+          # retain development's exact file without weakening any check.
+          records.append({'path':'tools/validate_repository.py','base':'702bd725f259a241a9b92aecde9b1a5787b94f94','preimage':'e3bacffe258b21faf185f7a61cc121a3383cf2b1','postimage':'e3bacffe258b21faf185f7a61cc121a3383cf2b1','edits':[]})
           segment = ast.get_source_segment(source,assignment)
           assert source.count(segment) == 1
           source = source.replace(segment, 'rows = ' + repr(records), 1)
@@ -60,7 +61,13 @@ jobs:
           new = "git('commit', '-m', 'Exact-parent PR 2151 merge validation input')\ncommit = text('rev-parse', 'HEAD')\nassert text('show', '-s', '--format=%P', commit) == HEAD + ' ' + DEV"
           assert source.count(old) == 1
           source = source.replace(old,new,1)
-          exec(compile(source,'authenticated-pr2151-plan','exec'))
+          try:
+              exec(compile(source,'authenticated-pr2151-plan','exec'))
+          except BaseException:
+              output = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr2151-prepared'
+              output.mkdir(exist_ok=True)
+              (output / 'plan-failure.log').write_text(traceback.format_exc())
+              raise
           PY
       - name: Retain validation and exact merge products
         if: always()
