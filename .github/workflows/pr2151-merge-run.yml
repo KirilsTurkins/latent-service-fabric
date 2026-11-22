@@ -1,0 +1,136 @@
+name: Validated PR 2151 merge publication
+on:
+  push:
+    branches: ['maintenance/pr2151-merge-publication-20261122']
+    paths: ['.github/workflows/pr2151-merge-run.yml']
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      LSF_PYTHON_POLICY_BASE: 702bd725f259a241a9b92aecde9b1a5787b94f94
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: f881e760dfb527e341b2b43b60d99f217ad2d8ae
+          fetch-depth: 100
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: '3.13.5'
+      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
+        with:
+          distribution: temurin
+          java-version: '25.0.4+101.0.LTS'
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a
+        with:
+          node-version: '24.19.0'
+          package-manager-cache: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+      - name: Install existing validator dependencies
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Fetch exact merge parent and isolated repair plan
+        run: |
+          git fetch --no-tags --depth=100 origin 702bd725f259a241a9b92aecde9b1a5787b94f94
+          git fetch --no-tags --depth=1 origin 138b7618554def0222b03a73796ed0a6a297436d
+      - name: Execute the authenticated plan without resetting an in-progress merge
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import ast, hashlib, json, subprocess, yaml
+          raw = subprocess.check_output(['git','show','138b7618554def0222b03a73796ed0a6a297436d:.github/workflows/pr2151-merge-publication.yml'])
+          assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == '41a2abca594c25e4428c53f15aac2595e621f23b'
+          plan = yaml.safe_load(raw)
+          step = next(s for s in plan['jobs']['prepare']['steps'] if s.get('name') == 'Resolve authenticated inputs and validate complete checkout')
+          source = step['run'].split("python3 - <<'PY'\n",1)[1].rsplit('\nPY',1)[0]
+          module = ast.parse(source)
+          assignment = next(n for n in module.body if isinstance(n,ast.Assign) and any(isinstance(t,ast.Name) and t.id == 'rows' for t in n.targets))
+          encoded = ast.literal_eval(assignment.value.args[0])
+          # Correct only the JSON serialization of the literal regex; every
+          # reconstructed source still has to match its original expected blob.
+          records = json.loads(encoded.replace('\\+', '\\\\+'))
+          segment = ast.get_source_segment(source,assignment)
+          assert source.count(segment) == 1
+          source = source.replace(segment, 'rows = ' + repr(records), 1)
+          old = "commit = text('commit-tree', tree, '-p', HEAD, '-p', DEV, '-m', 'Exact-parent PR 2151 merge validation input')\ngit('reset', '--soft', commit)\ngit('update-ref', '-d', 'MERGE_HEAD')"
+          new = "git('commit', '-m', 'Exact-parent PR 2151 merge validation input')\ncommit = text('rev-parse', 'HEAD')\nassert text('show', '-s', '--format=%P', commit) == HEAD + ' ' + DEV"
+          assert source.count(old) == 1
+          source = source.replace(old,new,1)
+          exec(compile(source,'authenticated-pr2151-plan','exec'))
+          PY
+      - name: Retain validation and exact merge products
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-merge-prepared-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2151-prepared
+          if-no-files-found: error
+          retention-days: 3
+  store-objects:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          name: pr2151-merge-prepared-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2151-prepared
+      - name: Store only validated Git blobs and tree, with no ref changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, re, urllib.request
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr2151-prepared'
+          manifest = json.loads((root / 'manifest.json').read_text())
+          assert manifest['status'] == 'passed' and manifest['productionRefsChanged'] is False
+          assert manifest['head'] == 'f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          assert manifest['development'] == '702bd725f259a241a9b92aecde9b1a5787b94f94'
+          assert manifest['baseTree'] == 'eae3ea23ff1253a50b83c5de95d6f6b3daa880c9'
+          assert re.fullmatch('[0-9a-f]{40}', manifest['tree'])
+          entries = manifest['entries']
+          assert 0 < len(entries) <= 100
+          assert len({e['path'] for e in entries}) == len(entries)
+          total = 0
+          for entry in entries:
+              path = pathlib.PurePosixPath(entry['path'])
+              assert not path.is_absolute() and '..' not in path.parts
+              assert entry['mode'] in ('100644','100755') and entry['type'] == 'blob'
+              assert re.fullmatch('[0-9a-f]{40}', entry['sha'])
+              source = root / 'blobs' / entry['sha']
+              assert source.is_file() and not source.is_symlink()
+              raw = source.read_bytes(); total += len(raw)
+              assert total <= 8 * 1024 * 1024
+              assert hashlib.sha256(raw).hexdigest() == entry['sha256']
+              assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == entry['sha']
+          def post(endpoint,data):
+              request = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/'+endpoint,data=json.dumps(data).encode(),headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'},method='POST')
+              with urllib.request.urlopen(request,timeout=60) as response:
+                  return json.load(response)
+          for entry in entries:
+              raw = (root / 'blobs' / entry['sha']).read_bytes()
+              result = post('blobs',{'content':base64.b64encode(raw).decode(),'encoding':'base64'})
+              assert result['sha'] == entry['sha']
+          tree = post('trees',{'base_tree':manifest['baseTree'],'tree':[{k:e[k] for k in ('path','mode','type','sha')} for e in entries]})
+          assert tree['sha'] == manifest['tree'], (tree['sha'],manifest['tree'])
+          result = {'tree':tree['sha'],'head':manifest['head'],'development':manifest['development'],'files':len(entries),'status':'stored','productionRefsChanged':False}
+          (root / 'stored-tree.json').write_text(json.dumps(result,indent=2)+'\n')
+          print(json.dumps(result))
+          PY
+      - name: Retain authenticated stored tree identity
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-merge-tree-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pr2151-prepared/stored-tree.json
+          if-no-files-found: error
+          retention-days: 3
