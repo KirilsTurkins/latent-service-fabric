@@ -1,0 +1,149 @@
+name: Isolated PR 2151 merge validation
+on:
+  push:
+    branches: ['diag/pr2151-merge-validation-20261122']
+    paths: ['.github/workflows/pr2151-merge-validation-temp.yml']
+permissions:
+  contents: read
+concurrency:
+  group: pr2151-merge-validation-temp
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      LSF_PYTHON_POLICY_BASE: '5569a03df63cac133146eee2680223ea3a1a3dc7'
+      RESOLUTION_PAYLOAD: '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'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          path: controls
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          path: source
+          ref: f881e760dfb527e341b2b43b60d99f217ad2d8ae
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: '3.13.5'
+      - name: Resolve both development merges without publishing refs
+        working-directory: source
+        run: python3 ../controls/tools/pr2151_merge_validation_temp.py
+      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
+        with:
+          distribution: temurin
+          java-version: '25.0.4+101.0.LTS'
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a
+        with:
+          node-version: '24.19.0'
+          package-manager-cache: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          toolchain: '1.97.1'
+      - name: Validate the exact combined source
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --requirement tools/requirements.lock
+          python3 -B -m unittest tools.tests.test_java_enum_guard tools.tests.test_java_date_link_guard tools.tests.test_java_exception_slots tools.tests.test_java_linear_stack tools.tests.test_typescript_event_ownership tools.tests.test_typescript_abort_lazy_algorithms tools.tests.test_typescript_native_object_pressure -v 2>&1 | tee "$RUNNER_TEMP/pr2151-integration/core.log"
+          python3 -B -m unittest tools.tests.test_java_compiler_acquisition tools.tests.test_java_dependency_suite tools.tests.test_java_resource_runtime tools.tests.test_java_standard_http_ownership tools.tests.test_java_teavm_failure_trace tools.tests.test_typescript_abort_any_ownership tools.tests.test_typescript_abort_stack_integration tools.tests.test_typescript_record_retirement tools.tests.test_typescript_abort_declarations tools.tests.test_typescript_native_task_meta tools.tests.test_native_fixture_toolchain -v 2>&1 | tee "$RUNNER_TEMP/pr2151-integration/adjacent.log"
+          python3 -B -m unittest discover -s sdk/java-guest/tests -v 2>&1 | tee "$RUNNER_TEMP/pr2151-integration/sdk.log"
+          python3 -B tools/validate_repository.py 2>&1 | tee "$RUNNER_TEMP/pr2151-integration/repository.log"
+          python3 -B tools/ci_coverage.py --receipt "$RUNNER_TEMP/pr2151-integration/ci-inventory.json" 2>&1 | tee "$RUNNER_TEMP/pr2151-integration/ci.log"
+          git diff --exit-code
+          git diff --cached --check
+          test "$(git write-tree)" = "$(cat "$RUNNER_TEMP/pr2151-integration/candidate-tree.txt")"
+      - name: Export exact validated Git objects as data
+        working-directory: source
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, subprocess
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'pr2151-integration'
+          info=json.loads((out/'parents.json').read_text())
+          def git(*a): return subprocess.check_output(['git',*a])
+          def entries(ref):
+              result={}
+              for row in git('ls-tree','-rz',ref).split(b'\0'):
+                  if not row: continue
+                  meta,path=row.split(b'\t',1); mode,kind,sha=meta.decode().split()
+                  assert kind=='blob'
+                  result[path.decode()]={'mode':mode,'sha':sha}
+              return result
+          before=entries(info['development']); after=entries(info['tree']); changes=[]
+          for path in sorted(before.keys()|after.keys()):
+              if before.get(path)==after.get(path): continue
+              if path not in after: changes.append({'path':path,'sha':None}); continue
+              item=after[path]; raw=git('cat-file','blob',item['sha'])
+              assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()==item['sha']
+              changes.append({'path':path,**item,'content':base64.b64encode(raw).decode()})
+          info['baseTree']=git('rev-parse',info['development']+'^{tree}').decode().strip()
+          info['changes']=changes; info['validated']=True
+          (out/'publication.json').write_text(json.dumps(info))
+          print('Validated tree',info['tree'],'changed paths',len(changes))
+          PY
+      - name: Retain merge and validation evidence
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-integration-validation
+          path: ${{ runner.temp }}/pr2151-integration/**
+          if-no-files-found: warn
+          retention-days: 7
+  publish-objects:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          name: pr2151-integration-validation
+          path: input
+      - name: Publish verified objects only; never move a branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, urllib.request
+          p=json.loads(pathlib.Path('input/publication.json').read_text())
+          assert p['validated'] is True
+          assert p['head']=='f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          assert p['development']=='5569a03df63cac133146eee2680223ea3a1a3dc7'
+          assert len(p['changes'])<150
+          root='https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
+          def post(route,body):
+              req=urllib.request.Request(root+route,data=json.dumps(body).encode(),method='POST',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'})
+              with urllib.request.urlopen(req,timeout=60) as response: return json.load(response)
+          elements=[]; seen=set()
+          for item in p['changes']:
+              path=item['path']; pp=pathlib.PurePosixPath(path)
+              assert not pp.is_absolute() and '..' not in pp.parts and '.git' not in pp.parts and path not in seen
+              assert 'pr2151_merge_validation_temp' not in path and 'pr2151-merge-validation-temp' not in path
+              seen.add(path)
+              if item['sha'] is None:
+                  elements.append({'path':path,'mode':'100644','type':'blob','sha':None}); continue
+              raw=base64.b64decode(item['content'],validate=True)
+              assert len(raw)<2_000_000 and item['mode'] in ('100644','100755','120000')
+              assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()==item['sha']
+              result=post('/git/blobs',{'content':item['content'],'encoding':'base64'})
+              assert result['sha']==item['sha']
+              elements.append({'path':path,'mode':item['mode'],'type':'blob','sha':item['sha']})
+          result=post('/git/trees',{'base_tree':p['baseTree'],'tree':elements})
+          assert result['sha']==p['tree'], (result['sha'],p['tree'])
+          pathlib.Path('published.json').write_text(json.dumps({'head':p['head'],'development':p['development'],'tree':p['tree'],'paths':len(elements)}))
+          print('VERIFIED_TREE='+p['tree'])
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-published-tree
+          path: published.json
+          retention-days: 7
