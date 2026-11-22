@@ -1,5 +1,22 @@
 # Java exception-frame storage
 
+## Integration status
+
+The active activation-compiler path now uses the development
+`tools/java_guest/exception_slots.py` adapter exactly once, called by
+`enum_guard.run`. Its receipt is `exceptionSlots`, and both sealed link routes
+retain `--stack-first`, a 65,536-byte stack, and the 64 MiB memory ceiling.
+The earlier `compact_exception_frames` implementation below is an independent
+native-reference lowering, not a second production pass. Never apply both to
+the same generated tree. The integrated native controls compare both adapted
+forms against the original exception macros; the build-route controls require
+only the production slot adapter and preserve sealed-input checking.
+
+See [the maintained exception-slot contract](java-exception-slot-lifetimes.md)
+for the active source-bound compiler path. The remaining sections record the
+original frame-storage repair and its historical evidence, not a second current
+receipt or a new signed qualification claim.
+
 The activation-enabled TeaVM C path uses function-local exception descriptors
 according to lexical nesting, rather than allocating a fresh descriptor for
 every sequential `TEAVM_TRY` site. This changes storage placement, not Java

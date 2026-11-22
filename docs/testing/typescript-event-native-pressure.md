@@ -53,31 +53,119 @@ listener, the ordinary awaited Promise checkpoint, and successful explicit
 retry of the same nine-dependent graph. All reason, order, fresh-state,
 no-network, budget, deadline, and cleanup assertions remain in force.
 
-## Strict declaration boundary
-
-Signed Fetch run `44620650191` at `0d7c4fa3` compiled the source-owned engine,
-but stopped before guest execution: the shipped AbortSignal declarations
-restricted both listener methods to `"abort"`, rejecting the existing
-`"fanout-fill"` control with TS2345. The declarations now accept string event
-names, as the inherited native EventTarget methods already do. Callback and
-options types are unchanged. This neither adds an API implementation nor
-casts away the refusal probe's type errors.
-
-The existing signed Fetch job runs the following check after installing its
-locked compiler. It uses the unchanged full probe, real Jco-generated WIT
-bindings and selected runtime declarations, without DOM or Node ambient types:
+## Reproduction and evidence limits
 
 ```sh
-python3 tools/check_typescript_abort_event_types.py --tools /path/to/pinned/frontend
+python3 -m unittest \
+  tools.tests.test_typescript_native_object_pressure \
+  tools.tests.test_typescript_event_ownership \
+  tools.tests.test_typescript_abort_any_ownership \
+  tools.tests.test_typescript_fetch_runtime
 ```
 
-The check requires the repository-pinned Node and TypeScript versions. It
-rejects numeric event names, invalid listeners and invalid `once` values.
-Independently restoring either old abort-only signature must reject the
-unchanged signed source; restoring the current declarations must compile again.
-These are compiler observations, not signed execution or retirement evidence.
+The pressure tests compile the actual production collection, preparation,
+admission, and retirement bodies with finite GC/broker doubles. They cover
+reachable-owner refusal, acknowledgement failure, missing collection-end,
+pending exceptions, snapshot refusal, exact dead-owner reclamation, and the
+non-collecting admission boundary. Emitted listener tests cover preparation
+failure before publication, retained removed identity, and duplicate handling.
+Node controls additionally exercise the refusal probe with only one filler slot
+available. These controls do not establish SpiderMonkey compaction, signed-host
+custody, or whole-runtime byte accounting.
 
-## Recovery across an awaited Promise
+The normal source-owned engine build and strict signed Fetch programme must
+qualify the combined source. No diagnostic binary is a production input and no
+historical or modeled pass substitutes for that gate.
+
+## Declaration boundary
+
+The signed Fetch attempt on PR #2156 head `3d88e6d`, run `44616090286`,
+job `135963175967`, stopped at strict typechecking before guest execution.
+Artifact `14585192162` (SHA-256
+`6e8c8838c845ae05e30ecb1fe628a24416f91ae6e3f501ce2bbbd710f59e0103`)
+retains TS2345 for adding and removing the non-abort `fanout-fill` listener.
+The runtime declarations had incorrectly restricted both methods to `abort`.
+
+The declarations now accept string event names, matching the selected native
+EventTarget methods inherited by AbortSignal. Callback and option types are
+unchanged; no browser globals, new runtime API, casts or typecheck suppressions
+are added. The source signal, positive held-listener requirement and every
+signed refusal/recovery assertion remain unchanged.
+
+The existing networking compiler-boundary job now also runs the strict
+declaration controls using its already installed, lock-checked frontend. The
+controls compile the actual fan-out helper source, reject the old abort-only
+declarations, and reject invalid event/callback arguments and undeclared browser globals. Missing tools,
+skipped controls and compiler errors fail this explicit gate. The full ordinary
+component build and signed programme remain separate mandatory steps.
+
+```sh
+LSF_TYPESCRIPT_FRONTEND=/path/to/installed-tools \
+  python3 -m tools.tests.test_typescript_abort_declarations
+```
+
+## Recovery checkpoint: avoid allocating empty algorithm storage
+
+The strict signed run `44701639483` on `ce9b3706` passed ordinary fan-out,
+then returned `diagnostic:abort-fanout:checkpoint:native-admission` in the
+refusal case. Artifact `14617568494` has SHA-256
+`4bafd057f3fd13efd1c87f94fe2a54e7ab8ae508a35ee1f03f95128f63fec9e2`;
+its component has SHA-256
+`d434749032a6e986e384f38bff38181c4dda33e9a78dc9d3d18efd0c0bbcec8e`.
+The hosted failure observation does not prove physical retirement.
+
+A separate replay of the unchanged main core with finite diagnostic imports
+reproduces that exact diagnostic at the unchanged 64-owner limit. It records
+the filler listener's original token being acknowledged (64 to 63), followed
+by a Promise allocation (63 to 64), then refusal of the await reaction.
+Thus the replay narrows the earlier suspected removal leak: the single freed
+slot is insufficient for the normal continuation while the graph remains live.
+These diagnostic imports are not the signed host or its original ledger.
+
+The production derivation now leaves `Slots::Algorithms` undefined until the
+first actual algorithm is attached. Creating a signal no longer allocates an
+empty native algorithm-list wrapper or its tracking record. Both weak sets and
+the EventTarget listener list retain their separate allocations and original
+owner reservations. No existing physical allocation becomes uncharged, and
+owners are not bundled or refunded early. An allocated algorithm list retains
+its charge even when its elements have drained, until actual finalization.
+
+First insertion uses the same non-collecting admission function to reserve a
+separate container owner, allocates its backing, and appends the separately
+owned algorithm before publishing the slot. Admission/allocation/append failure
+leaves the signal unchanged. The rooted context is passed by every native
+caller; staged callback captures never cross a newly introduced collection.
+An absent list is handled by the getter, abort drain, trace hook and finalizer;
+abort events still dispatch normally. Listener registration preserves the
+original pending native-admission failure rather than replacing it with OOM.
+
+The ten-signal fixture consequently avoids ten actual empty container and
+tracking allocations. This is a storage reduction, not a raised owner ceiling
+or a changed Promise checkpoint. The signed fixture, both refusals, positive
+filler count, nine dependents, original-root retry, event/reason ordering, fresh
+state, networking and cleanup checks remain unchanged.
+
+Run the additional compiler/lifetime controls with:
+
+```sh
+python3 -m unittest tools.tests.test_typescript_abort_lazy_algorithms
+```
+
+They compile the actual emitted create/getter/insertion/finalizer functions and
+the unchanged production container factory/retirement classes. Finite doubles
+cover independent first-use ownership, reuse, native refusal, allocation and
+append failure, original exceptions, partial initialization, delayed collection
+completion, backing deallocation and acknowledgement refusal. Reintroducing the
+eager allocation reproduces the recovery-capacity failure. The ordinary abort
+controls additionally exercise a fan-out with absent algorithm lists.
+
+These C++ controls and the diagnostic replay do not establish fresh signed
+execution, SpiderMonkey compaction, or byte-accurate whole-runtime accounting.
+The existing source-bound engine build and unchanged signed Fetch programme
+must still qualify this source; no diagnostic binary is a production input.
+
+## Private task completion and rooted abort retry
+
 
 Signed run `44701843668` at `afad3f21` passed compilation and ordinary fan-out,
 then returned `diagnostic:abort-fanout:checkpoint:native-admission`. Artifact
@@ -94,9 +182,9 @@ refunding still-live Promises would conceal this boundary.
 The selected source-splicer path now derives a lazy **private task completion
 capability**. Construction retains the original exit capability, task queues,
 metadata, and settlement handler. The completion Promise and its resolving
-functions are created on the first `completionPromise()` observation, or when
-settlement is admitted before terminal-state changes, child rejection, or
-handler detachment. The same real Promise is retained thereafter. Settlement creates it even without observers, preserving
+functions are created on the first `completionPromise()` observation, or at
+`onResolve` entry before detaching any original handler. The same real Promise
+is retained thereafter. Settlement creates it even without observers, preserving
 thenable assimilation and unhandled-rejection reporting rather than buffering
 results or substituting a custom Promise implementation. The factory must
 succeed before publishing either field. The original completion handler drops
@@ -128,6 +216,28 @@ results. These are diagnostic broker observations, not signed-node or original
 activation-ledger qualification. The guest probe, same-root retry, positive
 filler, budgets, deadlines and strict signed-result assertions are unchanged.
 
+
+## Combined development integration
+
+The merge of development `8f87f81f` into the event-wait branch retains both
+reductions: empty algorithm containers remain absent, and unobserved private
+task completion capabilities remain lazy. The rooted abort pressure preflight
+is retained; low-level admission is still non-collecting. No allocation is
+unaccounted or refunded early, and the 64-owner ceiling is unchanged.
+
+The emitted fan-out regression includes absent algorithm storage with a
+refused preflight: no default reason, vector reservation, callback or graph
+publication may occur. All prior empty-storage, factory-failure, first-use
+container ownership and task-completion controls remain required.
+
+Before this merge, event-wait head `4923f54a` passed signed Fetch run
+`44894162810`, including all 24 expected results, refusal/recovery, default
+reentry and fresh state. The retained artifact `14705778588` has SHA-256
+`c4b6fb3e21d2d9fc5095cefd91a05025ccb05399539af23b0cffeeb9b21647b5`.
+That is predecessor evidence, not signed execution of the combined source.
+Fresh combined-head engine construction and signed retirement checks remain
+required; full-ticket and whole-runtime accounting claims are unchanged.
+
 ## Admission before terminal task state
 
 A follow-up failure control calls the real generated task's `resolve`, rather
@@ -157,34 +267,13 @@ public enum; it is not signed cancellation qualification. The tests execute the
 actual generated class with real intrinsic Promises and a finite factory
 failure control, not the signed node or resource ledger.
 
-## Reproduction and evidence limits
 
-```sh
-python3 -m unittest \
-  tools.tests.test_typescript_native_task_meta \
-  tools.tests.test_typescript_native_object_pressure \
-  tools.tests.test_typescript_event_ownership \
-  tools.tests.test_typescript_abort_any_ownership \
-  tools.tests.test_typescript_fetch_runtime
-```
+## Native custody branch integration
 
-The pressure tests compile the actual production collection, preparation,
-admission, and retirement bodies with finite GC/broker doubles. They cover
-reachable-owner refusal, acknowledgement failure, missing collection-end,
-pending exceptions, snapshot refusal, exact dead-owner reclamation, and the
-non-collecting admission boundary. Emitted listener tests cover preparation
-failure before publication, retained removed identity, and duplicate handling.
-Node controls additionally exercise the refusal probe with only one filler slot
-available. These controls do not establish SpiderMonkey compaction, signed-host
-custody, or whole-runtime byte accounting.
-
-Task controls run the original and adapted generated class with real intrinsic
-Promises, including early observers, settlement without observers, thenables,
-throwing getters, unhandled rejection, reentrant observation, queue contention
-and factory refusal before publication. Emitted abort controls additionally
-require pending-exception preservation, already-aborted no-op and refusal before
-reason construction or graph mutation.
-
-The normal source-owned engine build and strict signed Fetch programme must
-qualify the combined source. No diagnostic binary is a production input and no
-historical or modeled pass substitutes for that gate.
+The integration with development `5569a03d` retains the landed #2156 lazy
+algorithm-storage repair and #2163 combined empty-storage/preflight controls.
+The private task completion admission checks above are retained from #2161.
+These optimizations avoid different physical allocations; neither grants
+additional capacity or retires a live owner. The signed probe and 64-owner
+ceiling are unchanged. The complete source-owned engine and signed Fetch
+programme must qualify this combined tree; predecessor results are historical.

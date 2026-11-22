@@ -16,9 +16,11 @@ completion. Every socket write and flush poll checks the retained current data
 permission. A cleanup failure remains a delivery diagnostic alongside the durable
 receipt. HTTP status does not turn uncertainty into an abort.
 
-Real signed Java, browser and complete recovery qualification remain acceptance
-work for #409/#718. Portable mapping, signed fixture execution and provider tests
-retain separate evidence boundaries.
+The [order-draft browser client](../../examples/stateful-reference/README.md)
+uses the result route to recover the original command and inspect its effects.
+For executed coverage, consult the [guest evidence](../testing/phase4-guest-progress-2026-11-09.md)
+and [installed recovery scenarios](../testing/installed-transaction-recovery.md).
+Each identifies its guest, node and transport.
 
 ## Installed scope
 

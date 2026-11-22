@@ -11,10 +11,11 @@ Durable state, command outcomes and protective history belong to the shared stor
 
 1. Derive `EntityScope` from trusted tenant, namespace incarnation and entity
    binding authority. Its constructor checks shape; it does not grant permission.
-2. Durably claim the canonical caller-scoped command attempt before queueing.
-   `EntityLaneRequest<T>` carries its opaque bounded identity and the original
-   immutable accepted envelope `T`, including publication/schema pin. Local
-   duplicate suppression covers a live lane only; durable recovery is separate.
+2. Check the selected publication, current policy and retention capacity. For an
+   initial entity command, subscribe to claim changes before probing the durable
+   record. An existing outcome goes through authorized recovery. For new work,
+   wait for the lane **before publishing the pending claim**, since that write
+   advances the namespace generation.
 3. Charge payload ownership before constructing the request. Configure explicit
    global/tenant/entity queue and retained-byte limits, global/tenant key and
    active-owner limits, scope/identity ceilings and maximum monotonic wait age.
@@ -31,7 +32,10 @@ Durable state, command outcomes and protective history belong to the shared stor
    pending queues so wait deadlines are observed; there is no per-entity timer.
 6. Transfer `EntityExecution::into_owned_work()` into the real execution owner.
    The returned `EntityLaneRequest<T>` and `EntityPhysicalOwner<T>` preserve the
-   accepted envelope. Every independently owned engine/commit/cleanup operation
+   accepted envelope. After selection the node reads and seals the fresh namespace,
+   binds the lane to the command role and attempts the durable claim.
+   [Node admission order](../../crates/latent-node/src/transaction_runtime/factory/admission.rs)
+   Every independently owned engine/commit/cleanup operation
    must retain a physical guard before submission. Client cancellation and
    deadlines cannot retire it. Only the last guard's destruction frees the lane.
 7. Seal transaction staging and sever guest references before handing owned bytes
@@ -48,6 +52,13 @@ manager fences reject. The lane owner keeps no dormant revocation table, so new
 admission must still use current trusted authority. Synchronous transactional
 children reject for the same or different entity, avoiding reentrant/cyclic
 waits. Existing nontransactional descendant behavior is unchanged.
+
+Ordinary queued commands and duplicate observers share global, tenant and entity
+limits on both count and bytes. A duplicate occupies a slot while the node
+checks result-read permission against the original source and deadline. It can
+sponsor the original command only after authorization. A full queue can therefore
+refuse another request even when the reported attached-observer count is zero.
+[Node queue and observer ownership](../../crates/latent-node/src/transaction_runtime/entity_queue.rs)
 
 ## Focused validation and remaining integration
 
@@ -67,11 +78,7 @@ cargo clippy -p latent-state --all-targets --all-features --locked -- -D warning
 ```
 
 The Clippy allowance applies to pre-existing explicit lifetimes on placeholder
-traits; the new lane modules deny Clippy all/pedantic lints. This substrate does
-not complete #394. The standalone invocation contract and trusted entity binding,
-durable command admission/result recovery, actual scheduler/cell/guest path,
-atomic namespace/store commit fence and real-component trap/commit/cleanup
-integration remain required by #382/#384/#387/#388 and #394. No Linux durability,
-real guest execution or final Phase 4 qualification is claimed by these portable
-owner tests. The unsafe wall-clock-only legacy `EntityLeaseManager` declaration
-is not implemented or adopted as the execution authority.
+traits. The [node queue tests](../../crates/latent-node/src/transaction_runtime/entity_queue/tests.rs)
+exercise the integrated admission path. Storage durability and signed-component
+trap, commit and cleanup require separate runs. The installed execution path
+uses the physical lane guard through retirement.

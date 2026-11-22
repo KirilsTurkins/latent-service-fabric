@@ -42,6 +42,20 @@ the caller can explicitly recover the original result using its preserved
 identity. Effects retain their separate dispatch disposition; a provider
 acknowledgement does not prove the command's outcome or ordered dispatch.
 
+Recovery snapshots are bounded before dispatch. Java, .NET and Node retain
+independent copies of selectors, abort fences and stale-edit preconditions.
+At most 128 expected-version entries can be submitted. An oversized collection,
+text field or encoded request fails locally. Editing a caller-owned buffer
+after submission cannot change the key or precondition used for recovery.
+Go bounds the request graph before traversing its shape. The
+[wire limits](../protocol/transactions.md#bounds-presence-and-encoding) also
+apply to callers supplying their own transport.
+
+Use `GetEffect` for the current disposition and `ListEffectHistory` to page
+through retained attempts. Each page requires the original command and effect
+association and current authorization. Browser callers have the narrower
+[HTTP result projection](../development/transaction-http-v1.md#original-request-facts).
+
 Effect management is explicit: `PlanEffectMutation` prepares finite checked data;
 `MutateState` applies that exact plan and its original record version, policy
 digest, action, reason and operation ID; `GetStateOperationReceipt` recovers the
@@ -104,7 +118,8 @@ The TypeScript package root exposes the pure `transaction` models, including
 Browser command/query/recovery execution must use the purpose-built authenticated
 HTTP boundary rather than private management RPC.
 
-Regeneration uses pinned Buf 1.72.0, Rust 1.97.1 formatting and Go 1.27.2 formatting:
+Regenerate models with the repository's Buf, Rust and Go formatters. The
+[toolchain manifest](../../tools/toolchain.toml) pins Buf 1.72.0, Rust 1.97.1 and Go 1.27.4.
 
 ```bash
 python3 tools/transaction_client_models.py --check
@@ -113,8 +128,8 @@ python3 tools/transaction_client_rust_shapes.py --check
 ```
 
 This source milestone includes six model sets and all six current transport facades.
-Backup/migration and the complete management
-profile operations, separate-node six-client scenario matrix and browser HTTP
-execution remain outstanding. Generated model checks, codec tests and compiler
-checks do not qualify signed guest execution or real external-client execution.
-Issue #401 stays open until those independent acceptance gates pass.
+The six transport suites include real-node command, rejection and lost-response
+scenarios. Compare their executed evidence separately from [signed guest results](../testing/phase4-guest-progress-2026-11-09.md)
+and the [browser reference application](../../examples/stateful-reference/README.md).
+The full client matrix, backup/migration and packaged qualification remain
+separate acceptance work.

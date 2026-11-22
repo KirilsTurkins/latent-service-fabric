@@ -1,4 +1,4 @@
-"""Actual v3 and historical v2 counts remain bound to their own receipts."""
+"""Current and historical aggregate counts remain bound to their own receipts."""
 import copy
 import json
 from pathlib import Path
@@ -26,15 +26,15 @@ class CurrentAggregateFilesystemChain(unittest.TestCase):
             extras = {'profile', 'frameworkInput', 'tool', 'derived', 'sourceCaptureDigest',
                 'targetsDigest', 'nativeAotReferenceBinding', 'selection'}
             controlled.update({key: before[key] for key in extras})
-            controlled.update(outputDigest=before['outputDigest'], generatedHelperCount=109,
+            controlled.update(outputDigest=before['outputDigest'], generatedHelperCount=113,
                 finiteWaitObservation=qualification.task_wait.FINITE_OBSERVATION,
-                unchangedOriginalMethods=44708, managedAcceptedWork=copy.deepcopy(INLINE_PRIMARY_REWRITE_RECEIPT),
+                unchangedOriginalMethods=44706, managedAcceptedWork=copy.deepcopy(INLINE_PRIMARY_REWRITE_RECEIPT),
                 aggregateTaskWait=copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED))
             docs['task-wait-port.json'] = controlled
-            docs['closed-filesystem-port.json']['unchangedBaseMethods'] = 44853
+            docs['closed-filesystem-port.json']['unchangedBaseMethods'] = 44857
             docs['runtime-profile.json']['profile'] = 'runtime-managed'
             selection = docs['compiler-patches.json']['patches'][0]['selection']
-            selection.update(generatedHelperCount=109, finiteWaitObservation=qualification.task_wait.FINITE_OBSERVATION,
+            selection.update(generatedHelperCount=113, finiteWaitObservation=qualification.task_wait.FINITE_OBSERVATION,
                              aggregateTaskWait=controlled['aggregateTaskWait'])
             def publish(values):
                 for name, value in values.items():
@@ -42,7 +42,7 @@ class CurrentAggregateFilesystemChain(unittest.TestCase):
                 refresh()
             publish(docs)
             qualification.build_evidence(root, aggregate=True)
-            for changed in (44852, 44854, True):
+            for changed in (44853, 44856, 44858, True):
                 wrong = copy.deepcopy(docs)
                 wrong['closed-filesystem-port.json']['unchangedBaseMethods'] = changed
                 publish(wrong)
@@ -56,7 +56,7 @@ class CurrentAggregateFilesystemChain(unittest.TestCase):
                 qualification.build_evidence(root, aggregate=True)
             wrong = copy.deepcopy(docs)
             del wrong['task-wait-port.json']['finiteWaitObservation']
-            wrong['task-wait-port.json']['generatedHelperCount'] = 108
+            wrong['task-wait-port.json']['generatedHelperCount'] = 112
             publish(wrong)
             with self.assertRaises((ValueError, WorkflowError)):
                 qualification.build_evidence(root, aggregate=True)

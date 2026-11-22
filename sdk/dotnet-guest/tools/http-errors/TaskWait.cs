@@ -416,8 +416,8 @@ internal static class TaskWait
             }
             var generatedHelpers = Methods(module).Where(item => !originalMap.ContainsKey(item.Key))
                 .ToDictionary(item => item.Value.FullName, item => BodyIdentity(item.Value));
-            Require(generatedHelpers.Count == (aggregateSelected ? 109 : managedSelected ? 105 : finiteSelected ? 11 : 9)
-                && timerMethods.Length == 3 && modifiedBodies.Count == (aggregateSelected ? 37 : managedSelected ? 27 : 4));
+            Require(generatedHelpers.Count == (aggregateSelected ? 113 : managedSelected ? 105 : finiteSelected ? 11 : 9)
+                && timerMethods.Length == 3 && modifiedBodies.Count == (aggregateSelected ? 39 : managedSelected ? 27 : 4));
             module.Write(output, new WriterParameters { WriteSymbols = false, DeterministicMvid = true });
             using (var written = ModuleDefinition.ReadModule(output))
             {
