@@ -1,0 +1,59 @@
+name: PR 2151 isolated merge inputs
+on:
+  push:
+    branches: [diagnostic/pr2151-merge-20261122]
+    paths: [.github/workflows/pr2151-merge-snapshot.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: f881e760dfb527e341b2b43b60d99f217ad2d8ae
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Preserve exact trees and common ancestor without repository credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          head=f881e760dfb527e341b2b43b60d99f217ad2d8ae
+          base=8f87f81f8c987f8f39f34bec693c8cb3e08ecb75
+          git fetch --no-tags origin "$base"
+          ancestor=$(git merge-base "$head" "$base")
+          out="$RUNNER_TEMP/pr2151-merge-inputs"
+          mkdir -p "$out"
+          export GIT_AUTHOR_NAME='Merge snapshot' GIT_AUTHOR_EMAIL='snapshot@localhost'
+          export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME" GIT_COMMITTER_EMAIL="$GIT_AUTHOR_EMAIL"
+          a=$(printf 'Local snapshot common ancestor\n' | git commit-tree "$ancestor^{tree}")
+          h=$(printf 'Local snapshot PR head\n' | git commit-tree "$head^{tree}" -p "$a")
+          b=$(printf 'Local snapshot development\n' | git commit-tree "$base^{tree}" -p "$a")
+          git update-ref refs/heads/snapshot-head "$h"
+          git update-ref refs/heads/snapshot-development "$b"
+          git update-ref refs/heads/snapshot-ancestor "$a"
+          git bundle create "$out/merge-inputs.bundle" refs/heads/snapshot-head refs/heads/snapshot-development refs/heads/snapshot-ancestor
+          python3 - "$head" "$base" "$ancestor" "$out" <<'PY'
+          import hashlib, json, pathlib, subprocess, sys
+          head, base, ancestor, output = sys.argv[1:]
+          out = pathlib.Path(output)
+          tree = lambda sha: subprocess.check_output(['git', 'rev-parse', sha+'^{tree}'], text=True).strip()
+          data = {'head': head, 'development': base, 'ancestor': ancestor,
+                  'trees': {name: tree(sha) for name, sha in [('head',head),('development',base),('ancestor',ancestor)]},
+                  'bundleSha256': hashlib.sha256((out/'merge-inputs.bundle').read_bytes()).hexdigest()}
+          (out/'identities.json').write_text(json.dumps(data, indent=2)+'\n')
+          print(json.dumps(data))
+          PY
+          set +e
+          git merge-tree --write-tree "$head" "$base" > "$out/merge-tree.txt"
+          result=$?
+          set -e
+          test "$result" -eq 0 -o "$result" -eq 1
+          cat "$out/merge-tree.txt"
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-exact-merge-inputs
+          path: ${{ runner.temp }}/pr2151-merge-inputs
+          if-no-files-found: error
+          retention-days: 3
