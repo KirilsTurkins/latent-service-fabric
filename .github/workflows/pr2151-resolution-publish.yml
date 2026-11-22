@@ -1,0 +1,195 @@
+name: Isolated PR 2151 resolution publication
+on:
+  push:
+    branches: ['work/pr2151-resolution-publish-20261122']
+    paths: ['.github/workflows/pr2151-resolution-publish.yml']
+permissions:
+  contents: read
+concurrency:
+  group: pr2151-resolution-publication
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      manifest: ${{ steps.export.outputs.manifest }}
+      tree: ${{ steps.export.outputs.tree }}
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      LSF_PYTHON_POLICY_BASE: '702bd725f259a241a9b92aecde9b1a5787b94f94'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: fdb179d12f90d1406c9085dda564256d951badb1
+          path: input
+          persist-credentials: false
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: f881e760dfb527e341b2b43b60d99f217ad2d8ae
+          path: source
+          fetch-depth: 64
+          persist-credentials: false
+      - name: Fetch exact development and retained documentation input
+        run: |
+          set -euo pipefail
+          git -C source fetch --no-tags --depth=64 origin 702bd725f259a241a9b92aecde9b1a5787b94f94
+          git -C source fetch --no-tags --depth=1 origin 3aabc54bf09040919f4b306f0009b5bcc1b5fb88
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: '3.13.5'
+      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
+        with:
+          distribution: temurin
+          java-version: '25.0.4+101.0.LTS'
+      - name: Construct authenticated real merge without a commit or ref update
+        run: |
+          set -euo pipefail
+          echo '5f8246eb1974a4eb9b7f089c12a9381b1fc6955510f273b61dba379049058fa4  input/.github/pr2151-prepare.py' | sha256sum -c -
+          python3 -B input/.github/pr2151-prepare.py
+      - name: Install existing source validator dependencies
+        working-directory: source
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Require source policy and affected regression suites without skips
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B - <<'PY' > "$RUNNER_TEMP/pr2151/validation.log" 2>&1
+          import json, os, pathlib, subprocess, unittest
+          from tools.ci_python_policy import require_no_new_controls
+          base = os.environ['LSF_PYTHON_POLICY_BASE']
+          files = subprocess.check_output(['git','diff','--cached','--name-only','--diff-filter=AM',base],text=True).splitlines()
+          for name in files:
+              p=pathlib.Path(name)
+              if p.name.startswith('test_') and p.suffix=='.py':
+                  old=subprocess.run(['git','show',base+':'+name],capture_output=True)
+                  require_no_new_controls(old.stdout.decode() if old.returncode==0 else '',p.read_text())
+          names = '''test_java_enum_guard test_java_date_link_guard test_java_exception_slots test_java_linear_stack test_typescript_event_ownership test_typescript_abort_lazy_algorithms test_typescript_native_object_pressure test_typescript_native_task_meta test_native_fixture_toolchain test_java_compiler_acquisition test_java_dependency_suite test_java_resource_runtime test_java_standard_http_ownership test_java_teavm_failure_trace test_typescript_abort_any_ownership test_typescript_abort_stack_integration test_typescript_record_retirement test_typescript_abort_declarations test_java_checkpoint_context test_java_future_cancel_interrupt test_java_http_fibers test_java_owner_admission test_java_scheduled_library test_java_exception_frames test_runtime_merge_integration test_transaction_client_models'''.split()
+          loader=unittest.TestLoader()
+          suite=loader.loadTestsFromNames(['tools.tests.'+name for name in names])
+          suite.addTests(loader.loadTestsFromName('tools.tests.test_local_tests.DriftTests'))
+          result=unittest.TextTestRunner(verbosity=2).run(suite)
+          assert result.wasSuccessful() and not result.skipped, 'affected regression suite must pass without skips'
+          sdk=unittest.TextTestRunner(verbosity=2).run(unittest.TestLoader().discover('sdk/java-guest/tests'))
+          assert sdk.wasSuccessful() and not sdk.skipped, 'SDK discovery must pass without skips'
+          summary={'sourceTests':result.testsRun,'sdkTests':sdk.testsRun,'skips':0,'pinnedJava':'25.0.4+101.0.LTS','signedExecution':False}
+          pathlib.Path(os.environ['RUNNER_TEMP'],'pr2151','validation.json').write_text(json.dumps(summary,indent=2)+'\n')
+          print(json.dumps(summary))
+          PY
+          tail -n 12 "$RUNNER_TEMP/pr2151/validation.log"
+          python3 -B tools/validate_repository.py > "$RUNNER_TEMP/pr2151/repository-validation.log" 2>&1
+      - name: Export exact tested tree and bounded publication data
+        id: export
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B - <<'PY'
+          import hashlib,json,os,pathlib,subprocess
+          root=pathlib.Path('source').resolve()
+          out=pathlib.Path(os.environ['RUNNER_TEMP'])/'pr2151'
+          def git(*args): return subprocess.check_output(['git','-C',str(root),*args])
+          H='f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          D='702bd725f259a241a9b92aecde9b1a5787b94f94'
+          tree=(out/'tree.txt').read_text().strip()
+          assert git('rev-parse','HEAD').decode().strip()==H
+          assert git('rev-parse','MERGE_HEAD').decode().strip()==D
+          assert git('write-tree').decode().strip()==tree
+          subprocess.run(['git','-C',str(root),'diff','--exit-code'],check=True)
+          assert not git('ls-files','--others','--exclude-standard').strip()
+          git('diff','--cached','--check')
+          blobdir=out/'blobs'; blobdir.mkdir(exist_ok=True)
+          entries=[]
+          for path in git('diff','--name-only','--no-renames',D,tree).decode().splitlines():
+              row=git('ls-tree',tree,'--',path).decode().strip()
+              if not row:
+                  entries.append({'path':path,'mode':'100644','type':'blob','sha':None}); continue
+              metadata,observed=row.split('\t')
+              mode,kind,sha=metadata.split()
+              assert observed==path and kind=='blob' and mode in ('100644','100755')
+              raw=git('cat-file','blob',sha)
+              assert len(raw)<=2*1024*1024
+              (blobdir/sha).write_bytes(raw)
+              entries.append({'path':path,'mode':mode,'type':kind,'sha':sha,'sha256':hashlib.sha256(raw).hexdigest(),'bytes':len(raw)})
+          assert 1<=len(entries)<=256
+          manifest={'head':H,'development':D,'tree':tree,'baseTree':git('rev-parse',D+'^{tree}').decode().strip(),'entries':entries}
+          raw=(json.dumps(manifest,sort_keys=True,indent=2)+'\n').encode()
+          (out/'manifest.json').write_bytes(raw)
+          (out/'diff.patch').write_bytes(git('diff','--binary',D,tree))
+          (out/'diff-stat.txt').write_bytes(git('diff','--stat',D,tree))
+          subprocess.run(['git','-C',str(root),'archive','--format=tar.gz','-o',str(out/'source.tar.gz'),tree],check=True)
+          with open(os.environ['GITHUB_OUTPUT'],'a') as target:
+              target.write('manifest='+hashlib.sha256(raw).hexdigest()+'\ntree='+tree+'\n')
+          print('TESTED_TREE',tree,'FILES',len(entries),'MANIFEST',hashlib.sha256(raw).hexdigest())
+          print((out/'diff-stat.txt').read_text())
+          PY
+      - name: Retain preparation and validation evidence
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-resolution-prepared-${{ github.run_id }}
+          path: ${{ runner.temp }}/pr2151/
+          retention-days: 7
+          if-no-files-found: error
+  objects:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          name: pr2151-resolution-prepared-${{ github.run_id }}
+          path: ${{ runner.temp }}/prepared
+      - name: Store only authenticated Git objects without checkout or ref updates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_MANIFEST: ${{ needs.prepare.outputs.manifest }}
+          EXPECTED_TREE: ${{ needs.prepare.outputs.tree }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -I - <<'PY'
+          import base64,hashlib,json,os,pathlib,re,urllib.request
+          root=pathlib.Path(os.environ['RUNNER_TEMP'])/'prepared'
+          raw=(root/'manifest.json').read_bytes()
+          assert len(raw)<1024*1024 and hashlib.sha256(raw).hexdigest()==os.environ['EXPECTED_MANIFEST']
+          manifest=json.loads(raw)
+          assert manifest['head']=='f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          assert manifest['development']=='702bd725f259a241a9b92aecde9b1a5787b94f94'
+          assert manifest['baseTree']=='eae3ea23ff1253a50b83c5de95d6f6b3daa880c9'
+          assert manifest['tree']==os.environ['EXPECTED_TREE']
+          def api(endpoint,payload):
+              assert endpoint in ('git/blobs','git/trees')
+              req=urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/'+endpoint,data=json.dumps(payload).encode(),method='POST',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','Content-Type':'application/json'})
+              with urllib.request.urlopen(req,timeout=60) as response: return json.load(response)
+          entries=[]; seen=set()
+          assert 1<=len(manifest['entries'])<=256
+          for item in manifest['entries']:
+              path=pathlib.PurePosixPath(item['path'])
+              assert not path.is_absolute() and '..' not in path.parts and '.git' not in path.parts and str(path)==item['path']
+              assert str(path) not in seen; seen.add(str(path))
+              assert item['mode'] in ('100644','100755') and item['type']=='blob'
+              sha=item['sha']
+              if sha is not None:
+                  assert re.fullmatch('[0-9a-f]{40}',sha)
+                  data=(root/'blobs'/sha).read_bytes()
+                  assert len(data)==item['bytes'] and len(data)<=2*1024*1024
+                  assert hashlib.sha256(data).hexdigest()==item['sha256']
+                  assert hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()==sha
+                  assert api('git/blobs',{'content':base64.b64encode(data).decode(),'encoding':'base64'})['sha']==sha
+              entries.append({key:item[key] for key in ('path','mode','type','sha')})
+          result=api('git/trees',{'base_tree':manifest['baseTree'],'tree':entries})
+          assert result['sha']==manifest['tree']
+          receipt={'tree':result['sha'],'head':manifest['head'],'development':manifest['development'],'entries':len(entries),'manifestSha256':os.environ['EXPECTED_MANIFEST'],'refUpdated':False}
+          (root/'publication.json').write_text(json.dumps(receipt,indent=2)+'\n')
+          print(json.dumps(receipt))
+          PY
+      - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-resolution-objects-${{ github.run_id }}
+          path: ${{ runner.temp }}/prepared/publication.json
+          retention-days: 7
+          if-no-files-found: error
