@@ -1,4 +1,4 @@
-import base64, hashlib, json, os, pathlib, subprocess, sys, zlib
+import ast, base64, hashlib, json, os, pathlib, subprocess, sys, zlib
 ROOT=pathlib.Path.cwd()
 sys.path.insert(0, str(ROOT))
 OUT=pathlib.Path(os.environ['RUNNER_TEMP'])/'pr2151-integration'
@@ -68,10 +68,28 @@ conflicts=set(text('diff','--name-only','--diff-filter=U').splitlines())
 retain_conflicts('new-conflicts',conflicts)
 print('New #2163 conflicts:',sorted(conflicts),flush=True)
 for path in sorted(conflicts):
-    if path in ('tools/tests/test_java_enum_guard.py','tools/tests/test_java_date_link_guard.py'):
-        # The newly merged branch copied these tests from the same security
-        # parent. Keep the reviewed exception-header setup and 64 KiB checks.
-        assert source(DEV,path)==source('7c830598ca437279a8eead344aae5945bffb5bcf',path), ('new Java changes',path)
+    if path=='tools/tests/test_java_enum_guard.py':
+        # Preserve the independently reviewed new lifetime fixture, its exact
+        # two-regions/one-slot assertions, and restored inputs on link failure.
+        incoming=source(DEV,path)
+        assert blob(incoming)=='ce6fde5d99a75be4b936bc068c689f8f7a210ba2'
+        combined=incoming.decode()
+        original=resolved[path].decode()
+        names=[node for node in ast.walk(ast.parse(original)) if isinstance(node,ast.FunctionDef) and node.name=='test_managed_link_changes_select_both_signed_qualification_owners']
+        assert len(names)==1
+        node=names[0]
+        method=''.join(original.splitlines(True)[node.lineno-1:node.end_lineno])
+        marker='    def test_unmodified_nonfiber_clang_command_and_frozen_diagnostics(self):'
+        assert combined.count(marker)==1 and node.name not in combined
+        combined=combined.replace(marker,method+'\n\n'+marker)
+        anchor="        self.assertEqual(receipt['exceptionSlots']['schemaVersion'], 'latent.java.exception-slots.v1')"
+        assert combined.count(anchor)==1
+        combined=combined.replace(anchor,"        self.assertEqual(receipt['cStack'], {'bytes': 65536, 'layout': 'stack-first'})\n"+anchor)
+        ast.parse(combined)
+        resolved[path]=combined.encode()
+        pathlib.Path(path).write_bytes(resolved[path]); git('add','--',path)
+    elif path=='tools/tests/test_java_date_link_guard.py':
+        assert source(DEV,path)==resolved[path], ('new Java date changes',path)
         pathlib.Path(path).write_bytes(resolved[path]); git('add','--',path)
     elif path=='tools/tests/test_local_tests.py' and source(DEV,path)==source(HEAD,path):
         pathlib.Path(path).write_bytes(resolved[path]); git('add','--',path)
