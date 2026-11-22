@@ -667,6 +667,9 @@ class NativeEntrypointTests(unittest.TestCase):
             command("git", "config", "user.name", "Fixture")
             command("git", "config", "user.email", "fixture@example.invalid")
             (repo / ".gitignore").write_text("/target/\n")
+            # This workspace is outside ROOT: retain the repository toolchain
+            # rather than silently using the runner's unrelated Cargo layout.
+            (repo / "rust-toolchain.toml").write_bytes((ROOT / "rust-toolchain.toml").read_bytes())
             (repo / "Cargo.toml").write_text('[workspace]\nmembers=["crates/latent-core"]\nresolver="2"\n')
             package = repo / "crates/latent-core"
             source = package / "src"

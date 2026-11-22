@@ -261,6 +261,8 @@ def run(compiler, generated: Path, selected: tuple[str, ...], destination: Path,
     date_index_path = index_path.with_name('date-init-required-v1.txt')
     date_index = read_file(date_index_path, 32)
     graph_receipt = _date_graph(date_index)
+    from tools.java_guest.exception_slots import stage as stage_exception_slots
+    exception_slots = stage_exception_slots(generated)
     source_before = inventory(generated)[-1]
     preprocessed = compiler.capture_preprocessed('-target', 'wasm32-wasip1', '-std=c11', '-O2',
         '-DLSF_JAVA_ACTIVATION_PROFILE=1', '-DLSF_TEAVM_WASM=1', '-DTEAVM_CUSTOM_LOG=1',
@@ -275,10 +277,12 @@ def run(compiler, generated: Path, selected: tuple[str, ...], destination: Path,
         from tools.java_guest.date_link_guard import run as run_date_link
         receipt['dateGuard']['link'] = run_date_link(compiler, generated, selected, destination, core, sealed)
     else:
+        # Keep the fixed downward-growing C stack below static data. An overflow
+        # must trap at the memory boundary, not overwrite allocator/bridge state.
         c_failure_context.run(compiler, generated, selected, '-target', 'wasm32-wasip1', '-std=c11', '-O2',
             '-DLSF_JAVA_ACTIVATION_PROFILE=1', '-DLSF_TEAVM_WASM=1', '-DTEAVM_CUSTOM_LOG=1',
             '-mllvm', '-wasm-enable-sjlj', '-lsetjmp', '-mllvm', '-wasm-use-legacy-eh=false',
-            '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory', '-Wl,-z,stack-size=65536',
+            '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory', '-Wl,--stack-first', '-Wl,-z,stack-size=65536',
             '-Wl,--max-memory=67108864', '-include', sdk / 'runtime/native.h',
             '-I', bindings, '-I', sdk / 'runtime', '-iquote', generated,
             '-x', 'cpp-output', '-', '-x', 'none', bindings / 'bridge.c', sdk / 'feasibility/platform.c',
@@ -286,6 +290,7 @@ def run(compiler, generated: Path, selected: tuple[str, ...], destination: Path,
     need(original == _bindings_identity(bindings), 'bindings-drift')
     need(index == read_file(index_path, MAX_INDEX), 'index-drift')
     need(date_index == read_file(date_index_path, 32), 'date-index-drift')
+    receipt['exceptionSlots'] = exception_slots
     receipt['dateGraph'] = graph_receipt
     receipt['bindings'] = original
     return receipt

@@ -939,11 +939,14 @@ class CompletableModelIntegrity(unittest.TestCase):
             "closed-read-write-references;absent-no-fallback;models=6")
         variants = [reviewed, reviewed.replace("bodies=205;", "bodies=204;"),
             reviewed.replace("bodies=205;", "bodies=206;"),
+            reviewed.replace("bodies=205;", "bodies=191;"),
             reviewed.replace("actual-coroutine-monitors=29;", "actual-coroutine-monitors=28;"),
             reviewed.replace("owned-callback-bodies=33;", "owned-callback-bodies=32;"),
             reviewed.replace("result-settlement-fence;", ""),
             reviewed.replace("queued-settlement-fence;", ""),
+            reviewed.replace("actual-generated-callbacks=28;", "actual-generated-callbacks=27;"),
             reviewed.replace("actual-generated-callbacks=28;", "actual-generated-callbacks=29;"),
+            reviewed.replace("actual-generated-callbacks=28;", "actual-generated-callbacks=23;"),
             reviewed.replace("actual-generated-callbacks=28;", ""),
             reviewed.replace("resolved-reference-closure;", ""),
             reviewed.replace("unsupported-no-fallback;", "")]
