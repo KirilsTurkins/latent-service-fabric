@@ -50,6 +50,11 @@ jobs:
           body = body.split('        run: |\n', 1)[1].split('      - name: Retain merge and validation evidence', 1)[0]
           source = textwrap.dedent(body).encode()
           assert hashlib.sha256(source).hexdigest() == 'ba6b6012fabf694eec6c72087de56549c13a51a34c533d2bdb273f0cb3741938'
+          old = b"[sys.executable, '-B', 'tools/ci_coverage.py']"
+          new = b"[sys.executable, '-B', 'tools/ci_coverage.py', '--receipt', str(out / 'ci-inventory.json')]"
+          assert source.count(old) == 1
+          source = source.replace(old, new)
+          assert hashlib.sha256(source).hexdigest() == 'd5d1ef24e80410330bb247431c1302efd47a5857040e6b7d93e282d6bd91cc6e'
           path = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr2151-validate.py'
           path.write_bytes(source)
           runpy.run_path(str(path), run_name='__main__')
