@@ -768,8 +768,8 @@ async fn connect_registration_interrupted(interruption: ConnectAuditInterruption
             .unwrap(),
         0
     );
-    // Socket EOF can race the cleanup worker briefly holding the capacity
-    // mutex. Retry only that observation lock, never an unsettled connection.
+    // Maintenance can hold the snapshot lock after the socket is already
+    // closed. Retry only that observation error, never a nonzero snapshot.
     let deadline = Instant::now() + Duration::from_secs(2);
     let snapshot = loop {
         match fixture.pools.snapshot() {
@@ -781,7 +781,7 @@ async fn connect_registration_interrupted(interruption: ConnectAuditInterruption
             {
                 tokio::task::yield_now().await;
             }
-            Err(error) => panic!("pool snapshot failed: {error:?}"),
+            Err(error) => panic!("pool snapshot failed after connect refusal: {error:?}"),
         }
     };
     assert_eq!(snapshot.connections, 0);

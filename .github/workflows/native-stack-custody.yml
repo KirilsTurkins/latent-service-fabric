@@ -1,0 +1,106 @@
+name: Native stack physical custody
+
+on:
+  workflow_dispatch: {}
+  pull_request:
+    branches: [development]
+    paths:
+      - '.github/workflows/native-stack-custody.yml'
+      - 'crates/latent-wasmtime/src/native_stacks*'
+      - 'crates/latent-wasmtime/src/native_stacks/**'
+      - 'crates/latent-wasmtime/src/backend*'
+      - 'crates/latent-wasmtime/src/lib.rs'
+      - 'crates/latent-wasmtime/src/host/runtime*'
+      - 'crates/latent-wasmtime/src/host/runtime/**'
+      - 'crates/latent-wasmtime/Cargo.toml'
+      - 'crates/latent-core/src/budget*'
+      - 'crates/latent-core/src/budget/**'
+      - 'crates/latent-core/src/activation_runtime*'
+      - 'crates/latent-core/src/activation_runtime/**'
+      - 'crates/latent-component-threading/**'
+      - 'crates/vendor/wasmtime/**'
+      - 'crates/vendor/wasmtime-cache/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - '.cargo/**'
+      - 'tools/run_stack_custody_witness.sh'
+      - 'tools/tests/test_stack_custody_boundary.py'
+      - 'tools/native_loader_boundary.py'
+      - 'tools/ci/contracts/workflows/native-stack-custody.yml/**'
+  push:
+    branches: [development]
+    paths:
+      - '.github/workflows/native-stack-custody.yml'
+      - 'crates/latent-wasmtime/src/native_stacks*'
+      - 'crates/latent-wasmtime/src/native_stacks/**'
+      - 'crates/latent-wasmtime/src/backend*'
+      - 'crates/latent-wasmtime/src/lib.rs'
+      - 'crates/latent-wasmtime/src/host/runtime*'
+      - 'crates/latent-wasmtime/src/host/runtime/**'
+      - 'crates/latent-wasmtime/Cargo.toml'
+      - 'crates/latent-core/src/budget*'
+      - 'crates/latent-core/src/budget/**'
+      - 'crates/latent-core/src/activation_runtime*'
+      - 'crates/latent-core/src/activation_runtime/**'
+      - 'crates/latent-component-threading/**'
+      - 'crates/vendor/wasmtime/**'
+      - 'crates/vendor/wasmtime-cache/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - '.cargo/**'
+      - 'tools/run_stack_custody_witness.sh'
+      - 'tools/tests/test_stack_custody_boundary.py'
+      - 'tools/native_loader_boundary.py'
+      - 'tools/ci/contracts/workflows/native-stack-custody.yml/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-stack-custody-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  custody:
+    name: Physical context deallocation and combined-profile controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_PROFILE_DEV_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_TEST_DEBUG_ASSERTIONS: 'true'
+      CARGO_PROFILE_DEV_OVERFLOW_CHECKS: 'true'
+      CARGO_PROFILE_TEST_OVERFLOW_CHECKS: 'true'
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13 # v7.0.1 + LSF fixes
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+      - name: Restore compiled Rust dependencies
+        uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334 # v2.9.3 + LSF fixes
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
+      - name: Exercise both isolated allocator profiles and every combined control
+        id: physical-custody
+        run: bash tools/run_stack_custody_witness.sh "$RUNNER_TEMP/native-stack-custody"
+      - name: Retain physical-custody discovery and execution results
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + LSF fixes
+        with:
+          name: native-stack-custody-${{ github.sha }}
+          path: ${{ runner.temp }}/native-stack-custody/
+          if-no-files-found: warn
+          retention-days: 7

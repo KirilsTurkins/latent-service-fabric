@@ -809,11 +809,9 @@ fn stream_wake_panic_does_not_skip_node_pool_retirement() {
     let providers = node.providers.as_ref().unwrap();
     let lifecycle = providers.streams.as_ref().unwrap().clone();
     let pools = providers.pools.clone();
-    let stream = invocation.block_on(connect_control_stream(&lifecycle, &session, endpoint));
-    let (mut peer, _) = fixture.listener.accept().unwrap();
-    peer.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
-    // Node retirement stops this same maintenance owner before retiring streams.
-    // Join it here so its independent scans do not race the pending-read setup.
+    // These panic controls already join maintenance before arming the read.
+    // Join before connect admission too: a scan may hold its bookkeeping lock
+    // even with no connections. Do not retry admission or any connect future.
     assert!(invocation.block_on(
         providers
             .stream_driver
@@ -821,6 +819,9 @@ fn stream_wake_panic_does_not_skip_node_pool_retirement() {
             .unwrap()
             .join(std::time::Instant::now() + Duration::from_secs(1))
     ));
+    let stream = invocation.block_on(connect_control_stream(&lifecycle, &session, endpoint));
+    let (mut peer, _) = fixture.listener.accept().unwrap();
+    peer.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
     let mut pending = Box::pin(stream.read(1, None).unwrap());
     let probe = Arc::new(PanicOnce {
         owner: std::thread::current().id(),
@@ -934,9 +935,9 @@ fn provider_retirement_panic_still_stops_node_admission() {
     let providers = node.providers.as_ref().unwrap();
     let lifecycle = providers.streams.as_ref().unwrap().clone();
     let pools = providers.pools.clone();
-    let stream = invocation.block_on(connect_control_stream(&lifecycle, &session, endpoint));
-    let (mut peer, _) = fixture.listener.accept().unwrap();
-    peer.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+    // These panic controls already join maintenance before arming the read.
+    // Join before connect admission too: a scan may hold its bookkeeping lock
+    // even with no connections. Do not retry admission or any connect future.
     assert!(invocation.block_on(
         providers
             .stream_driver
@@ -944,6 +945,9 @@ fn provider_retirement_panic_still_stops_node_admission() {
             .unwrap()
             .join(std::time::Instant::now() + Duration::from_secs(1))
     ));
+    let stream = invocation.block_on(connect_control_stream(&lifecycle, &session, endpoint));
+    let (mut peer, _) = fixture.listener.accept().unwrap();
+    peer.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
     let mut pending = Box::pin(stream.read(1, None).unwrap());
     let probe = Arc::new(PanicOnce {
         owner: std::thread::current().id(),

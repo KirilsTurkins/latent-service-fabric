@@ -237,3 +237,43 @@ reentry and fresh state. The retained artifact `14705778588` has SHA-256
 That is predecessor evidence, not signed execution of the combined source.
 Fresh combined-head engine construction and signed retirement checks remain
 required; full-ticket and whole-runtime accounting claims are unchanged.
+
+## Admission before terminal task state
+
+A follow-up failure control calls the real generated task's `resolve`, rather
+than only `onResolve`, with the completion capability factory refusing. The
+old lazy derivation leaves the task marked `RESOLVED` before allocating its
+completion capability. Its handlers remain attached, but a retry cannot reach
+them because `resolve` now rejects the already-resolved task. The rejection
+path similarly publishes its rejection/cancellation flags before the factory
+can refuse; a repeated `reject` becomes a no-op.
+
+The selected derivation prepares completion after each entry's original
+validation/no-op guards and before terminal publication: before `resolve`
+changes state, before `reject` visits children or changes rejection flags, and
+before `cancel` sets its cancelled flag. The `onResolve` preflight remains for
+direct callers. The stable capability makes these checks allocation-free once
+completion exists. A refused factory changes neither terminal state nor
+handlers and performs no child rejection. It does not refund a live owner or
+replay accepted application work.
+
+Closed AST prefix checks bind the original guards and transition points.
+Controls exercise repeated refusal followed by successful settlement of the
+same task, all three terminal paths, original error identity, validation before
+allocation, already-terminal no-ops, and exact preservation of each transition
+body apart from its one preflight. The direct cancellation control reaches the
+real delivered-cancel state by temporarily selecting the initial state in the
+public enum; it is not signed cancellation qualification. The tests execute the
+actual generated class with real intrinsic Promises and a finite factory
+failure control, not the signed node or resource ledger.
+
+
+## Native custody branch integration
+
+The integration with development `5569a03d` retains the landed #2156 lazy
+algorithm-storage repair and #2163 combined empty-storage/preflight controls.
+The private task completion admission checks above are retained from #2161.
+These optimizations avoid different physical allocations; neither grants
+additional capacity or retires a live owner. The signed probe and 64-owner
+ceiling are unchanged. The complete source-owned engine and signed Fetch
+programme must qualify this combined tree; predecessor results are historical.

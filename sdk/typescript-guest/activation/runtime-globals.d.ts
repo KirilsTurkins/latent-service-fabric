@@ -13,7 +13,7 @@ interface AbortSignal {
     readonly reason: any;
     onabort: ((event: any) => void) | null;
     throwIfAborted(): void;
-    // Native AbortSignal retains EventTarget's string event-name contract.
+    // AbortSignal retains EventTarget's string event names, including custom events.
     addEventListener(type: string, listener: (event: any) => void,
         options?: boolean | { once?: boolean }): void;
     removeEventListener(type: string, listener: (event: any) => void): void;

@@ -163,16 +163,24 @@ def transform(raw: bytes) -> tuple[bytes, dict]:
     return result, {'methods': methods, 'regions': total_regions, 'slots': total_slots}
 
 
+def source_paths(generated: Path) -> tuple[Path, ...]:
+    """Bound and authenticate the complete entry set before planning or writing."""
+    need(generated.is_dir() and not generated.is_symlink() and not generated.is_junction(), 'root')
+    paths = []
+    for path in generated.rglob('*'):
+        need(len(paths) < MAX_ENTRIES and not path.is_symlink() and not path.is_junction(), 'entry-bound')
+        paths.append(path)
+    return tuple(sorted(paths))
+
+
 def stage(generated: Path) -> dict:
     """Validate every input before changing the private generated source tree."""
-    need(generated.is_dir() and not generated.is_symlink() and not generated.is_junction(), 'root')
+    paths = source_paths(generated)
     original_header = read_file(generated / 'exceptions.h', 65536)
     adapted_header = header(original_header)
     originals, outputs, identities = {}, {}, []
-    entries = total = methods = regions = slots = 0
-    for path in sorted(generated.rglob('*')):
-        entries += 1
-        need(entries <= MAX_ENTRIES and not path.is_symlink() and not path.is_junction(), 'entry-bound')
+    total = methods = regions = slots = 0
+    for path in paths:
         if path.suffix not in ('.c', '.h'):
             continue
         need(len(originals) < MAX_FILES, 'file-count')
@@ -204,6 +212,9 @@ def stage(generated: Path) -> dict:
         outputs[generated / 'exceptions.h'] = adapted_header
     need(total + sum(len(data) - len(originals[path]) for path, data in outputs.items()) <= MAX_SOURCE,
          'output-bound')
+    # Re-reading only known files would accept a new header/source introduced
+    # during planning. Require the original bounded inventory before any write.
+    need(source_paths(generated) == paths, 'source-inventory-drift')
     for path, raw in originals.items():
         need(read_file(path, MAX_FILE) == raw, 'source-drift')
     for path, data in outputs.items():

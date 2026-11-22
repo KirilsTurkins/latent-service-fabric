@@ -480,7 +480,7 @@ impl WasmtimeBackend {
         input_trace: Option<&InputTrace>,
         capability_observer: &mut Option<latent_capabilities::broker::CapabilitySessionObserver>,
         host_result: &mut latent_executor::HostResultDisposition,
-        native_stack_observer: &mut Option<Arc<crate::native_stacks::StackContext>>,
+        native_stack_observer: &mut Option<crate::native_stacks::StackContextHandle>,
         runtime_retirement: &mut store::RuntimeRetirement,
     ) -> Result<GuestOutcome, PlatformError> {
         let cancellation = ownership.cancellation;

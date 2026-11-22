@@ -212,6 +212,70 @@ task.resolve([42]);assert.equal(called,1);assert.equal(await completion,42);
 assert.equal(task.completionPromise(),completion);task.exit();
 """)
 
+    def test_refused_completion_keeps_task_state_and_allows_same_task_settlement_retry(self):
+        self.javascript(r"""
+for(const operation of ['resolve','reject','cancel']) {
+ const {fresh,control,runtime}=completionRuntime(lazyTaskCompletion(prefix,parse)),task=fresh();
+ if(operation==='cancel') {
+  // Reach the real delivered-cancel state without first calling reject (which
+  // now admits completion before child/parent changes). Restore the public
+  // enum immediately; no task body or private field is replaced by the control.
+  const states=runtime.AsyncTask.State, prior=Object.getOwnPropertyDescriptor(states,'PENDING_CANCEL');
+  states.PENDING_CANCEL=states.INITIAL;
+  assert.equal(task.deliverPendingCancel({cancellable:true}),true);
+  if(prior)Object.defineProperty(states,'PENDING_CANCEL',prior);else delete states.PENDING_CANCEL;
+ }
+ const before={state:task.taskState(),cancelled:task.cancelled,cancelRequested:task.cancelRequested};
+ const reason=new Error('original-settlement-reason');let handlers=0;
+ task.registerOnResolveHandler(()=>++handlers);
+ const settle=()=>operation==='resolve'?task.resolve([42]):
+  operation==='reject'?task.reject(reason):task.cancel({error:reason});
+ control.fail=true;
+ for(let attempt=0;attempt<2;++attempt) {
+  assert.throws(settle,e=>e===control.reason);
+  assert.deepEqual({state:task.taskState(),cancelled:task.cancelled,cancelRequested:task.cancelRequested},before);
+  assert.equal(handlers,0);assert.equal(control.allocations,1);
+ }
+ control.fail=false;settle();
+ assert.equal(handlers,1);assert.equal(control.allocations,2);assert.equal(task.isResolved(),true);
+ const completion=task.completionPromise();assert.equal(completion,task.completionPromise());
+ if(operation==='reject')await assert.rejects(completion,e=>e===reason);
+ else assert.equal(await completion,operation==='resolve'?42:reason);
+ task.exit();
+}
+""")
+
+    def test_parent_completion_refusal_does_not_visit_child_rejection(self):
+        self.javascript(r"""
+const {fresh,control}=completionRuntime(lazyTaskCompletion(prefix,parse)),task=fresh();
+const child=task.createSubtask({componentIdx:-1,fnName:'child-control',callMetadata:{},isAsync:false});
+let visited=0;const reason=new Error('reject-after-admission');
+// Observe call ordering only; this does not claim child-lifecycle qualification.
+child.reject=error=>{assert.equal(error,reason);++visited;};
+control.fail=true;
+assert.throws(()=>task.reject(reason),e=>e===control.reason);
+assert.equal(visited,0);assert.equal(task.isResolved(),false);
+control.fail=false;task.reject(reason);assert.equal(visited,1);
+await assert.rejects(task.completionPromise(),e=>e===reason);
+task.removeSubtask(child);task.exit();
+""")
+
+    def test_completion_admission_preserves_existing_validation_and_terminal_noops(self):
+        self.javascript(r"""
+const {fresh,control}=completionRuntime(lazyTaskCompletion(prefix,parse));
+const borrowed=fresh();borrowed.borrowedHandles=[42];const before=control.allocations;
+control.fail=true;
+assert.throws(()=>borrowed.resolve([42]),/task still has borrow handles/);
+assert.throws(()=>borrowed.cancel(),/invalid task state/);
+assert.equal(control.allocations,before);assert.equal(borrowed.isResolved(),false);
+control.fail=false;borrowed.borrowedHandles=[];borrowed.resolve([42]);
+await borrowed.completionPromise();
+control.fail=true;
+assert.throws(()=>borrowed.resolve([42]),/already resolved/);
+assert.equal(borrowed.reject(new Error('ignored-after-settlement')),undefined);
+assert.equal(control.allocations,before+1);borrowed.exit();
+""")
+
     def test_lazy_completion_preserves_pending_entry_queue_and_reentrant_observation(self):
         self.javascript(r"""
 for(const source of [directIdleTaskSlots(prefix),lazyTaskCompletion(directIdleTaskSlots(prefix),parse)]) {
@@ -242,6 +306,11 @@ for(const [before,after] of [
  ['this.#onResolveHandlers = [];','this.#onResolveHandlers.length = 0;'],
  ['taskState() { return this.#state; }','taskState() { return this.#completionPromise; }'],
  ['this.#completionPromise = completionPromise;','this.#completionPromise = completionPromise; resolveCompletionPromise(42);'],
+ ['this.#state = AsyncTask.State.RESOLVED;','this.#state = AsyncTask.State.CANCEL_DELIVERED;'],
+ ['if (this.isResolvedState() || this.#rejected) { return; }','if (this.#rejected) { return; }'],
+ ['for (const subtask of this.#subtasks) {','for (const subtask of otherTasks) {'],
+ ['this.cancelled = true;','this.cancelled = false;'],
+ ['if (this.borrowedHandles.length > 0)','if (this.borrowedHandles.length >= 0)'],
  ]) {
   assert.notEqual(prefix.replace(before,after),prefix);
   assert.throws(()=>lazyTaskCompletion(prefix.replaceAll(before,after),parse),/task-completion-shape-drift/);
@@ -258,8 +327,18 @@ function taskClass(source) {
 }
 const before=taskClass(prefix),after=taskClass(adapted);
 for(const member of before.body.body) {
- if(['constructor','completionPromise','onResolve'].includes(member.key.name))continue;
+ if(['constructor','completionPromise','onResolve','resolve','reject','cancel'].includes(member.key.name))continue;
  const matching=after.body.body.filter(value=>shape(value)===shape(member));assert.equal(matching.length,1);
+}
+for(const name of ['resolve','reject','cancel']) {
+ const original=before.body.body.find(member=>member.key.name===name);
+ const changed=structuredClone(after.body.body.find(member=>member.key.name===name));
+ const body=changed.value.body.body;
+ const preparations=body.filter(node=>node.type==='ExpressionStatement' &&
+  node.expression.type==='CallExpression' && node.expression.callee.property?.name==='ensureCompletionPromise');
+ assert.equal(preparations.length,1);
+ changed.value.body.body=body.filter(node=>node!==preparations[0]);
+ assert.equal(shape(changed),shape(original));
 }
 assert(adapted.includes('this.#completionCapability = null; // Drop captures'));
 """)

@@ -264,6 +264,68 @@ export function lazyTaskCompletion(source, parse) {
     {start: settlement.value.body.start + 1, end: settlement.value.body.start + 1,
       text: '\n    this.#ensureCompletionPromise(); // Before detaching any original settlement handler.\n'},
   ];
+  // Lazy allocation adds a fallible boundary that did not exist at settlement.
+  // Admit it after the original validation/no-op guards, but before publishing
+  // terminal flags or rejecting children. onResolve alone is too late: resolve
+  // has already marked the task resolved, and reject has already set its guard.
+  const transitionBoundaries = parse(`class AsyncTask {
+  #componentIdx; #id; #entryFnName; #callbackFnName; #parentSubtask;
+  #state; #rejected; #subtasks;
+  resolve(results) {
+    _debugLog('[AsyncTask#resolve()] args', {
+      componentIdx: this.#componentIdx,
+      taskID: this.#id,
+      entryFnName: this.entryFnName(),
+      callbackFnName: this.#callbackFnName,
+    });
+
+    if (this.#state === AsyncTask.State.RESOLVED) {
+      throw new Error(\`(component [\${this.#componentIdx}]) task [\${this.#id}]  is already resolved (did you forget to wait for an import?)\`);
+    }
+
+    if (this.borrowedHandles.length > 0) {
+      throw new Error('task still has borrow handles');
+    }
+
+    this.#state = AsyncTask.State.RESOLVED;
+  }
+  reject(taskErr) {
+    _debugLog('[AsyncTask#reject()] args', {
+      componentIdx: this.#componentIdx,
+      taskID: this.#id,
+      parentSubtask: this.#parentSubtask,
+      parentSubtaskID: this.#parentSubtask?.id(),
+      entryFnName: this.entryFnName(),
+      callbackFnName: this.#callbackFnName,
+      errMsg: taskErr.message,
+    });
+
+    if (this.isResolvedState() || this.#rejected) { return; }
+
+    for (const subtask of this.#subtasks) {
+      subtask.reject(taskErr);
+    }
+  }
+  cancel(args) {
+    _debugLog('[AsyncTask#cancel()] args', { });
+    if (this.taskState() !== AsyncTask.State.CANCEL_DELIVERED) {
+      throw new Error(\`(component [\${this.#componentIdx}]) task [\${this.#id}] invalid task state [\${this.taskState()}] for cancellation\`);
+    }
+    if (this.borrowedHandles.length > 0) { throw new Error('task still has borrow handles'); }
+    this.cancelled = true;
+  }
+}`,
+    {ecmaVersion: 'latest', sourceType: 'module'}).body[0].body.body.filter(node => node.type === 'MethodDefinition');
+  for (const boundary of transitionBoundaries) {
+    const method = select(boundary.key.name);
+    const prefix = boundary.value.body.body;
+    if (method.kind !== 'method' || method.value.async || method.value.generator ||
+        shape(method.value.params) !== shape(boundary.value.params) ||
+        shape(method.value.body.body.slice(0, prefix.length)) !== shape(prefix)) fail();
+    const transition = method.value.body.body[prefix.length - 1];
+    edits.push({start: transition.start, end: transition.start,
+      text: 'this.#ensureCompletionPromise(); // Before terminal state or child settlement.\n    '});
+  }
   edits.sort((a, b) => b.start - a.start);
   let previous = source.length;
   for (const edit of edits) {

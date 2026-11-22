@@ -537,8 +537,10 @@ UPSTREAM_WASMTIME_PLACEHOLDERS = {
 
 # This one file now contains maintained allocation notifications. Its sole
 # placeholder remains the complete unchanged upstream shared/pooling branch.
-# The original file and block were checked against the checksum-pinned 48.0.9
-# registry archive; the complete maintained tree is authenticated before use.
+# The 48.0.9 original was recovered by reversing the authenticated local patch
+# with zero fuzz and matched upstream commit 6d94ceb1b955f52bafbe0892836b2a91a0bb6649
+# (Git blob 0419a76839f0a22ea0c4c2975a44035fc46040d5). The block is unchanged;
+# the complete maintained tree is still authenticated before this allowance.
 UPSTREAM_WASMTIME_MEMORY_IDENTITY = {
     "sha256": "a72944aab470240ea53884aa8598a5b44396a3ad7e32b9c8985626b8626ae2e2",
     "bytes": 32017,

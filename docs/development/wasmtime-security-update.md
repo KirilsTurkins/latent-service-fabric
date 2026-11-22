@@ -26,6 +26,29 @@ identity changed. Preserve failed attempts and original receipts. Exact current
 source, advisory scans and the affected runtime/containment checks determine
 acceptance; neither this page nor a passing historical scan grants it.
 
+### Keep transaction client descriptors synchronized
+
+An engine upgrade changes the transaction preparation digest. Regenerate both
+native admission metadata and every external SDK's protocol descriptor with the
+repository's pinned Buf, Rust and Go tools:
+
+```sh
+python3 tools/generate_transaction_contracts.py
+python3 tools/transaction_client_models.py --write
+python3 tools/generate_transaction_contracts.py --check
+python3 tools/transaction_client_models.py --check
+python3 -m unittest tools.tests.test_transaction_client_models
+```
+
+Commit the client contract index and all six generated SDK model files together
+with the preparation requirements and native profile. A self-consistent client
+index and its renderings can still be stale against native admission. The
+cross-profile regression checks these independent inputs, and the native Rust
+client test checks the actual descriptor conversion and rejects a mismatched
+preparation digest. Retain strict profile validation: accepting an old digest or
+retrying a rejected call would conceal the incompatibility rather than fix it.
+Fresh native transport and signed guest qualification remain separate gates.
+
 ## October 20, 2026 security update
 
 The selected same-line patch is

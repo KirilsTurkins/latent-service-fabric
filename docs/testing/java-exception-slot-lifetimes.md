@@ -130,3 +130,28 @@ an unsettled nonzero snapshot, another error or a persistent busy state fails.
 The assertion remains before fixture cleanup and does not relax policy refusal,
 physical socket closure or native-settlement requirements. Its real Rust test
 execution remains a CI responsibility; no local Rust execution is claimed.
+
+## Integration with the earlier frame-storage controls
+
+The compiler invokes this adapter once from `enum_guard.run`, before sealing
+its preprocessed input. The earlier `compact_exception_frames` lowering is
+retained only as an independently tested native reference; it is never chained
+with this production pass. Combined controls execute original macros and both
+lowerings with the same native lifetime fixture, and make a live-outer-slot
+alias mutation fail under the production adapter too.
+
+Before publishing any adapted bytes, staging now revalidates the complete
+bounded entry set as well as the original contents. Previously, re-reading only
+known files could miss a new header or source introduced during planning. A
+late entry now fails with `java-exception-slots-source-inventory-drift`, before
+the adapter writes either transformed C or the header. The checks do not claim
+atomic filesystem isolation against a concurrent writer after validation; the
+existing sealed compiler and capture boundaries still apply.
+
+```sh
+python3 -m unittest tools.tests.test_runtime_merge_integration
+```
+
+These controls exercise the sealed-build route and native C exception macros,
+not the hosted Java compiler or signed component execution. The integrated
+source still requires the ordinary hosted qualification programme.
