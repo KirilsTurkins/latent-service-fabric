@@ -176,6 +176,12 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
   if (JS_IsExceptionPending(cx)) return false;
   if (is_aborted(self)) return true;
 
+  // self/reason are rooted handles. Collect before default-error construction,
+  // dependent weak-set cursors, or staged captures exist. A resumed Promise job
+  // can leave physically dead owners charged until this safe checkpoint.
+  // Low-level admission remains non-collecting and cannot refund live work.
+  if (!lsf::typescript::activation::prepare_native_object_allocation(cx)) return false;
+
   // Default-error construction can re-enter JS through the pinned factory.
   // Do not overwrite a nested abort, repeat its steps, or keep weak iterators
   // across that construction. The eventual reason remains rooted throughout.
@@ -387,6 +393,7 @@ bool AbortSignal::abort(JSContext *cx, HandleObject self, HandleValue reason) {
         'rootReasonAllocationFailure': 'return-before-direct-reason-slot-write',
         'dependentAbortReason': 'rooted-root-reason-identity',
         'dependentFanoutAdmission': 'before-vector-growth-and-reason-publication',
+        'abortPressureCollection': 'rooted-handles-before-default-factory-or-weak-cursors',
         'dependentFanoutOwner': 'one-original-native-count-per-heap-frame-not-byte-accurate',
         'dependentFanoutRetirement': 'frame-unwind-then-safe-host-ack',
         'defaultReasonReentrancy': 'first-completed-abort-wins',

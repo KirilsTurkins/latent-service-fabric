@@ -345,7 +345,9 @@ class AbortFailureControls(unittest.TestCase):
     def test_failure_preserves_original_exception_and_completed_or_retained_work(self):
         for case in ('success', 'dispatch-failure', 'event-failure', 'reason-failure',
                      'algorithm-failure', 'dependent-continuation', 'default-reason',
-                     'explicit-reason', 'already-aborted', 'fanout-inline', 'fanout-heap', 'fanout-empty-algorithms',
+                     'explicit-reason', 'already-aborted', 'fanout-inline', 'fanout-heap',
+                     'fanout-empty-algorithms', 'fanout-empty-algorithms-pressure-refusal',
+                     'fanout-pressure-refusal', 'fanout-entry-exception', 'fanout-aborted-no-preflight',
                      'fanout-all-aborted', 'fanout-refusal', 'fanout-reserve-failure',
                      'fanout-recovery', 'fanout-nested', 'fanout-nested-refusal',
                      'fanout-ack-refusal', 'fanout-repeated', 'fanout-first-error',

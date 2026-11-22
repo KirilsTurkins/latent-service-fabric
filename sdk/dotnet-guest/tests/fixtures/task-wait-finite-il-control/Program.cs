@@ -46,7 +46,7 @@ internal static class Program
             Instruction instruction => instructions[instruction],
             Instruction[] list => list.Select(instruction => instructions[instruction]).ToArray(),
             VariableDefinition variable => body.Variables[variable.Index],
-            ParameterDefinition parameter => target.Parameters[parameter.Index],
+            ParameterDefinition parameter => target.Parameters[parameter.Index + (source.HasThis && !target.HasThis ? 1 : 0)],
             MethodReference method when methods.TryGetValue(method.FullName, out var replacement) => replacement,
             FieldReference field when fields.TryGetValue(field.FullName, out var replacement) => replacement,
             MethodReference method => module.ImportReference(method),
@@ -278,6 +278,9 @@ internal static class Program
         Require(ReferenceEquals(current.GetValue(null), prior) && (int)depth.GetValue(null)! == 4, "exception-scope-restore");
         Console.WriteLine("FINITE_WAIT_EMITTED_IL_HOST PASS completed-infinite;unchanged-infinite;restore-task;restore-token;precedence;outcomes;nested;finally");
         if (args.Length == 5)
+        {
             AggregateFiniteControl.Run(args[1], args[4], args[2], args[3]);
+            ManualResetEventControl.Run(args[4], args[3] + ".event.dll");
+        }
     }
 }

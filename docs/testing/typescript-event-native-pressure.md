@@ -163,3 +163,77 @@ These C++ controls and the diagnostic replay do not establish fresh signed
 execution, SpiderMonkey compaction, or byte-accurate whole-runtime accounting.
 The existing source-bound engine build and unchanged signed Fetch programme
 must still qualify this source; no diagnostic binary is a production input.
+
+## Private task completion and rooted abort retry
+
+
+Signed run `44701843668` at `afad3f21` passed compilation and ordinary fan-out,
+then returned `diagnostic:abort-fanout:checkpoint:native-admission`. Artifact
+`14618760997` retains that failed signed attempt. Its cleanup observation does
+not prove physical retirement.
+
+A replay of the retained engine with finite diagnostic broker imports narrows
+the failure beyond the returned diagnostic. The filler listener is actually
+removed and its original owner acknowledged at the next collection. The graph
+and generated task still retain 63 native owners. The recovery Promise takes
+the final slot, so its reaction cannot be admitted. Raising the ceiling or
+refunding still-live Promises would conceal this boundary.
+
+The selected source-splicer path now derives a lazy **private task completion
+capability**. Construction retains the original exit capability, task queues,
+metadata, and settlement handler. The completion Promise and its resolving
+functions are created on the first `completionPromise()` observation, or at
+`onResolve` entry before detaching any original handler. The same real Promise
+is retained thereafter. Settlement creates it even without observers, preserving
+thenable assimilation and unhandled-rejection reporting rather than buffering
+results or substituting a custom Promise implementation. The factory must
+succeed before publishing either field. The original completion handler drops
+its resolver captures only after they are no longer needed; their native owners
+still require actual physical retirement and acknowledgement.
+
+The derivation checks the exact rewritten AST shapes and use counts, rejects
+extra private uses, reserved-name collisions and repeated adaptation, and leaves
+unrelated task methods unchanged. The ordinary compiler path is not adapted.
+Both derivation files were already included in the captured compiler recipe.
+
+Deferring completion alone admits the awaited checkpoint but still reaches the
+limit on the resumed job's explicit abort retry. `AbortSignal::abort` therefore
+uses the existing pressure preflight after its pending-exception and
+already-aborted checks, **before** the default exception factory, weak-set
+cursors or fan-out staging. Its signal and reason are rooted handles. This
+collects only dead earlier-job owners; the live nine-dependent graph remains
+charged. Low-level admission remains non-collecting, and failed preparation
+cannot publish reasons, allocate the fan-out vector, or dispatch callbacks.
+
+The diagnostic rebuilds the real generated bindings with the retained engine.
+Its abort preflight is a private insertion of that engine's existing compiled
+collection/checkpoint code, not a fresh C++ engine build. The diagnostic fails
+with only the completion change, and returns the original success value with
+both changes at the same 64-owner ceiling.
+The latter still observes both required refusals before recovery. Replays of the
+other non-network event, abort and combinator cases also retain their original
+results. These are diagnostic broker observations, not signed-node or original
+activation-ledger qualification. The guest probe, same-root retry, positive
+filler, budgets, deadlines and strict signed-result assertions are unchanged.
+
+
+## Combined development integration
+
+The merge of development `8f87f81f` into the event-wait branch retains both
+reductions: empty algorithm containers remain absent, and unobserved private
+task completion capabilities remain lazy. The rooted abort pressure preflight
+is retained; low-level admission is still non-collecting. No allocation is
+unaccounted or refunded early, and the 64-owner ceiling is unchanged.
+
+The emitted fan-out regression includes absent algorithm storage with a
+refused preflight: no default reason, vector reservation, callback or graph
+publication may occur. All prior empty-storage, factory-failure, first-use
+container ownership and task-completion controls remain required.
+
+Before this merge, event-wait head `4923f54a` passed signed Fetch run
+`44894162810`, including all 24 expected results, refusal/recovery, default
+reentry and fresh state. The retained artifact `14705778588` has SHA-256
+`c4b6fb3e21d2d9fc5095cefd91a05025ccb05399539af23b0cffeeb9b21647b5`.
+That is predecessor evidence, not signed execution of the combined source.
+Fresh combined-head engine construction and signed retirement checks remain
+required; full-ticket and whole-runtime accounting claims are unchanged.

@@ -1,6 +1,8 @@
 """Compiler-free wiring check; real Rust execution stays in its owning test."""
 from pathlib import Path
 import subprocess
+import os
+import tomllib
 import unittest
 from unittest.mock import patch
 
@@ -18,6 +20,10 @@ class NativeFixtureToolchainTests(unittest.TestCase):
             if args[0] == "cargo":
                 root = Path(kwargs["cwd"])
                 observed.append((root / "rust-toolchain.toml").read_bytes())
+                pin = tomllib.loads(observed[-1].decode())['toolchain']['channel']
+                self.assertEqual(kwargs['env']['RUSTUP_TOOLCHAIN'], pin)
+                self.assertEqual(kwargs['env']['CARGO_NET_OFFLINE'], 'true')
+                self.assertEqual(os.environ['RUSTUP_TOOLCHAIN'], 'unrelated-ambient-toolchain')
                 self.assertNotEqual(root, owner.ROOT)
                 self.assertEqual(args, ("cargo", "generate-lockfile", "--offline"))
                 raise BeforeCompilation
@@ -26,7 +32,8 @@ class NativeFixtureToolchainTests(unittest.TestCase):
 
         fixture = owner.NativeEntrypointTests(
             "test_real_rust_independent_additions_merge_and_run_through_local_owner")
-        with patch.object(subprocess, "check_output", side_effect=command), \
+        with patch.dict(os.environ, {"RUSTUP_TOOLCHAIN": "unrelated-ambient-toolchain"}), \
+                patch.object(subprocess, "check_output", side_effect=command), \
                 patch.object(subprocess, "run", side_effect=AssertionError("unexpected compiler execution")), \
                 self.assertRaises(BeforeCompilation):
             fixture.test_real_rust_independent_additions_merge_and_run_through_local_owner()
