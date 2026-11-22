@@ -2,7 +2,7 @@ name: Isolated PR 2151 merge validation
 on:
   push:
     branches: ['diag/pr2151-merge-validation-20261122']
-    paths: ['.github/workflows/pr2151-merge-validation-temp.yml']
+    paths: ['.github/workflows/pr2151-merge-validation-temp.yml', 'tools/pr2151_merge_validation_temp.py']
 permissions:
   contents: read
 concurrency:
@@ -39,8 +39,6 @@ jobs:
           raw=subprocess.check_output(['git','show','5e24b3d01574b1fa94cc4fb472633d0cb185e037:.github/workflows/pr2151-merge-validation-temp.yml']).decode()
           line=next(line for line in raw.splitlines() if line.strip().startswith('RESOLUTION_PAYLOAD:'))
           value=line.split(':',1)[1].strip().strip("'")
-          # Repair the transcription error, then require the independently
-          # computed digest of the original supplied and tested local payload.
           value=value.replace('OnbbrmrI3giQ','OnbbrmrbrI3giQ')
           assert hashlib.sha256(value.encode()).hexdigest()=='eff52f939cc2387306dd8184243c1ea19f4a944e7a386579b2ff3f28803a9074'
           assert len(json.loads(zlib.decompress(base64.b64decode(value))))==15
