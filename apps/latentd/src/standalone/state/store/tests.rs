@@ -395,6 +395,7 @@ async fn cancelled_initializer_keeps_the_transferred_blob_lock_until_worker_reti
                 StartupPayload::Local {
                     owner,
                     provider,
+                    require_durable: false,
                     returned,
                 },
             )

@@ -144,7 +144,7 @@ async fn prepare(
     let payloads = if matches!(&request.request, Action::InspectNamespace {}) {
         bootstrap
             .local_payload_selection
-            .as_ref()
+            .as_deref()
             .and_then(super::super::store::LocalPayloadSelection::inventory_payloads)
     } else {
         None
