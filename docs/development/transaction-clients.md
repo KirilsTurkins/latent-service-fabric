@@ -132,13 +132,14 @@ The six transport suites include real-node command, rejection and lost-response
 scenarios. Compare their executed evidence separately from [signed guest results](../testing/phase4-guest-progress-2026-11-09.md)
 and the [browser reference application](../../examples/stateful-reference/README.md).
 
-For the six real-node command probes, select the separately provisioned signed
-aggregate by setting `LSF_401_AGGREGATE_SERVICE` and `LSF_401_AGGREGATE_ROUTE`
-to its installed service and route. Use its matching namespace, incarnation,
-publication and current aggregate key version. The command probes share the
-`examples:transactional-aggregate/api@1.0.0` contract and the `update` operation.
-With those two variables absent, the probes select the existing Java aggregate
-fixture. Each client uses a distinct command key.
+The real-node command, query, stale-edit, rejection and lost-response probes
+share the `examples:transactional-aggregate/api@1.0.0` fixture contract. Set
+`LSF_401_AGGREGATE_SERVICE` and `LSF_401_AGGREGATE_ROUTE` to the installed
+service and command route of the selected signed aggregate. If the query is
+installed on a separate route, set `LSF_401_AGGREGATE_QUERY_ROUTE`. Use the
+matching namespace, incarnation, publication and original command or view
+values for each scenario. Omitting all three variables selects the original
+Java fixture. Each client uses a distinct command key.
 
 The full client matrix, backup/migration and packaged qualification remain
 separate acceptance work.

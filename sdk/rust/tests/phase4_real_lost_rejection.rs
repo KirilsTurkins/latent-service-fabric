@@ -1,11 +1,10 @@
 //! Explicit lost-rejection and fresh-client recovery on a provisioned node.
 #![cfg(feature = "transport")]
+
+mod phase4_aggregate;
 use latent_core::TenantId;
 use latent_sdk::{
-    management::{
-        CallOptions, InvocationTarget, InvokeRequest, OutcomeKnowledge, PublicationRef,
-        ResourceBudget,
-    },
+    management::{CallOptions, InvokeRequest, OutcomeKnowledge, PublicationRef, ResourceBudget},
     network::{ClientConfig, ClientLimits, RpcClient},
     transaction::{
         self, CommandOutcome, CommandSelector, ExpectedVersion, InvokeCommandRequest,
@@ -71,13 +70,7 @@ async fn lost_rejection_response_reports_unknown() {
         profile: Some(transaction::current_profile()),
         invocation: Some(InvokeRequest {
             activation_id: Some(key.into()),
-            target: Some(InvocationTarget {
-                tenant,
-                service: "examples/transaction-java-aggregate".into(),
-                contract: "examples:transactional-aggregate/api@1.0.0".into(),
-                function: "update".into(),
-                route: Some("transaction-java-aggregate".into()),
-            }),
+            target: Some(phase4_aggregate::target(tenant, "update")),
             payload: br#"[{"delta":1,"reject":true}]"#.to_vec(),
             media_type: "application/vnd.latent.wit-values.v1+json".into(),
             budget: Some(ResourceBudget {
@@ -193,13 +186,7 @@ async fn changed_input_conflicts_with_original_rejection() {
         profile: Some(transaction::current_profile()),
         invocation: Some(InvokeRequest {
             activation_id: Some(key.into()),
-            target: Some(InvocationTarget {
-                tenant,
-                service: "examples/transaction-java-aggregate".into(),
-                contract: "examples:transactional-aggregate/api@1.0.0".into(),
-                function: "update".into(),
-                route: Some("transaction-java-aggregate".into()),
-            }),
+            target: Some(phase4_aggregate::target(tenant, "update")),
             payload: br#"[{"delta":2,"reject":true}]"#.to_vec(),
             media_type: "application/vnd.latent.wit-values.v1+json".into(),
             budget: Some(ResourceBudget {

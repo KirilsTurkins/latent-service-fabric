@@ -1,5 +1,5 @@
 /* Explicit version-fenced command against a separately provisioned node. */
-#include <latent/transaction_client.h>
+#include "phase4_aggregate.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,10 +28,6 @@ static void wait(latent_transport *owner, observed *o) { for (unsigned i=0; o->c
 static void close_owner(latent_transport *owner) { assert(latent_transport_shutdown(owner,1000)); latent_transport_usage u=latent_transport_get_usage(owner); assert(u.stopped && !u.sockets && !u.sessions && !u.in_flight && !u.queued && !u.retained_calls && !u.callbacks_pending && !u.http2_bytes); assert(latent_transport_destroy(owner)); }
 int main(void) {
     const char *tenant=required("LSF_401_TENANT"), *token=required("LSF_401_TOKEN"), *hex=required("LSF_401_EXPECTED_VERSION_HEX");
-    const char *service = getenv("LSF_401_AGGREGATE_SERVICE");
-    const char *route = getenv("LSF_401_AGGREGATE_ROUTE");
-    if (!service) service = "examples/transaction-java-aggregate";
-    if (!route) route = "transaction-java-aggregate";
     size_t len=strlen(hex); assert(len && len%2==0 && len<=512); uint8_t version[256];
     for (size_t i=0;i<len/2;i++) { int a=digit(hex[i*2]),b=digit(hex[i*2+1]); assert(a>=0 && b>=0); version[i]=(uint8_t)(a*16+b); }
     char url[300]; int written=snprintf(url,sizeof(url),"http://%s",required("LSF_401_ENDPOINT")); assert(written>0 && (size_t)written<sizeof(url));
@@ -41,7 +37,7 @@ int main(void) {
     latent_transaction_command_selector selector={.has_namespace=true,.namespace={str(tenant),str(required("LSF_401_NAMESPACE")),str(required("LSF_401_INCARNATION"))},.operation=TEXT("update"),.client_key=TEXT("c-sdk-direct-command")};
     latent_transaction_expected_version expected={.key=BYTES("aggregate/count"),.has_version=true,.version={version,len/2}};
     latent_transaction_invoke_command_request req={.has_profile=true,.profile=latent_transaction_current_profile(),.has_command=true,.command=selector,.input_format=TEXT("lsf-wit-values-v1"),.expected_versions=&expected,.expected_versions_count=1,
-      .has_invocation=true,.invocation={.has_activation_id=true,.activation_id=TEXT("c-sdk-direct-command"),.has_target=true,.target={.tenant=str(tenant),.service=str(service),.contract=TEXT("examples:transactional-aggregate/api@1.0.0"),.function=TEXT("update"),.has_route=true,.route=str(route)},
+      .has_invocation=true,.invocation={.has_activation_id=true,.activation_id=TEXT("c-sdk-direct-command"),.has_target=true,.target={.tenant=str(tenant),.service=phase4_aggregate_service(),.contract=TEXT("examples:transactional-aggregate/api@1.0.0"),.function=TEXT("update"),.has_route=true,.route=phase4_aggregate_route(false)},
       .payload=BYTES("[{\"delta\":1,\"reject\":false}]"),.media_type=TEXT("application/vnd.latent.wit-values.v1+json"),.has_budget=true,.budget={.cpu_fuel=1000000000,.memory_bytes=67108864,.state_read_bytes=4194304,.state_write_bytes=2097152,.effect_count=1,.has_wall_time_limit_millis=true,.wall_time_limit_millis=120000}}};
     observed first={0}; latent_profile_call *call=api->invoke_command(latent_transport_transaction(owner),&req,NULL,invoked,&first); assert(call); wait(owner,&first); api->release_call(call); close_owner(owner);
     if (first.failed) {

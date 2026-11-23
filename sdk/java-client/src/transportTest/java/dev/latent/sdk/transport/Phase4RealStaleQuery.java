@@ -22,7 +22,7 @@ public final class Phase4RealStaleQuery {
         byte[] version=HexFormat.of().parseHex(required("LSF_401_EXPECTED_VERSION_HEX")); check(version.length>0,"original version");
         var ns=new Transactions.NamespaceSelector(tenant,required("LSF_401_NAMESPACE"),required("LSF_401_INCARNATION"));
         var selector=new Transactions.CommandSelector(Optional.of(ns),"update",Optional.empty(),key,Optional.empty());
-        var target=new Management.InvocationTarget(tenant,"examples/transaction-java-aggregate","examples:transactional-aggregate/api@1.0.0","update",Optional.of("transaction-java-aggregate"));
+        var target=Phase4Aggregate.target(tenant, "update");
         var budget=new Management.ResourceBudget(1000000000L,67108864L,0,0,4194304L,2097152L,0,0,0,1,Optional.of(120000L));
         var invocation=new Management.InvokeRequest(Optional.of(key),Optional.empty(),Optional.empty(),Optional.of(target),ByteBuffer.wrap("[{\"delta\":1,\"reject\":false}]".getBytes(StandardCharsets.UTF_8)),"application/vnd.latent.wit-values.v1+json",Optional.empty(),0,Optional.empty(),Optional.of(budget),Map.of());
         var expected=new Transactions.ExpectedVersion(ByteBuffer.wrap("aggregate/count".getBytes(StandardCharsets.UTF_8)),Optional.empty(),Optional.of(ByteBuffer.wrap(version)));

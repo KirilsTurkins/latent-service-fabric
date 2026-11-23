@@ -49,9 +49,9 @@ func TestPhase4RejectAgainstRealNode(t *testing.T) {
 	if e != nil || len(version) == 0 {
 		t.Fatal("invalid version")
 	}
-	tenant, key, route, wall := rejectionField(t, "LSF_401_TENANT"), "go-sdk-rejected-command", "transaction-java-aggregate", uint64(120000)
+	tenant, key, wall := rejectionField(t, "LSF_401_TENANT"), "go-sdk-rejected-command", uint64(120000)
 	current, selector := tx.CurrentProfile(), rejectionSelector(t)
-	request := tx.InvokeCommandRequest{Profile: &current, Command: &selector, InputFormat: "lsf-wit-values-v1", ExpectedVersions: []tx.ExpectedVersion{{Key: []byte("aggregate/count"), Version: &version}}, Invocation: &profile.InvokeRequest{ActivationId: &key, Target: &profile.InvocationTarget{Tenant: tenant, Service: "examples/transaction-java-aggregate", Contract: "examples:transactional-aggregate/api@1.0.0", Function: "update", Route: &route}, Payload: []byte(`[{"delta":1,"reject":true}]`), MediaType: "application/vnd.latent.wit-values.v1+json", Budget: &profile.ResourceBudget{CpuFuel: 1000000000, MemoryBytes: 67108864, StateReadBytes: 4194304, StateWriteBytes: 2097152, EffectCount: 1, WallTimeLimitMillis: &wall}}}
+	request := tx.InvokeCommandRequest{Profile: &current, Command: &selector, InputFormat: "lsf-wit-values-v1", ExpectedVersions: []tx.ExpectedVersion{{Key: []byte("aggregate/count"), Version: &version}}, Invocation: &profile.InvokeRequest{ActivationId: &key, Target: phase4AggregateTarget(tenant, "update"), Payload: []byte(`[{"delta":1,"reject":true}]`), MediaType: "application/vnd.latent.wit-values.v1+json", Budget: &profile.ResourceBudget{CpuFuel: 1000000000, MemoryBytes: 67108864, StateReadBytes: 4194304, StateWriteBytes: 2097152, EffectCount: 1, WallTimeLimitMillis: &wall}}}
 	response, e := client.InvokeCommand(ctx, request, profile.CallOptions{})
 	if e != nil {
 		t.Fatalf("rejection invocation: %v", e)

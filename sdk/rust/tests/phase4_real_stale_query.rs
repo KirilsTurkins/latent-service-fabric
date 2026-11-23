@@ -1,8 +1,10 @@
 //! Explicit lost-response and fresh-client recovery on a provisioned node.
 #![cfg(feature = "transport")]
+
+mod phase4_aggregate;
 use latent_core::TenantId;
 use latent_sdk::{
-    management::{CallOptions, InvocationTarget, InvokeRequest, ResourceBudget},
+    management::{CallOptions, InvokeRequest, ResourceBudget},
     network::{ClientConfig, ClientLimits, RpcClient},
     transaction::{
         self, CommandOutcome, CommandSelector, ExpectedVersion, InvokeCommandRequest,
@@ -70,13 +72,7 @@ async fn stale_edit_does_not_refresh_expected_version() {
         profile: Some(transaction::current_profile()),
         invocation: Some(InvokeRequest {
             activation_id: Some(key.into()),
-            target: Some(InvocationTarget {
-                tenant,
-                service: "examples/transaction-java-aggregate".into(),
-                contract: "examples:transactional-aggregate/api@1.0.0".into(),
-                function: "update".into(),
-                route: Some("transaction-java-aggregate".into()),
-            }),
+            target: Some(phase4_aggregate::target(tenant, "update")),
             payload: br#"[{"delta":1,"reject":false}]"#.to_vec(),
             media_type: "application/vnd.latent.wit-values.v1+json".into(),
             budget: Some(ResourceBudget {

@@ -23,13 +23,11 @@ public final class Phase4RealCommand {
     private static void check(boolean value, String label) { if (!value) throw new AssertionError(label); }
     public static void main(String[] args) throws Exception {
         String tenant = required("LSF_401_TENANT"), key = "java-sdk-direct-command";
-        String service = System.getenv().getOrDefault("LSF_401_AGGREGATE_SERVICE", "examples/transaction-java-aggregate");
-        String route = System.getenv().getOrDefault("LSF_401_AGGREGATE_ROUTE", "transaction-java-aggregate");
         byte[] version = HexFormat.of().parseHex(required("LSF_401_EXPECTED_VERSION_HEX"));
         check(version.length > 0, "current key version");
         var namespace = new Transactions.NamespaceSelector(tenant, required("LSF_401_NAMESPACE"), required("LSF_401_INCARNATION"));
         var selector = new Transactions.CommandSelector(Optional.of(namespace), "update", Optional.empty(), key, Optional.empty());
-        var target = new Management.InvocationTarget(tenant, service, "examples:transactional-aggregate/api@1.0.0", "update", Optional.of(route));
+        var target = Phase4Aggregate.target(tenant, "update");
         var budget = new Management.ResourceBudget(1_000_000_000L, 67_108_864L, 0, 0, 4_194_304L, 2_097_152L, 0, 0, 0, 1, Optional.of(120_000L));
         var invocation = new Management.InvokeRequest(Optional.of(key), Optional.empty(), Optional.empty(), Optional.of(target),
                 ByteBuffer.wrap("[{\"delta\":1,\"reject\":false}]".getBytes(StandardCharsets.UTF_8)), "application/vnd.latent.wit-values.v1+json",

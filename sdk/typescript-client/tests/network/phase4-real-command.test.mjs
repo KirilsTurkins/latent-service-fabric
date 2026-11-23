@@ -1,6 +1,7 @@
 // Explicit live command probe; caller provisions a separate signed node.
 import assert from "node:assert/strict";
 import test from "node:test";
+import { aggregateTarget } from "./phase4-aggregate.mjs";
 import { RpcClient } from "../../dist/node/index.js";
 import { currentProfile, CommandOutcome } from "../../dist/transactions.js";
 function required(name) {
@@ -10,8 +11,6 @@ function required(name) {
 }
 test("version-fenced command commits through the real Node client and retires", { skip: process.env.LSF_401_LIVE !== "1" }, async () => {
   const tenant = required("LSF_401_TENANT");
-  const service = process.env.LSF_401_AGGREGATE_SERVICE ?? "examples/transaction-java-aggregate";
-  const route = process.env.LSF_401_AGGREGATE_ROUTE ?? "transaction-java-aggregate";
   const version = required("LSF_401_EXPECTED_VERSION_HEX");
   assert.match(version, /^(?:[0-9a-f]{2})+$/);
   const client = new RpcClient({ endpoint: `http://${required("LSF_401_ENDPOINT")}`, tenant,
@@ -19,8 +18,7 @@ test("version-fenced command commits through the real Node client and retires", 
   try {
     const request = { profile: currentProfile(), command: { namespace: { tenant, namespace: required("LSF_401_NAMESPACE"),
       incarnation: required("LSF_401_INCARNATION") }, operation: "update", clientKey: "typescript-sdk-direct-command" },
-      invocation: { activationId: "typescript-sdk-direct-command", target: { tenant, service,
-        contract: "examples:transactional-aggregate/api@1.0.0", function: "update", route },
+      invocation: { activationId: "typescript-sdk-direct-command", target: aggregateTarget(tenant, "update"),
         payload: Buffer.from('[{"delta":1,"reject":false}]'), mediaType: "application/vnd.latent.wit-values.v1+json", priority: 0,
         metadata: {}, budget: { cpuFuel: 1000000000n, memoryBytes: 67108864n, childCalls: 0, outboundRequests: 0,
           stateReadBytes: 4194304n, stateWriteBytes: 2097152n, blobReadBytes: 0n, blobWriteBytes: 0n, logBytes: 0n,

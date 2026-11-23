@@ -1,6 +1,7 @@
 // Explicit rejection and recovery probes against a separately provisioned node.
 import assert from "node:assert/strict";
 import test from "node:test";
+import { aggregateTarget } from "./phase4-aggregate.mjs";
 import { RpcClient } from "../../dist/node/index.js";
 import { currentProfile, CommandOutcome } from "../../dist/transactions.js";
 function required(name) { const value = process.env[name]; assert.ok(value, `missing fixture field: ${name}`); return value; }
@@ -13,8 +14,7 @@ test("durable rejection leaves the business key unchanged", { skip: process.env.
   const tenant = required("LSF_401_TENANT"), version = required("LSF_401_EXPECTED_VERSION_HEX");
   assert.match(version, /^(?:[0-9a-f]{2})+$/); const client = owner(tenant);
   try {
-    const invocation = { activationId: "typescript-sdk-rejected-command", target: { tenant, service: "examples/transaction-java-aggregate",
-      contract: "examples:transactional-aggregate/api@1.0.0", function: "update", route: "transaction-java-aggregate" },
+    const invocation = { activationId: "typescript-sdk-rejected-command", target: aggregateTarget(tenant, "update"),
       payload: Buffer.from('[{"delta":1,"reject":true}]'), mediaType: "application/vnd.latent.wit-values.v1+json", priority: 0,
       metadata: {}, budget: { cpuFuel: 1000000000n, memoryBytes: 67108864n, childCalls: 0, outboundRequests: 0,
         stateReadBytes: 4194304n, stateWriteBytes: 2097152n, blobReadBytes: 0n, blobWriteBytes: 0n, logBytes: 0n,

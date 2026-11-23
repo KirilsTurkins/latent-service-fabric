@@ -43,11 +43,11 @@ func TestPhase4FreshQueryAfterCommitAgainstRealNode(t *testing.T) {
 			t.Fatal("invalid expected view")
 		}
 	}
-	key, route, wall := "go-sdk-fresh-query", "transaction-java-aggregate", uint64(120000)
+	key, wall := "go-sdk-fresh-query", uint64(120000)
 	current := tx.CurrentProfile()
 	ns := tx.NamespaceSelector{Tenant: tenant, Namespace: rejectionField(t, "LSF_401_NAMESPACE"), Incarnation: rejectionField(t, "LSF_401_INCARNATION")}
 	query := tx.QueryRequest{Profile: &current, Namespace: &ns, MinimumViewVersion: &minimum, Invocation: &profile.InvokeRequest{
-		ActivationId: &key, Target: &profile.InvocationTarget{Tenant: tenant, Service: "examples/transaction-java-aggregate", Contract: "examples:transactional-aggregate/api@1.0.0", Function: "query", Route: &route},
+		ActivationId: &key, Target: phase4AggregateTarget(tenant, "query"),
 		Payload: []byte(`[]`), MediaType: "application/vnd.latent.wit-values.v1+json", Budget: &profile.ResourceBudget{CpuFuel: 1000000000, MemoryBytes: 67108864, StateReadBytes: 4194304, WallTimeLimitMillis: &wall},
 	}}
 	for i := 0; i < 3; i++ {

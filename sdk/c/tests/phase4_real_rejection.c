@@ -1,5 +1,5 @@
 /* Explicit rejection and fresh-client recovery against a provisioned node. */
-#include <latent/transaction_client.h>
+#include "phase4_aggregate.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,7 +46,7 @@ int main(void) {
         for(size_t i=0;i<len/2;i++) { int a=digit(hex[i*2]),b=digit(hex[i*2+1]); assert(a>=0 && b>=0); version[i]=(uint8_t)(a*16+b); }
         latent_transaction_expected_version expected={.key=BYTES("aggregate/count"),.has_version=true,.version={version,len/2}};
         latent_transaction_invoke_command_request req={.has_profile=true,.profile=latent_transaction_current_profile(),.has_command=true,.command=selector,.input_format=TEXT("lsf-wit-values-v1"),.expected_versions=&expected,.expected_versions_count=1,
-            .has_invocation=true,.invocation={.has_activation_id=true,.activation_id=TEXT("c-sdk-rejected-command"),.has_target=true,.target={.tenant=str(tenant),.service=TEXT("examples/transaction-java-aggregate"),.contract=TEXT("examples:transactional-aggregate/api@1.0.0"),.function=TEXT("update"),.has_route=true,.route=TEXT("transaction-java-aggregate")},.payload=BYTES("[{\"delta\":1,\"reject\":true}]"),.media_type=TEXT("application/vnd.latent.wit-values.v1+json"),.has_budget=true,.budget={.cpu_fuel=1000000000,.memory_bytes=67108864,.state_read_bytes=4194304,.state_write_bytes=2097152,.effect_count=1,.has_wall_time_limit_millis=true,.wall_time_limit_millis=120000}}};
+            .has_invocation=true,.invocation={.has_activation_id=true,.activation_id=TEXT("c-sdk-rejected-command"),.has_target=true,.target={.tenant=str(tenant),.service=phase4_aggregate_service(),.contract=TEXT("examples:transactional-aggregate/api@1.0.0"),.function=TEXT("update"),.has_route=true,.route=phase4_aggregate_route(false)},.payload=BYTES("[{\"delta\":1,\"reject\":true}]"),.media_type=TEXT("application/vnd.latent.wit-values.v1+json"),.has_budget=true,.budget={.cpu_fuel=1000000000,.memory_bytes=67108864,.state_read_bytes=4194304,.state_write_bytes=2097152,.effect_count=1,.has_wall_time_limit_millis=true,.wall_time_limit_millis=120000}}};
         call=api->invoke_command(latent_transport_transaction(owner),&req,NULL,invoked,&out); assert(call); wait(owner,&out); api->release_call(call); close_owner(owner); return 0;
     }
     assert(call); wait(owner,&out); api->release_call(call); close_owner(owner); return 0;

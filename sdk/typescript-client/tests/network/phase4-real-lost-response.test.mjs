@@ -1,6 +1,7 @@
 // Explicit lost-response and fresh-client recovery on a provisioned node.
 import assert from "node:assert/strict";
 import test from "node:test";
+import { aggregateTarget } from "./phase4-aggregate.mjs";
 import { RpcClient } from "../../dist/node/index.js";
 import { FailureCategory, OutcomeKnowledge } from "../../dist/management.js";
 import { currentProfile, CommandOutcome } from "../../dist/transactions.js";
@@ -20,7 +21,7 @@ test("lost committed response preserves unknown outcome and explicit recovery", 
       console.log("LOST_COMMIT_RECOVERED");
     } else {
       assert.equal(required("LSF_401_MODE"), "invoke");
-      const request = { profile: currentProfile(), command, invocation: { activationId: key, target: { tenant, service: "examples/transaction-java-aggregate", contract: "examples:transactional-aggregate/api@1.0.0", function: "update", route: "transaction-java-aggregate" },
+      const request = { profile: currentProfile(), command, invocation: { activationId: key, target: aggregateTarget(tenant, "update"),
         payload: Buffer.from('[{"delta":1,"reject":false}]'), mediaType: "application/vnd.latent.wit-values.v1+json", priority: 0, metadata: {},
         budget: { cpuFuel: 1000000000n, memoryBytes: 67108864n, childCalls: 0, outboundRequests: 0, stateReadBytes: 4194304n, stateWriteBytes: 2097152n, blobReadBytes: 0n, blobWriteBytes: 0n, logBytes: 0n, effectCount: 1, wallTimeLimitMillis: 120000n } }, inputFormat: "lsf-wit-values-v1", expectedVersions: [{ key: Buffer.from("aggregate/count"), version: bytes(required("LSF_401_EXPECTED_VERSION_HEX")) }] };
       const cancellation = process.env.LSF_401_CANCEL_AFTER_DISPATCH === "1";
