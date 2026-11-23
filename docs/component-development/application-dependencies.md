@@ -37,11 +37,28 @@ checkout. Keep that checkout separate from your application directory.
 
 Each walkthrough's language has run a developer-owned dependency in a signed
 greeting capsule. All six preserved the declared error on blank input and
-succeeded on a fresh call. The C resource example also fetched and parsed a
-price card after its original source directory was removed. The
+succeeded on a fresh call. The C example fetched and parsed a price card, and a
+Java HTTP client read a resource from its transitive JAR. Both used only their
+captures after removal of the original libraries. The
 [six-language execution record](../testing/evidence/sdk-private-library-invocations-2026-11-23.json)
 includes the dependency locks, tool and component identities, grants, results
 and node measurements.
+
+### Choose an HTTP client
+
+Select a client that uses the standard API supported by the capsule's runtime
+profile. Grant its destination and operations when you deploy it. These signed
+runs exercised two published clients per language on the source revisions in
+the linked records.
+
+| Language | Clients called through their ordinary APIs | Runtime and signed results |
+| --- | --- | --- |
+| Rust | Waki 0.5.1 and golem-wasi-http 0.2.0 | [WASI HTTP requests, response parsing and pending operations](../testing/evidence/rust-wasi-http-signed-2026-10-21.json) |
+| C | FreeBSD libfetch and libucl's URL includes, at the two pinned upstream commits | [libfetch reads and libucl parsing on the same C backend](../testing/evidence/c-http-pair-signed-2026-10-31.json) |
+| TypeScript | Ky 2.2.0 and Wretch 3.0.9 | [Global Fetch, JSON parsing and each client's 404 behavior](../testing/typescript-published-fetch.md) |
+| Go | Sling 1.4.0 and Requests 0.24.3 | [Default HTTP clients, domain results and private workers](../testing/evidence/go-http-tenant-catalogue-signed-2026-10-20.json) |
+| Java | http-request 6.0 and DavidWebb 1.3.0 | [URLConnection factories and DavidWebb's transitive JSON parser](../testing/java-published-http.md) |
+| C# / .NET | Flurl.Http 4.0.2 and Refit 16.4.0 | [HttpClient, generated Refit methods and parsed responses](../testing/evidence/dotnet-published-http-signed-2026-10-20.json) |
 
 ### Try a private JAR
 

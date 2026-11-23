@@ -374,9 +374,186 @@
       }
     ]
   },
+  "additionalJavaResourceAndHttp": {
+    "qualifier": "tools/qualify_java_private_http.py",
+    "sourceRevision": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "receiptDigest": "sha256:05ae3895f4379c0fb77be21ff259b274565d45ee85f0e0ffbcacda4284c6db60",
+    "signedCalls": 26,
+    "casesPerVariant": [
+      "json",
+      "http404",
+      "http500",
+      "truncated",
+      "oversized",
+      "forbidden",
+      "early",
+      "redirect",
+      "post",
+      "uncertain",
+      "alternate-denied",
+      "direct-factory",
+      "fresh"
+    ],
+    "variants": [
+      {
+        "dependencyIds": [
+          "outside.http.primary/1.0.7",
+          "outside.http.child/1.0.7"
+        ],
+        "acceptedLockDigest": "sha256:806aae6886973ad272c1ade25968489486faee4ba74064f1325b75681cd9bdcd",
+        "resourceDigest": "sha256:dcd9ca838d0134810c6295cde2d9919a12519c9e3c145280ecac29a1f6f89853",
+        "component": {
+          "sha256": "sha256:39919fd1d2c7d93835c4f1fd522e970569eb732d520343d40e13398a704816b8",
+          "bytes": 1174774
+        },
+        "originalsRemoved": true,
+        "nodeReceiptDigest": "sha256:7abe24b8357e8a30f8e6a362e97f7f538a56072eb108f7d4fbef9b6d582fda54",
+        "peerRequests": 11,
+        "peerMutations": 1,
+        "openPeerConnections": 0,
+        "nodeReaped": true
+      },
+      {
+        "dependencyIds": [
+          "tenant.example.unlisted-client/2026.10.19",
+          "different.owner.helper/4.2.1"
+        ],
+        "acceptedLockDigest": "sha256:d04d2a2ed2a987414416450816a15b22217b903bbe57c192d02278726ec46f3a",
+        "resourceDigest": "sha256:dcd9ca838d0134810c6295cde2d9919a12519c9e3c145280ecac29a1f6f89853",
+        "component": {
+          "sha256": "sha256:39919fd1d2c7d93835c4f1fd522e970569eb732d520343d40e13398a704816b8",
+          "bytes": 1174774
+        },
+        "originalsRemoved": true,
+        "nodeReceiptDigest": "sha256:cfa38b0cb3927f6c07f66e1d74b082cf66394abe79e71730f315657fc73082dc",
+        "peerRequests": 11,
+        "peerMutations": 1,
+        "openPeerConnections": 0,
+        "nodeReaped": true
+      }
+    ]
+  },
+  "additionalPublishedCClients": {
+    "qualifier": "tools/qualify_c_standard_facilities.py --libucl-http --build-native",
+    "sourceRevision": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "receiptDigest": "sha256:07322de1c738600e9c26b55083972b03f8e06f2bdaaf824971601bc0692a27df",
+    "clients": [
+      {
+        "client": "libfetch",
+        "component": {
+          "sha256": "sha256:20060fa6e3a28c6002166fded2294f5c7901f0e35eca3b063f9e7e1426cb644b",
+          "bytes": 132882
+        },
+        "runtimeProfile": "c-libfetch-clock-entropy-v1",
+        "cases": [
+          "normal",
+          "not-found",
+          "denied",
+          "early-close",
+          "sibling"
+        ],
+        "retirementsWithZeroOwners": 5,
+        "nodeReaped": true,
+        "openPeerConnections": 0,
+        "siblingProgress": {
+          "sourceBoundFirstFreadPending": true,
+          "completedSiblingBeforeGateRelease": true,
+          "nativePollPendingObserved": false
+        }
+      },
+      {
+        "client": "libucl",
+        "component": {
+          "sha256": "sha256:ad04c83e6bddc2bb2d9116165c02521a5ac0e5c7266098612484a1525402a4d5",
+          "bytes": 336998
+        },
+        "runtimeProfile": "c-libfetch-clock-entropy-v1",
+        "cases": [
+          "normal",
+          "not-found",
+          "denied",
+          "file",
+          "glob"
+        ],
+        "retirementsWithZeroOwners": 5,
+        "nodeReaped": true,
+        "openPeerConnections": 0
+      }
+    ]
+  },
+  "publishedClientReferences": {
+    "scope": "Each original signed programme retains its own compiler, component and native host identities in the referenced evidence. The workflow head identifies the successful job.",
+    "programmes": [
+      {
+        "language": "rust",
+        "clients": [
+          "waki@0.5.1",
+          "golem-wasi-http@0.2.0"
+        ],
+        "workflowHead": "407cac236c337b4cfae6d855d499717fd9ddce95",
+        "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39668260882/job/119458961583",
+        "evidencePath": "docs/testing/evidence/rust-wasi-http-signed-2026-10-21.json",
+        "evidenceDigest": "sha256:928969c9825b9f61cdc662354a98cb94c0f00011219e2b1bde6c3459c138d7a0"
+      },
+      {
+        "language": "c",
+        "clients": [
+          "FreeBSD libfetch@b319c3d6ac7cf408b56fe745f718de6a324ec180",
+          "libucl@1778e38ef06b75876cdd10d76f409954fea3869a"
+        ],
+        "workflowHead": "72fb8969352b37eb5c9f4f9cd0cfec9845fc9f1a",
+        "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41204486731/job/124546680546",
+        "evidencePath": "docs/testing/evidence/c-http-pair-signed-2026-10-31.json",
+        "evidenceDigest": "sha256:0a776706e869555594a6182daee69a4f452e8b96bc185ef57a72cda60f78d3f5"
+      },
+      {
+        "language": "typescript",
+        "clients": [
+          "ky@2.2.0",
+          "wretch@3.0.9"
+        ],
+        "workflowHead": "10bd9cc728cdf2dc91264a6c18bdcc41f683725f",
+        "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39379234452/job/118484260198",
+        "evidencePath": "docs/testing/evidence/typescript-published-fetch-signed-2026-10-20.json",
+        "evidenceDigest": "sha256:1206b9b4ce458a5bd0da0e1c4b0f8d4801556649dbbdc9174a2d55f3268455b5"
+      },
+      {
+        "language": "go",
+        "clients": [
+          "github.com/dghubble/sling@v1.4.0",
+          "github.com/carlmjohnson/requests@v0.24.3"
+        ],
+        "workflowHead": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39461611124/job/118762220036",
+        "evidencePath": "docs/testing/evidence/go-http-tenant-catalogue-signed-2026-10-20.json",
+        "evidenceDigest": "sha256:e981d36d15bfd097ad4b14178c7311f46bfde3498a057bf262866a33c35cc38e"
+      },
+      {
+        "language": "java",
+        "clients": [
+          "com.github.kevinsawicki:http-request:6.0",
+          "com.goebl:david-webb:1.3.0"
+        ],
+        "workflowHead": "d0bb3c9e8180659524ec4683e079b4b18a513fb4",
+        "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39351070454/job/118395099868",
+        "evidencePath": "docs/testing/java-published-http.md",
+        "evidenceDigest": "sha256:aa35351d3b4548881a3595f229451ffb174e1673ed9b02fddf75874e8fa8d68b"
+      },
+      {
+        "language": "dotnet",
+        "clients": [
+          "Flurl.Http@4.0.2",
+          "Refit@16.4.0"
+        ],
+        "workflowHead": "7ee022fe5305cb86b47d6e08eefaf65aac93e4ae",
+        "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39482018386/job/118833387604",
+        "evidencePath": "docs/testing/evidence/dotnet-published-http-signed-2026-10-20.json",
+        "evidenceDigest": "sha256:9ce3264081892a40051b54b626789246154b206693ee0ae2dae5d27630e36c80"
+      }
+    ]
+  },
   "remainingQualification": [
-    "Private library resource and HTTP paths across the other five languages",
-    "Two independently maintained published HTTP clients per language",
+    "A common current-source matrix for private resources and ordinary HTTP in all six languages",
     "Transitive scheduling, cancellation and in-flight physical measurements across the six runtime profiles",
     "Packaged clean-host authoring"
   ]
