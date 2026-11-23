@@ -399,10 +399,6 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
             partial_length == length;
     }
     lsf_streaming_metadata_close(&completed.val.ok);
-    if (!valid_length) {
-        failure(FETCH_PROTO, EOVERFLOW, "HTTP content length is invalid or unrepresentable");
-        goto fail_file;
-    }
     if (status < 200 || status >= 300) {
         if (status >= 300 && status < 400) failure(FETCH_MOVED, ENOTSUP, "HTTP redirects are outside this profile");
         else if (status == 401 || status == 403) failure(FETCH_AUTH, EACCES, "HTTP authentication refused");
@@ -410,6 +406,10 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
         else failure(http_status_category(status), EIO, "HTTP server returned an error response");
         snprintf(fetchLastErrString, MAXERRSTRING, "HTTP status %u%s", (unsigned)status,
                  status >= 300 && status < 400 ? ": redirects unsupported" : ": request failed");
+        goto fail_file;
+    }
+    if (!valid_length) {
+        failure(FETCH_PROTO, EOVERFLOW, "HTTP content length is invalid or unrepresentable");
         goto fail_file;
     }
     if (!valid_range) {
