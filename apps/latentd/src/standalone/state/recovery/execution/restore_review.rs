@@ -7,12 +7,28 @@ use latent_state::{
         history::{history_key, HistoryStatus},
         namespace_record_key, NamespaceStatus,
     },
-    recovery::{namespace_resume::NamespaceRecoveryView, RecoveryStatus},
+    recovery::{namespace_resume::NamespaceRecoveryView, RecoveryGuard, RecoveryStatus},
 };
 
 pub(super) struct PreparedReview {
     pub batch: AtomicBatch,
     pub report: serde_json::Value,
+}
+
+pub(super) fn status(guard: &RecoveryGuard) -> serde_json::Value {
+    let status = match guard.status() {
+        RecoveryStatus::Staging => "staging",
+        RecoveryStatus::ReconciliationRequired => "reconciliation-required",
+        RecoveryStatus::ReviewAccepted => "review-accepted",
+    };
+    serde_json::json!({
+        "status": status,
+        "restoreOperationDigest": digest(guard.operation_digest()),
+        "snapshotDigest": digest(guard.snapshot_digest()),
+        "windowDigest": digest(guard.window_digest()),
+        "acceptedReviewDigest": (guard.status() == RecoveryStatus::ReviewAccepted)
+            .then(|| digest(guard.review_digest())),
+    })
 }
 
 pub(super) fn prepare(

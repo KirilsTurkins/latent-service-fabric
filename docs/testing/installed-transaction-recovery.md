@@ -48,7 +48,10 @@ Current action fields are:
 Digests use `sha256:` and 64 lowercase hexadecimal digits. Restore inspection
 returns `windowDigest`; restore requires that exact acknowledgement. Namespace
 inspection returns encoded `namespace`, `history`, current `view`, optional
-`guard`, `reviewDigest` and `publicationEffects`. Review the selected publication's
+`guard`, `restoreStatus`, `reviewDigest` and `publicationEffects`. When a
+restore guard is present, `restoreStatus` reports its current status and the
+original operation, snapshot and loss-window digests. An accepted review also
+includes the original review digest. Review the selected publication's
 pending, dispatching, uncertain, blocked and retry counts before retiring it.
 These counts describe the authorized namespace view and leave retained work
 available for drain or explicit reconciliation. Run the check while the

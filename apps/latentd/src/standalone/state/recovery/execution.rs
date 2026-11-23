@@ -655,6 +655,7 @@ async fn metadata_action(
                     "history":observed.history.encode().map_err(|_| StoreError::Corrupt)?,
                     "view":observed.view_token()?,
                     "guard":observed.guard.as_ref().map(RecoveryGuard::encode).transpose()?,
+                    "restoreStatus":observed.guard.as_ref().map(restore_review::status),
                     "reviewDigest":digest(worker.review),
                     "publicationEffects":publication_effects(&worker, &view)?
                 }),
