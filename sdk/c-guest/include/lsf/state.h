@@ -29,16 +29,15 @@ static inline void lsf_state_close_cell(lsf_state_cell_t *cell) {
     if (!cell->live) return;
     lsf_require(cell->pages == 0);
     cell->live = false; /* Consumption remains final if the host drop traps. */
-    if (cell->parent) {
-        lsf_require(cell->parent->pages != 0);
-        cell->parent->pages--;
-    }
+    if (cell->parent) lsf_require(cell->parent->pages != 0);
     switch (cell->kind) {
     case LSF_STATE_COMMAND: latent_state_key_value_transaction_drop_own(cell->raw.command); break;
     case LSF_STATE_QUERY: latent_state_key_value_query_view_drop_own(cell->raw.query); break;
     case LSF_STATE_PAGE: latent_state_key_value_page_drop_own(cell->raw.page); break;
     default: __builtin_trap();
     }
+    /* A trapped drop does not prove that the page released its parent. */
+    if (cell->parent) cell->parent->pages--;
 }
 static inline void lsf_state_cell_cleanup(void *object) {
     lsf_state_close_cell(object);

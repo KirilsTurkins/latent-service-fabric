@@ -39,7 +39,12 @@ export const PAGE = new InjectionToken<Page>('order-draft-page', {
     }
     <p id="command-status" role="status" aria-live="polite">{{status()}}</p>
     <p id="application-message" role="alert">{{message()}}</p>
-    <p id="effect-status">{{effectCount()}} original effects @if (effectStates().length) { ? {{effectStates().join(', ')}} }</p>
+    <p id="effect-status" aria-live="polite">
+      {{effectCount()}} original effects
+      @if (effectStates().length) {
+        <span id="effect-dispositions">&ngsp;{{effectStates().join(', ')}}</span>
+      }
+    </p>
     <p>Provider acknowledgement does not mean consumer processing.</p>
     <div>
       <button id="recover-draft" type="button" (click)="recover()" [disabled]="busy() || !originalRetained()">Recover original command</button>
