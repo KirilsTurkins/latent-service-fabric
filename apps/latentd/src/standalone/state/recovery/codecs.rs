@@ -163,6 +163,9 @@ impl Codecs {
     }
     pub fn row(&self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
         self.check()?;
+        // This codec checks portable archive rows. The archive format carries
+        // logical rows but has no protected stream for provider-owned bytes.
+        super::super::validation::reject_unverified_payload(key, bytes)?;
         match latent_commit::atomic::validate_row(key, bytes) {
             Err(StoreError::UnsupportedFormat) => {}
             result => return result,

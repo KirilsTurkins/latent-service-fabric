@@ -311,7 +311,7 @@ fn finish_validation(view: &ReadView, original: &NativeReservation) -> Result<()
 
 // Without an admitted same-root physical provider, logical closure alone
 // cannot prove that required payload bytes exist.
-fn reject_unverified_payload(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+pub(super) fn reject_unverified_payload(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     if latent_state::payload_references::owns_row(key)
         && latent_state::payload_references::owner_reference(key, bytes)?.is_some()
     {
