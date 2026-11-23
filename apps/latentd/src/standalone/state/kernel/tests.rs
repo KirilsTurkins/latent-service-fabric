@@ -616,10 +616,12 @@ async fn enroll_offline_source(
         .drain_async(cutoff, tokio::time::sleep_until(cutoff.into()))
         .unwrap()
         .await;
-    assert!(report.clean && report.snapshot.physically_retired());
-    super::super::store::join_retired_workers(&store, cutoff)
+    assert!(report.snapshot.physically_retired(), "{report:?}");
+    assert_eq!(report.clean, approval.is_ok(), "{report:?}");
+    assert!(super::super::store::join_retired_workers(&store, cutoff)
         .await
-        .unwrap();
+        .unwrap()
+        .is_some());
     result
 }
 

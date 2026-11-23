@@ -12,8 +12,8 @@ use crate::{
 };
 use latent_control_store::DeploymentStore;
 use latent_core::{
-    native_capacity::{NativeBufferClass, NativeReservation},
-    DeploymentId, InvocationPrincipal, PlatformError, PlatformErrorCode, StateNamespaceId,
+    native_capacity::NativeReservation, DeploymentId, InvocationPrincipal, PlatformError,
+    PlatformErrorCode, StateNamespaceId,
 };
 use latent_effects::dispatch_store::DispatchCatalog;
 use latent_manifest::TransactionOperationMode;
@@ -61,6 +61,7 @@ impl ApprovedSource {
 
 #[expect(
     clippy::too_many_arguments,
+    clippy::too_many_lines,
     reason = "Use the original offline store owners"
 )]
 pub(super) async fn run(
@@ -184,6 +185,7 @@ pub(super) async fn run(
 
 #[expect(
     clippy::too_many_arguments,
+    clippy::too_many_lines,
     reason = "Use the original offline policy and artifact owners"
 )]
 async fn select(
