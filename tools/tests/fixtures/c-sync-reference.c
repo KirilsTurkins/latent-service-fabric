@@ -118,18 +118,29 @@ static void child_signal_unlock(void) {
 static int lazy_fast_path(void) {
     reset();CHECK(pthread_mutex_lock(&mutex)==0);CHECK(!root.task.id && !admissions);
     CHECK(pthread_mutex_trylock(&mutex)==EBUSY);CHECK(pthread_mutex_unlock(&mutex)==0);
+    CHECK(pthread_mutex_destroy(&mutex)==0 && source_errno==37);
+    reset();CHECK(pthread_mutex_timedlock(&mutex,NULL)==0);
+    CHECK(pthread_mutex_trylock(&mutex)==EBUSY);
+    active=&child;CHECK(pthread_mutex_timedlock(&mutex,NULL)==ENOTSUP);
+    struct sync_mutex locked=sync_mutex_read(&mutex);
+    CHECK(locked.owner==(uint32_t)(uintptr_t)&root && locked.count==1 && !locked.waiters);
+    CHECK(!root.task.id && !admissions && !parks && !suspends);
+    active=&root;CHECK(pthread_mutex_unlock(&mutex)==0);
     CHECK(pthread_mutex_destroy(&mutex)==0);CHECK(source_errno==37);return 0;
 }
 static int recursive_errorcheck_and_identity(void) {
     reset();pthread_mutexattr_t attr;uint32_t type=PTHREAD_MUTEX_RECURSIVE;memcpy(&attr,&type,4);
     CHECK(pthread_mutex_init(&mutex,&attr)==0);
     CHECK(pthread_mutex_lock(&mutex)==0 && pthread_mutex_lock(&mutex)==0);
+    CHECK(pthread_mutex_timedlock(&mutex,NULL)==0);
     active=&child;CHECK(pthread_mutex_unlock(&mutex)==EPERM);active=&root;
-    CHECK(pthread_mutex_unlock(&mutex)==0 && pthread_mutex_destroy(&mutex)==EBUSY);
+    CHECK(pthread_mutex_unlock(&mutex)==0 && pthread_mutex_unlock(&mutex)==0);
+    CHECK(pthread_mutex_destroy(&mutex)==EBUSY);
     CHECK(pthread_mutex_unlock(&mutex)==0 && pthread_mutex_destroy(&mutex)==0);
     type=PTHREAD_MUTEX_ERRORCHECK;memcpy(&attr,&type,4);
     CHECK(pthread_mutex_init(&mutex,&attr)==0 && pthread_mutex_lock(&mutex)==0);
     CHECK(pthread_mutex_lock(&mutex)==EDEADLK && !admissions);
+    CHECK(pthread_mutex_timedlock(&mutex,NULL)==EDEADLK && !admissions);
     CHECK(pthread_mutex_unlock(&mutex)==0);return 0;
 }
 static int refused_wait_keeps_original_lock(void) {
