@@ -5,6 +5,7 @@ use latent_rpc::{
         self as c, dispatcher_service_client::DispatcherServiceClient,
         state_service_client::StateServiceClient,
     },
+    invocation::v1::{self as i, invoke_response},
     phase4::{self, Request, Response},
     transaction::v1::{self as t, transaction_service_client::TransactionServiceClient},
 };
@@ -101,8 +102,18 @@ pub(super) fn project_outcome(response: &Response) -> Outcome {
             command_outcome(value.command.as_ref().expect("validated command"), data)
         }
         Response::InvokeCommand(value) => {
-            command_outcome(value.command.as_ref().expect("validated command"), data)
+            let mut outcome = invocation_outcome(
+                value.invocation.as_ref().expect("validated invocation"),
+                data,
+            );
+            outcome.outcome_known =
+                command_is_known(value.command.as_ref().expect("validated command"));
+            outcome
         }
+        Response::Query(value) => invocation_outcome(
+            value.invocation.as_ref().expect("validated invocation"),
+            data,
+        ),
         Response::MutateNamespace(value) => state_outcome(
             value
                 .receipt
@@ -152,7 +163,6 @@ pub(super) fn project_outcome(response: &Response) -> Outcome {
         | Response::InspectNamespace(_)
         | Response::SelectEntity(_)
         | Response::PlanEffectMutation(_)
-        | Response::Query(_)
         | Response::GetEffect(_)
         | Response::ListEffectHistory(_)
         | Response::CancelCommand(_) => Outcome::success(data),
@@ -172,11 +182,27 @@ pub(super) fn command_outcome(command: &t::CommandInspection, data: serde_json::
     } else {
         Outcome::success(data)
     };
-    outcome.outcome_known = matches!(
+    outcome.outcome_known = command_is_known(command);
+    outcome
+}
+
+fn command_is_known(command: &t::CommandInspection) -> bool {
+    matches!(
         t::CommandOutcome::try_from(command.outcome),
         Ok(t::CommandOutcome::Committed | t::CommandOutcome::Rejected | t::CommandOutcome::Aborted)
-    );
-    outcome
+    )
+}
+
+fn invocation_outcome(invocation: &i::InvokeResponse, data: serde_json::Value) -> Outcome {
+    match invocation.result.as_ref().expect("validated result") {
+        invoke_response::Result::Success(_) => Outcome::success(data),
+        invoke_response::Result::DeclaredError(_) => Outcome::domain_error(data),
+        invoke_response::Result::PlatformFailure(error) => {
+            let error = latent_wire::invocation::platform_error_from_proto(error.clone())
+                .expect("validated platform error");
+            Outcome::platform_failure(data, &error)
+        }
+    }
 }
 pub(super) fn state_outcome(disposition: i32, data: serde_json::Value) -> Outcome {
     let disposition =

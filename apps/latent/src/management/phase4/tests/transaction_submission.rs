@@ -151,3 +151,55 @@ fn fresh_query_preserves_the_minimum_view_and_refuses_mutating_bounds() {
     std::fs::write(&budget, br#"{"stateReadBytes":4096,"effectCount":1}"#).unwrap();
     assert!(prepare(command).is_err());
 }
+
+#[test]
+fn direct_submission_reports_the_invocation_status_and_command_certainty() {
+    use crate::output::Category;
+    use latent_rpc::{invocation::v1 as i, phase4::Response, transaction::v1 as t};
+
+    let failure = i::PlatformError {
+        code: "unavailable".into(),
+        message: "original result requires lookup".into(),
+        ..Default::default()
+    };
+    let invocation = i::InvokeResponse {
+        result: Some(i::invoke_response::Result::PlatformFailure(failure)),
+        ..Default::default()
+    };
+    let query = Response::from(t::QueryResponse {
+        invocation: Some(invocation.clone()),
+        ..Default::default()
+    });
+    let outcome = super::execute::project_outcome(&query);
+    assert_eq!(outcome.category, Category::PlatformError);
+    assert!(outcome.outcome_known);
+    assert_eq!(
+        outcome.data["invocation"]["result"]["kind"],
+        "technical-failure"
+    );
+
+    let command = Response::from(t::InvokeCommandResponse {
+        invocation: Some(invocation),
+        command: Some(t::CommandInspection {
+            outcome: t::CommandOutcome::Unknown as i32,
+            ..Default::default()
+        }),
+        ..Default::default()
+    });
+    let outcome = super::execute::project_outcome(&command);
+    assert_eq!(outcome.category, Category::PlatformError);
+    assert!(!outcome.outcome_known);
+
+    let query = Response::from(t::QueryResponse {
+        invocation: Some(i::InvokeResponse {
+            result: Some(i::invoke_response::Result::DeclaredError(
+                i::DeclaredError::default(),
+            )),
+            ..Default::default()
+        }),
+        ..Default::default()
+    });
+    let outcome = super::execute::project_outcome(&query);
+    assert_eq!(outcome.category, Category::DomainError);
+    assert!(outcome.outcome_known);
+}
