@@ -141,6 +141,24 @@ request can reactivate an ordinarily quiesced namespace with enrolled input
 when the original recovery epoch and external inbox custody still match.
 A restored epoch continues to require explicit inbox reconciliation.
 
+To approve one retry, stop the node and use the broker inspection report.
+When the latest delivery has a retained technical abort, copy the complete
+`latestDeliveryAbort` object to `approvedRetry` inside the same binding's
+`transaction` declaration in the protected trigger configuration. Add your
+original `requestId` to the object. Keep the sequence, command identity,
+attempt generation, transaction identity and owner fence unchanged. The
+sequence and attempt generation are decimal strings. The three identities
+are lowercase hexadecimal strings.
+
+The consumer uses that authorization selector only if it receives the same
+sequence on the original qualified source. The normal transaction owner checks
+the actual payload fingerprint, exact aborted attempt, captured source and
+current policy before it accepts a retry. The same request ID recovers the
+same attempt on repeated delivery. Pending or unconfirmed history remains
+held for review. Remove the retry selector when recovery is complete. If the
+consumer has exhausted its configured deliveries, this declaration does not
+rewind its position or grant another delivery.
+
 To approve a new logical source, run `enroll-inbox-source` under the
 `namespace-enroll-inbox-source` policy. Supply the reported `inputBinding` as
 `expectedScope`, `view` as `expectedView`, and `checkpointGeneration` as

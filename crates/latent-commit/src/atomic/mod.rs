@@ -30,7 +30,8 @@ pub use retention::{
 };
 pub use validation::{
     durable_row_format, inspect_inbox_delivery, validate_linked_row, validate_row, validate_view,
-    validate_view_observed, validate_view_observed_with_checkpoint,
+    validate_view_observed, validate_view_observed_with_checkpoint, InboxAbortSelector,
+    InboxDeliveryInspection,
 };
 pub use writer::{
     inspect, verify_inbox_scope, AdmissionDecision, AdmittedCommand, CompleteEnvelope,

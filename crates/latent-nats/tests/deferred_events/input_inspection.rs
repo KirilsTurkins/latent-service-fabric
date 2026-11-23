@@ -80,6 +80,7 @@ async fn real_deferred_input_inspection_keeps_original_consumer_position_and_nev
                 state_read_bytes: 4096,
                 state_write_bytes: 1024,
                 effect_count: 1,
+                approved_retry: None,
             }),
             budget: RootBudget {
                 cpu_fuel: 10_000,

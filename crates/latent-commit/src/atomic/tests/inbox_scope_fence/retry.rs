@@ -117,7 +117,15 @@ fn scoped_equal_retries_share_one_attempt_and_keep_original_source_and_expiry() 
             &original.key().recovery_scope,
             1
         ),
-        Ok(Some(Outcome::Aborted))
+        Ok(Some(InboxDeliveryInspection {
+            outcome: Outcome::Aborted,
+            abort: Some(InboxAbortSelector {
+                command: original.id(),
+                attempt_generation: original.attempt(),
+                transaction: original.transaction_id(),
+                owner_fence: original.abort_proof().unwrap(),
+            }),
+        }))
     );
     assert_eq!(
         inspect_inbox_delivery(&view, &scope, &original.key().operation, "other-trigger", 1),
@@ -158,7 +166,10 @@ fn scoped_equal_retries_share_one_attempt_and_keep_original_source_and_expiry() 
             &original.key().recovery_scope,
             1
         ),
-        Ok(Some(Outcome::Pending))
+        Ok(Some(InboxDeliveryInspection {
+            outcome: Outcome::Pending,
+            abort: None,
+        }))
     );
     assert!(matches!(
         PreparedAdmission::retry(

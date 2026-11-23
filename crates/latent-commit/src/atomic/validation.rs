@@ -201,6 +201,22 @@ fn validate_linked(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), At
     Ok(())
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct InboxDeliveryInspection {
+    pub outcome: Outcome,
+    pub abort: Option<InboxAbortSelector>,
+}
+
+/// Description of the exact approved operation before it can be retried. The
+/// runtime independently verifies this data against the original durable abort.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct InboxAbortSelector {
+    pub command: Identity,
+    pub attempt_generation: u64,
+    pub transaction: Identity,
+    pub owner_fence: Identity,
+}
+
 /// Descriptive metadata for one authenticated stream sequence. The caller
 /// supplies current operator authority, the configured trigger's recovery scope
 /// and the original read view. Only committed and rejected deliveries have an
@@ -211,7 +227,7 @@ pub fn inspect_inbox_delivery(
     operation: &str,
     recovery_scope: &str,
     stream_sequence: u64,
-) -> Result<Option<Outcome>, StoreError> {
+) -> Result<Option<InboxDeliveryInspection>, StoreError> {
     require_existing(view, source)?;
     if stream_sequence == 0 {
         return Err(StoreError::Invalid);
@@ -245,7 +261,10 @@ pub fn inspect_inbox_delivery(
         if current != record {
             return Err(AtomicError::Corrupt);
         }
-        Ok(Some(record.outcome))
+        Ok(Some(InboxDeliveryInspection {
+            outcome: record.outcome(),
+            abort: None,
+        }))
     })();
     result.map_err(storage_error)
 }
@@ -257,7 +276,7 @@ fn inspect_inbox_attempt(
     recovery_scope: &str,
     binding: &str,
     sequence: u64,
-) -> Result<Option<Outcome>, AtomicError> {
+) -> Result<Option<InboxDeliveryInspection>, AtomicError> {
     let message = sequence.to_string();
     let key = CommandKey {
         tenant: source.tenant.clone(),
@@ -289,7 +308,15 @@ fn inspect_inbox_attempt(
     {
         return Err(AtomicError::Corrupt);
     }
-    Ok(Some(record.outcome()))
+    Ok(Some(InboxDeliveryInspection {
+        outcome: record.outcome(),
+        abort: record.abort_proof().map(|owner_fence| InboxAbortSelector {
+            command: id,
+            attempt_generation: record.attempt(),
+            transaction: record.transaction_id(),
+            owner_fence,
+        }),
+    }))
 }
 
 fn linked_inbox_attempt(

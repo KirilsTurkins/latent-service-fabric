@@ -105,6 +105,8 @@ impl InboxAdmissionFactory for InboxFactory {
             match_found = Some((Arc::clone(installation), operation.input_format.clone()));
         }
         let (installation, input_format) = match_found.ok_or_else(denied)?;
+        let retry = delivery.retry_selection().map_err(|_| denied())?;
+        let retrying = retry.is_some();
         let selection = TransactionSelection {
             namespace: delivery.namespace().into(),
             incarnation: delivery.incarnation(),
@@ -115,12 +117,19 @@ impl InboxAdmissionFactory for InboxFactory {
             expected_versions: Vec::new(),
             minimum_view_version: None,
             input_format,
-            retry: None,
+            retry,
         };
-        Ok(Arc::new(
-            NativeTransactionAdmission::new(Arc::clone(&self.owners), installation, selection)?
-                .with_trusted_inbox(delivery.identity().clone())?
-                .with_trusted_inbox_scope(delivery.scope().clone())?,
-        ))
+        let admission =
+            NativeTransactionAdmission::new(Arc::clone(&self.owners), installation, selection)?;
+        let identity = delivery.identity().clone();
+        let scope = delivery.scope().clone();
+        let admission = if retrying {
+            admission.with_trusted_inbox_retry(identity, scope)?
+        } else {
+            admission
+                .with_trusted_inbox(identity)?
+                .with_trusted_inbox_scope(scope)?
+        };
+        Ok(Arc::new(admission))
     }
 }
