@@ -31,6 +31,7 @@ pub const OPERATIONS: [&str; 11] = [
     "timer-stop",
 ];
 static GENERATION: AtomicU64 = AtomicU64::new(1);
+const MAX_OWNER_SLOTS: u16 = 8192;
 
 /// Finite operator-selected ceilings. There is deliberately no product default:
 /// language qualification determines the selected limits and native costs.
@@ -47,7 +48,7 @@ pub struct RuntimeLimits {
 impl RuntimeLimits {
     pub fn validate(self) -> Result<(), PlatformError> {
         let total: u64 = self.values().into_iter().map(u64::from).sum();
-        if total == 0 || total > 8192 {
+        if total == 0 || total > u64::from(MAX_OWNER_SLOTS) {
             return Err(error(PlatformErrorCode::InvalidArgument, "runtime-limits"));
         }
         Ok(())
@@ -149,7 +150,10 @@ struct Inner {
 struct State {
     phase: RuntimePhase,
     next_id: u64,
-    owners: [u32; 7],
+    // Every count is bounded by the validated total of MAX_OWNER_SLOTS.
+    owners: [u16; 7],
+    parked_tasks: u16,
+    managed_idle_workers: u16,
     slab: Option<Slab>,
     admission_failures: u64,
     stale_wakes: u64,
@@ -237,6 +241,8 @@ impl ActivationRuntime {
                 phase: RuntimePhase::Running,
                 next_id: 1,
                 owners: [0; 7],
+                parked_tasks: 0,
+                managed_idle_workers: 0,
                 slab: None,
                 admission_failures: 0,
                 stale_wakes: 0,
@@ -414,7 +420,7 @@ impl ActivationRuntime {
             }
         }
         let index = kind.index();
-        if state.owners[index] >= self.inner.limits.values()[index] {
+        if u32::from(state.owners[index]) >= self.inner.limits.values()[index] {
             let mut observed = crate::diagnostic::ActivationDiagnostic::new(
                 crate::diagnostic::DiagnosticStage::Execution,
                 kind.limit_reason(),
@@ -562,6 +568,9 @@ impl ActivationRuntime {
             state.phase = RuntimePhase::Cancelling;
             return Err(error(PlatformErrorCode::Cancelled, "runtime-cancelled"));
         }
+        if kind == OwnerKind::ManagedIdleWorker {
+            state.managed_idle_workers += 1;
+        }
         #[cfg(test)]
         hook(AdmissionStep::CommittedPublication);
         Ok(RuntimeOwner {
@@ -635,22 +644,15 @@ impl ActivationRuntime {
         self.check_commit_ledger_locked(&mut state)?;
         #[cfg(test)]
         hook(ReadinessStep::Checked);
-        // Determine the post-park phase before taking accounting. The runtime
-        // state lock keeps this bounded scan stable until the tentative write.
+        let record =
+            state.slab.as_ref().expect("checked slab").records[slot].expect("checked owner");
+        let newly_parked_task = record.kind.index() == 0 && !record.parked;
         let should_wait = state.phase == RuntimePhase::Running
-            && !state.slab.as_ref().is_some_and(|slab| {
-                slab.records.iter().flatten().any(|record| {
-                    record.kind.index() == 0 && !record.parked && record.id != token.id
-                })
-            });
+            && state.owners[0] == state.parked_tasks + u16::from(newly_parked_task);
         let publication = self.inner.budget.runtime_publication_guard();
         self.check_commit_ledger_locked(&mut state)?;
         #[cfg(test)]
         hook(ReadinessStep::Guarded);
-        let previous_parked = state.slab.as_ref().expect("checked slab").records[slot]
-            .as_ref()
-            .expect("checked owner")
-            .parked;
         state.slab.as_mut().expect("checked slab").records[slot]
             .as_mut()
             .expect("checked owner")
@@ -666,11 +668,12 @@ impl ActivationRuntime {
             state.slab.as_mut().expect("checked slab").records[slot]
                 .as_mut()
                 .expect("checked owner")
-                .parked = previous_parked;
+                .parked = record.parked;
             state.phase = RuntimePhase::Cancelling;
             drop(publication);
             return Err(error(PlatformErrorCode::Cancelled, "runtime-cancelled"));
         }
+        state.parked_tasks += u16::from(newly_parked_task);
         #[cfg(test)]
         hook(ReadinessStep::Committed);
         drop(publication);
@@ -738,7 +741,7 @@ impl ActivationRuntime {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         if state.owners.iter().any(|n| *n != 0) {
             let failure = error(PlatformErrorCode::Internal, "runtime-lifecycle-unproven");
-            let owners = state.owners;
+            let owners = state.owners.map(u32::from);
             drop(state);
             owner_refusal::record(owners);
             return Err(failure);
@@ -866,29 +869,11 @@ impl ActivationRuntime {
             .state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let records = state
-            .slab
-            .as_ref()
-            .map_or(&[][..], |slab| slab.records.as_slice());
         RuntimeSnapshot {
             phase: state.phase,
-            owners: state.owners,
-            parked_tasks: u32::try_from(
-                records
-                    .iter()
-                    .flatten()
-                    .filter(|r| r.kind.index() == 0 && r.parked)
-                    .count(),
-            )
-            .expect("bounded runtime records"),
-            managed_idle_workers: u32::try_from(
-                records
-                    .iter()
-                    .flatten()
-                    .filter(|r| r.kind == OwnerKind::ManagedIdleWorker)
-                    .count(),
-            )
-            .expect("bounded runtime records"),
+            owners: state.owners.map(u32::from),
+            parked_tasks: u32::from(state.parked_tasks),
+            managed_idle_workers: u32::from(state.managed_idle_workers),
             host_memory_bytes: self.inner.budget.host_memory_bytes(),
             admission_failures: state.admission_failures,
             stale_wakes: state.stale_wakes,
@@ -921,29 +906,16 @@ impl Drop for RuntimeOwner {
         }) {
             let record = slot.take().expect("matching live owner");
             state.owners[record.kind.index()] -= 1;
-            if state.phase == RuntimePhase::Running
-                && record.kind.index() == 0
-                && !record.parked
-                && state.owners[0] != 0
-            {
-                // A runnable sibling can finish while all remaining tasks are
-                // parked. Mirror `park`'s task scan without changing closing,
-                // cancellation, or any of the still-live original owners.
-                let mut parked = false;
-                let mut runnable = false;
-                if let Some(slab) = &state.slab {
-                    for remaining in slab.records.iter().flatten() {
-                        if remaining.kind.index() == 0 {
-                            if remaining.parked {
-                                parked = true;
-                            } else {
-                                runnable = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-                if parked && !runnable {
+            if record.kind == OwnerKind::ManagedIdleWorker {
+                state.managed_idle_workers -= 1;
+            }
+            if record.kind.index() == 0 {
+                if record.parked {
+                    state.parked_tasks -= 1;
+                } else if state.phase == RuntimePhase::Running
+                    && state.parked_tasks != 0
+                    && state.parked_tasks == state.owners[0]
+                {
                     state.phase = RuntimePhase::Waiting;
                 }
             }
@@ -1014,10 +986,8 @@ impl RuntimeWake {
         }
         #[cfg(test)]
         hook(ReadinessStep::Guarded);
-        let previous_parked = state.slab.as_ref().expect("checked slab").records[slot]
-            .as_ref()
-            .expect("checked owner")
-            .parked;
+        let record =
+            state.slab.as_ref().expect("checked slab").records[slot].expect("checked owner");
         state.slab.as_mut().expect("checked slab").records[slot]
             .as_mut()
             .expect("checked owner")
@@ -1031,9 +1001,12 @@ impl RuntimeWake {
             state.slab.as_mut().expect("checked slab").records[slot]
                 .as_mut()
                 .expect("checked owner")
-                .parked = previous_parked;
+                .parked = record.parked;
             state.phase = RuntimePhase::Cancelling;
             return false;
+        }
+        if record.kind.index() == 0 && record.parked {
+            state.parked_tasks -= 1;
         }
         #[cfg(test)]
         hook(ReadinessStep::Committed);
