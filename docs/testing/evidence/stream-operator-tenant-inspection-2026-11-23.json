@@ -1,0 +1,111 @@
+{
+  "issue": 739,
+  "programme": "latent.stream-operator.unavailable-inspection.v1",
+  "sourceRevision": "ef484a216c69f4eda0d7da29e73a523cd907caa4",
+  "platform": "linux-x86_64",
+  "status": "passed",
+  "command": "python tools/qualify_stream_operator_node.py --inspect --source-commit <sourceRevision> --output <fresh-directory>",
+  "receiptDigest": "sha256:245ce0f897815e245f87fa33666594d22067c4016d2180fec24457887cb8b049",
+  "inspectionDigest": "sha256:a3199c9b2f080822686f67a0edac5862c407d1c3e2c38e6caf759d708eb676ff",
+  "products": {
+    "latent": {
+      "sha256": "sha256:0f82bb488aeecbfc7d77e75f0994c1196ef0e23c98f199b7228e271753414c3c",
+      "bytes": 76472408
+    },
+    "latentd": {
+      "sha256": "sha256:fb1ca308be377dc7f9df7b59ec40e886f68be95a78a84ffeea9455550f64c1c0",
+      "bytes": 212440888
+    },
+    "frontend": {
+      "sha256": "sha256:ac7c1b356bf2a3867ac999864d5f4fd381f3e8707f22ca7aa104458ec7583c7d",
+      "bytes": 3255688
+    }
+  },
+  "signedFixture": {
+    "syntheticTestEvidence": true,
+    "filesDigest": "sha256:ae8ed2d4ecf4f35608d539cb9bc384078b672c462fabdfa1baf297d71f35fb98",
+    "fileCount": 68,
+    "bytes": 56684
+  },
+  "cases": [
+    "ordinary-signed-publication-and-deployment",
+    "unfiltered-ordinary-clock",
+    "provider-filter-excludes-clock",
+    "contract-filter-excludes-clock",
+    "packaged-unavailable-stream-inspection",
+    "different-publication-refused",
+    "authenticated-tenant-admin-node-scope-refused",
+    "packaged-tenant-only-inspection",
+    "unchanged-inputs-and-clean-shutdown"
+  ],
+  "packagedFrontendProcesses": [
+    {
+      "case": "exact-stream",
+      "exitCode": 0,
+      "stdout": {
+        "bytes": 2628,
+        "sha256": "sha256:616015803e2bc9b3c767b5e64c31de4f9f40f693d2ff2bc7ad5f06fce196f9d1"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "case": "different-publication",
+      "exitCode": 1,
+      "stdout": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "bytes": 183,
+        "sha256": "sha256:d4fbbdccec5d5aca7496cd804f424b5a5add9bc09d2677522123d1c3b47ea34a"
+      }
+    },
+    {
+      "case": "tenant-admin",
+      "exitCode": 1,
+      "stdout": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stderr": {
+        "bytes": 187,
+        "sha256": "sha256:0dae3f46d0840e32334cfb91edf5b647b71d237b8f4360809e96603122d801e1"
+      }
+    },
+    {
+      "case": "tenant-only",
+      "exitCode": 0,
+      "stdout": {
+        "bytes": 932,
+        "sha256": "sha256:23d88c13d09551d4f5ffaf0e6ec6530a0bf731d86dd3687e5584c45984ee2a05"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  ],
+  "tenantInspection": {
+    "scope": "tenant",
+    "nodeUsage": null,
+    "nodeWideRequestDenied": true,
+    "publicationMismatch": "stream-operator-inspection-publication-changed"
+  },
+  "cliProcesses": 18,
+  "configurationAndPoliciesUnchanged": true,
+  "nodeReaped": true,
+  "nodeEvent": "stopped",
+  "streamInstalled": false,
+  "streamGrantCreated": false,
+  "guestInvoked": false,
+  "streamSocketDispatched": false,
+  "providerReadiness": "not-observed",
+  "executionPermission": false,
+  "positiveLiveUsageQualified": false,
+  "rotationQualified": false,
+  "quarantineQualified": false,
+  "wholeIssue739Acceptance": false
+}
