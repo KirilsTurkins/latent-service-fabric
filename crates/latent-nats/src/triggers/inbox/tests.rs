@@ -23,6 +23,7 @@ fn config() -> TriggerConfig {
         state_read_bytes: 4096,
         state_write_bytes: 4096,
         effect_count: 4,
+        approved_retry: None,
     });
     config
 }
@@ -351,4 +352,42 @@ fn simultaneous_scope_cannot_claim_different_stream_origins() {
         config.validate().is_ok(),
         "explicit new scope can use another origin"
     );
+}
+
+#[test]
+fn explicit_retry_applies_only_to_the_selected_authenticated_sequence() {
+    let mut cfg = config();
+    let original = delivery("input-broker", &cfg.bindings[0], u64::MAX, b"input");
+    assert!(original.retry_selection().unwrap().is_none());
+    let mut plan = json!({
+        "streamSequence": u64::MAX.to_string(),
+        "attemptGeneration": "2",
+        "requestId": "approved-operation",
+        "commandId": "a1".repeat(32),
+        "transactionId": "b2".repeat(32),
+        "ownerFence": "c3".repeat(32),
+    });
+    cfg.bindings[0].transaction.as_mut().unwrap().approved_retry =
+        Some(serde_json::from_value(plan.clone()).unwrap());
+    cfg.validate().unwrap();
+    let selected = delivery("input-broker", &cfg.bindings[0], u64::MAX, b"input");
+    assert_eq!(original.identity(), selected.identity());
+    assert_eq!(original.client_id(), selected.client_id());
+    let retry = selected.retry_selection().unwrap().unwrap();
+    assert_eq!(retry.command.hex(), "a1".repeat(32));
+    assert_eq!(retry.transaction.hex(), "b2".repeat(32));
+    assert_eq!(retry.request.expected_abort.hex(), "c3".repeat(32));
+    assert_eq!(retry.attempt, 2);
+    assert_eq!(retry.request.request_id, "approved-operation");
+    assert!(
+        delivery("input-broker", &cfg.bindings[0], u64::MAX - 1, b"input")
+            .retry_selection()
+            .unwrap()
+            .is_none()
+    );
+
+    plan["streamSequence"] = "02".into();
+    cfg.bindings[0].transaction.as_mut().unwrap().approved_retry =
+        Some(serde_json::from_value(plan).unwrap());
+    assert!(cfg.validate().is_err());
 }

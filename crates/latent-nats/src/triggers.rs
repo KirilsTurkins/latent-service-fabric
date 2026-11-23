@@ -11,7 +11,7 @@ mod monitor;
 mod owner;
 pub(crate) mod wire;
 pub use config::{RootBudget, TriggerBinding, TriggerConfig};
-pub use inbox::{InboxAdmissionFactory, InboxDelivery, TransactionalBinding};
+pub use inbox::{ApprovedInboxRetry, InboxAdmissionFactory, InboxDelivery, TransactionalBinding};
 pub use inspection::{BrokerInputProgress, NatsTriggerInspector};
 pub use monitor::{Acknowledgement, TriggerMonitor, TriggerSnapshot, TriggerStep, TriggerTerminal};
 pub use owner::{NatsTriggers, NATS_TRIGGER_PROFILE};

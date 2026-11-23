@@ -109,9 +109,21 @@ impl NatsTriggers {
         if credentials.is_empty() || credentials.capacity() > 8 {
             return Err(EventError::InvalidEvent);
         }
+        let retry_metadata = config
+            .bindings
+            .iter()
+            .filter(|binding| {
+                binding
+                    .transaction
+                    .as_ref()
+                    .is_some_and(|transaction| transaction.approved_retry.is_some())
+            })
+            .count()
+            * super::inbox::APPROVED_RETRY_METADATA_BYTES;
         let metadata = pools.reserve_protocol_metadata(
             65536
                 + config.bindings.len() * 2048
+                + retry_metadata
                 + 6 * config.extra_roots.iter().map(Vec::capacity).sum::<usize>(),
         )?;
         let destination = config.endpoint.credential_destination();

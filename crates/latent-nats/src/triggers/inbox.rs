@@ -1,4 +1,8 @@
 //! Trusted input history on the original pull, provider and admission owners.
+mod retry;
+pub use retry::ApprovedInboxRetry;
+pub(super) use retry::APPROVED_RETRY_METADATA_BYTES;
+
 use super::{config::identifier, wire, TriggerBinding, TriggerConfig};
 use crate::{
     config::text,
@@ -33,6 +37,8 @@ pub struct TransactionalBinding {
     pub state_read_bytes: u64,
     pub state_write_bytes: u64,
     pub effect_count: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approved_retry: Option<Box<ApprovedInboxRetry>>,
 }
 impl TransactionalBinding {
     pub(super) fn validate(&self, binding: &TriggerBinding, config: &TriggerConfig) -> Result<()> {
@@ -53,6 +59,9 @@ impl TransactionalBinding {
             || self.effect_count > 32
         {
             return Err(EventError::InvalidEvent);
+        }
+        if let Some(retry) = &self.approved_retry {
+            retry.validate()?;
         }
         self.qualification.validate_limits(
             config.maximum_payload_bytes + 5120,
@@ -107,6 +116,7 @@ pub struct InboxDelivery {
     client_id: String,
     identity: InboxIdentity,
     scope: latent_state::inbox_scope::InboxScope,
+    approved_retry: Option<Box<ApprovedInboxRetry>>,
 }
 impl InboxDelivery {
     #[must_use]
@@ -138,6 +148,17 @@ impl InboxDelivery {
     #[must_use]
     pub fn scope(&self) -> &latent_state::inbox_scope::InboxScope {
         &self.scope
+    }
+
+    /// The node's protected one-delivery retry selector. It still has to pass
+    /// admission against the actual original input, scope and abort receipt.
+    pub fn retry_selection(
+        &self,
+    ) -> Result<Option<latent_node::transaction_runtime::TransactionRetrySelection>> {
+        self.approved_retry
+            .as_deref()
+            .map(ApprovedInboxRetry::selection)
+            .transpose()
     }
 
     pub(super) fn capture(
@@ -175,6 +196,10 @@ fn capture(
     if sequence == 0 || qualified.binding != binding_identity(binding)? {
         return Err(EventError::PermissionDenied);
     }
+    let selected = binding
+        .transaction
+        .as_ref()
+        .ok_or(EventError::PermissionDenied)?;
     let scope = binding.inbox_scope(provider)?;
     let binding_id = scope
         .input_binding()
@@ -199,6 +224,11 @@ fn capture(
         incarnation: scope.incarnation,
         processing_scope: scope.processing_scope.clone(),
         client_id,
+        approved_retry: selected
+            .approved_retry
+            .as_ref()
+            .filter(|retry| retry.stream_sequence == identity.message)
+            .cloned(),
         identity,
         scope,
     })

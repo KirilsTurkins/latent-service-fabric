@@ -11,7 +11,7 @@ use crate::{
     standalone::{effects::ProtectedEffectClock, state::StateBootstrap},
 };
 use latent_capabilities::namespace::{CallerScope, RecoverySelection};
-use latent_commit::atomic::{inspect_inbox_delivery, Outcome};
+use latent_commit::atomic::{inspect_inbox_delivery, InboxDeliveryInspection, Outcome};
 use latent_control_store::DeploymentStore;
 use latent_core::{
     native_capacity::NativeReservation, DeploymentId, InvocationPrincipal, PlatformError,
@@ -250,7 +250,12 @@ async fn inspect_source(
     if let Some(broker) = broker {
         report["action"] = "inspect-inbox-broker".into();
         report["brokerProgress"] = serde_json::to_value(broker).map_err(|_| super::denied())?;
-        report["latestDeliveryHistory"] = history.into();
+        if let Some((disposition, abort)) = history {
+            report["latestDeliveryHistory"] = disposition.into();
+            if let Some(abort) = abort {
+                report["latestDeliveryAbort"] = abort;
+            }
+        }
     }
     Ok(report)
 }
@@ -260,26 +265,39 @@ fn latest_delivery(
     approved: &ApprovedSource,
     enrolled: bool,
     sequence: u64,
-) -> Result<&'static str, StoreError> {
+) -> Result<(&'static str, Option<serde_json::Value>), StoreError> {
     if !enrolled {
-        return Ok("not-enrolled");
+        return Ok(("not-enrolled", None));
     }
     if sequence == 0 {
-        return Ok("not-yet-delivered");
+        return Ok(("not-yet-delivered", None));
     }
-    match inspect_inbox_delivery(
+    let Some(InboxDeliveryInspection { outcome, abort }) = inspect_inbox_delivery(
         view,
         &approved.scope,
         &approved.source.target().function.0,
         &approved.trigger_recovery_scope,
         sequence,
-    )? {
-        Some(Outcome::Committed) => Ok("retained-commit"),
-        Some(Outcome::Rejected) => Ok("retained-rejection"),
-        Some(Outcome::Pending) => Ok("retained-pending"),
-        Some(Outcome::Aborted) => Ok("retained-technical-abort"),
-        None => Ok("unconfirmed"),
-    }
+    )?
+    else {
+        return Ok(("unconfirmed", None));
+    };
+    let disposition = match outcome {
+        Outcome::Committed => "retained-commit",
+        Outcome::Rejected => "retained-rejection",
+        Outcome::Pending => "retained-pending",
+        Outcome::Aborted => "retained-technical-abort",
+    };
+    let abort = abort.map(|abort| {
+        serde_json::json!({
+            "streamSequence": sequence.to_string(),
+            "commandId": abort.command.hex(),
+            "attemptGeneration": abort.attempt_generation.to_string(),
+            "transactionId": abort.transaction.hex(),
+            "ownerFence": abort.owner_fence.hex(),
+        })
+    });
+    Ok((disposition, abort))
 }
 
 #[expect(

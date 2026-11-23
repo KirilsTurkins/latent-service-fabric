@@ -85,7 +85,10 @@ fn scoped_replay_preserves_success_and_rejection_after_reopen_and_body_expiry() 
                     &input.key.recovery_scope,
                     1
                 ),
-                Ok(Some(original.outcome()))
+                Ok(Some(InboxDeliveryInspection {
+                    outcome: original.outcome(),
+                    abort: None,
+                }))
             );
             assert_eq!(
                 inspect_inbox_delivery(
