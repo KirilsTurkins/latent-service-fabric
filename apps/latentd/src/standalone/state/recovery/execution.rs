@@ -221,6 +221,7 @@ pub(super) async fn execute(
                     return Err(error);
                 }
             };
+            let inbox_custody = input.inbox_custody();
             if let Action::Restore {
                 window_acknowledgement,
                 ..
@@ -252,16 +253,17 @@ pub(super) async fn execute(
                     .map_err(|error| failure(format!("restore-stage:{error:?}")));
                 let retired = retire(snapshot, &codecs).await;
                 let receipt = outcome?;
-                Ok(
-                    serde_json::json!({"action":"restore", "operationDigest":digest(receipt.operation_digest()),
+                let mut value = serde_json::json!({"action":"restore", "operationDigest":digest(receipt.operation_digest()),
                         "snapshotDigest":digest(receipt.input().snapshot().snapshot_digest),
                         "manifestDigest":digest(receipt.input().snapshot().manifest_digest),
                         "destinationIdentity":receipt.checkpoint().identity().as_str(),
                         "checkpoint":receipt.checkpoint().encode(), "importedRows":receipt.imported_rows().to_string(),
-                        "resourcePhysicallyRetired":retired, "pausedForReconciliation":true}),
-                )
+                        "resourcePhysicallyRetired":retired, "pausedForReconciliation":true});
+                report_inbox_custody(&mut value, inbox_custody);
+                Ok(value)
             } else {
-                let value = serde_json::json!({"action":"inspect-restore", "snapshot":snapshot_value(input.snapshot()), "windowDigest":digest(input.window().digest().map_err(storage)?), "window":input.window()});
+                let mut value = serde_json::json!({"action":"inspect-restore", "snapshot":snapshot_value(input.snapshot()), "windowDigest":digest(input.window().digest().map_err(storage)?), "window":input.window()});
+                report_inbox_custody(&mut value, inbox_custody);
                 drop(input);
                 let retired = retire(snapshot, &codecs).await;
                 Ok(with_retirement(value, retired))
@@ -796,6 +798,18 @@ fn file_config(file: &File) -> ProtectedSnapshotConfig {
 }
 fn snapshot_value(receipt: &SnapshotReceipt) -> serde_json::Value {
     serde_json::json!({"action":"snapshot", "snapshotDigest":digest(receipt.snapshot_digest), "manifestDigest":digest(receipt.manifest_digest), "fileBytes":receipt.file_bytes.to_string(), "manifest":receipt.manifest})
+}
+fn report_inbox_custody(
+    report: &mut serde_json::Value,
+    custody: Option<latent_state::store_identity::InboxCustodyWatermark>,
+) {
+    if let Some(custody) = custody {
+        report["inboxReplay"] = serde_json::json!({
+            "status": "reconciliation-required",
+            "sourceInventoryGeneration": custody.generation.to_string(),
+            "sourceInventoryDigest": digest(custody.digest),
+        });
+    }
 }
 fn with_retirement(mut value: serde_json::Value, retired: bool) -> serde_json::Value {
     value["resourcePhysicallyRetired"] = retired.into();

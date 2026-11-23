@@ -51,6 +51,14 @@ Generic resume refuses a retained current migration and cannot replace its
 protected checkpoint and activation owner. Old v1 recipes and bytes retain
 their own approval boundary.
 
+When the archive contains anchored inbox sources, restore inspection and
+staging report `inboxReplay` with the exact source inventory generation and
+digest and status `reconciliation-required`. The reviewed window covers the
+original database history, including newer records absent from the archive.
+Keep the consumer paused while reviewing broker delivery and acknowledgement
+positions against the retained history. The source inventory proves binding
+custody only. It supplies no broker replay position or permission to resume.
+
 For protected staging, use the same explicit `destinationStoreIdentity` in both
 inspection and restore. The identity accepts one through 128 ASCII letters,
 digits, dots, underscores or hyphens. Source validation remains bound to the
