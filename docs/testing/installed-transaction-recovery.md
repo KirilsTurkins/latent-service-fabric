@@ -90,6 +90,13 @@ store report exists. The collector must retain that failed attempt.
 
 ## Finite current ownership
 
+An offline snapshot of anchored inbox history includes the complete retained
+source rows for the selected namespace and its current incarnation. Save the
+snapshot receipt alongside the original external checkpoint. The receipt's
+`inboxCustody` records the checkpoint generation, source count and inventory
+digest observed during export. Restoration of this history requires an
+inbox-aware reconciliation workflow and remains held in the current profile.
+
 The existing Java declaration remains 96 MiB native recovery capacity with a
 32 MiB maximum reservation, 16 MiB retained store recovery capacity, an
 8 MiB + 8 KiB recovery job, and an 8 MiB cache. Compact signed captures use the

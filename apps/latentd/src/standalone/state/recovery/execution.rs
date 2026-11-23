@@ -608,7 +608,15 @@ async fn snapshot(
     .await?;
     let outcome = result.map_err(protected)?.map_err(snapshot_error);
     let retired = retire(snapshot, &codecs).await;
-    Ok(with_retirement(snapshot_value(&outcome?), retired))
+    let mut report = with_retirement(snapshot_value(&outcome?), retired);
+    if let Some(custody) = codecs.checkpoint.inbox_custody() {
+        report["inboxCustody"] = serde_json::json!({
+            "checkpointGeneration": codecs.checkpoint.generation(),
+            "sourceCount": custody.generation,
+            "sourceDigest": digest(custody.digest),
+        });
+    }
+    Ok(report)
 }
 
 async fn metadata_action(

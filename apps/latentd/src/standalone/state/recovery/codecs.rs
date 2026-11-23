@@ -161,6 +161,20 @@ impl Codecs {
     }
     pub fn row(&self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
         self.check()?;
+        match latent_state::inbox_scope::retained_scope(key, bytes) {
+            Ok(scope) => {
+                return if scope.tenant == self.namespace.tenant.0
+                    && scope.namespace == self.namespace.id.0
+                    && scope.incarnation == self.namespace.version.incarnation
+                {
+                    Ok(())
+                } else {
+                    Err(StoreError::Conflict)
+                };
+            }
+            Err(StoreError::UnsupportedFormat) => {}
+            Err(error) => return Err(error),
+        }
         match latent_commit::atomic::validate_row(key, bytes) {
             Err(StoreError::UnsupportedFormat) => {}
             result => return result,
