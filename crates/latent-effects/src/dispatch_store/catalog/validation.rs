@@ -487,7 +487,7 @@ fn load(view: &ReadView, effect: &str) -> Result<EffectRecord, StoreError> {
     EffectRecord::decode(&bytes).map_err(storage_error)
 }
 
-fn walk(
+pub(super) fn walk(
     view: &ReadView,
     family: Family,
     prefix: &[u8],
