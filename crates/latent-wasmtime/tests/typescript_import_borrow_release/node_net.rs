@@ -467,12 +467,90 @@ pub(super) async fn run() {
         );
     }
     assert_eq!(f.backend.resource_snapshot().stores_created, 8);
+    let paused = held_paused_payload(&f, &listener, &budget).await;
+    assert_eq!(f.backend.resource_snapshot().stores_created, 9);
+    println!("TYPESCRIPT_NODE_NET_PAUSED_PAYLOAD {paused}");
     drop(observer);
     f.streams.take().unwrap().shutdown().await;
     println!(
         "TYPESCRIPT_NODE_NET_COMPLETE {}",
         json!({"cases":8,"guestComponents":1,"gateComponent":false,"wholeAC7":false,"wholeCostQualification":false,"productionEnablement":false,"referenceProfile":reference})
     );
+}
+
+// The peer releases the control byte only after the first read window leaves
+// the native provider. The guest checks bytesRead while its primary socket
+// still has no data listener, then resumes and receives that exact payload.
+async fn held_paused_payload(
+    f: &Fixture,
+    listener: &TcpListener,
+    budget: &latent_core::ResourceBudget,
+) -> Value {
+    let mut request = f.request("node-net-paused-payload", 7);
+    request.target.contract = ContractId(CONTRACT.into());
+    request.input = serde_json::to_vec(&json!([7, listener.local_addr().unwrap().port()])).unwrap();
+    request.budget = budget.clone();
+    let mut invocation = Box::pin(f.manager.start(request).unwrap());
+    let (both_tx, both_rx) = oneshot::channel();
+    let (write_tx, write_rx) = oneshot::channel();
+    let (resume_tx, resume_rx) = oneshot::channel();
+    let peer = async {
+        let (mut primary, _) = listener.accept().await.unwrap();
+        let (mut control, _) = listener.accept().await.unwrap();
+        let mut byte = [0; 1];
+        assert_eq!(primary.read(&mut byte).await.unwrap(), 0, "expected FIN");
+        both_tx.send(()).unwrap();
+        write_rx.await.unwrap();
+        primary.write_all(b"Q").await.unwrap();
+        primary.shutdown().await.unwrap();
+        resume_rx.await.unwrap();
+        control.write_all(b"r").await.unwrap();
+        eof(&mut control).await;
+    };
+    let host = async {
+        marker(&mut invocation, both_rx, "paused-payload-real-fin").await;
+        read_admitted(f, &mut invocation, 2, 65536, "paused-payload-two-reads").await;
+        write_tx.send(()).unwrap();
+        let paused = pending_reads(
+            f,
+            &mut invocation,
+            2,
+            1,
+            32768,
+            "paused-payload-before-resume",
+        )
+        .await;
+        resume_tx.send(()).unwrap();
+        let receipt = invocation.await;
+        let ActivationOutcome::Succeeded(success) = receipt.outcome else {
+            panic!(
+                "paused data and EOF did not complete: {:?}",
+                receipt.outcome
+            );
+        };
+        assert_eq!(
+            serde_json::from_slice::<Vec<String>>(&success.output).unwrap(),
+            ["node-net:paused-payload:pass"]
+        );
+        let used = success.consumption;
+        assert_eq!(used.outbound_requests, 2);
+        assert!(used.cpu_fuel <= budget.cpu_fuel && used.peak_memory_bytes <= budget.memory_bytes);
+        assert_eq!(
+            (used.child_calls, used.log_bytes, used.effect_count),
+            (0, 0, 0)
+        );
+        idle(f, "paused-payload-idle").await;
+        json!({"case":"node-net-paused-payload","guestResult":"node-net:paused-payload:pass",
+            "beforeResume":paused,"outboundRequests":used.outbound_requests,"cpuFuel":used.cpu_fuel,
+            "peakMemoryBytes":used.peak_memory_bytes,"postRoot":sample(f,"paused-payload-post-root")})
+    };
+    let ((), result) = tokio::time::timeout(
+        Duration::from_millis(budget.wall_time_limit_millis.unwrap()),
+        async { tokio::join!(peer, host) },
+    )
+    .await
+    .expect("paused socket did not finish under the original root deadline");
+    result
 }
 
 // Read ONLY the node's original, closed public diagnostic projection. Do not
