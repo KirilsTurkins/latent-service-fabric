@@ -10,7 +10,7 @@ from tools.java_guest import c_failure_context
 from tools.java_guest.compiler import sdk_snapshot
 from tools.java_guest.compiler_profile import admit
 from tools.java_guest.date_guard import LIBC_SYMBOLS
-from tools.java_guest.enum_guard import MAX_INPUT, _bindings_identity
+from tools.java_guest.enum_guard import ACTIVATION_C_STACK_FLAGS, MAX_INPUT, _bindings_identity
 from tools.rust_capsule_project import read_file
 
 MAX_OWNED = 64 * 1024 * 1024
@@ -107,9 +107,11 @@ def run(compiler, generated: Path, selected: tuple[str, ...], destination: Path,
             need(read_file(owned / name, MAX_INPUT) == data, 'owned-drift')
 
     recheck()
+    # Keep the fixed downward-growing C stack below static data. An overflow
+    # must trap at the memory boundary, not overwrite allocator/bridge state.
     c_failure_context.run(compiler, generated, selected, '-target', 'wasm32-wasip1', '-nostdlib',
         '-mexec-model=reactor', owned / 'crt1-reactor.o', '-Wl,--entry=_initialize', owned / 'libsetjmp.a',
-        '-Wl,--no-entry', '-Wl,--export-memory', '-Wl,-z,stack-size=65536',
+        '-Wl,--no-entry', '-Wl,--export-memory', *ACTIVATION_C_STACK_FLAGS,
         '-Wl,--max-memory=67108864', *(owned / name for name in OBJECTS),
         owned / 'libc.a', owned / 'libclang_rt.builtins.a', '-o', core)
     recheck()

@@ -201,13 +201,22 @@ public final class ManagedFirstAdmissionOwnerControl {
         var pool = cached ? Executors.newCachedThreadPool(factory) : Executors.newFixedThreadPool(1, factory);
         selected.set(pool);
         if (cached) {
-            // A cached first task is now reserved. Exercise insertion through
-            // the supported idle-worker handoff instead.
+            // Project the existing maximum-worker queue branch. Real cached
+            // idle workers now take an owned handoff instead of the FIFO.
             pool.submit(() -> {}).get(5, TimeUnit.SECONDS);
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
             while (live.get().getState() != Thread.State.TIMED_WAITING) {
                 require(live.get().isAlive() && System.nanoTime() - deadline < 0, "cached-worker-not-idle");
                 Thread.yield();
+            }
+            synchronized (pool) {
+                var limit = pool.getClass().getDeclaredField("parallelism"); limit.setAccessible(true); limit.setInt(pool, 1);
+                var head = pool.getClass().getDeclaredField("idleWorkers"); head.setAccessible(true);
+                Object idle = head.get(pool); require(idle == worker(target.get()), "unexpected-idle-worker");
+                var next = idle.getClass().getDeclaredField("nextIdle"); next.setAccessible(true);
+                var registered = idle.getClass().getDeclaredField("idle"); registered.setAccessible(true);
+                require(next.get(idle) == null && registered.getBoolean(idle), "unexpected-idle-registry");
+                head.set(pool, null); registered.setBoolean(idle, false);
             }
         }
         var queue = pool.getClass().getDeclaredField("queue"); queue.setAccessible(true); queue.set(pool, new FaultDeque());

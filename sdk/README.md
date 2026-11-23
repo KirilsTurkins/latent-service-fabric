@@ -34,7 +34,9 @@ transport's network tests cover separate parts of the contract.
 
 Development also provides a distinct [transaction client surface](../docs/development/transaction-clients.md)
 in all six languages for installed command/query, original-result lookup, state
-inspection and preconditioned effect controls. It uses the existing bounded
+inspection, paged effect history and preconditioned effect controls. Browser
+applications use an authenticated result route with the original command key
+and optional effect ID. External RPC clients use the existing bounded
 transports and requires the explicitly installed transaction profile; it is
 outside the published alpha.5 SDK baseline. Preserve original command identities
 after uncertainty as described in [transaction recovery](../docs/operations/transaction-recovery.md).

@@ -1,0 +1,279 @@
+# TypeScript EventTarget native allocation pressure
+
+## Observed failure
+
+On PR #2161 head `644711813efc3bc34cfdd3dcdb54ae5c88132c05`, signed
+Fetch run `44583246210` fails `abort-fanout` after 17 preceding cases. Its
+retained component has SHA-256
+`cc340a315c269301324fd139cca5d2b263f8f85a4b1b0cfce9cedf6cbe6bb865`.
+The failure is not evidence that cleanup physically completed.
+
+An isolated replay of that exact SpiderMonkey core with diagnostic runtime
+imports reproduces the native-register refusal at the unchanged 64-owner
+ceiling during listener registration. Its rejected export subsequently reaches
+a closed formatted-output path, producing the visible `unreachable` trap.
+The diagnostic imports are not the signed node or original activation ledger.
+
+Reusing the same core's existing Promise pressure-collection prefix before
+listener registration makes ordinary nine-way fan-out return its expected value
+without increasing the diagnostic owner limit. This identifies avoidable dead
+ownership before registration; it is not fresh signed qualification of the
+source change below.
+
+## Rooted preflight, non-collecting admission
+
+`prepare_native_object_allocation` uses the existing Promise pressure checkpoint.
+It rejects a pending exception, unavailable activation, or stopped native
+retirement state. Collection still requires physical finalization, the original
+collection-end notification, and successful acknowledgement of each original
+owner. Reachable objects and failed acknowledgements never create capacity.
+
+`EventTarget::add_listener` calls this preflight only after conversions and the
+duplicate/aborted-signal checks. Its inputs remain Handles or RootedValues. The
+rooted target retains its non-moving native listener list; the lookup cursor
+has been discarded, and only a removed record's integer index survives collection.
+The new listener, its captures, and any abort terminator do not exist yet.
+Duplicate registrations still bypass preparation and admission.
+
+`admit_native_object` intentionally does **not** collect. Abort graph, Fetch,
+and listener publication paths may hold staged native captures or weak-set
+cursors that are not safe across a newly introduced collection. In particular,
+the second admission for an abort terminator cannot collect over a staged
+listener. Both admissions and every fallible allocation must succeed before
+publishing the new listener identity.
+
+## Refusal control
+
+The refusal probe fills the existing source signal with listeners for the
+separate `fanout-fill` event type instead of first allocating an unrelated
+EventTarget container. No fill callback can run during abort dispatch. The
+probe still requires at least one held listener, both the filler-registration
+and fan-out refusals, unchanged root/dependent state, removal of every held
+listener, the ordinary awaited Promise checkpoint, and successful explicit
+retry of the same nine-dependent graph. All reason, order, fresh-state,
+no-network, budget, deadline, and cleanup assertions remain in force.
+
+## Reproduction and evidence limits
+
+```sh
+python3 -m unittest \
+  tools.tests.test_typescript_native_object_pressure \
+  tools.tests.test_typescript_event_ownership \
+  tools.tests.test_typescript_abort_any_ownership \
+  tools.tests.test_typescript_fetch_runtime
+```
+
+The pressure tests compile the actual production collection, preparation,
+admission, and retirement bodies with finite GC/broker doubles. They cover
+reachable-owner refusal, acknowledgement failure, missing collection-end,
+pending exceptions, snapshot refusal, exact dead-owner reclamation, and the
+non-collecting admission boundary. Emitted listener tests cover preparation
+failure before publication, retained removed identity, and duplicate handling.
+Node controls additionally exercise the refusal probe with only one filler slot
+available. These controls do not establish SpiderMonkey compaction, signed-host
+custody, or whole-runtime byte accounting.
+
+The normal source-owned engine build and strict signed Fetch programme must
+qualify the combined source. No diagnostic binary is a production input and no
+historical or modeled pass substitutes for that gate.
+
+## Declaration boundary
+
+The signed Fetch attempt on PR #2156 head `3d88e6d`, run `44616090286`,
+job `135963175967`, stopped at strict typechecking before guest execution.
+Artifact `14585192162` (SHA-256
+`6e8c8838c845ae05e30ecb1fe628a24416f91ae6e3f501ce2bbbd710f59e0103`)
+retains TS2345 for adding and removing the non-abort `fanout-fill` listener.
+The runtime declarations had incorrectly restricted both methods to `abort`.
+
+The declarations now accept string event names, matching the selected native
+EventTarget methods inherited by AbortSignal. Callback and option types are
+unchanged; no browser globals, new runtime API, casts or typecheck suppressions
+are added. The source signal, positive held-listener requirement and every
+signed refusal/recovery assertion remain unchanged.
+
+The existing networking compiler-boundary job now also runs the strict
+declaration controls using its already installed, lock-checked frontend. The
+controls compile the actual fan-out helper source, reject the old abort-only
+declarations, and reject invalid event/callback arguments and undeclared browser globals. Missing tools,
+skipped controls and compiler errors fail this explicit gate. The full ordinary
+component build and signed programme remain separate mandatory steps.
+
+```sh
+LSF_TYPESCRIPT_FRONTEND=/path/to/installed-tools \
+  python3 -m tools.tests.test_typescript_abort_declarations
+```
+
+## Recovery checkpoint: avoid allocating empty algorithm storage
+
+The strict signed run `44701639483` on `ce9b3706` passed ordinary fan-out,
+then returned `diagnostic:abort-fanout:checkpoint:native-admission` in the
+refusal case. Artifact `14617568494` has SHA-256
+`4bafd057f3fd13efd1c87f94fe2a54e7ab8ae508a35ee1f03f95128f63fec9e2`;
+its component has SHA-256
+`d434749032a6e986e384f38bff38181c4dda33e9a78dc9d3d18efd0c0bbcec8e`.
+The hosted failure observation does not prove physical retirement.
+
+A separate replay of the unchanged main core with finite diagnostic imports
+reproduces that exact diagnostic at the unchanged 64-owner limit. It records
+the filler listener's original token being acknowledged (64 to 63), followed
+by a Promise allocation (63 to 64), then refusal of the await reaction.
+Thus the replay narrows the earlier suspected removal leak: the single freed
+slot is insufficient for the normal continuation while the graph remains live.
+These diagnostic imports are not the signed host or its original ledger.
+
+The production derivation now leaves `Slots::Algorithms` undefined until the
+first actual algorithm is attached. Creating a signal no longer allocates an
+empty native algorithm-list wrapper or its tracking record. Both weak sets and
+the EventTarget listener list retain their separate allocations and original
+owner reservations. No existing physical allocation becomes uncharged, and
+owners are not bundled or refunded early. An allocated algorithm list retains
+its charge even when its elements have drained, until actual finalization.
+
+First insertion uses the same non-collecting admission function to reserve a
+separate container owner, allocates its backing, and appends the separately
+owned algorithm before publishing the slot. Admission/allocation/append failure
+leaves the signal unchanged. The rooted context is passed by every native
+caller; staged callback captures never cross a newly introduced collection.
+An absent list is handled by the getter, abort drain, trace hook and finalizer;
+abort events still dispatch normally. Listener registration preserves the
+original pending native-admission failure rather than replacing it with OOM.
+
+The ten-signal fixture consequently avoids ten actual empty container and
+tracking allocations. This is a storage reduction, not a raised owner ceiling
+or a changed Promise checkpoint. The signed fixture, both refusals, positive
+filler count, nine dependents, original-root retry, event/reason ordering, fresh
+state, networking and cleanup checks remain unchanged.
+
+Run the additional compiler/lifetime controls with:
+
+```sh
+python3 -m unittest tools.tests.test_typescript_abort_lazy_algorithms
+```
+
+They compile the actual emitted create/getter/insertion/finalizer functions and
+the unchanged production container factory/retirement classes. Finite doubles
+cover independent first-use ownership, reuse, native refusal, allocation and
+append failure, original exceptions, partial initialization, delayed collection
+completion, backing deallocation and acknowledgement refusal. Reintroducing the
+eager allocation reproduces the recovery-capacity failure. The ordinary abort
+controls additionally exercise a fan-out with absent algorithm lists.
+
+These C++ controls and the diagnostic replay do not establish fresh signed
+execution, SpiderMonkey compaction, or byte-accurate whole-runtime accounting.
+The existing source-bound engine build and unchanged signed Fetch programme
+must still qualify this source; no diagnostic binary is a production input.
+
+## Private task completion and rooted abort retry
+
+
+Signed run `44701843668` at `afad3f21` passed compilation and ordinary fan-out,
+then returned `diagnostic:abort-fanout:checkpoint:native-admission`. Artifact
+`14618760997` retains that failed signed attempt. Its cleanup observation does
+not prove physical retirement.
+
+A replay of the retained engine with finite diagnostic broker imports narrows
+the failure beyond the returned diagnostic. The filler listener is actually
+removed and its original owner acknowledged at the next collection. The graph
+and generated task still retain 63 native owners. The recovery Promise takes
+the final slot, so its reaction cannot be admitted. Raising the ceiling or
+refunding still-live Promises would conceal this boundary.
+
+The selected source-splicer path now derives a lazy **private task completion
+capability**. Construction retains the original exit capability, task queues,
+metadata, and settlement handler. The completion Promise and its resolving
+functions are created on the first `completionPromise()` observation, or at
+`onResolve` entry before detaching any original handler. The same real Promise
+is retained thereafter. Settlement creates it even without observers, preserving
+thenable assimilation and unhandled-rejection reporting rather than buffering
+results or substituting a custom Promise implementation. The factory must
+succeed before publishing either field. The original completion handler drops
+its resolver captures only after they are no longer needed; their native owners
+still require actual physical retirement and acknowledgement.
+
+The derivation checks the exact rewritten AST shapes and use counts, rejects
+extra private uses, reserved-name collisions and repeated adaptation, and leaves
+unrelated task methods unchanged. The ordinary compiler path is not adapted.
+Both derivation files were already included in the captured compiler recipe.
+
+Deferring completion alone admits the awaited checkpoint but still reaches the
+limit on the resumed job's explicit abort retry. `AbortSignal::abort` therefore
+uses the existing pressure preflight after its pending-exception and
+already-aborted checks, **before** the default exception factory, weak-set
+cursors or fan-out staging. Its signal and reason are rooted handles. This
+collects only dead earlier-job owners; the live nine-dependent graph remains
+charged. Low-level admission remains non-collecting, and failed preparation
+cannot publish reasons, allocate the fan-out vector, or dispatch callbacks.
+
+The diagnostic rebuilds the real generated bindings with the retained engine.
+Its abort preflight is a private insertion of that engine's existing compiled
+collection/checkpoint code, not a fresh C++ engine build. The diagnostic fails
+with only the completion change, and returns the original success value with
+both changes at the same 64-owner ceiling.
+The latter still observes both required refusals before recovery. Replays of the
+other non-network event, abort and combinator cases also retain their original
+results. These are diagnostic broker observations, not signed-node or original
+activation-ledger qualification. The guest probe, same-root retry, positive
+filler, budgets, deadlines and strict signed-result assertions are unchanged.
+
+
+## Combined development integration
+
+The merge of development `8f87f81f` into the event-wait branch retains both
+reductions: empty algorithm containers remain absent, and unobserved private
+task completion capabilities remain lazy. The rooted abort pressure preflight
+is retained; low-level admission is still non-collecting. No allocation is
+unaccounted or refunded early, and the 64-owner ceiling is unchanged.
+
+The emitted fan-out regression includes absent algorithm storage with a
+refused preflight: no default reason, vector reservation, callback or graph
+publication may occur. All prior empty-storage, factory-failure, first-use
+container ownership and task-completion controls remain required.
+
+Before this merge, event-wait head `4923f54a` passed signed Fetch run
+`44894162810`, including all 24 expected results, refusal/recovery, default
+reentry and fresh state. The retained artifact `14705778588` has SHA-256
+`c4b6fb3e21d2d9fc5095cefd91a05025ccb05399539af23b0cffeeb9b21647b5`.
+That is predecessor evidence, not signed execution of the combined source.
+Fresh combined-head engine construction and signed retirement checks remain
+required; full-ticket and whole-runtime accounting claims are unchanged.
+
+## Admission before terminal task state
+
+A follow-up failure control calls the real generated task's `resolve`, rather
+than only `onResolve`, with the completion capability factory refusing. The
+old lazy derivation leaves the task marked `RESOLVED` before allocating its
+completion capability. Its handlers remain attached, but a retry cannot reach
+them because `resolve` now rejects the already-resolved task. The rejection
+path similarly publishes its rejection/cancellation flags before the factory
+can refuse; a repeated `reject` becomes a no-op.
+
+The selected derivation prepares completion after each entry's original
+validation/no-op guards and before terminal publication: before `resolve`
+changes state, before `reject` visits children or changes rejection flags, and
+before `cancel` sets its cancelled flag. The `onResolve` preflight remains for
+direct callers. The stable capability makes these checks allocation-free once
+completion exists. A refused factory changes neither terminal state nor
+handlers and performs no child rejection. It does not refund a live owner or
+replay accepted application work.
+
+Closed AST prefix checks bind the original guards and transition points.
+Controls exercise repeated refusal followed by successful settlement of the
+same task, all three terminal paths, original error identity, validation before
+allocation, already-terminal no-ops, and exact preservation of each transition
+body apart from its one preflight. The direct cancellation control reaches the
+real delivered-cancel state by temporarily selecting the initial state in the
+public enum; it is not signed cancellation qualification. The tests execute the
+actual generated class with real intrinsic Promises and a finite factory
+failure control, not the signed node or resource ledger.
+
+
+## Native custody branch integration
+
+The integration with development `5569a03d` retains the landed #2156 lazy
+algorithm-storage repair and #2163 combined empty-storage/preflight controls.
+The private task completion admission checks above are retained from #2161.
+These optimizations avoid different physical allocations; neither grants
+additional capacity or retires a live owner. The signed probe and 64-owner
+ceiling are unchanged. The complete source-owned engine and signed Fetch
+programme must qualify this combined tree; predecessor results are historical.

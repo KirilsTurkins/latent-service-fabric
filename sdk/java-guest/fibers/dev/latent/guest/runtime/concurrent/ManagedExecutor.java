@@ -27,7 +27,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     // Status observations must remain available while an application holds
     // the executor monitor or a worker interrupt hook runs under it.
     private volatile boolean shutdown;
-    private boolean interrupting;
+    private volatile boolean interrupting;
     private volatile boolean retiring;
     private int running;
     private volatile int pendingWork;
@@ -37,9 +37,11 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
     private volatile int enteringWorkers;
     // Worker-creating first tasks stay out of the public FIFO until startup resolves.
     private Item reservedFirsts;
+    // Only workers actually entering a cached idle wait are eligible for a handoff.
+    private Worker idleWorkers;
     private static final int RESERVED = 0, TRANSFERRING = 1, CLAIMING = 2,
         CLAIMED = 3, WITHDRAWING = 4, WITHDRAWN = 5, QUARANTINED = 6,
-        SETTLING = 7, QUEUED = 8;
+        SETTLING = 7, QUEUED = 8, HANDOFF = 9;
     // Never reuse a preference: an accepted but unstarted worker can outlive
     // withdrawal of its entry. Zero means there is no preference.
     private long nextPreference;
@@ -268,6 +270,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         FutureTask<?> future = command instanceof FutureTask<?> ? (FutureTask<?>)command : null;
         boolean acceptedResult = false, acceptedAction = false, linked = false, counted = false;
         Item item = null;
+        Worker handoff = null;
         try {
             synchronized (this) {
                 if (shutdown || retiring || Activation.closing() && !Activation.acceptedContinuation())
@@ -288,11 +291,19 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                 // original pre-admission check.
                 if (shutdown || retiring)
                     throw new java.util.concurrent.RejectedExecutionException("activation-executor-closed");
-                // Cached pools reuse an idle worker, but reserve a new one
-                // when accepted work exceeds existing and starting workers.
-                // The sum is bounded by parallelism under this monitor.
-                if (workers.size() >= parallelism - startingWorkers
-                        || cached && pendingWork <= workers.size() + startingWorkers) {
+                // A cached handoff is committed only to a worker already in
+                // its idle wait. Keep the same Item and Queue owner until it
+                // physically claims them, including after shutdownNow.
+                if (cached && queue.isEmpty()) {
+                    handoff = takeIdleWorker();
+                    if (handoff != null) {
+                        item.transferState = HANDOFF;
+                        handoff.firstLease = item.queued;
+                        notifyAll();
+                        return;
+                    }
+                }
+                if (workers.size() >= parallelism - startingWorkers) {
                     transferReserved(item);
                     notifyAll();
                     return;
@@ -304,6 +315,7 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         } catch (Throwable error) {
             synchronized (this) {
                 try {
+                    if (handoff != null && handoff.firstLease == item.queued) handoff.firstLease = null;
                     if (linked && reserved(item.queued) == item) {
                         if (item.transferState != QUARANTINED && !item.uncertainStart) rollbackReserved(item);
                     } else if (!linked) {
@@ -416,6 +428,8 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         private volatile Thread thread;
         private volatile long first;
         private volatile Activation.Lease firstLease;
+        private Worker nextIdle;
+        private boolean idle;
         Worker(ManagedExecutor pool, long first) { this.pool = pool; this.first = first; }
         Worker(ManagedExecutor pool, Activation.Lease firstLease) { this.pool = pool; this.firstLease = firstLease; }
         void prepare(Thread thread) { this.thread = thread; }
@@ -426,7 +440,44 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                     || !Activation.runningManaged(expected, current)) return;
             try { current.work(this); } finally { clear(); }
         }
-        void clear() { pool = null; thread = null; first = 0; firstLease = null; }
+        void clear() { pool = null; thread = null; first = 0; firstLease = null; nextIdle = null; idle = false; }
+    }
+
+    // Callers hold the pool monitor. These links never retain an Item or an
+    // application command; every live worker already has its original owner.
+    private void registerIdle(Worker worker) {
+        if (worker.idle || worker.firstLease != null) {
+            Activation.fenceUncertainCompletion();
+            throw new IllegalStateException("activation-executor-idle-worker-state");
+        }
+        worker.nextIdle = idleWorkers; worker.idle = true; idleWorkers = worker;
+    }
+
+    private Worker takeIdleWorker() {
+        Worker worker = idleWorkers;
+        if (worker == null) return null;
+        if (!worker.idle || worker.firstLease != null || worker.pool != this || worker.thread == null) {
+            Activation.fenceUncertainCompletion();
+            throw new IllegalStateException("activation-executor-idle-worker-state");
+        }
+        idleWorkers = worker.nextIdle; worker.nextIdle = null; worker.idle = false;
+        return worker;
+    }
+
+    private void unregisterIdle(Worker selected) {
+        if (!selected.idle) return;
+        Worker previous = null;
+        for (Worker worker = idleWorkers; worker != null; worker = worker.nextIdle) {
+            if (worker == selected) {
+                if (previous == null) idleWorkers = worker.nextIdle;
+                else previous.nextIdle = worker.nextIdle;
+                worker.nextIdle = null; worker.idle = false;
+                return;
+            }
+            previous = worker;
+        }
+        Activation.fenceUncertainCompletion();
+        throw new IllegalStateException("activation-executor-idle-worker-lost");
     }
 
     private void startWorker() {
@@ -555,6 +606,30 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                 synchronized (this) {
                     Activation.Lease firstLease = worker.firstLease; worker.firstLease = null;
                     item = firstLease == null ? null : reserved(firstLease);
+                    if (firstLease != null && item == null) {
+                        Activation.fenceUncertainCompletion();
+                        throw new IllegalStateException("activation-executor-handoff-lost");
+                    }
+                    if (item == null) {
+                        long idleStart = System.nanoTime();
+                        while (queue.isEmpty() && worker.firstLease == null && !shutdown && !retiring) {
+                            long remaining = expireIdle ? 60_000_000_000L - (System.nanoTime() - idleStart) : 0;
+                            if (expireIdle && remaining <= 0) return;
+                            if (cached) registerIdle(worker);
+                            try {
+                                if (expireIdle) wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
+                                else wait();
+                            } catch (InterruptedException wake) {
+                                if (interrupting && worker.firstLease == null) return;
+                            } finally { if (cached) unregisterIdle(worker); }
+                        }
+                        firstLease = worker.firstLease; worker.firstLease = null;
+                        item = firstLease == null ? null : reserved(firstLease);
+                        if (firstLease != null && item == null) {
+                            Activation.fenceUncertainCompletion();
+                            throw new IllegalStateException("activation-executor-handoff-lost");
+                        }
+                    }
                     if (item != null) {
                         if (retiring) {
                             item.transferState = QUARANTINED;
@@ -567,16 +642,6 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                         catch (Throwable uncertain) { item.transferState = QUARANTINED; throw uncertain; }
                         unlinkReserved(item);
                     } else {
-                        long idleStart = System.nanoTime();
-                        while (queue.isEmpty() && !shutdown && !retiring) {
-                            try {
-                                if (expireIdle) {
-                                    long remaining = 60_000_000_000L - (System.nanoTime() - idleStart);
-                                    if (remaining <= 0) return;
-                                    wait(remaining / 1_000_000, (int)(remaining % 1_000_000));
-                                } else wait();
-                            } catch (InterruptedException wake) { if (interrupting) return; }
-                        }
                         if (queue.isEmpty()) return;
                         long first = worker.first; worker.first = 0;
                         item = removePreferred(first);
@@ -592,7 +657,24 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
                         if (transferring) { item.transferState = CLAIMED; unlinkReserved(item); }
                     }
                 }
-                if (!interrupting) Thread.interrupted();
+                try {
+                    // Startup hooks, idle waits, or host settlement may consume
+                    // the stop wakeup. Recheck after clearing a non-stop flag so
+                    // a concurrent shutdownNow cannot lose its interruption.
+                    if ((interrupting || (Thread.interrupted() && interrupting)) && !current.isInterrupted())
+                        current.interrupt();
+                } catch (Throwable error) {
+                    // Application Thread hooks can throw before the callback.
+                    // Queue settlement already succeeded: keep this exact Item
+                    // and its Result/action custody, without retrying that lease
+                    // or pretending the accepted callback physically completed.
+                    synchronized (this) {
+                        item.transferState = QUARANTINED;
+                        item.nextReserved = reservedFirsts; reservedFirsts = item;
+                        Activation.fenceUncertainCompletion();
+                    }
+                    throw error;
+                }
                 try { item.command.run(); }
                 finally {
                     try {
@@ -607,6 +689,14 @@ final class ManagedExecutor extends AbstractExecutorService implements Activatio
         } finally {
             boolean replacement = false;
             synchronized (this) {
+                try { unregisterIdle(worker); }
+                catch (Throwable uncertain) { Activation.fenceUncertainCompletion(); }
+                Activation.Lease stranded = worker.firstLease; worker.firstLease = null;
+                if (stranded != null) {
+                    Item pending = reserved(stranded);
+                    if (pending != null) pending.transferState = QUARANTINED;
+                    Activation.fenceUncertainCompletion();
+                }
                 removeWorker(current);
                 if (!queue.isEmpty() && !interrupting) {
                     if (!retiring && workers.size() < parallelism - startingWorkers

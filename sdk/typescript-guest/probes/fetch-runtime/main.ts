@@ -391,7 +391,10 @@ function ordinaryAbortFanout(): string {
 
 function refusedAbortFanout() {
   const graph = abortFanoutGraph();
-  const filler = new EventTarget();
+  // Fill with real listener owners on the existing source, not an unrelated
+  // extra target container. The non-abort event type cannot fire in this case.
+  // At least one held listener and both native refusals are still mandatory.
+  const filler = graph.source.signal;
   const held: Array<() => void> = [];
   const expected = 'activation-runtime-promise-native-register-denied:2';
   let fillDenied = false, abortDenied = false;

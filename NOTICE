@@ -24,6 +24,15 @@ LLVM SjLj compiler source backport
   modified identities and upstream commits; no compiler qualification is
   implied by retaining these sources.
 
+TeaVM exception macro fixture
+  tools/tests/fixtures/teavm_0_15_exceptions.h is the unchanged
+  org/teavm/backend/c/exceptions.h resource from teavm-core 0.15.0.
+  Attribution: TeaVM contributors. Terms: Apache-2.0; see LICENSE.
+  Its exact SHA-256 is bound by the Java exception-frame tests. The separate
+  LSF storage transformation is documented in
+  docs/testing/java-exception-frame-storage.md. The retained fixture does
+  not imply signed guest or compiler-model qualification.
+
 Rust standard library
   Original source preimages in sdk/rust-standard-runtime/upstream/std are from
   rust-lang/rust commit 8bab26f4f68e0e26f0bb7960be334d5b520ea452.
@@ -43,7 +52,7 @@ rustls parser source
   original and modified file identities, and LSF's changes.
 
 Wasmtime runtime source
-  crates/vendor/wasmtime contains the crates.io Wasmtime 48.0.8 source package
+  crates/vendor/wasmtime contains the crates.io Wasmtime 48.0.9 source package
   and separately identified LSF value/native-memory admission changes.
   Attribution: The Wasmtime Project Developers.
   Terms: Apache-2.0 WITH LLVM-exception. The unmodified LICENSE and original

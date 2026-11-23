@@ -180,8 +180,10 @@ Copying catalogs does not grant authority or establish protected continuity.
 
 Inspect and restore the same exact snapshot, immutable destination identity and
 reviewed window, then require the actual receipt's `destinationIdentity` when
-configuring the restored node. Historical state/effect outcomes remain historical;
-restoration changes incarnation and leaves recovery paused for explicit review.
+configuring the restored node. Verify the original business incarnation, an
+advanced recovery epoch and a paused dispatcher. Original commands and effects
+retain their identities. A token from the earlier view must be refused.
+[Namespace history checks](../architecture/namespace-history-epochs.md)
 Schema migration selects only the installed closed recipe and verified signed
 application source. A compatible reader cannot relabel the original schema or
 approve migration.

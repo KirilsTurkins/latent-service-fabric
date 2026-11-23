@@ -30,6 +30,12 @@ def emitted_listener_body(source):
 
 
 class TypeScriptEventOwnershipTests(unittest.TestCase):
+    def test_graph_pressure_controls_fail_instead_of_skipping_without_a_compiler(self):
+        from unittest.mock import patch
+        with patch.dict(os.environ, {}, clear=True), patch.object(shutil, 'which', return_value=None):
+            with self.assertRaisesRegex(RuntimeError, r'C\+\+ compiler is required'):
+                NativeGraphPressureControls.setUpClass()
+
     def test_original_declaration_or_native_source_drift_is_rejected(self):
         value = originals()
         for name in value:
@@ -37,14 +43,43 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'unreviewed-original-Event-source'):
                 events.derive_event_ownership(changed, b'not-used')
 
-    def test_each_abort_container_is_admitted_before_publication(self):
+    def test_graph_pressure_collection_precedes_objects_but_not_staged_native_admission(self):
+        derived, receipt = derive()
+        for path, signature, allocation in (
+                (abort_engine.PATH, b'JSObject *AbortSignal::create(', b'JS_NewObjectWithGivenProto'),
+                ('StarlingMonkey/builtins/web/event/event-target.cpp',
+                 b'JSObject *EventTarget::create(', b'JS_NewObjectWithGivenProto'),
+                ('StarlingMonkey/builtins/web/event/event-target.cpp',
+                 b'bool EventTarget::constructor(', b'JS_NewObjectForConstructor')):
+            source = derived[path]
+            start = source.index(signature)
+            body = source[start:source.index(b'\n}', start)]
+            self.assertLess(body.index(b'prepare_native_object_allocation(cx)'), body.index(allocation))
+        source = derived['StarlingMonkey/builtins/web/event/event-target.cpp']
+        for signature in (b'bool EventTarget::init(', b'bool EventTarget::invoke_listeners('):
+            start = source.index(signature)
+            body = source[start:source.index(b'\n}', start)]
+            self.assertNotIn(b'prepare_native_object_allocation', body)
+        root = Path(__file__).resolve().parents[2]
+        native = (root/'sdk/typescript-guest/activation/native_engine.cpp').read_bytes()
+        start = native.index(b'bool admit_native_object(')
+        body = native[start:native.index(b'\n}', start)]
+        self.assertIn(b'acknowledge_promise_retirement(cx)', body)
+        self.assertNotIn(b'collect_before_native_allocation', body)
+        self.assertFalse(receipt['nativeGraphAdmissionCollects'])
+        self.assertEqual(receipt['nativeGraphPressureCollection'],
+                         'rooted-construction-and-listener-boundaries-before-staging')
+
+    def test_abort_weak_containers_are_admitted_before_publication_and_algorithms_stay_absent(self):
         derived, _ = derive()
         source = derived[abort_engine.PATH]
         start = source.index(b'JSObject *AbortSignal::create(')
         end = source.index(b'// https://dom.spec.whatwg.org/#dom-abortsignal-abort', start)
         body = source[start:end]
-        self.assertEqual(body.count(b'make_native_container<'), 3)
-        self.assertLess(body.index(b'if (!dependents) return nullptr;'), body.index(b'algorithms.release()'))
+        self.assertEqual(body.count(b'make_native_container<'), 2)
+        self.assertLess(body.index(b'if (!dependents) return nullptr;'), body.index(b'sources.release()'))
+        self.assertNotIn(b'make_native_container<AlgorithmList>', body)
+        self.assertIn(b'Slots::Algorithms), JS::UndefinedValue()', body)
         self.assertNotIn(b'new AlgorithmList', source)
         self.assertNotIn(b'new WeakIndexSet', source)
 
@@ -76,10 +111,10 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         self.assertLess(source.rindex(b'admit_native_object(cx, listener_owner)', 0, listener), listener)
         terminator = source.index(b'js::MakeUnique<Terminator>(')
         self.assertLess(source.rindex(b'admit_native_object(cx, accepted)', 0, terminator), terminator)
-        self.assertIn(b'if (!AbortSignal::add_algorithm(signal, std::move(terminator))) {', source)
+        self.assertIn(b'if (!AbortSignal::add_algorithm(cx, signal, std::move(terminator))) {', source)
         self.assertLess(source.index(b'if (!list->reserve(list->length() + (replacing_removed ? 0 : 1)))'), terminator)
         self.assertLess(terminator, source.index(b'list->infallibleAppend(staged);', terminator))
-        self.assertLess(source.index(b'if (!AbortSignal::add_algorithm(signal, std::move(terminator)))'),
+        self.assertLess(source.index(b'if (!AbortSignal::add_algorithm(cx, signal, std::move(terminator)))'),
                         source.index(b'staged->callback = callback_val;'))
 
     def test_all_original_abort_subclasses_transfer_ownership_and_keep_callback_bodies(self):
@@ -115,7 +150,7 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         self.assertIn(b'js::MakeUnique<Terminator>(std::move(abort_owner), weak)', source)
         allocation = source.index(b'auto algorithm = js::MakeUnique<Terminator>')
         failure = source.index(b'if (!algorithm) { JS_ReportOutOfMemory(cx); return false; }', allocation)
-        publication = source.index(b'if (!AbortSignal::add_algorithm(signal, std::move(algorithm))) return false;', allocation)
+        publication = source.index(b'if (!AbortSignal::add_algorithm(cx, signal, std::move(algorithm))) return false;', allocation)
         self.assertLess(allocation, failure)
         self.assertLess(failure, publication)
         # Original accepted response work remains owned by its engine queue.
@@ -138,7 +173,7 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
                       b'      !lsf::typescript::activation::admit_native_object(cx, abort_owner)) return false;', source)
         self.assertIn(b'std::move(abort_owner), response_promise, response_obj, signal', source)
         self.assertIn(b'if (!algorithm) { JS_ReportOutOfMemory(cx); return false; }', source)
-        self.assertIn(b'if (!AbortSignal::add_algorithm(signal, std::move(algorithm))) return false;', source)
+        self.assertIn(b'if (!AbortSignal::add_algorithm(cx, signal, std::move(algorithm))) return false;', source)
 
     def test_original_listener_order_callback_once_and_abort_reason_bodies_are_unchanged(self):
         before = originals()
@@ -222,7 +257,10 @@ class TypeScriptEventOwnershipTests(unittest.TestCase):
         ending = b'JSObject *AbortSignal::create('
         before_event = selected_abort[selected_abort.index(begin):selected_abort.index(ending)]
         changed_abort = derived[abort_engine.PATH][derived[abort_engine.PATH].index(begin):derived[abort_engine.PATH].index(ending)]
-        self.assertEqual(changed_abort, before_event)
+        # Empty algorithm storage is the only change to the selected drain.
+        nullable = b'algorithms && next < algorithms->length()'
+        self.assertEqual(changed_abort.count(nullable), 1)
+        self.assertEqual(changed_abort.replace(nullable, b'next < algorithms->length()', 1), before_event)
 
     def test_owned_graph_changes_remain_unqualified_and_snapshot_mutation_is_denied(self):
         _, receipt = derive()
@@ -341,6 +379,8 @@ class AbortFailureControls(unittest.TestCase):
         for case in ('success', 'dispatch-failure', 'event-failure', 'reason-failure',
                      'algorithm-failure', 'dependent-continuation', 'default-reason',
                      'explicit-reason', 'already-aborted', 'fanout-inline', 'fanout-heap',
+                     'fanout-empty-algorithms', 'fanout-empty-algorithms-pressure-refusal',
+                     'fanout-pressure-refusal', 'fanout-entry-exception', 'fanout-aborted-no-preflight',
                      'fanout-all-aborted', 'fanout-refusal', 'fanout-reserve-failure',
                      'fanout-recovery', 'fanout-nested', 'fanout-nested-refusal',
                      'fanout-ack-refusal', 'fanout-repeated', 'fanout-first-error',
@@ -596,6 +636,7 @@ class EventPublicationControls(unittest.TestCase):
 
     def test_registration_and_reactivation_failure_boundaries(self):
         for case in (
+            'lazy-algorithm-refusal-preserves-error',
             'native-refusal-before-listener-publication',
             'algorithm-refusal-before-listener-publication',
             'vector-refusal-before-algorithm-publication',
@@ -867,6 +908,86 @@ class AbortWeakCollectionControls(unittest.TestCase):
         self.assertLess(source.index(b'dependents->value.init(cx);'), source.index(b'dependents.release()'))
         self.assertEqual(receipt['abortWeakEdges'], 'runtime-WeakCache-sweep-not-object-marking-hook')
         self.assertFalse(receipt['signedLSFComponentQualified'])
+
+
+class NativeGraphPressureControls(unittest.TestCase):
+    """Emitted construction and production leases with a finite collector double."""
+    @classmethod
+    def setUpClass(cls):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('cl')
+        if not compiler:
+            raise RuntimeError('C++ compiler is required for graph pressure controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        output = Path(cls.temporary.name)
+        root = Path(__file__).resolve().parents[2]
+        native = (root/'sdk/typescript-guest/activation/native_engine.cpp').read_bytes()
+        records = (root/'sdk/typescript-guest/activation/promise_records.h').read_bytes()
+        containers = (root/'sdk/typescript-guest/activation/native_objects.h').read_bytes()
+        selected, _ = derive()
+        abort = selected[abort_engine.PATH]
+        event = selected['StarlingMonkey/builtins/web/event/event-target.cpp']
+
+        def function(source, signature):
+            start = source.index(signature)
+            return source[start:source.index(b'\n}', start) + 2]
+
+        constructors = b'\n'.join((function(event, b'JSObject *EventTarget::create('),
+            function(event, b'bool EventTarget::init('), function(abort, b'JSObject *AbortSignal::create(')))
+        finalizers = b'\n'.join((function(event, b'void EventTarget::finalize('),
+                               function(abort, b'void AbortSignal::finalize(')))
+        template = (root/'tools/tests/fixtures/typescript_graph_pressure.cpp').read_bytes()
+        replacements = {
+            b'// INSERT_PRESSURE_HELPER': function(records, b'template<class Checkpoint>'),
+            b'// INSERT_COLLECTION_BOUNDARY': function(native, b'bool collect_before_native_allocation('),
+            b'// INSERT_PREPARE_BOUNDARY': function(native, b'bool prepare_native_object_allocation('),
+            b'// INSERT_ADMISSION': function(native, b'bool admit_native_object('),
+            b'// INSERT_CONTAINER_FACTORY': function(containers, b'template<class T> using NativeContainer'),
+            b'// INSERT_FINALIZERS': finalizers,
+        }
+        for marker, body in replacements.items():
+            if template.count(marker) != 1:
+                raise AssertionError('unique native pressure insertion point required')
+            template = template.replace(marker, body, 1)
+        call = b'  if (!lsf::typescript::activation::prepare_native_object_allocation(cx)) return nullptr;\n'
+        if constructors.count(call) != 2:
+            raise AssertionError('two rooted constructor boundaries required')
+        for label, bodies in (('selected', constructors), ('previous', constructors.replace(call, b''))):
+            source_file = output/(label+'.cpp')
+            source_file.write_bytes(template.replace(b'// INSERT_CONSTRUCTORS', bodies, 1))
+            binary = output/(label+'.exe' if os.name == 'nt' else label)
+            include = str(root/'sdk/typescript-guest/activation')
+            if Path(compiler).stem.lower() == 'cl':
+                args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', '/wd4100', '/I'+include,
+                        str(source_file), '/Fe:'+str(binary), '/Fo:'+str(output/(label+'.obj'))]
+            else:
+                args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter', '-I'+include,
+                        str(source_file), '-o', str(binary)]
+            result = subprocess.run(args, capture_output=True, timeout=60)
+            if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+                raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
+            setattr(cls, label+'_binary', binary)
+
+    def check_case(self, binary, case, passed=True):
+        result = subprocess.run([str(binary), case], capture_output=True, timeout=10)
+        self.assertEqual(result.returncode, 0 if passed else 1, (result.stdout + result.stderr)[:65536])
+        self.assertEqual(json.loads(result.stdout),
+                         {'case': case, 'passed': passed, 'engineQualified': False})
+
+    def test_emitted_constructors_collect_dead_graphs_without_releasing_live_owners(self):
+        for case in ('synchronous-turnover', 'fanout-after-dead-graphs', 'event-construction-collects',
+                     'all-reachable-remains-exhausted', 'admission-does-not-collect', 'entry-pending',
+                     'snapshot', 'acknowledgement-failure', 'no-release-before-collection-end'):
+            with self.subTest(case=case):
+                self.check_case(self.selected_binary, case)
+
+    def test_previous_constructors_cannot_reclaim_dead_graph_capacity(self):
+        for case in ('synchronous-turnover', 'fanout-after-dead-graphs', 'event-construction-collects'):
+            with self.subTest(case=case):
+                self.check_case(self.previous_binary, case, False)
+        for case in ('all-reachable-remains-exhausted', 'admission-does-not-collect'):
+            with self.subTest(case=case):
+                self.check_case(self.previous_binary, case)
 
 
 if __name__ == "__main__":

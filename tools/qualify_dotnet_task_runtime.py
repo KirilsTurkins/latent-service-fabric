@@ -9,11 +9,12 @@ import sys
 if __package__ in {None, ''}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from tools import dotnet_task_runtime_context as event_context
 from tools.build_observation import build_environment
 from tools.dotnet_guest.build import build
 from tools.dotnet_guest.compiler import runtime_inputs
 from tools.dotnet_guest.task_wait import PROFILE, validate_current_receipt
-from tools.dotnet_task_runtime_fixture import QUALIFICATION_CASES, RESET_NOTIFICATION_MODE, expected, prepare, selected_fixture
+from tools.dotnet_task_runtime_fixture import EVENT_WAIT_MODE, QUALIFICATION_CASES, RESET_NOTIFICATION_MODE, expected, prepare, selected_fixture
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.qualify_dotnet_standard_console import inherited
@@ -21,7 +22,8 @@ from tools.run_rust_capsule_workflow import run
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, TEMPLATES, digest, fresh, inventory, read_json, snapshot, write_json
 
-HELPERS = ('tools/dotnet_task_runtime_fixture.py', 'tools/dotnet_task_runtime_probe.py',
+HELPERS = ('tools/dotnet_task_runtime_fixture.py', 'tools/dotnet_task_runtime_context.py',
+    'tools/dotnet_task_runtime_probe.py',
     'tools/qualify_dotnet_task_runtime.py', 'tools/run_rust_capsule_workflow.py',
     'tools/dotnet_guest/task_wait.py', 'tools/dotnet_guest/async_exports.py',
     'tools/dotnet_guest/compiler.py', 'tools/dotnet_guest/entropy_grants.py')
@@ -37,6 +39,26 @@ def require_current_task_wait_receipt(port):
         require_finite_observation=True)
 
 
+def require_current_task_wait_binding(port):
+    """Bind this managed programme to the current receipt before signing.
+
+    The shared validator owns version and helper identities. Requiring the
+    aggregate section here also prevents a valid finite-only receipt from
+    qualifying the ordinary managed-task programme.
+    """
+    require_current_task_wait_receipt(port)
+    selection = port.get('selection')
+    native = port.get('nativeAotReferenceBinding')
+    require(port.get('profile') == PROFILE and 'aggregateTaskWait' in port
+            and type(selection) is dict
+            and selection.get('requiredDeclarations') == sorted((
+                'latent:clock/monotonic@0.1.0', 'latent:runtime/activation@0.1.0',
+                'latent:clock/wall@0.1.0', 'latent:random/random@0.1.0'))
+            and type(native) is dict and type(native.get('responseFiles')) is list
+            and len(native['responseFiles']) == 1,
+            'dotnet-tasks-final-corelib-binding')
+
+
 def require_reset_notification_receipt(captured, observed):
     cases = observed.get('dotnetTaskRuntime', {}).get('cases')
     library, selected = selected_fixture(reset_notification=True)
@@ -46,16 +68,17 @@ def require_reset_notification_receipt(captured, observed):
             and all(type(row) is dict for row in cases)
             and [row.get('mode') for row in cases] == list(QUALIFICATION_CASES),
             'dotnet-tasks-exact-case-inventory')
-    witness = cases[-1]
-    invocation = witness.get('invocation')
-    retirement = witness.get('retirement')
-    require(type(invocation) is dict and invocation.get('processReaped') is True
-            and invocation.get('exitCode') == 0
-            and invocation.get('decoded') == [{'ok': expected(RESET_NOTIFICATION_MODE)}]
-            and invocation.get('response', {}).get('outcomeKnown') is True
-            and type(retirement) is dict
-            and retirement.get('phase') == 'dotnet-ordinary-tasks-' + RESET_NOTIFICATION_MODE + '-retired',
-            'dotnet-tasks-reset-notification-receipt')
+    for mode in (EVENT_WAIT_MODE, *event_context.CASES, RESET_NOTIFICATION_MODE):
+        witness = cases[QUALIFICATION_CASES.index(mode)]
+        invocation = witness.get('invocation')
+        retirement = witness.get('retirement')
+        require(type(invocation) is dict and invocation.get('processReaped') is True
+                and invocation.get('exitCode') == 0
+                and invocation.get('decoded') == [{'ok': expected(mode)}]
+                and invocation.get('response', {}).get('outcomeKnown') is True
+                and type(retirement) is dict
+                and retirement.get('phase') == 'dotnet-ordinary-tasks-' + mode + '-retired',
+                'dotnet-tasks-runtime-witness-receipt')
 
 
 def qualify(output: Path, tools: Path, native_qualification: Path):
@@ -94,14 +117,7 @@ def qualify(output: Path, tools: Path, native_qualification: Path):
         require((greeting / 'source-inputs.json').read_bytes() == before, 'dotnet-tasks-source-capture-changed')
         record['build'] = read_json(greeting / 'BUILD-COMPLETE.json')
         port = read_json(greeting / 'task-wait-port.json')
-        require_current_task_wait_receipt(port)
-        require(port['profile'] == PROFILE and port['completion'] == 'actual-task-only'
-                and port['selection']['requiredDeclarations'] == sorted((
-                    'latent:clock/monotonic@0.1.0', 'latent:runtime/activation@0.1.0',
-                    'latent:clock/wall@0.1.0', 'latent:random/random@0.1.0'))
-                and port['finiteAndCancellableWaits']=='original-Task-WhenAny-Delay'
-                and len(port['nativeAotReferenceBinding']['responseFiles']) == 1,
-                'dotnet-tasks-final-corelib-binding')
+        require_current_task_wait_binding(port)
         record['taskWaitPort'] = port
         stage = 'sign'
         builds = [greeting if template == 'greeting' else companions[template] for template in TEMPLATES]

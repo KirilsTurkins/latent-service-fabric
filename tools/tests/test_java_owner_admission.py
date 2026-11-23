@@ -24,6 +24,8 @@ NULL_FACTORY_CASES = (
 )
 CACHED_FACTORY_CASES = ('graceful', 'immediate', 'denied', 'null', 'throw', 'registration-denied',
                         'registration-unknown', 'registration-handoff', 'uncertain-start')
+CACHED_HANDOFF_CASES = ('graceful', 'immediate', 'cancel', 'queue-denied', 'queue-lost',
+                        'idle-registry-lost', 'two')
 SETTLEMENT_CASES = preparation.OWNER_SETTLEMENT_CASES
 WORK_CASES = preparation.WORK_FINISH_CASES
 FIRST_ADMISSION_CASES = ('withdrawn', 'registering', 'identity-reentry', 'identity-concurrent',
@@ -66,6 +68,8 @@ class RecordingCompiler:
             return 'MANAGED_FIRST_ADMISSION_ACTIVATION PASS ' + argv[-1]
         if stage.startswith('managed-cached-factory-activation-'):
             return 'MANAGED_CACHED_FACTORY_ACTIVATION PASS ' + argv[-1]
+        if stage.startswith('managed-cached-handoff-activation-'):
+            return 'MANAGED_CACHED_HANDOFF_ACTIVATION PASS ' + argv[-1]
         if stage == 'timer-worker-admission-source-control':
             return 'TIMER_WAIT_ADMISSION_SOURCE PASS typed-refusal;accepted-callback-not-run;owners-retired;root-refused'
         if stage.startswith('owner-admission-source-'):
@@ -93,6 +97,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
             'scheduled-factory-concurrency-activation-withdrawn', 'scheduled-factory-concurrency-activation-registering',
             *('managed-first-admission-activation-' + mode for mode in FIRST_ADMISSION_CASES),
             *('managed-cached-factory-activation-' + mode for mode in CACHED_FACTORY_CASES),
+            *('managed-cached-handoff-activation-' + mode for mode in CACHED_HANDOFF_CASES),
             'completable-minimal-activation-source',
             'future-task-interrupt-monitor-activation',
             'timer-worker-admission-source-compile', 'timer-worker-admission-source-control',
@@ -112,6 +117,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
             'fibers/conformance/compiler/timer-source-control/ScheduledFactoryConcurrencyActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/ManagedFirstAdmissionActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/ManagedCachedFactoryActivationControl.java',
+            'fibers/conformance/compiler/timer-source-control/ManagedCachedHandoffActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/CompletableMinimalStageActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/FutureTaskInterruptMonitorActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java',
@@ -141,7 +147,8 @@ class OwnerAdmissionPreparation(unittest.TestCase):
             self.assertEqual(argv[-2:], ('ScheduledNullFactoryActivationControl', case))
         self.assertEqual(receipt['managedFirstAdmissionActivation'], list(FIRST_ADMISSION_CASES))
         self.assertEqual(receipt['managedCachedFactoryActivation'], list(CACHED_FACTORY_CASES))
-        start = 10 + len(NULL_FACTORY_CASES) + len(FIRST_ADMISSION_CASES) + len(CACHED_FACTORY_CASES)
+        self.assertEqual(receipt['managedCachedHandoffActivation'], list(CACHED_HANDOFF_CASES))
+        start = 10 + len(NULL_FACTORY_CASES) + len(FIRST_ADMISSION_CASES) + len(CACHED_FACTORY_CASES) + len(CACHED_HANDOFF_CASES)
         for case, (_, argv) in zip(OWNER_CASES, compiler.calls[start:start + len(OWNER_CASES)], strict=True):
             self.assertEqual(argv[:3], ('java', '-Xmx256m', '-cp'))
             self.assertEqual(argv[-2:], ('OwnerAdmissionSourceControl', case))
@@ -255,6 +262,17 @@ class OwnerAdmissionPreparation(unittest.TestCase):
                         self.run_control(compiler)
                     self.assertEqual(compiler.calls[-1][0], stage)
 
+    def test_cached_handoff_activation_output_matches_each_mode(self):
+        for mode in CACHED_HANDOFF_CASES:
+            stage = 'managed-cached-handoff-activation-' + mode
+            good = 'MANAGED_CACHED_HANDOFF_ACTIVATION PASS ' + mode
+            for invalid in ('', good + '\n' + good, 'MANAGED_CACHED_HANDOFF_ACTIVATION PASS other'):
+                with self.subTest(mode=mode, output=invalid):
+                    compiler = RecordingCompiler(lambda actual: invalid if actual == stage else None)
+                    with self.assertRaisesRegex(ValueError, 'cached handoff activation control did not complete: ' + mode):
+                        self.run_control(compiler)
+                    self.assertEqual(compiler.calls[-1][0], stage)
+
     def test_null_factory_outputs_must_match_each_selected_mode(self):
         for case in NULL_FACTORY_CASES:
             stage = 'scheduled-null-factory-activation-' + case
@@ -285,6 +303,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
                   'scheduled-factory-concurrency-activation-withdrawn', 'scheduled-factory-concurrency-activation-registering',
             *('managed-first-admission-activation-' + mode for mode in FIRST_ADMISSION_CASES),
             *('managed-cached-factory-activation-' + mode for mode in CACHED_FACTORY_CASES),
+            *('managed-cached-handoff-activation-' + mode for mode in CACHED_HANDOFF_CASES),
                   'completable-minimal-activation-source',
                   'future-task-interrupt-monitor-activation',
                   'timer-worker-admission-source-compile', 'timer-worker-admission-source-control',
@@ -316,6 +335,7 @@ class OwnerAdmissionPreparation(unittest.TestCase):
                      'fibers/conformance/compiler/timer-source-control/ScheduledFactoryConcurrencyActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/ManagedFirstAdmissionActivationControl.java',
             'fibers/conformance/compiler/timer-source-control/ManagedCachedFactoryActivationControl.java',
+            'fibers/conformance/compiler/timer-source-control/ManagedCachedHandoffActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/CompletableMinimalStageActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/FutureTaskInterruptMonitorActivationControl.java',
                      'fibers/conformance/compiler/timer-source-control/dev/latent/generated/Bindings.java'):
