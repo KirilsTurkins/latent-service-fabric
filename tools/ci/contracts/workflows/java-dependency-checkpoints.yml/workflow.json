@@ -20,7 +20,20 @@
 ".github/workflows/java-dependency-checkpoints.yml"
 ]
 },
-"workflow_dispatch":null
+"workflow_dispatch":{
+"inputs":{
+"native-origin":{
+"default":"current",
+"description":"Native products for the six signed checkpoint calls",
+"options":[
+"current",
+"historical"
+],
+"required":true,
+"type":"choice"
+}
+}
+}
 },
 "permissions":{
 "actions":"read",
@@ -30,7 +43,7 @@
 "requiredJobs":[
 "dependency-checkpoints"
 ],
-"reviewReason":"Add one bounded unchanged Commons AtomicSafeInitializer dependency-loop qualification with actual maintained-plugin IR controls and six signed two-tenant calls. Preserve original Java budgets, clocks/runtime-only grants, prior suites and separate 193-control native provenance; unsigned compiler warm-up counted separately, no native rebuild or whole-ticket/GC qualification claim. Reference processes use15s maximum,60s total; every real outcome remains required.",
+"reviewReason":"Run the original six signed calls with either the current five ordinary products or the authenticated historical five products.",
 "schemaVersion":"latent.ci.contracts.v1",
 "workflow":".github/workflows/java-dependency-checkpoints.yml"
 }

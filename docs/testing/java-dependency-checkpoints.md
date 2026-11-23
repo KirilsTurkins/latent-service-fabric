@@ -21,6 +21,26 @@ then checks them again after the signed calls. An existing verified Gradle
 compiler cache can be supplied with `--read-only-cache`. For historical
 replay, `--native` takes the authenticated producer directory.
 
+The `Java published dependency checkpoints` workflow accepts a `native-origin`
+choice when run manually. `current` builds both the guest and the five native
+products from the selected Git revision. `historical` verifies and uses the
+original producer archive.
+
+On November 23, all six signed calls passed on a locally built Linux node at
+`02bdf199b57f0e740237cddf0f02d9e5c9118bd9`. Both tenants returned `42` from
+the dependency and monitor cases, retained their thread-local values and
+exception, and returned fresh state on the next call. Both missing-grant calls
+were denied. All six returned the execution cell to service, and the node and
+peer shut down cleanly. The [execution record](evidence/java-dependency-checkpoints-current-2026-11-23.json)
+includes the component and binary hashes, results, provider counts and sampled
+node RSS.
+
+The original 141,534-byte build marker exceeded the signer's 65,536-byte read
+limit. The builder now keeps full argument lists in the compiler's existing
+command records when the marker needs to reference them by size and digest.
+The signed run verified all 34 such records, used an 11,783-byte marker and
+produced the same 1,696,112-byte component.
+
 The fixture calls unchanged Commons Lang 3.14.0 `AtomicSafeInitializer.get()`.
 The original Maven archive digest is
 `7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c`.
@@ -79,11 +99,10 @@ to `missing-runtime-port`; bounded or unresolved analysis remains
 `unresolved-behavior`. All findings retain source/compiler binding and no authority.
 
 The programme uses the maintained Maven capture/review and offline Java build.
-When no verified compiler cache is supplied, its existing unsigned greeting
-warm-up compiles first: two components are compiled in total, only one of which
-is the new signed target. Five existing native products retain their separate
-`b422af24d86344ac7abb8b8fa56c3782aab63915` origin and 193-control producer evidence;
-no native host is rebuilt and no historical guest is relabelled.
+Without a verified compiler cache it first compiles an unsigned greeting to
+warm the cache, then compiles the signed target. In historical mode the five
+native products come from the 193-control producer at
+`b422af24d86344ac7abb8b8fa56c3782aab63915`.
 
 Six signed calls reuse one node across two tenants, following two pre-entry
 runtime-grant denials. The original 64 MiB memory, one-billion fuel, 4 MiB Java
