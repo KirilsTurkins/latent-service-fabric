@@ -48,6 +48,7 @@ pub(in crate::standalone) async fn recover(
     let state = settings.state.as_ref().ok_or_else(super::denied)?;
     if !settings.credentials_from_protected_file
         || principal.kind != PrincipalKind::Administrator
+        || !bootstrap.matches_local_payload(settings)
         || state.tenant_quotas.len() != 1
         || principal.tenant.as_ref()
             != Some(&latent_core::TenantId(
@@ -194,6 +195,14 @@ async fn prepare(
     let metadata = original
         .reserve_buffer(NativeBufferClass::Work, 1024 * 1024)
         .map_err(|_| super::capacity())?;
+    let payloads = if matches!(&request.request, Action::InspectNamespace {}) {
+        bootstrap
+            .local_payload_selection
+            .as_ref()
+            .and_then(super::super::store::LocalPayloadSelection::inventory_payloads)
+    } else {
+        None
+    };
     let policy = Arc::clone(owners.policy);
     let principal = principal.clone();
     let adapters = match (owners.providers, owners.http) {
@@ -287,6 +296,7 @@ async fn prepare(
                         namespace,
                         identity: configuration.store_identity.clone(),
                         quotas: super::super::validation::quotas(&configuration),
+                        payloads,
                         checkpoint: floor,
                         original,
                         _metadata: metadata,

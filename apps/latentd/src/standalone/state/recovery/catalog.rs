@@ -250,6 +250,22 @@ impl Catalog {
                 self.command(bytes, inventory, count)
             }
             Family::Outbox => self.effect(bytes, inventory, count),
+            Family::PayloadReference if latent_state::payload_references::owns_row(key) => {
+                use latent_state::payload_references::{owner_reference, row_tenant};
+                let scope = self.scope();
+                if row_tenant(key, bytes)? != scope.tenant.0
+                    || owner_reference(key, bytes)?.is_some_and(|reference| {
+                        !scope.contains(
+                            &reference.owner.tenant,
+                            &reference.owner.namespace,
+                            reference.owner.incarnation,
+                        )
+                    })
+                {
+                    return Err(StoreError::UnsupportedFormat);
+                }
+                observe(inventory, RetainedKind::MigrationCheckpoint, LINKED, count)
+            }
             Family::PayloadReference => {
                 let payload = latent_effects::payload::PayloadRecord::decode(bytes)
                     .map_err(|_| StoreError::Corrupt)?;

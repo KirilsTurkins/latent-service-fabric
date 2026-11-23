@@ -226,7 +226,7 @@ impl Catalogs {
         {
             return Err(mode_error());
         }
-        Self::open_inner(settings, None, Arc::new(SystemActivationClock)).await
+        Self::open_inner(settings, None, Arc::new(SystemActivationClock), false).await
     }
 
     pub(super) async fn open_with_control(
@@ -241,7 +241,21 @@ impl Catalogs {
         runtime: &tokio::runtime::Handle,
         clock: Arc<dyn ActivationClock>,
     ) -> Result<Self, PlatformError> {
-        Self::open_inner(settings, Some(runtime), clock).await
+        Self::open_inner(settings, Some(runtime), clock, false).await
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    async fn open_for_recovery(
+        settings: &NodeSettings,
+        runtime: &tokio::runtime::Handle,
+    ) -> Result<Self, PlatformError> {
+        Self::open_inner(
+            settings,
+            Some(runtime),
+            Arc::new(SystemActivationClock),
+            true,
+        )
+        .await
     }
 
     #[allow(
@@ -252,12 +266,16 @@ impl Catalogs {
         settings: &NodeSettings,
         runtime: Option<&tokio::runtime::Handle>,
         clock: Arc<dyn ActivationClock>,
+        recovery_only: bool,
     ) -> Result<Self, PlatformError> {
         let profile = platform(Stage::Configuration, settings.check_config())?;
         let mut state = platform(
             Stage::NativeCapacity,
             super::state::StateBootstrap::new(settings, &clock),
         )?;
+        if let Some(state) = &mut state {
+            state.recovery_only = recovery_only;
+        }
         platform(
             Stage::ExecutionProfile,
             settings.persist_execution_profile(),

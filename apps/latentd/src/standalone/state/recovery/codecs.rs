@@ -27,6 +27,7 @@ pub(super) struct Codecs {
     pub namespace: NamespaceRecord,
     pub identity: StoreIdentity,
     pub quotas: Vec<TenantQuota>,
+    pub payloads: Option<super::super::store::InventoryPayloads>,
     pub checkpoint: ExternalCheckpoint,
     pub original: Arc<NativeReservation>,
     pub _metadata: NativeBufferPermit,
@@ -115,7 +116,21 @@ impl Codecs {
     }
     pub fn closure(&self, view: &ReadView) -> Result<SnapshotClosure, StoreError> {
         self.check()?;
-        super::super::validation::validate(view, &self.identity, &self.quotas, &self.original)?;
+        if let Some((store, provider)) = &self.payloads {
+            super::super::validation::validate_with_local_payloads(
+                view,
+                &self.identity,
+                &self.quotas,
+                &self.original,
+                &super::super::validation::LocalPayloadVerifier {
+                    store,
+                    provider,
+                    original: &self.original,
+                },
+            )?;
+        } else {
+            super::super::validation::validate(view, &self.identity, &self.quotas, &self.original)?;
+        }
         let owner = DispatchCatalog::checkpoint(view)?.ok_or(StoreError::Corrupt)?;
         if owner.0 < self.checkpoint.dispatch_owner_epoch()
             || owner.1 < self.checkpoint.clock_floor_millis()

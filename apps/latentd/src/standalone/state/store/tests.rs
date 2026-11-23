@@ -328,6 +328,35 @@ async fn startup_transfers_the_same_ordinary_blob_owner_without_enabling_durable
     store.reap_retired_threads().unwrap();
 }
 
+#[tokio::test]
+async fn offline_blob_startup_leaves_absent_state_and_durable_mode_absent() {
+    use latent_blobs::local::{LocalBlobLimits, LocalBlobStore};
+
+    let (root, settings, mut bootstrap) = fixture();
+    let blob_root = root.path().join("blobs");
+    drop(LocalBlobStore::open(&blob_root, "private", LocalBlobLimits::default()).unwrap());
+    let owner = LocalBlobStore::reopen_with_checkpoint(
+        &blob_root,
+        "private",
+        LocalBlobLimits::default(),
+        &|| Ok(()),
+    )
+    .unwrap();
+    bootstrap.recovery_only = true;
+    let provider = crate::config::ProviderIdentity {
+        id: "local".into(),
+        tenant: "tenant".into(),
+        service: "blob".into(),
+        epoch: 1,
+    };
+    assert!(bootstrap
+        .open_store_with_local_payloads(&settings, owner, provider, blob_root.clone(), true)
+        .await
+        .is_err());
+    assert!(!settings.store.root.join(&settings.store.file_name).exists());
+    assert!(!blob_root.join("DURABLE.json").exists());
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn cancelled_initializer_keeps_the_transferred_blob_lock_until_worker_retirement() {
     use latent_blobs::local::{LocalBlobError, LocalBlobLimits, LocalBlobStore};

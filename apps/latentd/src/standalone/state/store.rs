@@ -69,6 +69,7 @@ enum StartupPayload {
     Local {
         owner: Arc<latent_blobs::local::LocalBlobStore>,
         provider: crate::config::ProviderIdentity,
+        require_durable: bool,
         returned: std::sync::mpsc::SyncSender<(Arc<latent_blobs::local::LocalBlobStore>, bool)>,
     },
 }
@@ -136,12 +137,16 @@ fn validate_startup_payload(
         StartupPayload::Local {
             mut owner,
             provider,
+            require_durable,
             returned,
         } => {
             let durable = latent_blobs::local::LocalBlobStore::bind_existing_durable_for_view(
                 &mut owner, view,
             )
             .map_err(|_| StoreError::Unavailable)?;
+            if require_durable && !durable {
+                return Err(StoreError::UnsupportedFormat);
+            }
             if durable {
                 validation::validate_with_local_payloads(
                     view,
@@ -181,6 +186,13 @@ impl StateBootstrap {
         &mut self,
         settings: &StateSettings,
     ) -> Result<Arc<ProtectedStoreOwner>, PlatformError> {
+        self.check_live()?;
+        if !self.matches(settings) {
+            return Err(super::unavailable());
+        }
+        if let Some(store) = self.opened_store.as_ref().filter(|_| self.recovery_only) {
+            return Ok(Arc::clone(store));
+        }
         self.open_store_inner(settings, None, true, StartupPayload::None)
             .await
     }
@@ -224,10 +236,11 @@ impl StateBootstrap {
             .open_store_inner(
                 settings,
                 None,
-                false,
+                self.recovery_only,
                 StartupPayload::Local {
                     owner,
                     provider,
+                    require_durable: self.recovery_only && durable_retention,
                     returned,
                 },
             )
