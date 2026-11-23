@@ -363,32 +363,6 @@ impl InboxHistory {
     }
 }
 
-#[cfg(test)]
-mod inbox_history_tests {
-    use super::{Family, InboxHistory, RowKey};
-
-    #[test]
-    fn same_count_with_replaced_terminal_protection_is_detected() {
-        let inbox = RowKey {
-            family: Family::Inbox,
-            key: b"input:17".to_vec(),
-        };
-        let command = RowKey {
-            family: Family::Command,
-            key: b"pending:18".to_vec(),
-        };
-        let mut archived = InboxHistory::default();
-        archived.observe(&inbox, b"original protection");
-        let mut current = InboxHistory::default();
-        current.observe(&inbox, b"changed protection");
-        current.observe(&command, b"pending");
-
-        let comparison = archived.compare(current);
-        assert_eq!((comparison.archived_rows, comparison.current_rows), (1, 1));
-        assert!(!comparison.identical);
-    }
-}
-
 fn require_inbox_custody(
     view: &ReadView,
     original: &NativeReservation,
@@ -437,5 +411,31 @@ fn native_snapshot_error(error: NativeCapacityError) -> SnapshotError {
         | NativeCapacityError::BufferTooLarge
         | NativeCapacityError::AllocationFailed => SnapshotError::Capacity,
         _ => SnapshotError::Review(StoreError::Unavailable),
+    }
+}
+
+#[cfg(test)]
+mod inbox_history_tests {
+    use super::{Family, InboxHistory, RowKey};
+
+    #[test]
+    fn same_count_with_replaced_terminal_protection_is_detected() {
+        let inbox = RowKey {
+            family: Family::Inbox,
+            key: b"input:17".to_vec(),
+        };
+        let command = RowKey {
+            family: Family::Command,
+            key: b"pending:18".to_vec(),
+        };
+        let mut archived = InboxHistory::default();
+        archived.observe(&inbox, b"original protection");
+        let mut current = InboxHistory::default();
+        current.observe(&inbox, b"changed protection");
+        current.observe(&command, b"pending");
+
+        let comparison = archived.compare(current);
+        assert_eq!((comparison.archived_rows, comparison.current_rows), (1, 1));
+        assert!(!comparison.identical);
     }
 }
