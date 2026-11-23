@@ -13,7 +13,7 @@ import tomllib
 if __package__ in (None, ''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 
-from tools import java_dependency_checkpoint_fixture as fixture, rust_thread_native_products as products
+from tools import java_dependency_checkpoint_fixture as fixture
 from tools.application_dependencies import verify_inputs
 from tools.build_observation import build_environment
 from tools.java_capsule_build import RECIPE, FIBER_IO_PROFILE, build
@@ -96,9 +96,10 @@ def build_evidence(artifact):
 
 def select_native(prepared, commands, output):
     if prepared is not None:
-        verify = partial(products.verify_prepared, prepared)
+        from tools.rust_thread_native_products import native_products, verify_prepared
+        verify = partial(verify_prepared, prepared)
         origin = verify()
-        binaries = products.native_products(prepared)
+        binaries = native_products(prepared)
         for binary in binaries.values():
             binary.chmod(0o700)
         return binaries, origin, verify

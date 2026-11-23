@@ -1,10 +1,11 @@
 """Controller boundary controls; actual JDK/compiler/component execution is separate."""
 import copy
 from pathlib import Path
+import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from tools import java_dependency_checkpoint_fixture as fixture, java_dependency_checkpoint_node as node
 from tools import qualify_java_dependency_checkpoints as programme
@@ -35,9 +36,11 @@ class JavaDependencyCheckpointTests(unittest.TestCase):
                 binaries['latent'].write_bytes(b'changed')
                 with self.assertRaisesRegex(DevError, 'native-product-mismatch'):
                     verify()
-                with patch.object(programme.products, 'verify_prepared', side_effect=FileNotFoundError), \
+                missing = SimpleNamespace(verify_prepared=Mock(side_effect=FileNotFoundError), native_products=Mock())
+                with patch.dict(sys.modules, {'tools.rust_thread_native_products': missing}), \
                         self.assertRaises(FileNotFoundError):
                     programme.select_native(directory, commands, directory)
+                missing.native_products.assert_not_called()
                 build.assert_called_once()
 
     def test_original_project_has_only_explicit_runtime_clocks_and_unchanged_limits(self):
