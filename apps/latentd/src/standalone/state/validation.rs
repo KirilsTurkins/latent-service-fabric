@@ -170,6 +170,30 @@ pub(super) fn validate_with_local_payloads(
     validate_inventory_with_local_payloads(view, identity, quotas, original, payloads).map(|_| ())
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(super) fn validate_offline_inventory(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+    payloads: Option<&super::store::InventoryPayloads>,
+) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
+    match payloads {
+        Some((store, provider)) => validate_inventory_with_local_payloads(
+            view,
+            identity,
+            quotas,
+            original,
+            &LocalPayloadVerifier {
+                store,
+                provider,
+                original,
+            },
+        ),
+        None => validate_inventory(view, identity, quotas, original),
+    }
+}
+
 trait PayloadVerifier {
     fn verify(&self, view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError>;
 }

@@ -426,6 +426,7 @@ async fn checkpoint_with_matching_source_inventory_survives_restart() {
     // silently adopted by an older checkpoint on the ordinary startup path.
     let legacy = std::fs::read(fixture.checkpoint()).unwrap();
     let dispatch = fixture.persisted_dispatch();
+    assert!(inspect_offline_checkpoint(&fixture).await.is_err());
     let native = bootstrap.native.clone();
     assert!(StateKernel::start(
         bootstrap,
@@ -450,6 +451,15 @@ async fn checkpoint_with_matching_source_inventory_survives_restart() {
         .advance_inbox_custody(custody)
         .unwrap();
     std::fs::write(fixture.checkpoint(), checkpoint.encode()).unwrap();
+    assert_eq!(
+        inspect_offline_checkpoint(&fixture).await.unwrap(),
+        checkpoint
+    );
+    assert_eq!(
+        std::fs::read(fixture.checkpoint()).unwrap(),
+        checkpoint.encode()
+    );
+    assert_eq!(fixture.persisted_dispatch(), dispatch);
     let (kernel, mut effects) = StateKernel::start(
         bootstrap,
         &fixture.settings,
@@ -467,6 +477,53 @@ async fn checkpoint_with_matching_source_inventory_survives_restart() {
     assert!(effects.shutdown(deadline).await.unwrap().clean);
     drop(effects);
     assert!(kernel.shutdown(deadline).await.unwrap().clean);
+}
+
+async fn inspect_offline_checkpoint(
+    fixture: &Fixture,
+) -> Result<ExternalCheckpoint, PlatformError> {
+    use latent_core::native_capacity::{NativeAdmissionClass, NativeReservationRequest};
+
+    let mut bootstrap = fixture.bootstrap();
+    let original = Arc::new(
+        bootstrap
+            .native
+            .reserve(
+                NativeAdmissionClass::Recovery,
+                NativeReservationRequest {
+                    work_bytes: 9 * 1024 * 1024,
+                    ..NativeReservationRequest::default()
+                },
+                bootstrap.deadline,
+            )
+            .unwrap(),
+    );
+    let store = bootstrap
+        .open_store_offline(&fixture.settings)
+        .await
+        .unwrap();
+    let inspected =
+        super::super::recovery::inspect_checkpoint(&store, &fixture.settings, &original, None)
+            .await;
+    let result = match inspected {
+        Ok((checkpoint, floor)) => {
+            checkpoint.retire().await;
+            Ok(floor)
+        }
+        Err(error) => Err(error),
+    };
+    store.close();
+    let cutoff = bootstrap.deadline;
+    let drained = store
+        .drain_async(cutoff, tokio::time::sleep_until(cutoff.into()))
+        .unwrap()
+        .await;
+    assert!(drained.snapshot.physically_retired());
+    assert!(super::super::store::join_retired_workers(&store, cutoff)
+        .await
+        .unwrap()
+        .is_some());
+    result
 }
 
 #[tokio::test]

@@ -116,20 +116,15 @@ impl Codecs {
     }
     pub fn closure(&self, view: &ReadView) -> Result<SnapshotClosure, StoreError> {
         self.check()?;
-        if let Some((store, provider)) = &self.payloads {
-            super::super::validation::validate_with_local_payloads(
-                view,
-                &self.identity,
-                &self.quotas,
-                &self.original,
-                &super::super::validation::LocalPayloadVerifier {
-                    store,
-                    provider,
-                    original: &self.original,
-                },
-            )?;
-        } else {
-            super::super::validation::validate(view, &self.identity, &self.quotas, &self.original)?;
+        let custody = super::super::validation::validate_offline_inventory(
+            view,
+            &self.identity,
+            &self.quotas,
+            &self.original,
+            self.payloads.as_ref(),
+        )?;
+        if custody != self.checkpoint.inbox_custody() {
+            return Err(StoreError::Conflict);
         }
         let owner = DispatchCatalog::checkpoint(view)?.ok_or(StoreError::Corrupt)?;
         if owner.0 < self.checkpoint.dispatch_owner_epoch()

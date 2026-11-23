@@ -4,10 +4,10 @@ use super::{
     catalog::Catalog,
     codecs::Codecs,
     execution::NativeRecoveryReport,
-    request::NativeRecoveryRequest,
+    request::{Action, NativeRecoveryRequest},
 };
 use crate::{
-    config::NodeSettings,
+    config::{state::StateSettings, NodeSettings},
     standalone::{effects::ProtectedEffectClock, state::StateBootstrap},
 };
 use latent_artifacts::DirectoryArtifactRepository;
@@ -21,8 +21,10 @@ use latent_core::{
 use latent_effects::dispatch_store::DispatchCatalog;
 use latent_policy::{capability::PolicyStore, supply_chain::SupplyChainAuthority};
 use latent_state::{
-    protected_store::{ProtectedCheckpointConfig, ProtectedStoreOwner},
+    embedded::ReadView,
+    protected_store::{ProtectedCheckpoint, ProtectedCheckpointConfig, ProtectedStoreOwner},
     recovery::namespace_resume::NamespaceRecoveryView,
+    store_identity::ExternalCheckpoint,
     store_io::StoreIoKind,
 };
 use std::{sync::Arc, time::Instant};
@@ -122,7 +124,7 @@ pub(in crate::standalone) async fn recover(
     reason = "Original checkpoint, signed selections, installed clock and purpose decisions remain one admission construction"
 )]
 async fn prepare(
-    state: &crate::config::state::StateSettings,
+    state: &StateSettings,
     principal: &InvocationPrincipal,
     request: NativeRecoveryRequest,
     owners: &RecoveryOwners<'_>,
@@ -139,27 +141,19 @@ async fn prepare(
     if marker.created_here {
         return Err(super::denied());
     }
-    let (checkpoint, opened) = store
-        .open_checkpoint(
-            ProtectedCheckpointConfig {
-                root: state.checkpoint_root.clone(),
-            },
-            state.store_identity.clone(),
-            None,
-            Arc::clone(original),
-            DispatchCatalog::checkpoint,
-        )
-        .map_err(|_| super::denied())?
-        .await
-        .map_err(|_| super::denied())?;
-    opened.map_err(|_| super::denied())?;
-    let (checkpoint, inspected) = store
-        .inspect_checkpoint(checkpoint, DispatchCatalog::checkpoint)
-        .map_err(|_| super::denied())?
-        .await
-        .map_err(|_| super::denied())?;
-    let inspected = inspected.map_err(|_| super::denied())?;
-    let floor = inspected.checkpoint.ok_or_else(super::denied)?;
+    let payloads = if matches!(&request.request, Action::InspectNamespace {}) {
+        bootstrap
+            .local_payload_selection
+            .as_ref()
+            .and_then(super::super::store::LocalPayloadSelection::inventory_payloads)
+    } else {
+        None
+    };
+    let (checkpoint, floor) = inspect_checkpoint(store, state, original, payloads.as_ref()).await?;
+    if floor.inbox_custody().is_some() && !matches!(&request.request, Action::InspectNamespace {}) {
+        // Export and recovery writes need an inbox-aware restore contract.
+        return Err(super::denied());
+    }
     let clock = ProtectedEffectClock::admit(
         Arc::clone(&owners.clock),
         Arc::clone(&owners.supply_chain),
@@ -195,14 +189,6 @@ async fn prepare(
     let metadata = original
         .reserve_buffer(NativeBufferClass::Work, 1024 * 1024)
         .map_err(|_| super::capacity())?;
-    let payloads = if matches!(&request.request, Action::InspectNamespace {}) {
-        bootstrap
-            .local_payload_selection
-            .as_ref()
-            .and_then(super::super::store::LocalPayloadSelection::inventory_payloads)
-    } else {
-        None
-    };
     let policy = Arc::clone(owners.policy);
     let principal = principal.clone();
     let adapters = match (owners.providers, owners.http) {
@@ -311,4 +297,62 @@ async fn prepare(
     job.await
         .map_err(|_| super::super::unavailable())?
         .map_err(|_| super::super::unavailable())?
+}
+
+pub(in crate::standalone::state) async fn inspect_checkpoint(
+    store: &ProtectedStoreOwner,
+    state: &StateSettings,
+    original: &Arc<NativeReservation>,
+    payloads: Option<&super::super::store::InventoryPayloads>,
+) -> Result<(ProtectedCheckpoint, ExternalCheckpoint), PlatformError> {
+    use crate::config::state::STARTUP_VALIDATOR_BYTES;
+
+    let config = ProtectedCheckpointConfig {
+        root: state.checkpoint_root.clone(),
+    };
+    let inventory = || {
+        let identity = state.store_identity.clone();
+        let quotas = super::super::validation::quotas(state);
+        let original = Arc::clone(original);
+        let payloads = payloads.cloned();
+        move |view: &ReadView| {
+            super::super::validation::validate_offline_inventory(
+                view,
+                &identity,
+                &quotas,
+                &original,
+                payloads.as_ref(),
+            )
+        }
+    };
+    let (checkpoint, opened) = store
+        .open_checkpoint_with_inbox_inventory(
+            config,
+            state.store_identity.clone(),
+            None,
+            Arc::clone(original),
+            STARTUP_VALIDATOR_BYTES,
+            DispatchCatalog::checkpoint,
+            inventory(),
+        )
+        .map_err(|_| super::denied())?
+        .await
+        .map_err(|_| super::denied())?;
+    opened.map_err(|_| super::denied())?;
+    let (checkpoint, inspected) = store
+        .inspect_checkpoint_with_inbox_inventory(
+            checkpoint,
+            Arc::clone(original),
+            STARTUP_VALIDATOR_BYTES,
+            DispatchCatalog::checkpoint,
+            inventory(),
+        )
+        .map_err(|_| super::denied())?
+        .await
+        .map_err(|_| super::denied())?;
+    let floor = inspected
+        .map_err(|_| super::denied())?
+        .checkpoint
+        .ok_or_else(super::denied)?;
+    Ok((checkpoint, floor))
 }
