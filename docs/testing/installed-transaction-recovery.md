@@ -136,6 +136,9 @@ command and current attempt agree. An unconfirmed sequence requires review of
 the recovery window. Pending, abort and unconfirmed observations give no
 permission to acknowledge or retry. This inspection performs no pull or
 acknowledgement. Resume remains a separate authorized operation.
+At startup, the protected input owner qualifies each configured stream and
+consumer before the node accepts traffic. Unavailable or changed broker
+bindings cause startup to fail within the configured deadline.
 Set `transactionalTriggers.startPaused` to true in the protected node
 configuration to keep the input owner paused after a planned restart. The
 node can still serve ordinary application traffic. The flag defaults to false.

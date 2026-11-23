@@ -110,21 +110,45 @@ impl NatsTriggerInspector {
             .iter()
             .position(|row| row.bindings.contains(&index))
             .ok_or(EventError::PermissionDenied)?;
+        poller.inspect_binding(tenant_index, index, deadline).await
+    }
+}
+
+impl NatsTriggers {
+    /// Prove readiness on the installed input owner before starting delivery.
+    /// Every configured binding shares the original whole-node startup deadline.
+    pub async fn qualify_startup(&mut self, deadline: Instant) -> Result<()> {
+        if self.transaction_admission.is_none() {
+            return Err(EventError::PermissionDenied);
+        }
+        for tenant in 0..self.tenants.len() {
+            for selected in 0..self.tenants[tenant].bindings.len() {
+                let binding = self.tenants[tenant].bindings[selected];
+                self.inspect_binding(tenant, binding, deadline).await?;
+            }
+        }
+        Ok(())
+    }
+
+    async fn inspect_binding(
+        &mut self,
+        tenant_index: usize,
+        index: usize,
+        deadline: Instant,
+    ) -> Result<BrokerInputProgress> {
         let deadline = deadline
-            .min(Instant::now() + Duration::from_millis(poller.config.operation_timeout_millis));
+            .min(Instant::now() + Duration::from_millis(self.config.operation_timeout_millis));
         let (_cancel, mut stop) = tokio::sync::watch::channel(false);
-        let mut opened = poller
-            .open(tenant_index, index, deadline, &mut stop)
-            .await?;
-        let binding = &poller.config.bindings[index];
-        let reply = format!("{}.0000000000000001", poller.namespace);
+        let mut opened = self.open(tenant_index, index, deadline, &mut stop).await?;
+        let binding = &self.config.bindings[index];
+        let reply = format!("{}.0000000000000001", self.namespace);
         let connection = opened.connection.resource();
         inbox::qualify(connection, &opened.request, binding, &reply).await?;
         let frame = consumer::read_info(connection, &opened.request, binding, &reply).await?;
-        consumer::validate(frame.payload(), binding, &poller.config)?;
+        consumer::validate(frame.payload(), binding, &self.config)?;
         let progress = decode_progress(frame.payload())?;
         inbox::qualify(connection, &opened.request, binding, &reply).await?;
-        let credential = &poller.credentials[poller.tenants[tenant_index].credential];
+        let credential = &self.credentials[self.tenants[tenant_index].credential];
         network::check_current(credential, &opened.auth.stamp)?;
         let selected = binding
             .transaction

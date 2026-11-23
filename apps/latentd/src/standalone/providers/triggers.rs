@@ -16,7 +16,7 @@ pub(super) async fn install(
 ) -> Result<NatsTriggers, PlatformError> {
     let credentials = credentials(store, settings, deadline).await?;
     let installation = &settings.installation;
-    NatsTriggers::install_with_transaction_admission(
+    let mut incoming = NatsTriggers::install_with_transaction_admission(
         Arc::clone(pools),
         &installation.id,
         installation.epoch,
@@ -25,7 +25,11 @@ pub(super) async fn install(
         credentials,
         admission,
     )
-    .map_err(|_| super::unavailable())
+    .map_err(|_| super::unavailable())?;
+    Box::pin(incoming.qualify_startup(deadline))
+        .await
+        .map_err(inspection_error)?;
+    Ok(incoming)
 }
 
 pub(super) async fn inspect(
@@ -60,19 +64,19 @@ pub(super) async fn inspect(
         inspection
             .inspect(tenant, binding, deadline)
             .await
-            .map_err(|error| {
-                let reason = match error {
-                    latent_nats::EventError::PermissionDenied => {
-                        "transactional-input-broker-identity-changed"
-                    }
-                    _ => "transactional-input-broker-inspection-unavailable",
-                };
-                crate::standalone::error(latent_core::PlatformErrorCode::Unavailable, reason)
-            })
+            .map_err(inspection_error)
     }
     .await;
     store.close();
     observation
+}
+
+fn inspection_error(error: latent_nats::EventError) -> PlatformError {
+    let reason = match error {
+        latent_nats::EventError::PermissionDenied => "transactional-input-broker-identity-changed",
+        _ => "transactional-input-broker-inspection-unavailable",
+    };
+    crate::standalone::error(latent_core::PlatformErrorCode::Unavailable, reason)
 }
 
 async fn credentials(
