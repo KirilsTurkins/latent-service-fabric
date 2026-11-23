@@ -2,16 +2,44 @@
 import copy
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
 from tools import java_dependency_checkpoint_fixture as fixture, java_dependency_checkpoint_node as node
+from tools import qualify_java_dependency_checkpoints as programme
+from tools.dev_workflow.common import DevError
 from tools.qualify_java_dependency_checkpoints import build_evidence
+from tools.phase3_resource_identity import file_identity
 from tools.rust_capsule_project import write_json
 from tools.phase2_operator_process import WorkflowError
 
 
 class JavaDependencyCheckpointTests(unittest.TestCase):
+    def test_current_native_products_are_rechecked_and_a_missing_archive_cannot_select_them(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            for name in programme.PRODUCTS:
+                (directory / name).write_bytes(name.encode())
+            receipt = directory / 'native-tuple.json'
+            write_json(receipt, {
+                'status': 'passed', 'features': [], 'tupleRole': 'ordinary-defaults',
+                'hostAbiProfile': 'lsf-host-abi-phase3-v5', 'wasmtimeVersion': '48.0.9',
+                'head': '1' * 40, 'tree': '2' * 40,
+                'binaries': {name: file_identity(directory / name) for name in programme.PRODUCTS},
+            })
+            commands = SimpleNamespace(environment={})
+            with patch.object(programme, 'build_default_products', return_value=(directory, receipt)) as build:
+                binaries, origin, verify = programme.select_native(None, commands, directory)
+                self.assertEqual(verify(), origin)
+                binaries['latent'].write_bytes(b'changed')
+                with self.assertRaisesRegex(DevError, 'native-product-mismatch'):
+                    verify()
+                with patch.object(programme.products, 'verify_prepared', side_effect=FileNotFoundError), \
+                        self.assertRaises(FileNotFoundError):
+                    programme.select_native(directory, commands, directory)
+                build.assert_called_once()
+
     def test_original_project_has_only_explicit_runtime_clocks_and_unchanged_limits(self):
         with tempfile.TemporaryDirectory() as temporary:
             app=fixture.project(Path(temporary)/'application')

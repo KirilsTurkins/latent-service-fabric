@@ -6,6 +6,21 @@ passed the six signed cases on source `2ea9ef407f64634bd2b4b92fac2fbc7e84b5e50f`
 The [verified receipt](evidence/java-dependency-checkpoints-signed-2026-10-23.json)
 binds the source, compiler controls, generated C, component and runtime observations.
 
+To run the same six cases against the current checkout, use a clean Linux
+checkout with the pinned Rust, JDK, Gradle, WASI SDK and guest binding tools.
+The checkout builds the CLI, node, signer, packager and contract reader with
+their ordinary features. Use an output directory outside the checkout.
+
+```sh
+python3 -B tools/qualify_java_dependency_checkpoints.py \
+  --build-native --wasi-sdk "$WASI_SDK_PATH" --output "$RUNNER_TEMP/java-checkpoints"
+```
+
+The programme records the source revision and hashes of the five binaries,
+then checks them again after the signed calls. An existing verified Gradle
+compiler cache can be supplied with `--read-only-cache`. For historical
+replay, `--native` takes the authenticated producer directory.
+
 The fixture calls unchanged Commons Lang 3.14.0 `AtomicSafeInitializer.get()`.
 The original Maven archive digest is
 `7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c`.

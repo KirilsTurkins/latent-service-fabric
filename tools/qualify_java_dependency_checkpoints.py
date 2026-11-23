@@ -1,11 +1,14 @@
 """One fresh captured-JAR checkpoint component on separately authenticated native products."""
 from __future__ import annotations
 import argparse
+from functools import partial
+import os
 import re
 from pathlib import Path
 import subprocess
 import sys
 import time
+import tomllib
 
 if __package__ in (None, ''):
     sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
@@ -20,6 +23,8 @@ from tools.java_guest.coroutine_patch import PATCH_CLASSES, ASYNC_CLASSES, ASYNC
 from tools.java_standard_http_library import compiler_cache
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity, source_identity
+from tools.qualify_java_server_lifecycle import ordinary_tuple
+from tools.qualify_java_server_lifecycle_suite import PRODUCTS, native as build_default_products
 from tools.rust_capsule_build import Commands
 from tools.rust_capsule_project import ROOT, fresh, inventory, read_file, read_json, snapshot, write_json
 
@@ -89,25 +94,58 @@ def build_evidence(artifact):
         'monitorCompiler':compiler,'actualChildMonitorBoundary':True,'signedQualification':False}
 
 
-def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None):
+def select_native(prepared, commands, output):
+    if prepared is not None:
+        verify = partial(products.verify_prepared, prepared)
+        origin = verify()
+        binaries = products.native_products(prepared)
+        for binary in binaries.values():
+            binary.chmod(0o700)
+        return binaries, origin, verify
+
+    commands.environment.update(CARGO_TARGET_DIR=os.environ.get('CARGO_TARGET_DIR', str(ROOT / 'target')),
+        CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0', CARGO_INCREMENTAL='0')
+    pins = tomllib.loads((ROOT / 'tools/toolchain.toml').read_text())
+    directory, receipt = build_default_products(commands, output, pins)
+    binaries = {name: directory / name for name in PRODUCTS}
+    verify = partial(ordinary_tuple, receipt, binaries)
+    return binaries, verify(), verify
+
+
+def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None,build_native=False):
     require(sys.platform=='linux' and sys.version_info>=(3,13),'java-checkpoint-linux-python313')
-    native_directory,wasi_sdk=(Path(p).resolve(strict=True) for p in (native_directory,wasi_sdk))
+    require(build_native == (native_directory is None), 'java-checkpoint-select-one-native-origin')
+    wasi_sdk=Path(wasi_sdk).resolve(strict=True)
+    sources=[wasi_sdk]
+    if native_directory is not None:
+        native_directory=Path(native_directory).resolve(strict=True)
+        sources.append(native_directory)
     output=Path(output).absolute()
     require(output!=ROOT and ROOT not in output.parents and output not in ROOT.parents
-        and all(output!=p and output not in p.parents and p not in output.parents for p in (native_directory,wasi_sdk)),
+        and all(output!=p and output not in p.parents and p not in output.parents for p in sources),
         'java-checkpoint-separated-inputs')
-    origin=products.verify_prepared(native_directory);native=products.native_products(native_directory)
-    for path in native.values():path.chmod(0o700)
     output=fresh(output)
-    before={name:file_identity(ROOT/name) for name in MATERIALS};consumer=source_identity(ROOT)
+    materials = MATERIALS
+    if build_native:
+        materials = (*materials, 'tools/qualify_java_server_lifecycle.py',
+                     'tools/qualify_java_server_lifecycle_suite.py')
+    before={name:file_identity(ROOT/name) for name in materials};consumer=source_identity(ROOT)
     commands=Commands(ROOT,fresh(output/'commands'),build_environment(output),deadline_seconds=1800,command_seconds=600)
     record={'schemaVersion':'lsf.java.dependency-checkpoint-qualification.v1','status':'incomplete',
         'source':subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,timeout=10).decode().strip(),
-        'consumerSource':consumer,'materials':before,'nativeOrigin':origin,'nativeProductsBuilt':0,
+        'consumerSource':consumer,'materials':before,'nativeProductsBuilt':0,
         'guestComponentsCompiled':0,'targetComponentsCompiled':0,'fullTicketQualification':False,
         'garbageCollectionObserved':False,'historicalGuestQualificationRelabelled':False}
-    stage='normal-pinned-commons-capture'
+    stage='build-current-default-native' if build_native else 'authenticate-retained-native'
     try:
+        native,origin,verify_native=select_native(native_directory,commands,output)
+        if build_native:
+            require(origin['sourceHead']==record['source'] and
+                    read_json(output/'native/native-tuple.json')['sourceIdentity']==consumer,
+                    'java-checkpoint-current-native-source-mismatch')
+            record['nativeProductsBuilt']=len(native)
+        record['nativeOrigin']=origin
+        stage='normal-pinned-commons-capture'
         app,selected,original,record['capture']=fixture.capture(output/'project')
         source=inventory(snapshot(app))
         stage='maintained-unsigned-compiler-cache-warm-up'
@@ -135,7 +173,7 @@ def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None):
         record['node']=execute(artifact,native,output/'node',commands.deadline,record['build']['component']['sha256'])
         require(build_evidence(artifact)==record['build'] and inventory(snapshot(app))==source
             and verify_inputs(app,'java').identity==record['capture']['capturedInputIdentity']
-            and origin==products.verify_prepared(native_directory) and consumer==source_identity(ROOT)
+            and origin==verify_native() and consumer==source_identity(ROOT)
             and before=={name:file_identity(ROOT/name) for name in before}
             and time.monotonic()<commands.deadline,'java-checkpoint-final-original-source-and-product-bindings')
         record.update(status='passed',commands=commands.records)
@@ -147,7 +185,11 @@ def qualify(native_directory,wasi_sdk,output,*,read_only_cache=None):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    for name in ('native','wasi-sdk','output'):parser.add_argument('--'+name,type=Path,required=True)
+    selection=parser.add_mutually_exclusive_group(required=True)
+    selection.add_argument('--native',type=Path,help='Authenticate the immutable historical native products')
+    selection.add_argument('--build-native',action='store_true',help='Build ordinary native products from this checkout')
+    for name in ('wasi-sdk','output'):parser.add_argument('--'+name,type=Path,required=True)
     parser.add_argument('--read-only-cache',type=Path)
     args=parser.parse_args()
-    print(qualify(args.native,args.wasi_sdk,args.output,read_only_cache=args.read_only_cache)['status'])
+    print(qualify(args.native,args.wasi_sdk,args.output,read_only_cache=args.read_only_cache,
+        build_native=args.build_native)['status'])
