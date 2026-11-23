@@ -22,12 +22,14 @@ fn scope() -> InboxScope {
 
 fn request(scope: &InboxScope) -> AdmissionInput {
     let mut request = input("inbox-fenced");
-    request.inbox = Some(InboxIdentity {
+    let identity = InboxIdentity {
         provider: scope.provider.clone(),
         binding: scope.input_binding().unwrap(),
         message: "1".into(),
         payload_digest: Identity::derive(b"input", &[b"message"]),
-    });
+    };
+    request.key.client_key = identity.command_key().unwrap();
+    request.inbox = Some(identity);
     request
 }
 

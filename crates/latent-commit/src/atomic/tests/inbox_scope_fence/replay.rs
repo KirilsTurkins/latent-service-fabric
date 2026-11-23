@@ -59,6 +59,18 @@ fn scoped_replay_preserves_success_and_rejection_after_reopen_and_body_expiry() 
         assert!(original_inbox.is_some());
         drop(store);
         let store = open(&dir.path().join("state.redb"));
+        let mut changed_operation = request(&scope);
+        changed_operation.key.operation = "another-operation".into();
+        let mut changed_principal = request(&scope);
+        changed_principal.key.recovery_scope = "another-trigger".into();
+        for changed in [changed_operation, changed_principal] {
+            let view = store.snapshot().unwrap();
+            assert_ne!(command_identity(&changed.key).unwrap(), original.id());
+            assert!(matches!(
+                PreparedAdmission::prepare(&view, changed, time(102), |_, _| Ok(())),
+                Err(AtomicError::Conflict)
+            ));
+        }
         for now in [102, original.result_expires()] {
             let view = store.snapshot().unwrap();
             let (record, result) =
@@ -66,14 +78,33 @@ fn scoped_replay_preserves_success_and_rejection_after_reopen_and_body_expiry() 
             assert_eq!(record.encode().unwrap(), original.encode().unwrap());
             assert_eq!(record.inbox_identity(), Some(inbox));
             assert_eq!(
-                inspect_inbox_terminal(&view, &scope, &input.key.operation, 1),
+                inspect_inbox_delivery(
+                    &view,
+                    &scope,
+                    &input.key.operation,
+                    &input.key.recovery_scope,
+                    1
+                ),
                 Ok(Some(original.outcome()))
             );
             assert_eq!(
-                inspect_inbox_terminal(&view, &scope, &input.key.operation, 2),
+                inspect_inbox_delivery(
+                    &view,
+                    &scope,
+                    &input.key.operation,
+                    &input.key.recovery_scope,
+                    2
+                ),
                 Ok(None)
             );
-            assert!(inspect_inbox_terminal(&view, &scope, "foreign-operation", 1).is_err());
+            assert!(inspect_inbox_delivery(
+                &view,
+                &scope,
+                "foreign-operation",
+                &input.key.recovery_scope,
+                1
+            )
+            .is_err());
             if now < original.result_expires() {
                 assert_eq!(result.unwrap().value().unwrap().bytes, b"original");
             } else {
@@ -129,7 +160,14 @@ fn scoped_replay_refuses_missing_damaged_and_recreated_source_without_changing_h
             })
             .unwrap();
         let view = store.snapshot().unwrap();
-        assert!(inspect_inbox_terminal(&view, &scope, &input.key.operation, 1).is_err());
+        assert!(inspect_inbox_delivery(
+            &view,
+            &scope,
+            &input.key.operation,
+            &input.key.recovery_scope,
+            1
+        )
+        .is_err());
         let failure = inspect_inbox(
             &view,
             &input.key,

@@ -161,6 +161,18 @@ impl PreparedAdmission {
             let _ = view.is_empty()?;
             return Ok(AdmissionDecision::Existing(existing));
         }
+        let terminal_inbox = input
+            .inbox
+            .as_ref()
+            .map(|inbox| inbox.row_key(&input.key))
+            .transpose()?;
+        if let Some(key) = &terminal_inbox {
+            // A new operation or caller can select a different command key for
+            // the same broker input. A terminal marker still owns that input.
+            if view.get_bounded(key, 86)?.is_some() {
+                return Err(AtomicError::Conflict);
+            }
+        }
         let (mut namespace, namespace_key, namespace_bytes) =
             namespace(view, &input.key, &input.source.state_schema)?;
         let result_expires = time
@@ -292,6 +304,9 @@ impl PreparedAdmission {
             ],
         };
         super::accounting::apply(view, &TenantId(record.key.tenant.clone()), &mut batch)?;
+        if let Some(key) = terminal_inbox {
+            batch.expectations.push(ExpectedRow { key, value: None });
+        }
         Ok(AdmissionDecision::New(Self {
             record,
             batch,

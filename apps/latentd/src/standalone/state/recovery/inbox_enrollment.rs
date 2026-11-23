@@ -10,7 +10,8 @@ use crate::{
     config::{state::StateSettings, NodeSettings},
     standalone::{effects::ProtectedEffectClock, state::StateBootstrap},
 };
-use latent_commit::atomic::{inspect_inbox_terminal, Outcome};
+use latent_capabilities::namespace::{CallerScope, RecoverySelection};
+use latent_commit::atomic::{inspect_inbox_delivery, Outcome};
 use latent_control_store::DeploymentStore;
 use latent_core::{
     native_capacity::NativeReservation, DeploymentId, InvocationPrincipal, PlatformError,
@@ -31,6 +32,7 @@ use std::sync::Arc;
 struct ApprovedSource {
     scope: InboxScope,
     source: Arc<RecoverySource>,
+    trigger_recovery_scope: String,
     authority: Authority,
     purpose: &'static str,
 }
@@ -265,16 +267,18 @@ fn latest_delivery(
     if sequence == 0 {
         return Ok("not-yet-delivered");
     }
-    match inspect_inbox_terminal(
+    match inspect_inbox_delivery(
         view,
         &approved.scope,
         &approved.source.target().function.0,
+        &approved.trigger_recovery_scope,
         sequence,
     )? {
         Some(Outcome::Committed) => Ok("retained-commit"),
         Some(Outcome::Rejected) => Ok("retained-rejection"),
+        Some(Outcome::Pending) => Ok("retained-pending"),
+        Some(Outcome::Aborted) => Ok("retained-technical-abort"),
         None => Ok("unconfirmed"),
-        _ => Err(StoreError::Corrupt),
     }
 }
 
@@ -395,6 +399,11 @@ async fn select(
         ApprovedSource {
             scope,
             source,
+            trigger_recovery_scope: CallerScope::derive(
+                &binding.invocation_principal(),
+                &RecoverySelection::OriginalCaller,
+            )?
+            .scope,
             authority,
             purpose: request.request.purposes()[0],
         },
