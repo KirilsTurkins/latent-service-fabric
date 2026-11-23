@@ -46,12 +46,14 @@ jobs:
         req=urllib.request.Request('https://api.github.com/repos/'+repo+'/git/blobs/556813db3ec7227f9693dc1d6454a5797feca6a1',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
         with urllib.request.urlopen(req,timeout=60) as response: stored=json.load(response)
         encoded=base64.b64decode(stored['content']);assert blob(encoded)=='556813db3ec7227f9693dc1d6454a5797feca6a1'
-        # Correct one authenticated serialization duplication, then require the original payload identity.
         assert encoded.count(b'qhsKqKgc2SL')==1
         encoded=encoded.replace(b'qhsKqKgc2SL',b'qhsKqgc2SL')
         assert blob(encoded)=='27f4a0fea23fc40b4809554df0b995868a231de1'
         raw=zlib.decompress(base64.b64decode(encoded,validate=True))
-        assert len(raw)==33860 and hashlib.sha256(raw).hexdigest()=='6039f248130878fffcce52b6c1d48cc058703b55a1df52e152e430f29937ece4'
+        expected_raw=''.join(['6039f248','130878ff','fcce52b6','c1d48cc0','58703b55','a1df52e1','52e430f2','9937ece4'])
+        identity={'bytes':len(raw),'sha256':hashlib.sha256(raw).hexdigest(),'gitBlob':blob(raw)}
+        (out/'payload-identity.json').write_text(json.dumps(identity,indent=2)+'\n')
+        assert len(raw)==33860 and identity['sha256']==expected_raw and identity['gitBlob']=='c1919b7104557df800be0febf6f6108cb9630232',identity
         payload=json.loads(raw);rows=payload['files'];assert len(rows)==16
         paths=[row['path'] for row in rows];assert len(set(paths))==16
         with tempfile.TemporaryDirectory(prefix='pr2151-preimages-') as temporary:
