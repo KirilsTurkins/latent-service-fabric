@@ -750,6 +750,19 @@ class StreamOperator(unittest.TestCase):
         self.assertEqual(len(result["capabilities"]), 1)
         self.assertEqual({path.name: path.read_bytes() for path in self.operator_root.iterdir() if path.is_file()}, before)
 
+    def test_tenant_only_inspection_requests_one_deployment_without_node_usage(self):
+        operator = self.operator()
+        operator.grant()
+        self.client.calls.clear()
+        self.client.inspection["nodeUsage"] = None
+        result = operator.inspect("mail-deployment", tenant_only=True)
+        self.assertEqual(self.client.calls, [["capability", "list", "--deployment", "mail-deployment",
+            "--provider", stream.PROFILE, "--contract-prefix", stream.CAPABILITY, "--page-size", "1"]])
+        self.assertIsNone(result["nodeUsage"])
+        self.assertEqual(result["tenantUsage"]["scope"], "tenant")
+        self.assertEqual(result["revision"]["publicationId"], self.options["publication"])
+        self.assertFalse(result["executionPermission"])
+
     def test_inspection_rejects_reused_deployment_with_missing_or_foreign_publication(self):
         operator = self.operator()
         self.client.inspection["revision"]["deploymentId"] = "foreign-deployment"

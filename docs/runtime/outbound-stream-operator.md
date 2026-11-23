@@ -153,6 +153,12 @@ they differ from the saved provider descriptor. Empty results and unavailable
 counters remain unavailable; inspection grants no execution permission or
 readiness and changes no local owner or remote grant.
 
+A tenant administrator can use `inspect --deployment NAME --tenant-only` with
+the same private CLI, client configuration, specification and state directory.
+This requests the deployment and its tenant usage through the tenant-scoped
+capability RPC. The response contains `nodeUsage: null`. Omit `--tenant-only`
+with a node-operator credential to include node-wide usage and quarantine counts.
+
 For a retained stream observation, the authenticated node-operator usage result
 includes optional `nodeUsage.streamQuarantinedConnections` as a decimal string.
 It counts original quarantined connections across the current and up to eight
