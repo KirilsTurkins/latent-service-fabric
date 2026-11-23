@@ -1934,6 +1934,39 @@ fn accepted_work_may_park_and_wake_during_closing_and_draining() {
 }
 
 #[test]
+fn snapshots_count_distinct_parked_tasks_and_managed_workers_through_settlement() {
+    let runtime = runtime();
+    let task = runtime.register(OwnerKind::Task, None).unwrap();
+    let worker = runtime
+        .register(OwnerKind::ManagedIdleWorker, None)
+        .unwrap();
+    let wait = runtime.register(OwnerKind::Wait, None).unwrap();
+    let counts = || {
+        let snapshot = runtime.snapshot();
+        (
+            snapshot.parked_tasks,
+            snapshot.managed_idle_workers,
+            snapshot.phase,
+        )
+    };
+    assert_eq!(counts(), (0, 1, RuntimePhase::Running));
+    runtime.park(wait.token()).unwrap();
+    runtime.park(worker.token()).unwrap();
+    let wake = runtime.park(worker.token()).unwrap();
+    assert_eq!(counts(), (1, 1, RuntimePhase::Running));
+    drop(task);
+    assert_eq!(counts(), (1, 1, RuntimePhase::Waiting));
+    assert!(wake.wake());
+    assert!(wake.wake());
+    assert_eq!(counts(), (0, 1, RuntimePhase::Running));
+    runtime.park(worker.token()).unwrap();
+    drop(worker);
+    drop(wait);
+    runtime.retire().unwrap();
+    assert_eq!(counts(), (0, 0, RuntimePhase::Retired));
+}
+
+#[test]
 fn foreign_store_token_and_opaque_sleeping_work_cannot_establish_quiescence() {
     let first = runtime();
     let fresh = runtime();
