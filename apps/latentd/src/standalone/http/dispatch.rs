@@ -120,6 +120,7 @@ pub(super) fn begin(
         return Err(502);
     }
     let transaction = accepted.transaction().cloned();
+    let transaction_fence = accepted.transaction_fence().cloned();
     let trace = shared.traces.next_trace().map_err(status)?;
     let context = TrustedContext::new(head.principal, trace).map_err(|_| 500u16)?;
     let mapped = head
@@ -141,7 +142,7 @@ pub(super) fn begin(
                 facts,
                 invocation,
                 revision,
-                lease,
+                transaction_fence.ok_or(503u16)?,
                 shared.services.clock.as_ref(),
             )?));
         }
@@ -210,6 +211,7 @@ pub(super) fn begin(
                         facts,
                         &mut reserved,
                         invocation.input().len(),
+                        transaction_fence.ok_or_else(transaction_route_missing)?,
                         Arc::clone(shared_owner.as_ref().expect("transaction owner")),
                     )
                 });
@@ -254,6 +256,13 @@ pub(super) fn begin(
     };
     // This fixed-size owner allocation is covered by the exchange reservation.
     Ok(Begun::Activation(Box::new(activation)))
+}
+
+fn transaction_route_missing() -> PlatformError {
+    crate::standalone::error(
+        PlatformErrorCode::Unavailable,
+        "transaction-http-route-fence-unavailable",
+    )
 }
 fn cache_request(
     mapped: &http::Request,

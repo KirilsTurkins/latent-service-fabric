@@ -1,14 +1,22 @@
-use super::super::{DirectoryDeploymentRepository, PinnedRouteResolver, PublicationView};
+use super::{
+    super::{
+        compiler::RevisionRecord, CompiledCatalog, DirectoryDeploymentRepository,
+        PinnedRouteResolver, PublicationView, PublishedCatalog,
+    },
+    table::{HttpTable, Row},
+};
 use crate::http_routes::{
     capacity, conflict, corrupt, definition::reserved_node_path, TriggerReadLease,
     TriggerTargetIdentity, MAX_DEFINITION_BYTES,
 };
 use latent_artifacts::{web::WebSelection, PublicationRef};
-use latent_core::{DeploymentId, FunctionId, PlatformError, PlatformErrorCode, TriggerId};
+use latent_core::{
+    DeploymentId, FunctionId, PlatformError, PlatformErrorCode, TenantId, TriggerId,
+};
 use latent_ingress::http::{CanonicalTarget, Method};
-use latent_manifest::{TriggerManifest, TriggerTarget};
+use latent_manifest::{ApplicationTriggerTarget, TriggerManifest, TriggerTarget};
 use latent_routing::{InvocationTarget, ResolvedRevision, RevisionPolicySource};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock, Weak};
 
 /// The selected authority variant is explicit. A static route never fabricates
 /// an invocation revision, and an application route never carries web layout authority.
@@ -57,6 +65,7 @@ pub struct AcceptedHttpRoute {
     state_version: u64,
     target: AcceptedHttpTarget,
     transaction: Option<latent_ingress::http::transaction::TransactionRoute>,
+    fence: Option<Arc<AcceptedTransactionRoute>>,
     lease: TriggerReadLease,
 }
 impl AcceptedHttpRoute {
@@ -83,6 +92,10 @@ impl AcceptedHttpRoute {
         self.transaction.as_ref()
     }
     #[must_use]
+    pub fn transaction_fence(&self) -> Option<&Arc<AcceptedTransactionRoute>> {
+        self.fence.as_ref()
+    }
+    #[must_use]
     pub fn revision(&self) -> Option<&ResolvedRevision> {
         self.target.revision()
     }
@@ -94,6 +107,84 @@ impl AcceptedHttpRoute {
     pub fn into_parts(self) -> (AcceptedHttpTarget, TriggerReadLease) {
         (self.target, self.lease)
     }
+}
+
+/// The original routing match stays current through logical transaction
+/// acceptance or each protected response write. The lease covers the copied
+/// match metadata. It keeps no old catalog or route graph alive.
+pub struct AcceptedTransactionRoute {
+    current: Weak<RwLock<PublishedCatalog>>,
+    target: CanonicalTarget,
+    method: Method,
+    trigger: TriggerId,
+    generation: u64,
+    _lease: TriggerReadLease,
+}
+
+impl AcceptedTransactionRoute {
+    pub fn with_current<T>(&self, action: impl FnOnce() -> T) -> Result<T, PlatformError> {
+        let catalog = self.current.upgrade().ok_or_else(super::unavailable)?;
+        let current = catalog.try_read().map_err(|_| super::unavailable())?;
+        if !current.confirmed {
+            return Err(super::unavailable());
+        }
+        let (index, row) =
+            matching(&current.http, &self.target, self.method).ok_or_else(withdrawn)?;
+        if row.manifest.id != self.trigger
+            || current.http.data.records[index].generation != self.generation
+        {
+            return Err(withdrawn());
+        }
+        let tenant = row
+            .manifest
+            .metadata
+            .tenant
+            .as_ref()
+            .ok_or_else(withdrawn)?;
+        let TriggerTarget::Application(target) = &row.manifest.target else {
+            return Err(withdrawn());
+        };
+        application_record(&current.routes, tenant, target).map_err(|_| withdrawn())?;
+        Ok(action())
+    }
+}
+
+fn withdrawn() -> PlatformError {
+    super::super::error(
+        PlatformErrorCode::PermissionDenied,
+        "transaction-http-route-changed",
+    )
+}
+
+fn matching<'a>(
+    table: &'a HttpTable,
+    target: &CanonicalTarget,
+    method: Method,
+) -> Option<(usize, &'a Row)> {
+    table
+        .rows
+        .iter()
+        .enumerate()
+        .filter(|(_, row)| row.matcher.matches(target, method))
+        .max_by_key(|(_, row)| row.matcher.precedence())
+}
+
+fn application_record<'a>(
+    routes: &'a CompiledCatalog,
+    tenant: &TenantId,
+    target: &ApplicationTriggerTarget,
+) -> Result<&'a RevisionRecord, PlatformError> {
+    let id = DeploymentId(target.route.as_ref().ok_or_else(conflict)?.clone());
+    let record = routes.record_by_id(&id).ok_or_else(conflict)?;
+    if record.deployment.metadata.tenant.as_ref() != Some(tenant)
+        || record.deployment.service != target.service
+        || record.publication.as_ref() != target.publication.as_ref()
+        || Some(&record.revision.0) != target.revision.as_ref()
+        || routes.versions.get(&id) != target.deployment_generation.as_ref()
+    {
+        return Err(conflict());
+    }
+    Ok(record)
 }
 
 impl DirectoryDeploymentRepository {
@@ -108,16 +199,9 @@ impl DirectoryDeploymentRepository {
         if !previous.confirmed {
             return Err(super::unavailable());
         }
-        let (index, row) = previous
-            .http
-            .rows
-            .iter()
-            .enumerate()
-            .filter(|(_, row)| row.matcher.matches(request_target, method))
-            .max_by_key(|(_, row)| row.matcher.precedence())
-            .ok_or_else(|| {
-                super::super::error(PlatformErrorCode::RouteUnavailable, "http-route-not-found")
-            })?;
+        let (index, row) = matching(&previous.http, request_target, method).ok_or_else(|| {
+            super::super::error(PlatformErrorCode::RouteUnavailable, "http-route-not-found")
+        })?;
         let lease = self
             .http_budget
             .read_with_scratch(MAX_DEFINITION_BYTES + 64 * 1024, 16 * 1024)?;
@@ -164,27 +248,40 @@ impl DirectoryDeploymentRepository {
                 }
             }
         };
+        let transaction = if row
+            .manifest
+            .configuration
+            .get("profile")
+            .and_then(latent_manifest::__serde_json::Value::as_str)
+            == Some(latent_ingress::http::transaction::PROFILE)
+        {
+            Some(
+                latent_ingress::http::transaction::TransactionRoute::from_configuration(
+                    &row.manifest.configuration,
+                )
+                .map_err(|_| corrupt())?,
+            )
+        } else {
+            None
+        };
+        let trigger_generation = previous.http.data.records[index].generation;
+        let fence = transaction.as_ref().map(|_| {
+            Arc::new(AcceptedTransactionRoute {
+                current: Arc::downgrade(&self.current),
+                target: request_target.routing_identity(),
+                method,
+                trigger: row.manifest.id.clone(),
+                generation: trigger_generation,
+                _lease: lease.clone(),
+            })
+        });
         Ok(AcceptedHttpRoute {
             trigger: row.manifest.id.clone(),
-            trigger_generation: previous.http.data.records[index].generation,
+            trigger_generation,
             state_version: previous.transaction,
             target,
-            transaction: if row
-                .manifest
-                .configuration
-                .get("profile")
-                .and_then(latent_manifest::__serde_json::Value::as_str)
-                == Some(latent_ingress::http::transaction::PROFILE)
-            {
-                Some(
-                    latent_ingress::http::transaction::TransactionRoute::from_configuration(
-                        &row.manifest.configuration,
-                    )
-                    .map_err(|_| corrupt())?,
-                )
-            } else {
-                None
-            },
+            transaction,
+            fence,
             lease,
         })
     }
@@ -217,16 +314,7 @@ impl DirectoryDeploymentRepository {
         let TriggerTarget::Application(manifest_target) = &manifest.target else {
             return Err(conflict());
         };
-        let id = DeploymentId(manifest_target.route.as_ref().ok_or_else(conflict)?.clone());
-        let record = view.routes.record_by_id(&id).ok_or_else(conflict)?;
-        if record.deployment.metadata.tenant.as_ref() != Some(tenant)
-            || record.deployment.service != manifest_target.service
-            || record.publication.as_ref() != manifest_target.publication.as_ref()
-            || Some(&record.revision.0) != manifest_target.revision.as_ref()
-            || view.routes.versions.get(&id) != manifest_target.deployment_generation.as_ref()
-        {
-            return Err(conflict());
-        }
+        let record = application_record(&view.routes, tenant, manifest_target)?;
         let publication = record
             .publication_reference(self.artifacts.as_ref())?
             .ok_or_else(conflict)?;

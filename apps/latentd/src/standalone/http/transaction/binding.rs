@@ -1,4 +1,5 @@
-use super::{HttpResultValidator, Services};
+use super::{HttpResultValidator, IngressRoute, Services};
+use latent_control_store::http_routes::AcceptedTransactionRoute;
 use latent_core::{PlatformError, PlatformErrorCode, ResourceBudget};
 use latent_ingress::http::{
     self,
@@ -98,6 +99,7 @@ pub(in crate::standalone::http) fn bind(
     facts: &TransactionRequest,
     reservation: &mut InboundActivationReservation,
     input_bytes: usize,
+    route_fence: Arc<AcceptedTransactionRoute>,
     shared_owner: Arc<latent_node::transaction_runtime::SharedCommandOwner>,
 ) -> Result<
     (
@@ -106,6 +108,7 @@ pub(in crate::standalone::http) fn bind(
     ),
     PlatformError,
 > {
+    route_fence.with_current(|| ())?;
     let installation = selected(services, route, reservation.revision())?;
     let mode = if route.mode() == RouteMode::Query {
         TransactionOperationMode::FreshQuery
@@ -159,6 +162,7 @@ pub(in crate::standalone::http) fn bind(
             native,
         )?
         .with_prepared_input(Arc::new(HttpResultValidator))
+        .with_ingress_fence(Arc::new(IngressRoute(route_fence)))
         .with_shared_command_owner(shared_owner),
     );
     reservation.bind_transaction(admission.clone())?;
@@ -189,9 +193,12 @@ pub(in crate::standalone::http) fn recover(
     facts: &TransactionRequest,
     invocation: Invocation,
     revision: latent_routing::ResolvedRevision,
-    lease: latent_control_store::http_routes::TriggerReadLease,
+    route_fence: Arc<AcceptedTransactionRoute>,
     clock: &dyn latent_core::ActivationClock,
 ) -> Result<latent_core::BoxFuture<'static, Result<http::Delivery, u16>>, u16> {
+    route_fence
+        .with_current(|| ())
+        .map_err(super::super::dispatch::status)?;
     let installation =
         selected(services, route, &revision).map_err(super::super::dispatch::status)?;
     let principal = invocation.context().principal().clone();
@@ -221,9 +228,7 @@ pub(in crate::standalone::http) fn recover(
     Ok(Box::pin(async move {
         let _installation = installation;
         let response = response.await.map_err(super::super::dispatch::status)?;
-        let delivery = super::deliver(invocation, response);
-        drop(lease);
-        delivery
+        super::deliver(invocation, response, Some(route_fence))
     }))
 }
 
