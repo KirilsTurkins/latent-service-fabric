@@ -16,7 +16,10 @@ class InventoryTests(unittest.TestCase):
         self.assertEqual(set(data['boundaries']), registry.BOUNDARIES)
         self.assertIn('--doc', data['recipes']['explicit-doctests']['run'])
         self.assertIn('ed25519-dalek/legacy_compatibility', data['recipes']['signing-compatibility']['run'])
-        self.assertEqual(len([s for s in data['suites'] if s['mode'] == 'custom']), 2)
+        custom = {s['id'] for s in data['suites'] if s['mode'] == 'custom'}
+        self.assertEqual(custom, {'latent-wasmtime.test.aot-sandbox',
+                                  'latent-wasmtime.test.aot-supervisor',
+                                  'latent-wasmtime.test.runtime-owner-storage-witness'})
         self.assertEqual(len({s['id'] for s in data['suites']}), len(data['suites']))
 
     def test_invalid_registrations_are_rejected(self):

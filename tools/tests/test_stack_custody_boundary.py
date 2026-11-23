@@ -40,7 +40,7 @@ all = "warn"
         self.write(boundary.LOADER, boundary.ALLOW + "\n" + boundary.FUNCTION
                    + "\nfn load_failed() {}\n")
         for relative in (boundary.NATIVE_STACK, boundary.NATIVE_STACK_COMBINED,
-                         boundary.NATIVE_STACK_CUSTODY_TEST):
+                         boundary.NATIVE_STACK_CUSTODY_TEST, boundary.OWNER_STORAGE):
             self.write(relative, (ROOT / relative).read_text())
 
     def write(self, relative, content):
@@ -76,6 +76,15 @@ all = "warn"
         self.write(f"{boundary.CRATE}/src/unreviewed_allocator.rs",
                    (ROOT / boundary.NATIVE_STACK_CUSTODY_TEST).read_text())
         self.assertTrue(any("unreviewed unsafe" in e for e in boundary.validate(self.root)))
+
+    def test_owner_table_allocator_is_bound_to_reviewed_path_and_source(self):
+        original = (ROOT / boundary.OWNER_STORAGE).read_text()
+        self.write(f"{boundary.CRATE}/src/unreviewed_owner_storage.rs", original)
+        self.write(boundary.OWNER_STORAGE, original + "\n// Unreviewed change.\n")
+        errors = boundary.validate(self.root)
+        self.assertIn("audited owner-table allocation changed; review exact layout and original-ledger custody",
+                      errors)
+        self.assertTrue(any("unreviewed_owner_storage.rs" in error for error in errors))
 
 
 class CustodyRunner(unittest.TestCase):
