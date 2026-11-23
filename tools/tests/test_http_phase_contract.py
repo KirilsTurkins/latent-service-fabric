@@ -110,6 +110,14 @@ class HttpPhaseContract(unittest.TestCase):
             same=copy.deepcopy(added[0]);same['if']['properties']['capability']['const']='latent:http/streaming@0.3.0'
             self.assertEqual(same,original)
             subject['allOf'].remove(added[0])
+            state = next(row for row in subject['allOf']
+                if row['if']['properties']['capability']['const'] == 'latent:state/key-value@0.2.0')
+            properties = state['then']['properties']
+            if name == 'capability-provider-binding':
+                properties = properties['restriction']['properties']
+            operations = properties['operations']['items']['enum']
+            self.assertEqual(operations.count('namespace-enroll-inbox-source'), 1)
+            operations.remove('namespace-enroll-inbox-source')
             canonical=json.dumps(value,sort_keys=True,separators=(',',':')).encode()
             self.assertEqual(hashlib.sha256(canonical).hexdigest(),identity)
 

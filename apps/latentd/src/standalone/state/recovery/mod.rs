@@ -4,6 +4,7 @@ mod authority;
 mod catalog;
 mod codecs;
 mod execution;
+mod inbox_enrollment;
 mod migration;
 mod operation;
 mod original_resume;

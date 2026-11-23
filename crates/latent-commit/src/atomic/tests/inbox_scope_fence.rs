@@ -12,6 +12,7 @@ fn scope() -> InboxScope {
         tenant: "tenant".into(),
         namespace: "aggregate".into(),
         incarnation: 1,
+        entity: None,
         processing_scope: "primary".into(),
         provider: "input".into(),
         stream: "orders".into(),
