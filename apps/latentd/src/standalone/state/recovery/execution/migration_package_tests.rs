@@ -10,6 +10,72 @@ mod seed;
 use fixture::*;
 use latent_state::{embedded::StoreError, recovery::snapshot::RequiredArtifact};
 
+#[tokio::test]
+async fn protected_compaction_checks_the_selected_view_and_preserves_logical_rows() {
+    let mut fixture = Box::pin(Fixture::new(1)).await;
+    let worker = fixture.codecs.clone();
+    let (view, closure) = fixture
+        .store
+        .with_store(StoreIoKind::RecoveryRead, 8 * 1024 * 1024, move |engine| {
+            let snapshot = engine.snapshot()?;
+            Ok((
+                worker.selected_view(&snapshot)?.view_token()?,
+                worker.closure(&snapshot)?,
+            ))
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    fixture.idle().await;
+    let mut stale = view.clone();
+    stale[0] ^= 1;
+    fixture.reseal(Action::CompactNamespace {
+        expected_view: stale,
+    });
+    let refused = super::execute(&fixture.store, fixture.codecs.clone(), &fixture.settings)
+        .await
+        .unwrap_err();
+    assert!(refused.message.contains("Conflict"), "{refused:?}");
+
+    fixture.idle().await;
+    fixture.reseal(Action::CompactNamespace {
+        expected_view: view.clone(),
+    });
+    let result = super::execute(&fixture.store, fixture.codecs.clone(), &fixture.settings)
+        .await
+        .unwrap();
+    assert_eq!(result["view"], json!(view));
+    assert!(
+        result["fileBytesAfter"]
+            .as_str()
+            .unwrap()
+            .parse::<u64>()
+            .unwrap()
+            > 0
+    );
+
+    fixture.idle().await;
+    let worker = fixture.codecs.clone();
+    let (after, retained) = fixture
+        .store
+        .with_store(StoreIoKind::RecoveryRead, 8 * 1024 * 1024, move |engine| {
+            let snapshot = engine.snapshot()?;
+            Ok((
+                worker.selected_view(&snapshot)?.view_token()?,
+                worker.closure(&snapshot)?,
+            ))
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(after, view);
+    assert_eq!(retained.inventory, closure.inventory);
+    assert_eq!(retained.required_artifacts, closure.required_artifacts);
+    assert!(fixture.finish().await);
+}
+
 fn canonical(fixture: &Fixture) -> RequiredArtifact {
     let source = fixture.codecs.catalog.primary();
     RequiredArtifact {

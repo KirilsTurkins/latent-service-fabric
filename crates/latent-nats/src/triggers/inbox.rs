@@ -55,6 +55,29 @@ impl TransactionalBinding {
     }
 }
 
+impl TriggerBinding {
+    /// Describe the exact source required by both startup and delivery.
+    /// A configuration description supplies no authority to create history.
+    pub fn inbox_scope(&self, provider: &str) -> Result<latent_state::inbox_scope::InboxScope> {
+        let selected = self
+            .transaction
+            .as_ref()
+            .ok_or(EventError::PermissionDenied)?;
+        if !text(provider, 128) {
+            return Err(EventError::PermissionDenied);
+        }
+        Ok(latent_state::inbox_scope::InboxScope {
+            tenant: self.tenant.clone(),
+            namespace: selected.namespace.clone(),
+            incarnation: selected.incarnation,
+            processing_scope: selected.processing_scope.clone(),
+            provider: provider.into(),
+            stream: self.stream.clone(),
+            stream_created: selected.qualification.stream_created.clone(),
+        })
+    }
+}
+
 /// The installed host implements this seam using its normal command factory.
 /// The reservation is the original prepaid input/admission owner. The delivery
 /// can only be constructed by this provider after authenticated qualification.
@@ -141,22 +164,10 @@ fn capture(
     sequence: u64,
     payload: &[u8],
 ) -> Result<InboxDelivery> {
-    let selected = binding
-        .transaction
-        .as_ref()
-        .ok_or(EventError::PermissionDenied)?;
-    if sequence == 0 || !text(provider, 128) || qualified.binding != binding_identity(binding)? {
+    if sequence == 0 || qualified.binding != binding_identity(binding)? {
         return Err(EventError::PermissionDenied);
     }
-    let scope = latent_state::inbox_scope::InboxScope {
-        tenant: binding.tenant.clone(),
-        namespace: selected.namespace.clone(),
-        incarnation: selected.incarnation,
-        processing_scope: selected.processing_scope.clone(),
-        provider: provider.into(),
-        stream: binding.stream.clone(),
-        stream_created: selected.qualification.stream_created.clone(),
-    };
+    let scope = binding.inbox_scope(provider)?;
     let binding_id = scope
         .input_binding()
         .map_err(|_| EventError::InvalidEvent)?;
@@ -175,10 +186,10 @@ fn capture(
         .command_key()
         .map_err(|_| EventError::InvalidEvent)?;
     Ok(InboxDelivery {
-        tenant: binding.tenant.clone(),
-        namespace: selected.namespace.clone(),
-        incarnation: selected.incarnation,
-        processing_scope: selected.processing_scope.clone(),
+        tenant: scope.tenant.clone(),
+        namespace: scope.namespace.clone(),
+        incarnation: scope.incarnation,
+        processing_scope: scope.processing_scope.clone(),
         client_id,
         identity,
         scope,

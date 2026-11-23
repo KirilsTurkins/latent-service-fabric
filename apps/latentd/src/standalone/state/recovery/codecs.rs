@@ -115,7 +115,15 @@ impl Codecs {
     }
     pub fn closure(&self, view: &ReadView) -> Result<SnapshotClosure, StoreError> {
         self.check()?;
-        super::super::validation::validate(view, &self.identity, &self.quotas, &self.original)?;
+        let custody = super::super::validation::validate_inventory(
+            view,
+            &self.identity,
+            &self.quotas,
+            &self.original,
+        )?;
+        if custody != self.checkpoint.inbox_custody() {
+            return Err(StoreError::Conflict);
+        }
         let owner = DispatchCatalog::checkpoint(view)?.ok_or(StoreError::Corrupt)?;
         if owner.0 < self.checkpoint.dispatch_owner_epoch()
             || owner.1 < self.checkpoint.clock_floor_millis()

@@ -1,10 +1,10 @@
-use super::{validation, DispatchCatalog};
+use super::{validation, DispatchCatalog, DispatchCounts, EFFECT_PREFIX};
 use crate::dispatch::{effect_record_version, EffectRecord};
 use crate::dispatch_store::{
     codec::OwnerRecord, effect_management::EffectManagementCatalog, effect_payload_key,
     effect_row_key, storage_error,
 };
-use latent_state::embedded::{ReadView, StoreError};
+use latent_state::embedded::{Family, ReadView, StoreError};
 
 /// One fully validated original effect. Native payload/history buffers retire
 /// inside this read; the output retains only bounded metadata, never a grant.
@@ -17,6 +17,40 @@ pub struct EffectInspection {
 }
 
 impl DispatchCatalog {
+    /// Inspect retained disposition counts for one exact namespace and
+    /// publication on the caller's already admitted recovery view.
+    pub fn publication_counts(
+        view: &ReadView,
+        tenant: &str,
+        namespace: &str,
+        incarnation: u64,
+        publication: &str,
+        checkpoint: &mut dyn FnMut() -> Result<(), StoreError>,
+    ) -> Result<DispatchCounts, StoreError> {
+        let mut counts = DispatchCounts::default();
+        validation::walk(
+            view,
+            Family::Outbox,
+            EFFECT_PREFIX,
+            checkpoint,
+            |key, bytes, _| {
+                crate::dispatch_store::validate_row(key, bytes)?;
+                let record = EffectRecord::decode(bytes).map_err(storage_error)?;
+                let authority = record.authority().map_err(storage_error)?;
+                let scope = authority.scope();
+                if scope.tenant == tenant
+                    && scope.namespace == namespace
+                    && scope.incarnation == incarnation
+                    && scope.publication == publication
+                {
+                    counts.observe(&record)?;
+                }
+                Ok(())
+            },
+        )?;
+        Ok(counts)
+    }
+
     /// Read one exact row and its existing finite payload/history/receipt
     /// closure. Missing rows remain missing; reading never expires or redrives.
     pub fn inspect_effect(

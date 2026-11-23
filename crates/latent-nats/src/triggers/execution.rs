@@ -1,6 +1,7 @@
 use super::{consumer::Ack, driver::stopped, InboxDelivery, TriggerBinding, TriggerTerminal};
 use crate::EventError;
 use latent_activation::{ActivationOutcome, ActivationRequest, TraceContext};
+use latent_commit::atomic::Outcome;
 use latent_core::ClockSample;
 use latent_core::{
     ActivationId, ContractId, FunctionId, IncomingDeadline, InvocationPrincipal, Metadata,
@@ -150,21 +151,23 @@ pub(super) fn transaction_outcome(
         } => Some(command),
         _ => None,
     };
-    let terminal = record
+    let disposition = record
         .filter(|record| delivery.matches(record))
-        .and_then(|record| match record.outcome() {
-            latent_commit::atomic::Outcome::Committed => Some(TriggerTerminal::Succeeded),
-            latent_commit::atomic::Outcome::Rejected => Some(TriggerTerminal::DeclaredFailure),
-            latent_commit::atomic::Outcome::Pending | latent_commit::atomic::Outcome::Aborted => {
-                None
-            }
-        });
-    if let Some(terminal) = terminal {
+        .and_then(|record| terminal_broker_disposition(record.outcome()));
+    if let Some((terminal, acknowledgement)) = disposition {
         if completion.authority.with_current(&mut || {}).is_ok() {
-            return (terminal, Ack::Success, Some(completion));
+            return (terminal, acknowledgement, Some(completion));
         }
     }
     (TriggerTerminal::RecoveryRequired, Ack::Hold, None)
+}
+
+pub(super) fn terminal_broker_disposition(outcome: Outcome) -> Option<(TriggerTerminal, Ack)> {
+    match outcome {
+        Outcome::Committed => Some((TriggerTerminal::Succeeded, Ack::Success)),
+        Outcome::Rejected => Some((TriggerTerminal::DeclaredFailure, Ack::Terminate)),
+        Outcome::Pending | Outcome::Aborted => None,
+    }
 }
 
 impl super::NatsTriggers {

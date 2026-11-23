@@ -34,6 +34,9 @@ pub(super) enum Action {
         file: File,
     },
     InspectNamespace {},
+    CompactNamespace {
+        expected_view: Vec<u8>,
+    },
     InspectRestore {
         file: File,
         destination_root: PathBuf,
@@ -183,6 +186,7 @@ impl Action {
         match self {
             Self::Snapshot { .. } => &["namespace-snapshot"],
             Self::InspectNamespace {} => &["namespace-inspect"],
+            Self::CompactNamespace { .. } => &["state-checkpoint"],
             Self::InspectRestore { .. } => &["namespace-inspect-restore"],
             Self::Restore { .. } => &["namespace-inspect-restore", "namespace-restore"],
             Self::StageMigration { .. } | Self::CompleteMigration { .. } => {
@@ -249,6 +253,7 @@ impl Action {
                 Ok(())
             }
             Self::InspectNamespace {} | Self::Review {} => Ok(()),
+            Self::CompactNamespace { expected_view } => view(expected_view),
             Self::InspectCloseEffects {
                 operation_id,
                 effect_ids,

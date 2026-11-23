@@ -32,6 +32,7 @@ Current action fields are:
 | --- | --- |
 | `snapshot` | `operationId`, `file: {root,name}` |
 | `inspect-namespace` | none |
+| `compact-namespace` | exact `expectedView` byte array from `inspect-namespace` |
 | `inspect-restore` | `file`, `destinationRoot`, `destinationCheckpointRoot`, `operationId`, `snapshotDigest`, `manifestDigest`, optional `destinationStoreIdentity` |
 | `restore` | the inspect fields plus exact `windowAcknowledgement` |
 | `inspect-close-effects` | `operationId`, `effectIds`, `reason` |
@@ -45,10 +46,23 @@ Current action fields are:
 Digests use `sha256:` and 64 lowercase hexadecimal digits. Restore inspection
 returns `windowDigest`; restore requires that exact acknowledgement. Namespace
 inspection returns encoded `namespace`, `history`, current `view`, optional
-`guard`, and `reviewDigest`. Its `storeCapacity` reports the protected
-engine file's observed length, configured byte limit, remaining growth
-allowance and whether compaction is active. This reports storage pressure
-against the selected file limit independently from memory and queue admission.
+`guard`, `reviewDigest` and `publicationEffects`. Review the selected publication's
+pending, dispatching, uncertain, blocked and retry counts before retiring it.
+These counts describe the authorized namespace view and leave retained work
+available for drain or explicit reconciliation. Run the check while the
+publication still has inspection authority.
+
+Namespace inspection reports the protected file through `storeCapacity`, including
+its observed length, configured limit, growth headroom and compaction activity.
+To compact a stopped installation, use `compact-namespace` with its exact
+`expectedView` and the protected `state-checkpoint` permission. The worker
+rechecks the view and current authority before using the bounded redb compactor.
+The profile allows 8 MiB of work, 64 MiB of read and write I/O each, up to
+8192 I/O operations and 256 KiB of file growth within five seconds. The
+receipt reports the actual file sizes, I/O and elapsed time. Physical
+uncertainty holds the store for recovery. Business records and recovery
+floors are preserved by successful compaction.
+
 Migration resume returns action `resume-migration`,
 encoded current `receipt`, current `view`, and `resourcePhysicallyRetired`.
 Generic resume refuses a retained current migration and cannot replace its

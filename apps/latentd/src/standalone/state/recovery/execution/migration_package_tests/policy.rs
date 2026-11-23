@@ -15,7 +15,7 @@ pub(super) fn install(
         "id":"native","effect":"allow","principals":[{"kind":"administrator","subject":"operator"}],
         "services":["examples/transaction-java-aggregate"],"publications":[publication],
         "capability":STATE_CONTRACT,"operations":["namespace-snapshot","namespace-schema-migrate",
-            "namespace-inspect-restore","namespace-restore"],
+            "namespace-inspect-restore","namespace-restore","state-checkpoint"],
         "resources":{"kind":"state","scopes":[{"namespace":"transactional-aggregate","incarnation":1,
             "entity":null,"recoveryKind":"original-caller","recoveryScope":caller.scope,"resultPolicy":"visibility-v1"}]},
         "ceiling":{"operations":1,"inputBytes":67_108_864,"outputBytes":67_108_864,"wallTimeMillis":30000}}]});
