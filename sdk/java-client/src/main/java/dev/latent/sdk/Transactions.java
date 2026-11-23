@@ -260,7 +260,10 @@ public final class Transactions {
             long blockedEffects,
             long deadLetterEffects,
             long countsObservedAtUnixMillis,
-            boolean clockContinuityProven) { }
+            boolean clockContinuityProven,
+            Optional<Long> dispatchingEffects,
+            Optional<Long> unresolvedPayloadBytes,
+            Optional<Long> oldestUnresolvedAgeMillis) { }
 
     public record GetEffectRequest(
             Optional<TransactionProfile> profile,

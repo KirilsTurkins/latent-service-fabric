@@ -16,6 +16,11 @@ response does not claim an atomic observation across different owners. Pending
 control and restored-history review keep admission paused. Pause closes new
 provider admission, while already accepted claim/send/cleanup may finish.
 
+The durable observation includes dispatching effects and unresolved payload bytes
+once the native scan completes. It also includes the age of the oldest unresolved
+effect when that observation has clock continuity. The CLI writes these optional
+unsigned values as decimal strings and uses null when a value is unavailable.
+
 Control carries one original operation ID, action, and positive owner epoch and
 revision. The revision must have a representable successor. Its durable receipt
 retains the authenticated actor, original action, before/after generation, exact

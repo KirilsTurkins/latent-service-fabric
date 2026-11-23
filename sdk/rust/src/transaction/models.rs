@@ -321,6 +321,9 @@ pub struct DispatcherSnapshot {
     pub dead_letter_effects: u64,
     pub counts_observed_at_unix_millis: u64,
     pub clock_continuity_proven: bool,
+    pub dispatching_effects: Option<u64>,
+    pub unresolved_payload_bytes: Option<u64>,
+    pub oldest_unresolved_age_millis: Option<u64>,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
