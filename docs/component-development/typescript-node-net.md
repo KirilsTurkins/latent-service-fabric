@@ -15,6 +15,13 @@ observed stream, broker, pool, Store and activation owners after root exit.
 The test used the development provider on loopback. The case results, costs
 and compiler identities are in the [signed socket receipt](../testing/evidence/typescript-socket-paused-end-2026-11-23.json).
 
+The follow-up reran the eight cases and exercised a ninth on the same signed
+component. A peer sent one byte and EOF while the primary socket was paused.
+A second connection signalled the guest to resume only after the host observed
+one delivered byte and a single pending read across both connections. The
+guest received the buffered byte once, followed by end and close. Its original
+budget covered 955,950,071 fuel and 12,189,239 peak guest bytes.
+
 The source implementation supports `Socket`, `connect`/`createConnection`,
 connection and data events, copied Buffer chunks, pause/resume, serialized
 writes, backpressure, writable readiness after zero progress, timeout events,
