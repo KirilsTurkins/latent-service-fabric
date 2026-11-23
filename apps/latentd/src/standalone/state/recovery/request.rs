@@ -42,6 +42,15 @@ pub(super) enum Action {
         #[serde(default, deserialize_with = "maintenance_generation")]
         expected_generation: Option<u64>,
     },
+    InspectInboxSource {
+        binding: String,
+    },
+    EnrollInboxSource {
+        binding: String,
+        expected_scope: String,
+        expected_view: Vec<u8>,
+        expected_checkpoint_generation: u64,
+    },
     InspectRestore {
         file: File,
         destination_root: PathBuf,
@@ -183,6 +192,15 @@ impl NativeRecoveryRequest {
 #[cfg(test)]
 mod restore_target_tests;
 impl Action {
+    pub(super) fn inbox_binding(&self) -> Option<&str> {
+        match self {
+            Self::InspectInboxSource { binding } | Self::EnrollInboxSource { binding, .. } => {
+                Some(binding)
+            }
+            _ => None,
+        }
+    }
+
     pub(super) fn restore_destination_identity(
         &self,
         source: &StoreIdentity,
@@ -205,7 +223,8 @@ impl Action {
     pub const fn purposes(&self) -> &'static [&'static str] {
         match self {
             Self::Snapshot { .. } => &["namespace-snapshot"],
-            Self::InspectNamespace {} => &["namespace-inspect"],
+            Self::InspectNamespace {} | Self::InspectInboxSource { .. } => &["namespace-inspect"],
+            Self::EnrollInboxSource { .. } => &["namespace-enroll-inbox-source"],
             Self::CompactNamespace { .. } => &["state-checkpoint"],
             Self::SweepResultBodies { .. } => &["purge-expired-payload"],
             Self::InspectRestore { .. } => &["namespace-inspect-restore"],
@@ -276,6 +295,21 @@ impl Action {
             Self::InspectNamespace {} | Self::Review {} => Ok(()),
             Self::CompactNamespace { expected_view }
             | Self::SweepResultBodies { expected_view, .. } => view(expected_view),
+            Self::InspectInboxSource { binding } => identity(binding),
+            Self::EnrollInboxSource {
+                binding,
+                expected_scope,
+                expected_view,
+                expected_checkpoint_generation,
+            } => {
+                identity(binding)?;
+                view(expected_view)?;
+                if *expected_checkpoint_generation == 0 || expected_scope.len() != 64 {
+                    return Err(super::denied());
+                }
+                super::assets::digest_bytes(&format!("sha256:{expected_scope}"))?;
+                Ok(())
+            }
             Self::InspectCloseEffects {
                 operation_id,
                 effect_ids,

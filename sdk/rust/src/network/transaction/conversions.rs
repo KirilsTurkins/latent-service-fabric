@@ -477,6 +477,9 @@ impl From<c::DispatcherSnapshot> for model::DispatcherSnapshot {
             dead_letter_effects: value.dead_letter_effects,
             counts_observed_at_unix_millis: value.counts_observed_at_unix_millis,
             clock_continuity_proven: value.clock_continuity_proven,
+            dispatching_effects: value.dispatching_effects,
+            unresolved_payload_bytes: value.unresolved_payload_bytes,
+            oldest_unresolved_age_millis: value.oldest_unresolved_age_millis,
         }
     }
 }
@@ -507,6 +510,9 @@ impl TryFrom<model::DispatcherSnapshot> for c::DispatcherSnapshot {
             dead_letter_effects: value.dead_letter_effects,
             counts_observed_at_unix_millis: value.counts_observed_at_unix_millis,
             clock_continuity_proven: value.clock_continuity_proven,
+            dispatching_effects: value.dispatching_effects,
+            unresolved_payload_bytes: value.unresolved_payload_bytes,
+            oldest_unresolved_age_millis: value.oldest_unresolved_age_millis,
         })
     }
 }

@@ -39,7 +39,7 @@ impl io::poll::Guest for ClosedRuntime {
 }
 impl exports::latent::dotnet_retirement::owner::Guest for ClosedRuntime {
     async fn drain() {
-        pump::Pump::current().drain_retired();
+        pump::Pump::drain_current();
     }
 }
 export!(ClosedRuntime);

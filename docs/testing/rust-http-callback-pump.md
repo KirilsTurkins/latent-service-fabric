@@ -15,6 +15,11 @@ the adapter build recipe, not by a guest declaration or an ordinary host default
 Synchronous `ready`, `get` and stream operations inspect existing state and
 signal the driver; they do not poll an async import in a synchronous WIT task.
 
+A synchronous readiness query on an unused adapter leaves its scheduler
+unallocated. The compiler-owned root drain also returns immediately if the
+invocation never registered work or a waiter. After the first registration,
+readiness queries signal the existing driver and the root drains its accepted work.
+
 Each waiter retains its original readiness sources and current waker. The
 driver wakes only callers whose actual sources became ready. The operation
 and deferred-retirement capacity remains 32; at most 64 live waiters and 64

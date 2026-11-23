@@ -14,6 +14,9 @@ example. Your selection is shared across the examples. The build, deploy and tes
 commands work the same way for every language; use the language you installed
 during setup.
 
+To use a third-party library or a local dependency with the development
+authoring tools, follow [Add a library to your capsule](application-dependencies.md#add-a-library-to-your-capsule).
+
 ## 1. A greeting capsule
 
 The first program accepts a name and returns a greeting. An empty name produces

@@ -281,6 +281,9 @@ export interface DispatcherSnapshot {
   readonly deadLetterEffects: bigint;
   readonly countsObservedAtUnixMillis: bigint;
   readonly clockContinuityProven: boolean;
+  readonly dispatchingEffects?: bigint;
+  readonly unresolvedPayloadBytes?: bigint;
+  readonly oldestUnresolvedAgeMillis?: bigint;
 }
 
 export interface GetEffectRequest {

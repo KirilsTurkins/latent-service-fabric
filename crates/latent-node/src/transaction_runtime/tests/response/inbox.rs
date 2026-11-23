@@ -28,11 +28,12 @@ fn attach(
     )
 }
 
-fn source() -> (InboxScope, InboxIdentity) {
+fn source(entity: Option<&str>) -> (InboxScope, InboxIdentity) {
     let scope = InboxScope {
         tenant: "a".into(),
         namespace: "orders".into(),
         incarnation: 1,
+        entity: entity.map(str::to_owned),
         processing_scope: "primary".into(),
         provider: "input".into(),
         stream: "orders".into(),
@@ -90,7 +91,7 @@ async fn committed_input(
     entity: Option<&str>,
 ) -> (Fixture, InboxScope, InboxIdentity, CommandRecord) {
     let fixture = Box::pin(Fixture::with_scoped_trigger()).await;
-    let (scope, identity) = source();
+    let (scope, identity) = source(entity);
     install_source(&fixture, &scope).await;
     let (first, envelope, budget) = invocation(&fixture, &scope, &identity, entity);
     let guest = first.admit(&envelope, &budget).await.unwrap();

@@ -328,6 +328,7 @@ impl DispatcherOwner {
 
     pub async fn refresh_counts(&self) -> Result<DispatcherSnapshot, DispatcherError> {
         let counts = store::counts(&self.services.store).await?;
+        let counts_time = self.services.time.observe();
         let mut state = self
             .services
             .shared
@@ -335,7 +336,7 @@ impl DispatcherOwner {
             .lock()
             .map_err(|_| DispatcherError::AdmissionClosed)?;
         state.counts = counts;
-        state.counts_time = self.services.time.observe().unix_millis;
+        state.counts_time = counts_time;
         drop(state);
         self.snapshot()
     }

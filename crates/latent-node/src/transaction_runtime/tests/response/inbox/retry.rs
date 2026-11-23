@@ -57,7 +57,7 @@ async fn aborted_input(
     entity: Option<&str>,
 ) -> (Fixture, InboxScope, InboxIdentity, CommandRecord) {
     let fixture = Box::pin(Fixture::with_scoped_trigger()).await;
-    let (scope, identity) = source();
+    let (scope, identity) = source(entity);
     install_source(&fixture, &scope).await;
     let (admission, envelope, budget) = invocation(&fixture, &scope, &identity, entity);
     let guest = admission.admit(&envelope, &budget).await.unwrap();

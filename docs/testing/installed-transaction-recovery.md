@@ -19,8 +19,9 @@ state-mode file; offline requests cannot create a missing source store.
 
 ## Closed native input and output
 
-Invoke `transaction_recovery --config CONFIG --credential-file FILE --tenant
-TENANT --request-file REQUEST`. The protected request is at most 16 KiB and has
+Invoke `latentd transaction-recovery --config CONFIG --credential-file FILE
+--tenant TENANT --request-file REQUEST` from the installed Development node
+binary on Linux x86-64. The protected request is at most 16 KiB and has
 `publication`, `request`, and optional `decoderSources`. Neither digests nor
 paths convey authority. Decoder selectors are closed objects containing only
 `componentDigest` and `publication`; at most three extra publications are
@@ -34,6 +35,8 @@ Current action fields are:
 | `inspect-namespace` | none |
 | `compact-namespace` | exact `expectedView` byte array from `inspect-namespace` |
 | `sweep-result-bodies` | exact `expectedView` and `expectedGeneration` from `inspect-namespace` |
+| `inspect-inbox-source` | `binding` |
+| `enroll-inbox-source` | `binding`, `expectedScope`, `expectedView`, `expectedCheckpointGeneration` |
 | `inspect-restore` | `file`, `destinationRoot`, `destinationCheckpointRoot`, `operationId`, `snapshotDigest`, `manifestDigest`, optional `destinationStoreIdentity` |
 | `restore` | the inspect fields plus exact `windowAcknowledgement` |
 | `inspect-close-effects` | `operationId`, `effectIds`, `reason` |
@@ -82,6 +85,17 @@ Generic resume refuses a retained current migration and cannot replace its
 protected checkpoint and activation owner. Old v1 recipes and bytes retain
 their own approval boundary.
 
+When the archive contains anchored inbox sources, restore inspection and
+staging report `inboxReplay` with the exact source inventory generation and
+digest and status `reconciliation-required`. It reports the number of terminal
+inbox records in the archive and current store, and whether the exact records
+match. A mismatch calls for review even when the counts coincide. The reviewed
+window covers the original database history, including newer records absent
+from the archive.
+Keep the consumer paused while reviewing broker delivery and acknowledgement
+positions against the retained history. The source inventory proves binding
+custody only. It supplies no broker replay position or permission to resume.
+
 For protected staging, use the same explicit `destinationStoreIdentity` in both
 inspection and restore. The identity accepts one through 128 ASCII letters,
 digits, dots, underscores or hyphens. Source validation remains bound to the
@@ -119,7 +133,41 @@ Retirement never converts an uncertain write into a known abort. Early
 configuration/authentication/admission failure may refuse the process before a
 store report exists. The collector must retain that failed attempt.
 
+## Enroll a transactional inbox source
+
+Stop the node. Use its protected configuration containing the transactional
+trigger binding and select the corresponding current signed command
+publication. Use `inspect-inbox-source` under the `namespace-inspect` policy.
+It returns the configured source's `inputBinding` (64 lowercase hex digits),
+the exact namespace `view` byte array, the `checkpointGeneration`, and whether
+the source is already enrolled.
+
+To approve a new logical source, run `enroll-inbox-source` under the
+`namespace-enroll-inbox-source` policy. Supply the reported `inputBinding` as
+`expectedScope`, `view` as `expectedView`, and `checkpointGeneration` as
+`expectedCheckpointGeneration`. Keep the same binding and publication in both
+requests. Enrollment preserves the dispatch floor and advances the protected
+checkpoint by one source. Restart the node after the recovery report confirms
+success and clean physical retirement. The broker qualifies the configured
+stream incarnation and consumer during delivery.
+
+A stale inspection requires a fresh read. If an interrupted write leaves a
+checkpoint mismatch, startup and offline enrollment hold the source for
+reconciliation. Keep both the original database and external checkpoint.
+
 ## Finite current ownership
+
+An offline snapshot of anchored inbox history includes the complete retained
+source rows for the selected namespace and its current incarnation. Save the
+snapshot receipt alongside the original external checkpoint. The receipt's
+`inboxCustody` records the checkpoint generation, source count and inventory
+digest observed during export. Restore inspection compares the archived
+inventory with the retained sources before offering a loss window. Staging
+preserves an exact match in the new protected checkpoint and keeps delivery
+paused for reconciliation. An archive with different source history is refused.
+Operators can inspect and close deferred effects using the existing recovery
+plans; the clock checkpoint advances with the same verified inbox inventory.
+The inbox requires its own reconciliation before delivery resumes.
 
 The existing Java declaration remains 96 MiB native recovery capacity with a
 32 MiB maximum reservation, 16 MiB retained store recovery capacity, an

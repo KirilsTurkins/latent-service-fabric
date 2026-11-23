@@ -227,7 +227,9 @@ int pthread_mutex_timedlock(pthread_mutex_t *restrict object,const struct timesp
 #if LSF_C_TIMED_CLOCK
     int saved=errno,error=sync_mutex_timed(object,deadline);errno=saved;return error;
 #else
-    (void)object;(void)deadline;return ENOTSUP;
+    /* Immediate acquisition needs neither a clock read nor a Wait owner. */
+    (void)deadline;int saved=errno,error=sync_try(object,1);errno=saved;
+    return error==EBUSY?ENOTSUP:error;
 #endif
 }
 int mtx_init(mtx_t *object,int type) {

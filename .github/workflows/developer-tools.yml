@@ -365,11 +365,29 @@ jobs:
         if: matrix.language == 'typescript'
         with:
           node-version: 24.19.0
-      - name: Prepare captured Go watch compiler namespace
-        if: matrix.language == 'go'
+      - name: Prepare captured Go and Rust watch compiler namespace
+        if: matrix.language == 'go' || matrix.language == 'rust'
+        timeout-minutes: 5
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install --yes bubblewrap
+          set -euo pipefail
+          if ! command -v bwrap >/dev/null; then
+            sources=$(mktemp --suffix=.list "$RUNNER_TEMP/lsf-watch-apt.XXXXXX")
+            trap 'rm -f -- "$sources"' EXIT
+            for suite in noble noble-updates noble-security; do
+              printf 'deb [arch=amd64 signed-by=/usr/share/keyrings/ubuntu-archive-keyring.gpg] https://archive.ubuntu.com/ubuntu/ %s main universe\n' "$suite"
+            done > "$sources"
+            apt_options=(
+              -o "Dir::Etc::sourcelist=$sources"
+              -o 'Dir::Etc::sourceparts=-'
+              -o 'Acquire::https::Timeout=20'
+              -o 'Acquire::Retries=1'
+              -o 'Acquire::Languages=none'
+            )
+            sudo apt-get "${apt_options[@]}" -o 'APT::Update::Error-Mode=any' update
+            sudo apt-get "${apt_options[@]}" install --yes --no-install-recommends bubblewrap
+          fi
+          bwrap --version
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Qualify normal Go dependency watch through three reviewed signed builds
         if: matrix.language == 'go'
@@ -384,12 +402,6 @@ jobs:
             ${{ runner.temp }}/go-dependency-watch/ci-account.json
           if-no-files-found: warn
           retention-days: 3
-      - name: Prepare captured Rust watch compiler namespace
-        if: matrix.language == 'rust'
-        run: |
-          sudo apt-get update
-          sudo apt-get install --yes bubblewrap
-          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Qualify normal Rust dependency watch through three reviewed signed builds
         if: matrix.language == 'rust'
         run: sudo --preserve-env=GITHUB_ACTIONS,RUNNER_OS "$(command -v python)" -B tools/run_rust_dependency_watch_ci.py --payload target/dev-tools/payload --source-node target/dev-tools/source-node --qualifier tools/qualify_rust_dependency_watch.py --fixture tools/rust_dependency_watch_fixture.py --node-probe tools/dev_node_application_probe.py --output "$RUNNER_TEMP/rust-dependency-watch"
