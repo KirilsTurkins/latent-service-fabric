@@ -33,6 +33,7 @@ Current action fields are:
 | `snapshot` | `operationId`, `file: {root,name}` |
 | `inspect-namespace` | none |
 | `compact-namespace` | exact `expectedView` byte array from `inspect-namespace` |
+| `sweep-result-bodies` | exact `expectedView` and `expectedGeneration` from `inspect-namespace` |
 | `inspect-restore` | `file`, `destinationRoot`, `destinationCheckpointRoot`, `operationId`, `snapshotDigest`, `manifestDigest`, optional `destinationStoreIdentity` |
 | `restore` | the inspect fields plus exact `windowAcknowledgement` |
 | `inspect-close-effects` | `operationId`, `effectIds`, `reason` |
@@ -62,6 +63,16 @@ The profile allows 8 MiB of work, 64 MiB of read and write I/O each, up to
 receipt reports the actual file sizes, I/O and elapsed time. Physical
 uncertainty holds the store for recovery. Business records and recovery
 floors are preserved by successful compaction.
+
+For a stopped node with an active, ready namespace, use `sweep-result-bodies`
+with protected `purge-expired-payload` permission. Copy the inspected `view`
+and `resultMaintenance.generation` into the request as `expectedView` and
+`expectedGeneration`. Use null if there is no progress yet. Each call advances
+one indexed page under the protected clock. After a restart, the reviewed
+generation resumes that same pass. Check `passComplete` to stop, and inspect
+again after an uncertain return. Only eligible expired response bodies and
+their own payload references are released. Command identities, inbox history
+and unresolved effect references remain protective.
 
 Migration resume returns action `resume-migration`,
 encoded current `receipt`, current `view`, and `resourcePhysicallyRetired`.

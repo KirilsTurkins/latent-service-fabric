@@ -1,6 +1,54 @@
 use super::*;
 
 #[test]
+fn reviewed_result_pass_resumes_after_reopen_and_refuses_stale_generation() {
+    let (directory, store, effects) = setup();
+    let first = completed(&store, &effects, "reviewed-body-first");
+    let second = completed(&store, &effects, "reviewed-body-second");
+    let due = first.result_expires().max(second.result_expires()) + 1;
+    let owner = ResultMaintenanceOwner::default();
+    let reader = store.snapshot().unwrap();
+    assert_eq!(
+        owner.reviewed_step(&store, observation(due, 0), None, maintenance),
+        Err(AtomicError::Limit)
+    );
+    assert_eq!(MaintenanceProgress::inspect(&reader).unwrap(), None);
+    drop(reader);
+
+    let progress = owner
+        .reviewed_step(&store, observation(due, 0), None, maintenance)
+        .unwrap();
+    assert_eq!(progress.generation, 1);
+    assert_eq!(progress.retired, 1);
+    assert!(progress.cursor.is_some());
+    drop(store);
+
+    let store = open(&directory.path().join("state.redb"));
+    let rebooted = MaintenanceClock {
+        boot: [8; 32],
+        ..observation(due + 1, 0)
+    };
+    assert_eq!(
+        owner.reviewed_step(&store, rebooted, None, maintenance),
+        Err(AtomicError::Conflict)
+    );
+    let progress = owner
+        .reviewed_step(&store, rebooted, Some(progress.generation), maintenance)
+        .unwrap();
+    assert_eq!(progress.generation, 2);
+    assert_eq!(progress.visited, 2);
+    assert_eq!(progress.retired, 2);
+    assert!(progress.cursor.is_none());
+    let view = store.snapshot().unwrap();
+    for command in [first, second] {
+        let key = command_row_key(command.id);
+        let original = view.get(&key).unwrap().unwrap();
+        assert!(result_bytes(&store, &command).starts_with(b"LCE\0\x01"));
+        validate_linked_row(&view, &key, &original).unwrap();
+    }
+}
+
+#[test]
 fn quota_read_bounds_corrupt_rows_and_preserves_small_legacy_stores() {
     let root = tempfile::tempdir().unwrap();
     let row = RowKey {

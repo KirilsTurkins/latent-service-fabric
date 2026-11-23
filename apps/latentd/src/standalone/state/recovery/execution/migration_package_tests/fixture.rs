@@ -51,6 +51,10 @@ pub(super) struct Fixture {
 
 impl Fixture {
     pub async fn new(count: usize) -> Self {
+        Self::with_namespace(count, true).await
+    }
+
+    pub async fn with_namespace(count: usize, quiesce: bool) -> Self {
         let root = tempfile::tempdir().unwrap();
         let packages = super::configuration::packages(root.path(), count).await;
         let policy = super::configuration::policy(root.path(), &packages);
@@ -60,7 +64,7 @@ impl Fixture {
             original,
             store,
             quotas,
-        } = open_store(root.path()).await;
+        } = open_store(root.path(), quiesce).await;
         let (current, catalog, metadata) =
             capture_catalog(&packages, &settings, &native, &original);
         let principal = InvocationPrincipal {
@@ -269,7 +273,7 @@ struct Started {
     quotas: Vec<latent_state::tenant::TenantQuota>,
 }
 
-async fn open_store(root: &std::path::Path) -> Started {
+async fn open_store(root: &std::path::Path, quiesce: bool) -> Started {
     let mut config = ProtectedStoreConfig::bounded_linux(root.join("state"));
     config.create_if_missing = true;
     config.engine.cache_bytes = 1024 * 1024;
@@ -333,7 +337,7 @@ async fn open_store(root: &std::path::Path) -> Started {
             original.clone(),
             move |engine| {
                 let _memory = seed_memory;
-                super::seed::populate(engine, quota)
+                super::seed::populate(engine, quota, quiesce)
             },
         )
         .unwrap()

@@ -144,7 +144,9 @@ async fn prepare(
     if floor.inbox_custody().is_some()
         && !matches!(
             &request.request,
-            Action::InspectNamespace {} | Action::CompactNamespace { .. }
+            Action::InspectNamespace {}
+                | Action::CompactNamespace { .. }
+                | Action::SweepResultBodies { .. }
         )
     {
         // Export and recovery writes need an inbox-aware restore contract.

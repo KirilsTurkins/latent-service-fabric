@@ -28,6 +28,7 @@ use std::{sync::Arc, time::Instant};
 mod compaction;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod migration_package_tests;
+mod retention;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -147,6 +148,10 @@ pub(super) async fn execute(
         Action::CompactNamespace { expected_view } => {
             compaction::compact(store, &codecs, expected_view.clone()).await
         }
+        Action::SweepResultBodies {
+            expected_view,
+            expected_generation,
+        } => retention::sweep(store, &codecs, expected_view.clone(), *expected_generation).await,
         Action::Snapshot { operation_id, file } => {
             snapshot(store, Arc::clone(&codecs), operation_id, file).await
         }
@@ -650,7 +655,8 @@ async fn metadata_action(
                     "guard":observed.guard.as_ref().map(RecoveryGuard::encode).transpose()?,
                     "reviewDigest":digest(worker.review),
                     "publicationEffects":publication_effects(&worker, &view)?,
-                    "storeCapacity":store_capacity(engine)?
+                    "storeCapacity":store_capacity(engine)?,
+                    "resultMaintenance":retention::inspect(&view)?
                 }),
                 Action::InspectCloseEffects { operation_id, effect_ids, reason } => {
                     let plan = inspect(&view, close_scope(&worker), worker.authority.actor.clone(), operation_id.clone(), effect_ids.clone(), reason.clone())?;

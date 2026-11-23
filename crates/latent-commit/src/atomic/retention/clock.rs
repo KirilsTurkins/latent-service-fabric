@@ -62,6 +62,14 @@ impl MaintenanceClock {
     }
 }
 impl MaintenanceProgress {
+    /// Read the generation of the original bounded maintenance pass.
+    pub fn inspect(view: &latent_state::embedded::ReadView) -> Result<Option<Self>, AtomicError> {
+        view.get_bounded(&Self::key(), PROGRESS_BYTES)?
+            .as_deref()
+            .map(Self::decode)
+            .transpose()
+    }
+
     pub(super) fn anchor(clock: MaintenanceClock, generation: u64) -> Self {
         Self {
             generation,

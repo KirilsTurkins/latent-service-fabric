@@ -37,6 +37,11 @@ pub(super) enum Action {
     CompactNamespace {
         expected_view: Vec<u8>,
     },
+    SweepResultBodies {
+        expected_view: Vec<u8>,
+        #[serde(default, deserialize_with = "maintenance_generation")]
+        expected_generation: Option<u64>,
+    },
     InspectRestore {
         file: File,
         destination_root: PathBuf,
@@ -128,6 +133,21 @@ where
         .map_err(|_| serde::de::Error::custom("invalid restore destination identity"))
 }
 
+fn maintenance_generation<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<String>::deserialize(deserializer)?
+        .map(|value| {
+            value
+                .parse::<u64>()
+                .ok()
+                .filter(|generation| *generation != 0 && generation.to_string() == value)
+                .ok_or_else(|| serde::de::Error::custom("invalid maintenance generation"))
+        })
+        .transpose()
+}
+
 impl NativeRecoveryRequest {
     pub fn decode(bytes: &[u8]) -> Result<Self, PlatformError> {
         if bytes.is_empty() || bytes.len() > 16_384 {
@@ -187,6 +207,7 @@ impl Action {
             Self::Snapshot { .. } => &["namespace-snapshot"],
             Self::InspectNamespace {} => &["namespace-inspect"],
             Self::CompactNamespace { .. } => &["state-checkpoint"],
+            Self::SweepResultBodies { .. } => &["purge-expired-payload"],
             Self::InspectRestore { .. } => &["namespace-inspect-restore"],
             Self::Restore { .. } => &["namespace-inspect-restore", "namespace-restore"],
             Self::StageMigration { .. } | Self::CompleteMigration { .. } => {
@@ -253,7 +274,8 @@ impl Action {
                 Ok(())
             }
             Self::InspectNamespace {} | Self::Review {} => Ok(()),
-            Self::CompactNamespace { expected_view } => view(expected_view),
+            Self::CompactNamespace { expected_view }
+            | Self::SweepResultBodies { expected_view, .. } => view(expected_view),
             Self::InspectCloseEffects {
                 operation_id,
                 effect_ids,

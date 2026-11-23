@@ -11,6 +11,42 @@ use fixture::*;
 use latent_state::{embedded::StoreError, recovery::snapshot::RequiredArtifact};
 
 #[tokio::test]
+async fn protected_result_sweep_checks_the_inspected_generation() {
+    let mut fixture = Box::pin(Fixture::with_namespace(1, false)).await;
+    fixture.reseal(Action::InspectNamespace {});
+    let read = super::execute(&fixture.store, fixture.codecs.clone(), &fixture.settings)
+        .await
+        .unwrap();
+    assert!(read["resultMaintenance"].is_null());
+    let view: Vec<u8> = serde_json::from_value(read["view"].clone()).unwrap();
+    fixture.idle().await;
+
+    fixture.reseal(Action::SweepResultBodies {
+        expected_view: view,
+        expected_generation: None,
+    });
+    let result = super::execute(&fixture.store, fixture.codecs.clone(), &fixture.settings)
+        .await
+        .unwrap();
+    let progress = &result["resultMaintenance"];
+    assert_eq!(progress["generation"], "1");
+    assert_eq!(progress["passComplete"], true);
+    fixture.idle().await;
+    let stale = super::execute(&fixture.store, fixture.codecs.clone(), &fixture.settings)
+        .await
+        .unwrap_err();
+    assert_eq!(stale.message, "protected-result-maintenance:Conflict");
+    fixture.idle().await;
+
+    fixture.reseal(Action::InspectNamespace {});
+    let inspected = super::execute(&fixture.store, fixture.codecs.clone(), &fixture.settings)
+        .await
+        .unwrap();
+    assert_eq!(&inspected["resultMaintenance"], progress);
+    assert!(fixture.finish().await);
+}
+
+#[tokio::test]
 async fn protected_compaction_checks_the_selected_view_and_preserves_logical_rows() {
     let mut fixture = Box::pin(Fixture::new(1)).await;
     let worker = fixture.codecs.clone();
