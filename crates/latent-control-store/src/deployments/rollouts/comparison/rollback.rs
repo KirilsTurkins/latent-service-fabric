@@ -1,5 +1,5 @@
 //! Reverse comparison reads historical source integrity without reviving its grant.
-use super::{bundle, descriptors, incompatible, web, MAX_PACKAGE};
+use super::{bundle, descriptors, incompatible, state, web, MAX_PACKAGE};
 use crate::rollouts::{error, Result, RolloutRelease};
 use latent_artifacts::{
     AdmissionAuthority, ArtifactRepository, HistoricalExecutionState, LifecycleAuthorityHandle,
@@ -127,6 +127,12 @@ pub(in crate::deployments::rollouts) async fn compare(
         (Some(old), Some(new)) => {
             let previous = bundle(old, tenant, &served.component)?;
             let next = bundle(new, tenant, &target.component)?;
+            state::require_compatible(
+                &previous,
+                &served.deployment_id,
+                &next,
+                &target.deployment_id,
+            )?;
             if !compare_packages(&previous, &next, PackageComparisonLimits::default())?
                 .allows_replacement(None)
             {

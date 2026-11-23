@@ -9,8 +9,8 @@ use latent_artifacts::{
     DirectoryArtifactRepositoryConfig, FieldDescriptor, PackageAdmissionUpload, ValueType,
 };
 use latent_core::{ArtifactReference, Metadata};
-use latent_manifest::{JsonManifestCodec, ManifestCodec};
-use latent_packaging::{build_package, PackageBundle, PackagingLimits};
+use latent_manifest::{JsonManifestCodec, ManifestCodec, TransactionBinding};
+use latent_packaging::{build_package, LayerInput, PackageBundle, PackageInput, PackagingLimits};
 
 #[test]
 fn unknown_named_types_and_breaking_local_shapes_never_create_a_rollout_or_routes() {
@@ -60,6 +60,14 @@ fn unknown_named_types_and_breaking_local_shapes_never_create_a_rollout_or_route
 }
 
 pub(super) fn package(changed_shape: bool, changed_bytes: bool) -> PackageBundle {
+    build_package(
+        package_input(changed_shape, changed_bytes),
+        PackagingLimits::default(),
+    )
+    .unwrap()
+}
+
+fn package_input(changed_shape: bool, changed_bytes: bool) -> PackageInput {
     let mut input = packages::capsule(packages::component::Options {
         signed_record_field: changed_shape,
         ..Default::default()
@@ -99,6 +107,52 @@ pub(super) fn package(changed_shape: bool, changed_bytes: bool) -> PackageBundle
     );
     packages::mutate_json(&mut input, "capsule.json", |manifest| {
         manifest["component"]["digest"] = json::json!(digest.as_str());
+    });
+    input
+}
+
+fn bound_package(
+    changed_shape: bool,
+    changed_bytes: bool,
+    deployment: &str,
+    schema: Option<&str>,
+) -> PackageBundle {
+    let Some(schema) = schema else {
+        return package(changed_shape, changed_bytes);
+    };
+    let mut input = package_input(changed_shape, changed_bytes);
+    let capsule = JsonManifestCodec::default()
+        .decode_capsule(
+            &input
+                .layers
+                .iter()
+                .find(|layer| layer.path == "capsule.json")
+                .unwrap()
+                .bytes,
+        )
+        .unwrap();
+    input.layers.push(LayerInput {
+        path: TransactionBinding::ASSET_PATH.into(),
+        role: latent_artifacts::package::LayerRole::Asset,
+        media_type: TransactionBinding::MEDIA_TYPE.into(),
+        bytes: serde_json::to_vec(&json::json!({
+            "apiVersion": "latent.dev/v1",
+            "kind": "TransactionBinding",
+            "capsule": capsule.metadata.name,
+            "deployment": deployment,
+            "binding": "transactions",
+            "profile": latent_core::transaction_contract::PROFILE,
+            "hostAbiDigest": latent_manifest::phase4_host_abi_digest(),
+            "namespace": "aggregate",
+            "stateSchema": format!("sha256:{}", schema.repeat(64)),
+            "operations": [{
+                "operation": "update",
+                "mode": "strict-command",
+                "inputFormat": "update-v1",
+                "resultFormat": "result-v1",
+            }],
+        }))
+        .unwrap(),
     });
     build_package(input, PackagingLimits::default()).unwrap()
 }
@@ -147,10 +201,16 @@ pub(super) fn upload(bundle: &PackageBundle) -> PackageAdmissionUpload {
 
 #[test]
 fn retained_package_bridge_compares_actual_nested_wit_and_binds_package_pair() {
-    for changed_shape in [false, true] {
+    for (changed_shape, previous_schema, target_schema, denied) in [
+        (false, None, None, false),
+        (true, None, None, true),
+        (false, Some("1"), Some("1"), false),
+        (false, Some("1"), Some("2"), true),
+        (false, Some("1"), None, true),
+    ] {
         let tenant = TenantId("tests".into());
-        let old = package(false, false);
-        let candidate = package(changed_shape, !changed_shape);
+        let old = bound_package(false, false, "base", previous_schema);
+        let candidate = bound_package(changed_shape, !changed_shape, "candidate", target_schema);
         let artifacts = [artifact_for(&old), artifact_for(&candidate)];
         let authority = authority::Authority::new_many(artifacts.to_vec());
         let artifacts_root = TempRoot::new();
@@ -207,12 +267,13 @@ fn retained_package_bridge_compares_actual_nested_wit_and_binds_package_pair() {
                 canary_policy: None,
             },
         };
-        if changed_shape {
+        if denied {
             let before = std::fs::read(root.0.join("catalog.json")).unwrap();
-            assert_code(
-                run(store.prepare_rollout(request)),
-                Code::IncompatibleContract,
-            );
+            let error = run(store.prepare_rollout(request)).err().unwrap();
+            assert_eq!(error.code, Code::IncompatibleContract);
+            if !changed_shape {
+                assert_eq!(error.message, "rollout-state-schema-incompatible");
+            }
             assert_eq!(std::fs::read(root.0.join("catalog.json")).unwrap(), before);
             assert!(store.get_rollout(&tenant, &id()).unwrap().is_none());
         } else {

@@ -1,4 +1,5 @@
 mod rollback;
+mod state;
 mod web;
 use crate::rollouts::{corrupt, error, Result};
 use latent_artifacts::{ArtifactRepository, RetainedPackageSource};
@@ -126,6 +127,12 @@ pub(super) async fn compare(
         (Some(old_source), Some(new_source)) => {
             let old_bundle = bundle(old_source, tenant, old)?;
             let new_bundle = bundle(new_source, tenant, candidate)?;
+            state::require_compatible(
+                &old_bundle,
+                &old_release.deployment_id,
+                &new_bundle,
+                &candidate_release.deployment_id,
+            )?;
             let report =
                 compare_packages(&old_bundle, &new_bundle, PackageComparisonLimits::default())?;
             if !report.allows_replacement(None) {
@@ -158,6 +165,11 @@ fn descriptors(
         || next.verified_digest() != candidate
         || previous.manifest().world != next.manifest().world
         || previous.manifest().imports != next.manifest().imports
+        || previous
+            .manifest()
+            .imports
+            .iter()
+            .any(|import| state::transaction_import(&import.contract.0))
         || previous.contracts().is_empty()
     {
         return Err(incompatible());

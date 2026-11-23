@@ -18,10 +18,12 @@ values. These metadata ports confer no publication, migration or access authorit
 writer against every selected reader, for at most eight exact package revisions.
 The compatible aggregate v2 canary reads v1 and v2 but continues writing v1.
 After a separately quiesced and validated migration, the v2 writer emits v2;
-selecting the old v1 reader then refuses. Ordinary code rollback never rewrites
-business values or rolls back external effects. Deployment and commit owners must
-call this port under their existing current publication/policy fences; these
-foundation ports alone do not claim completed deployment integration for #398.
+selecting the old v1 reader then refuses. Ordinary code rollback preserves current
+business values and external effects. The rollout coordinator compares the
+transaction companions of both exact signed packages before increasing traffic
+or rolling back. Transactional revisions must name the same namespace and
+schema and preserve the modes and formats of operations already serving traffic.
+An incompatible data format requires the explicit offline migration workflow.
 
 Retained work uses its own exact format identities. `RetainedInventory` bounds
 the observed linked work to 128 identities, 65,536 observations and 128 MiB and
@@ -42,8 +44,6 @@ executes its fixed reader/writer conformance before accepting `ReviewedSchema`.
 Its [linked catalog reviewer](../../apps/latentd/src/standalone/state/recovery/catalog.rs)
 validates actual retained command/result/effect associations. Extra decoder
 publications supply original decoding sources, never new execution permission.
-This is a closed installed recovery profile, not a general schema evaluator or
-automatic deployment/canary compatibility gate. The broader deployment, native
-application and packaged qualification remains separate. See
+This installed recovery profile has a closed schema and codec inventory. See
 [fixed migration](fixed-aggregate-offline-migration.md) and the
 [installed qualification](../testing/installed-transaction-recovery.md).
