@@ -46,7 +46,13 @@ Current action fields are:
 Digests use `sha256:` and 64 lowercase hexadecimal digits. Restore inspection
 returns `windowDigest`; restore requires that exact acknowledgement. Namespace
 inspection returns encoded `namespace`, `history`, current `view`, optional
-`guard`, and `reviewDigest`. Migration resume returns action `resume-migration`,
+`guard`, `reviewDigest` and `publicationEffects`. Review the selected publication's
+pending, dispatching, uncertain, blocked and retry counts before retiring it.
+These counts describe the authorized namespace view and leave retained work
+available for drain or explicit reconciliation. Run the check while the
+publication still has inspection authority.
+
+Migration resume returns action `resume-migration`,
 encoded current `receipt`, current `view`, and `resourcePhysicallyRetired`.
 Generic resume refuses a retained current migration and cannot replace its
 protected checkpoint and activation owner. Old v1 recipes and bytes retain

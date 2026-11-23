@@ -164,6 +164,63 @@ fn receipt(disposition: Disposition, now: u64) -> AttemptReceipt {
 }
 
 #[test]
+fn publication_inspection_preserves_pending_and_uncertain_effects_in_the_exact_scope() {
+    let fixture = Fixture::new();
+    let store = fixture.store();
+    seed(store, 'a');
+    let due = seed(store, 'b');
+    let epoch = DispatchCatalog::begin_exclusive_epoch(store, time(100), None).unwrap();
+    let claim = DispatchCatalog::claim(store, epoch, &due, time(101)).unwrap();
+    DispatchCatalog::begin_send(store, epoch, &claim.attempt, time(102)).unwrap();
+    DispatchCatalog::complete(
+        store,
+        epoch,
+        &claim.attempt,
+        receipt(Disposition::Uncertain, 103),
+        None,
+        time(103),
+    )
+    .unwrap();
+
+    let original = physical_dispatch_rows(store);
+    let view = store.snapshot().unwrap();
+    let counts = |tenant, namespace, incarnation, publication| {
+        DispatchCatalog::publication_counts(
+            &view,
+            tenant,
+            namespace,
+            incarnation,
+            publication,
+            &mut || Ok(()),
+        )
+        .unwrap()
+    };
+    let selected = counts("tenant-a", "orders", 7, "publication-old");
+    assert_eq!((selected.pending, selected.uncertain), (1, 1));
+    assert!(selected.oldest_unresolved_millis.is_some());
+    for excluded in [
+        counts("tenant-b", "orders", 7, "publication-old"),
+        counts("tenant-a", "other", 7, "publication-old"),
+        counts("tenant-a", "orders", 8, "publication-old"),
+        counts("tenant-a", "orders", 7, "publication-new"),
+    ] {
+        assert_eq!(excluded, DispatchCounts::default());
+    }
+    assert_eq!(
+        DispatchCatalog::publication_counts(
+            &view,
+            "tenant-a",
+            "orders",
+            7,
+            "publication-old",
+            &mut || Err(StoreError::Unavailable)
+        ),
+        Err(StoreError::Unavailable)
+    );
+    assert_eq!(physical_dispatch_rows(store), original);
+}
+
+#[test]
 fn native_claim_send_complete_and_history_are_generation_cas_atomic() {
     let fixture = Fixture::new();
     let store = fixture.store();

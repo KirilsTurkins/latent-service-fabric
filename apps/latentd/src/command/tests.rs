@@ -47,6 +47,7 @@ fn transaction_recovery_uses_a_protected_credential_path_and_one_mode() {
         "--tenant",
         "tenant",
     ];
+    assert!(CommandLine::try_parse_from(common).is_err());
     let parsed =
         CommandLine::try_parse_from(common.into_iter().chain(["--request-file", "request.json"]))
             .unwrap();

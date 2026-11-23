@@ -16,7 +16,11 @@ pub(super) struct Arguments {
     #[arg(long)]
     tenant: String,
     /// Runs normal startup and shutdown, and can advance the durable epoch.
-    #[arg(long, conflicts_with = "request_file")]
+    #[arg(
+        long,
+        required_unless_present = "request_file",
+        conflicts_with = "request_file"
+    )]
     diagnose_startup: bool,
     /// Closed native action data. Signed selection and current policy remain required.
     #[arg(long, conflicts_with = "diagnose_startup")]
@@ -30,14 +34,7 @@ pub(super) fn installed(args: Arguments) -> Result<(), super::Failure> {
             PlatformErrorCode::Unavailable,
         ));
     }
-    run(args).map_err(|stage| {
-        let code = if stage == "native-recovery-mode-required" {
-            PlatformErrorCode::InvalidArgument
-        } else {
-            PlatformErrorCode::Unavailable
-        };
-        super::Failure::new(stage, code)
-    })
+    run(args).map_err(|stage| super::Failure::new(stage, PlatformErrorCode::Unavailable))
 }
 
 #[derive(Parser)]
@@ -57,9 +54,6 @@ pub fn transaction_recovery_example_entry() -> ExitCode {
     }
 }
 fn run(args: Arguments) -> Result<(), &'static str> {
-    if args.request_file.is_none() && !args.diagnose_startup {
-        return Err("native-recovery-mode-required");
-    }
     let settings = NodeConfig::load(&args.config)
         .and_then(|input| input.derive())
         .map_err(|_| "protected-configuration-refused")?;
@@ -80,7 +74,7 @@ fn run(args: Arguments) -> Result<(), &'static str> {
     let grace = settings.shutdown_grace();
     let result = if let Some(path) = &args.request_file {
         recover(&runtime, settings, credential, &args.tenant, path)
-    } else {
+    } else if args.diagnose_startup {
         encode(runtime.block_on(StandaloneNode::diagnose_startup(
             settings,
             credential,
@@ -89,6 +83,8 @@ fn run(args: Arguments) -> Result<(), &'static str> {
             RuntimeThreads::default(),
         )))
         .map(Output::Diagnosis)
+    } else {
+        Err("native-recovery-mode-required")
     };
     runtime.shutdown_timeout(grace);
     let result = result?;
