@@ -71,7 +71,7 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
     saved = state.load(root, "project.json")
     source, build_receipt = build.accepted(root, saved)
     descriptor = saved["descriptor"]
-    phase4 = descriptor["hostAbi"] == TRANSACTION_HOST_ABI
+    phase4 = descriptor.get("hostAbi") == TRANSACTION_HOST_ABI
     compatibility_outcomes = guest_compatibility_outcomes.from_build(source, descriptor, build_receipt)
     deadline = min(deadline if deadline is not None else float("inf"), time.monotonic() + 300)
     cli, journal = client(root, deadline=deadline)

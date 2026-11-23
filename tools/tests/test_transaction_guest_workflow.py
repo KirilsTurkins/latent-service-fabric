@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tools.dev_workflow import build_artifacts, build_cache, bundle, common, node_transaction_query, project, scenarios, tool_inventory, transaction_binding
+from tools.dev_workflow import build_artifacts, build_cache, bundle, common, node_test_profile, node_transaction_query, project, scenarios, tool_inventory, transaction_binding
 from tools.tests.test_dev_contracts import descriptor
 from tools.transaction_guest_project import augment
 
@@ -128,6 +128,22 @@ class TransactionGuestWorkflowTests(unittest.TestCase):
                     shutil.copytree(payload / "recipe", other / "recipe")
                     compiler_inventory(other, "a" * 40, language)
                     self.assertEqual(set(templates(other, "a" * 40, language)), {"greeting", "word-count", "shipping"})
+
+    def test_phase4_fixture_preparation_preserves_installed_state_and_providers(self):
+        selected = {**descriptor(), "hostAbi": common.TRANSACTION_HOST_ABI}
+        retained = {"state": {"formatVersion": 2, "operations": []},
+                    "budgetProfile": {"mode": "phase4", "maximumStateReadBytes": 262144},
+                    "providers": {"formatVersion": 1, "bindings": []},
+                    "capabilityPolicies": {"formatVersion": 1}}
+        configuration, fixtures = node_test_profile.configuration(retained, selected)
+        self.assertEqual(configuration, retained)
+        self.assertIsNot(configuration["state"], retained["state"])
+        self.assertEqual(fixtures, {})
+        self.assertEqual(node_test_profile.scope(selected)["hostAbi"], common.TRANSACTION_HOST_ABI)
+        with self.assertRaisesRegex(common.DevError, "transaction-test-requires-configured-phase4-node"):
+            node_test_profile.configuration({}, selected)
+        with self.assertRaisesRegex(common.DevError, "stateless-test-will-not-replace-phase4-node-profile"):
+            node_test_profile.configuration(retained, descriptor())
 
     def test_node_query_uses_original_scope_and_never_runs_in_portable(self):
         token = base64.b64encode(b"original-view").decode("ascii")

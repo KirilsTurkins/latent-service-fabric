@@ -5,7 +5,7 @@ from pathlib import Path
 import time
 
 from . import build, paths, process, state, tool_inventory
-from .common import decode, digest, identifier, require
+from .common import TRANSACTION_HOST_ABI, decode, digest, identifier, require
 
 
 def prepare(root: Path, descriptor: dict, tool_root: Path) -> dict:
@@ -21,8 +21,13 @@ def prepare(root: Path, descriptor: dict, tool_root: Path) -> dict:
     target = root / "test-signing"
     intent = {"source": receipt["source"], "attempt": receipt["attempt"],
               "component": receipt["artifacts"]["component"], "toolInventory": inventory, "signer": pin["sha256"]}
+    phase4 = descriptor["hostAbi"] == TRANSACTION_HOST_ABI
+    sign_command = "demo-sign-transaction" if phase4 else "demo-sign"
+    if phase4:
+        intent["hostAbi"] = TRANSACTION_HOST_ABI
     additional = []
     if (root / "local-service-build.json").exists():
+        require(not phase4, "transaction-test-signer-requires-one-capsule")
         from .local_service_fixture import signing_input
         child_source, child_descriptor, child_receipt = signing_input(root)
         require(child_receipt["artifacts"]["component"] != intent["component"], "distinct-local-fixture-component-required")
@@ -35,7 +40,7 @@ def prepare(root: Path, descriptor: dict, tool_root: Path) -> dict:
         require(not target.exists(), "test-signing-output-already-exists")
         state.atomic(root, "test-signing-intent.json", intent)
         with paths.opened(tool_root, pin["path"]):
-            result = process.run([str(tool_root / pin["path"]), "demo-sign", str(target),
+            result = process.run([str(tool_root / pin["path"]), sign_command, str(target),
                                   str(source / descriptor["build"]["outputRoot"]), *additional], root,
                                  timeout=60, maximum=1048576)
         require(result.returncode == 0, "test-signing-failed-private-output-retained")
