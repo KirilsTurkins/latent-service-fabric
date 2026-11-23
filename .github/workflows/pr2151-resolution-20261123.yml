@@ -1,0 +1,271 @@
+name: Isolated PR 2151 merge validation and object publication
+on:
+  push:
+    branches: ['diag/pr2151-resolution-20261123']
+    paths: ['.github/workflows/pr2151-resolution-20261123.yml']
+permissions:
+  contents: read
+concurrency:
+  group: isolated-pr2151-resolution-20261123
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      manifest: ${{ steps.export.outputs.manifest }}
+    steps:
+      - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+        with:
+          ref: f881e760dfb527e341b2b43b60d99f217ad2d8ae
+          persist-credentials: false
+          path: source
+      - name: Authenticate exact parents and prepare the reviewed resolution
+        working-directory: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git -c credential.helper='!gh auth git-credential' fetch --no-tags --depth=128 origin f881e760dfb527e341b2b43b60d99f217ad2d8ae 702bd725f259a241a9b92aecde9b1a5787b94f94
+          python3 - <<'PY'
+          import base64, gzip, hashlib, json, os, pathlib, subprocess, tempfile, urllib.request
+          root = pathlib.Path.cwd()
+          evidence = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr2151-resolution'
+          evidence.mkdir()
+          def git(*args, check=True):
+              return subprocess.run(['git', *args], cwd=root, check=check, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+          def text(*args):
+              return git(*args).stdout.decode().strip()
+          def get(path):
+              req = urllib.request.Request('https://api.github.com/repos/KirilsTurkins/latent-service-fabric/' + path, headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json'})
+              with urllib.request.urlopen(req, timeout=60) as response:
+                  return json.load(response)
+          chunks = ['027acd72270c3c12974c72f8c49918fd7b2c6d75', 'dc1b9d39d14588223fe5f2b91a27dc9c2482748c', 'adfbbe31621f672e30ccd6ef54e7f92a991469cc', '5c444adc9c0ee1d08b7e8b2dd8dddf498540923c', 'eb1945fa28a2c9fe0d6b96233d0f64dd188a60df']
+          parts = []
+          for sha in chunks:
+              blob = get('git/blobs/' + sha)
+              raw = base64.b64decode(blob['content'])
+              assert hashlib.sha1(b'blob ' + str(len(raw)).encode() + b'\0' + raw).hexdigest() == sha
+              parts.append(raw)
+          packed = base64.b64decode(b''.join(parts), validate=True)
+          assert hashlib.sha256(packed).hexdigest() == '6f7b7d8c8f1bcf082051e40040848fe6f75a8ae86a5247f1bb8cf9bd9cd5df3f'
+          recipe = json.loads(gzip.decompress(packed))
+          head, dev = recipe['head'], recipe['development']
+          assert head == 'f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          assert dev == '702bd725f259a241a9b92aecde9b1a5787b94f94'
+          assert get('git/ref/heads/fix/sdk-java-cached-idle-handoff-20261117')['object']['sha'] == head
+          assert get('git/ref/heads/development')['object']['sha'] == dev
+          assert text('rev-parse', 'HEAD') == head
+          assert text('merge-base', head, dev) == recipe['base']
+          assert not text('status', '--porcelain')
+          git('config', 'user.name', 'LSF isolated validation')
+          git('config', 'user.email', 'noreply@github.com')
+          merge = git('merge', '--no-commit', '--no-ff', dev, check=False)
+          (evidence / 'merge.log').write_bytes(merge.stdout + merge.stderr)
+          assert merge.returncode in (0, 1), merge.stderr
+          assert text('rev-parse', 'MERGE_HEAD') == dev
+          conflicts = set(text('diff', '--name-only', '--diff-filter=U').splitlines())
+          assert conflicts <= set(recipe['conflicts']), sorted(conflicts)
+          print('Actual merge conflicts:', sorted(conflicts))
+          with tempfile.TemporaryDirectory() as directory:
+              temporary = pathlib.Path(directory)
+              subprocess.run(['git', 'init', '-q', directory], check=True)
+              for row in recipe['rows']:
+                  path = pathlib.PurePosixPath(row['path'])
+                  assert not path.is_absolute() and '..' not in path.parts and '.git' not in path.parts
+                  raw = git('show', row['ref'] + ':' + row['path']).stdout
+                  assert hashlib.sha256(raw).hexdigest() == row['pre'], row['path']
+                  target = temporary / path
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(raw)
+                  if row['patch']:
+                      subprocess.run(['git', 'apply', '--whitespace=error', '-'], input=row['patch'].encode(), cwd=temporary, check=True)
+                  final = target.read_bytes()
+                  assert hashlib.sha256(final).hexdigest() == row['post'], row['path']
+                  assert hashlib.sha1(b'blob ' + str(len(final)).encode() + b'\0' + final).hexdigest() == row['blob']
+                  destination = root / path
+                  assert not destination.is_symlink() and destination.resolve().is_relative_to(root)
+                  destination.parent.mkdir(parents=True, exist_ok=True)
+                  destination.write_bytes(final)
+          git('add', '--', *[row['path'] for row in recipe['rows']])
+          assert not text('diff', '--name-only', '--diff-filter=U')
+          for key, ref in [('preserveOurs', head), ('preserveDevelopment', dev)]:
+              for path in recipe[key]:
+                  assert (root / path).read_bytes() == git('show', ref + ':' + path).stdout, path
+          ours = set(text('diff', '--name-only', recipe['base'], head).splitlines())
+          overlays = {row['path'] for row in recipe['rows']}
+          final_changes = set(text('diff', '--cached', '--name-only', dev).splitlines())
+          assert final_changes <= ours | overlays, sorted(final_changes - ours - overlays)
+          from tools.ci_python_policy import require_no_new_controls
+          for name in sorted(final_changes):
+              if pathlib.Path(name).name.startswith('test_') and name.endswith('.py'):
+                  old = git('show', dev + ':' + name, check=False)
+                  require_no_new_controls(old.stdout.decode() if old.returncode == 0 else '', (root / name).read_text())
+          git('diff', '--cached', '--check')
+          tree = text('write-tree')
+          git('commit', '-m', 'Isolated validation only: exact PR 2151 merged source')
+          assert text('rev-parse', 'HEAD^{tree}') == tree
+          assert text('show', '-s', '--format=%P', 'HEAD').split() == [head, dev]
+          assert not text('status', '--porcelain')
+          (evidence / 'recipe.json').write_text(json.dumps(recipe, indent=2) + '\n')
+          (evidence / 'source.json').write_text(json.dumps({'head': head, 'development': dev, 'tree': tree, 'baseTree': text('rev-parse', dev + '^{tree}'), 'localCommit': text('rev-parse', 'HEAD'), 'conflicts': sorted(conflicts)}, indent=2) + '\n')
+          (evidence / 'resolution.patch').write_bytes(git('diff', '--binary', dev, 'HEAD').stdout)
+          print('Resolved tree:', tree)
+          print('No new suppression controls; original handoff and landed runtime inputs preserved.')
+          PY
+      - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+        with:
+          python-version: '3.13.5'
+      - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
+        with:
+          distribution: temurin
+          java-version: '25.0.4+101.0.LTS'
+      - uses: KirilsTurkins/lsf-setup-node@791d25988f7dc57f537b82342f7af452cd59cd6a
+        with:
+          node-version: '24.19.0'
+          package-manager-cache: false
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5
+        with:
+          toolchain: '1.97.1'
+      - name: Install the unchanged validator dependencies
+        working-directory: source
+        run: python3 -m pip install --requirement tools/requirements.lock
+      - name: Validate combined runtime and original PR controls
+        working-directory: source
+        env:
+          PYTHONDONTWRITEBYTECODE: '1'
+          LSF_PYTHON_POLICY_BASE: '702bd725f259a241a9b92aecde9b1a5787b94f94'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, pathlib, subprocess
+          evidence = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr2151-resolution'
+          source = json.loads((evidence / 'source.json').read_text())
+          def unchanged():
+              assert subprocess.check_output(['git','rev-parse','HEAD^{tree}'], text=True).strip() == source['tree']
+              assert not subprocess.check_output(['git','status','--porcelain'], text=True).strip()
+          groups = [
+              ('focused', ['-m','unittest','tools.tests.test_java_enum_guard','tools.tests.test_java_date_link_guard','tools.tests.test_java_exception_slots','tools.tests.test_java_linear_stack','tools.tests.test_typescript_event_ownership','tools.tests.test_typescript_abort_lazy_algorithms','tools.tests.test_typescript_native_object_pressure','tools.tests.test_typescript_native_task_meta','tools.tests.test_native_fixture_toolchain','tools.tests.test_java_exception_frames','tools.tests.test_runtime_merge_integration','-v']),
+              ('adjacent', ['-m','unittest','tools.tests.test_java_compiler_acquisition','tools.tests.test_java_dependency_suite','tools.tests.test_java_resource_runtime','tools.tests.test_java_standard_http_ownership','tools.tests.test_java_teavm_failure_trace','tools.tests.test_typescript_abort_any_ownership','tools.tests.test_typescript_abort_stack_integration','tools.tests.test_typescript_record_retirement','tools.tests.test_typescript_abort_declarations','-v']),
+              ('java-sdk', ['-m','unittest','discover','-s','sdk/java-guest/tests','-v']),
+              ('handoff', ['-m','unittest','tools.tests.test_java_checkpoint_context','tools.tests.test_java_future_cancel_interrupt','tools.tests.test_java_http_fibers','tools.tests.test_java_owner_admission','tools.tests.test_java_scheduled_library','-v']),
+              ('rust-fixture', ['-m','unittest','tools.tests.test_local_tests','-v']),
+              ('repository', ['tools/validate_repository.py']),
+              ('inventory', ['tools/ci_coverage.py','--receipt','target/ci/pr2151-resolution-inventory.json'])
+          ]
+          results = []
+          for name, args in groups:
+              unchanged()
+              log = evidence / (name + '.log')
+              with log.open('wb') as output:
+                  result = subprocess.run(['python3','-B',*args], stdout=output, stderr=subprocess.STDOUT, timeout=600)
+              content = log.read_text(errors='replace')
+              print(name, 'exit', result.returncode, '\n' + content[-3500:], flush=True)
+              assert result.returncode == 0, name
+              assert 'skipped=' not in content, name + ': skipped test'
+              unchanged()
+              results.append({'name': name, 'exitCode': result.returncode})
+          (evidence / 'validation.json').write_text(json.dumps({'passed': True, 'tree': source['tree'], 'groups': results, 'signedRuntimeQualified': False}, indent=2) + '\n')
+          PY
+      - name: Export only exact validated Git objects
+        id: export
+        working-directory: source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, subprocess
+          evidence = pathlib.Path(os.environ['RUNNER_TEMP']) / 'pr2151-resolution'
+          source = json.loads((evidence / 'source.json').read_text())
+          validation = json.loads((evidence / 'validation.json').read_text())
+          def git(*args): return subprocess.check_output(['git', *args])
+          assert validation['passed'] and validation['tree'] == source['tree']
+          assert git('rev-parse','HEAD^{tree}').decode().strip() == source['tree']
+          assert not git('status','--porcelain').strip()
+          paths = git('diff','--no-renames','--name-only','-z',source['development'],'HEAD').decode().split('\0')
+          entries = []
+          for name in filter(None, paths):
+              record = git('ls-tree','-z','HEAD','--',name)
+              assert record
+              prefix, path = record[:-1].decode().split('\t', 1)
+              mode, kind, sha = prefix.split()
+              assert kind == 'blob' and mode in ('100644','100755') and path == name
+              raw = pathlib.Path(name).read_bytes()
+              assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == sha
+              entries.append({'path': name, 'mode': mode, 'type': 'blob', 'sha': sha, 'sha256': hashlib.sha256(raw).hexdigest(), 'content': base64.b64encode(raw).decode()})
+          assert len(entries) < 100 and not any('pr2151-resolution-20261123' in row['path'] for row in entries)
+          manifest = dict(source, entries=entries)
+          data = json.dumps(manifest, separators=(',',':')).encode()
+          assert len(data) < 2000000
+          (evidence / 'validated-tree.json').write_bytes(data)
+          digest = hashlib.sha256(data).hexdigest()
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output: output.write('manifest=' + digest + '\n')
+          print('VALIDATED', source['tree'], 'manifest', digest, 'files', len(entries))
+          PY
+      - name: Retain validation evidence on every outcome
+        if: always()
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-resolution-validation
+          path: ${{ runner.temp }}/pr2151-resolution/
+          retention-days: 7
+          if-no-files-found: error
+  objects:
+    needs: validate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+        with:
+          name: pr2151-resolution-validation
+          path: evidence
+      - name: Store authenticated blobs and tree without executing repository code or moving refs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_MANIFEST: ${{ needs.validate.outputs.manifest }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import base64, hashlib, json, os, pathlib, urllib.request
+          path = pathlib.Path('evidence/validated-tree.json')
+          data = path.read_bytes()
+          assert len(data) < 2000000 and hashlib.sha256(data).hexdigest() == os.environ['EXPECTED_MANIFEST']
+          manifest = json.loads(data)
+          assert manifest['head'] == 'f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+          assert manifest['development'] == '702bd725f259a241a9b92aecde9b1a5787b94f94'
+          url = 'https://api.github.com/repos/KirilsTurkins/latent-service-fabric/git/'
+          headers = {'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json'}
+          def post(endpoint, body):
+              assert endpoint in ('blobs', 'trees')
+              request = urllib.request.Request(url + endpoint, data=json.dumps(body).encode(), headers=headers, method='POST')
+              with urllib.request.urlopen(request, timeout=60) as response: return json.load(response)
+          entries = []
+          for row in manifest['entries']:
+              relative = pathlib.PurePosixPath(row['path'])
+              assert not relative.is_absolute() and '..' not in relative.parts and '.git' not in relative.parts
+              assert row['mode'] in ('100644', '100755') and row['type'] == 'blob'
+              raw = base64.b64decode(row['content'], validate=True)
+              assert len(raw) < 500000 and hashlib.sha256(raw).hexdigest() == row['sha256']
+              assert hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest() == row['sha']
+              stored = post('blobs', {'content': row['content'], 'encoding': 'base64'})
+              assert stored['sha'] == row['sha']
+              entries.append({key: row[key] for key in ('path','mode','type','sha')})
+          tree = post('trees', {'base_tree': manifest['baseTree'], 'tree': entries})
+          assert tree['sha'] == manifest['tree']
+          receipt = {'tree': tree['sha'], 'parents': [manifest['head'], manifest['development']], 'baseTree': manifest['baseTree'], 'manifestSha256': os.environ['EXPECTED_MANIFEST'], 'entries': entries, 'refsMoved': False}
+          pathlib.Path('published-tree.json').write_text(json.dumps(receipt, indent=2) + '\n')
+          print(json.dumps(receipt, sort_keys=True))
+          PY
+      - name: Retain object-publication receipt
+        uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+        with:
+          name: pr2151-resolution-published-tree
+          path: published-tree.json
+          retention-days: 7
+          if-no-files-found: error
