@@ -15,8 +15,8 @@ checkout. Keep that checkout separate from your application directory.
 | Java | A Maven coordinate and scope, or a local JAR | [Add a Maven dependency or capture a local JAR](java-dependencies.md) |
 | C# / .NET | A `PackageReference` in `Capsule.csproj` | [Add a NuGet package and build with NativeAOT](dotnet-dependencies.md) |
 
-1. **Declare the dependency.** Use the language guide's `add` command and
-   select the version or local input you intend to ship. Include the transitive
+1. **Declare the dependency.** Use the editor for your input type. For example,
+   Java uses `add` for Maven coordinates and `add-local` for a local JAR. Include the transitive
    inputs your library uses. Public, private and local dependencies use the
    same capture mechanism.
 2. **Review the lock.** Run the guide's native lock step where applicable, then
@@ -29,8 +29,51 @@ checkout. Keep that checkout separate from your application directory.
    For library data files, declare the [packaged resources](packaged-resources.md)
    the handler reads. For network calls, select the language's supported runtime
    profile and grant the deployed capsule the required destination and operation.
-   Use the [compatibility report](library-compatibility.md) to locate any
-   unsupported reachable API.
+   Inspect the [compatibility report](library-compatibility.md) for an unsupported
+   operation. For example, on the closed Rust profile, `Builder::spawn` returns
+   an error the application can handle. The signed example records the executed
+   fallback as `unsupported-reached` and verifies a fresh invocation after an
+   uncaught call.
+
+### Try a private JAR
+
+From a directory alongside the SDK checkout, start with a JDK 25 library of
+your own. This example calls `outside.sdkdemo.Library.calculate(25)` from the
+generated greeting handler and expects `42`. Put the following in `Library.java`.
+
+```java
+package outside.sdkdemo;
+
+public final class Library {
+    public static int calculate(int value) {
+        return value + 17;
+    }
+}
+```
+
+In PowerShell, build the library, create the application and review its capture.
+Set `$sdk` to the path of your SDK checkout.
+
+```powershell
+$sdk = (Resolve-Path ../latent-service-fabric).Path
+$author = Join-Path $sdk tools/java_capsule.py
+New-Item -ItemType Directory -Path classes | Out-Null
+javac --release 25 -d classes Library.java
+jar --create --file outside-library.jar -C classes .
+python $author new ./my-java
+python $author add-local ./my-java --id outside-demo --jar ./outside-library.jar
+python $author resolve ./my-java --candidate ./candidate.json
+Get-Content -Raw ./candidate.json
+$digest = 'sha256:' + (Get-FileHash ./candidate.json -Algorithm SHA256).Hash.ToLowerInvariant()
+python $author review-lock ./my-java --candidate ./candidate.json --expect $digest
+python $author dependencies ./my-java
+```
+
+In `my-java/src/dev/latent/app/Capsule.java`, use
+`return Result.ok(Integer.toString(outside.sdkdemo.Library.calculate(25)));`
+as the successful return in `greet`. Follow the offline build and package steps
+in the [Java dependency guide](java-dependencies.md). Invoke the deployed
+`greet` with a nonempty name and check that the response is `"42"`.
 
 ## How the capture is stored
 
