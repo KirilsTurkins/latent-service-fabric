@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import math
 from pathlib import Path
@@ -12,7 +13,7 @@ from .common import InstallError, document, encode, execute, require
 from .configuration import EXTERNAL, client_document, load, validate_layout
 from . import files, host
 from .layout import Layout, service_identity
-from .verify import version
+from .verify import TRANSACTION_ABI_PATH, transaction_engine, version
 
 
 def current(layout: Layout) -> Path:
@@ -25,6 +26,20 @@ def current(layout: Layout) -> Path:
     with files.directory(result, {0, os.geteuid()}):
         pass
     return result
+
+
+def abi_profile(root: Path, node: dict, engine: dict) -> str:
+    if node.get("state") is None:
+        return engine["hostAbiProfile"]
+    profile = transaction_engine(engine)
+    require(profile is not None, "selected-release-does-not-admit-transaction-state")
+    abi_bytes = files.read(root / TRANSACTION_ABI_PATH, 65536)
+    require(hashlib.sha256(abi_bytes).hexdigest() == profile["abiFileSha256"],
+            "transaction-runtime-abi-file-mismatch")
+    abi = document(abi_bytes, 65536)
+    require(abi.get("id") == profile["hostAbiProfile"] and abi.get("digest") == profile["hostAbiDigest"]
+            and abi.get("wasmtimeVersion") == engine["wasmtimeVersion"], "transaction-runtime-abi-mismatch")
+    return profile["hostAbiProfile"]
 
 
 def preflight(layout: Layout, candidate: str | None = None) -> dict:
@@ -40,6 +55,8 @@ def preflight(layout: Layout, candidate: str | None = None) -> dict:
     for name in ("latent", "latentd", "latent-aot-compiler"):
         host.dynamic_probe(root / "bin" / name)
     source = document(files.read(root / "release-source.json", 65536), 65536)
+    engine = source["engine"]
+    selected_abi = abi_profile(root, node, engine)
     with tempfile.TemporaryDirectory(prefix=".lsf-preflight-", dir=layout.cache) as temporary:
         config = layout.node
         if candidate is not None and node["securityProfile"] == EXTERNAL:
@@ -54,8 +71,8 @@ def preflight(layout: Layout, candidate: str | None = None) -> dict:
     require(report.get("schemaVersion") == "latent.standalone.config-check.v1"
             and report.get("profile") == node["securityProfile"]
             and report.get("protectedCredentialFile") is True, "node-profile-check-incomplete")
-    require(report.get("wasmtimeVersion") == source["engine"]["wasmtimeVersion"]
-            and report.get("hostAbiProfile") == source["engine"]["hostAbiProfile"], "node-engine-identity-mismatch")
+    require(report.get("wasmtimeVersion") == engine["wasmtimeVersion"]
+            and report.get("hostAbiProfile") == selected_abi, "node-engine-identity-mismatch")
     if node["securityProfile"] == EXTERNAL:
         require(report.get("admission") == "enforced" and report.get("authenticatedNativeLoading") is True
                 and report.get("compilerSandbox") == "lsf-linux-x86_64-landlock3-seccomp-v1",

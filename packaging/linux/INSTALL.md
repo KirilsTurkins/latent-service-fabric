@@ -21,6 +21,12 @@ Kubernetes, registry, application provider, or external orchestrator is needed
 to install and run the native binaries. Other distributions, ARM64 and musl are
 not declared supported by this release.
 
+The release manifest includes the exact Phase 4 host ABI and the bundled
+transaction engine version, along with the transaction schemas. The installer
+checks a state-enabled configuration against that authenticated ABI. Durability
+uses the protected local ext4 store and immediate commits. Enable state
+explicitly in the protected node configuration before starting the service.
+
 Before executing **any downloaded installer or verifier code**, independently
 provision GitHub CLI **2.96.0 or newer**, Sigstore trusted roots, and the exact
 approved release version/commit through your OS/release-verification provisioning

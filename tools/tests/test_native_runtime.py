@@ -17,7 +17,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tools.native_runtime import archive, configuration, files, lifecycle, verify
+from tools.native_runtime import archive, checks, configuration, files, lifecycle, verify
 from tools.native_runtime.common import InstallError, document, encode, execute
 from tools.native_runtime.layout import Layout
 from tools.native_runtime_build import assemble, bootstrap, dependency_inventory, shared_license
@@ -75,6 +75,60 @@ def selected(root: Path, version: str = "0.1.0-test.1", previous: dict | None = 
 
 
 class ManifestTests(unittest.TestCase):
+    def test_native_upgrade_preserves_the_approved_retained_transaction_profile(self):
+        from types import SimpleNamespace
+
+        old, _ = fixture()
+        new, _ = fixture("0.1.0-test.2")
+        previous = {"version": old["version"], "sourceCommit": old["sourceCommit"],
+                    "archiveSha256": old["archive"]["sha256"]}
+        new["compatibility"]["upgradeFrom"] = [previous]
+        state = {"profile": configuration.LOCAL, "releases": {
+            old["version"]: {"metadata": old, "publisher": "publisher"}}, "currentVersion": old["version"]}
+        release = SimpleNamespace(metadata=new, publisher="publisher")
+        profile = {"hostAbiProfile": verify.TRANSACTION_ABI, "hostAbiDigest": "sha256:" + "a" * 64,
+                   "abiFileSha256": "b" * 64, "store": {**verify.TRANSACTION_STORE, "engineVersion": "4.4.0"}}
+        new["engine"]["transactionState"] = copy.deepcopy(profile)
+        lifecycle.compatible(state, release, True, configuration.LOCAL)
+        old["engine"]["transactionState"] = profile
+        lifecycle.compatible(state, release, True, configuration.LOCAL)
+        new["engine"]["transactionState"]["store"]["engineVersion"] = "4.5.0"
+        with self.assertRaisesRegex(InstallError, "retained-transaction-format-change"):
+            lifecycle.compatible(state, release, True, configuration.LOCAL)
+        del new["engine"]["transactionState"]
+        with self.assertRaisesRegex(InstallError, "retained-transaction-format-change"):
+            lifecycle.compatible(state, release, True, configuration.LOCAL)
+
+    @unittest.skipUnless(LINUX, "installed ABI inspection uses Linux protected descriptors")
+    def test_state_enabled_preflight_uses_the_abi_authenticated_with_the_native_release(self):
+        metadata, _payload = fixture()
+        engine = metadata["engine"]
+        abi_bytes = (ROOT / verify.TRANSACTION_ABI_PATH).read_bytes()
+        abi = document(abi_bytes)
+        profile = {"hostAbiProfile": abi["id"], "hostAbiDigest": abi["digest"],
+                   "abiFileSha256": hashlib.sha256(abi_bytes).hexdigest(),
+                   "store": {**verify.TRANSACTION_STORE, "engineVersion": "4.4.0"}}
+        self.assertEqual(checks.abi_profile(ROOT, {}, engine), engine["hostAbiProfile"])
+        with self.assertRaisesRegex(InstallError, "does-not-admit-transaction-state"):
+            checks.abi_profile(ROOT, {"state": {}}, engine)
+
+        engine["transactionState"] = profile
+        with self.assertRaisesRegex(InstallError, "transaction-runtime-files-missing"):
+            verify.manifest(metadata, metadata["version"])
+        for name in sorted(verify.TRANSACTION_SCHEMAS | {verify.TRANSACTION_ABI_PATH}):
+            payload = (ROOT / name).read_bytes()
+            metadata["files"].append({"path": name, "size": len(payload),
+                                      "sha256": hashlib.sha256(payload).hexdigest(), "mode": 0o644})
+        self.assertEqual(verify.manifest(metadata, metadata["version"]), metadata)
+        self.assertEqual(checks.abi_profile(ROOT, {"state": {}}, engine), verify.TRANSACTION_ABI)
+        self.assertEqual(checks.abi_profile(ROOT, {}, engine), engine["hostAbiProfile"])
+        profile["hostAbiDigest"] = "sha256:" + "0" * 64
+        with self.assertRaisesRegex(InstallError, "transaction-runtime-abi-mismatch"):
+            checks.abi_profile(ROOT, {"state": {}}, engine)
+        profile["store"]["filesystem"] = "nfs"
+        with self.assertRaisesRegex(InstallError, "unsupported-transaction-store-profile"):
+            verify.manifest(metadata, metadata["version"])
+
     def test_development_fixture_metadata_is_closed_and_never_release_authority(self):
         metadata, _payload = fixture()
         metadata["developmentTest"] = copy.deepcopy(verify.DEVELOPMENT_TEST)

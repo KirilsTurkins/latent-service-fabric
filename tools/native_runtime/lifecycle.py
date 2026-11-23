@@ -16,7 +16,7 @@ from .checks import current
 from .common import document, encode, execute, require
 from .configuration import LOCAL, approve_compiler, provision
 from .layout import Layout, node_identity
-from .verify import VerifiedRelease, development_publisher, manifest, publisher_id, publisher_policy, version
+from .verify import VerifiedRelease, development_publisher, manifest, publisher_id, publisher_policy, transaction_engine, version
 
 UNIT = Path("/etc/systemd/system/lsf.service")
 MAX_STATE = 4_194_304
@@ -87,6 +87,10 @@ def compatible(state: dict, selected: VerifiedRelease, upgrade: bool, profile: s
             and all(new["engine"][name] == old["engine"][name]
                     for name in ("wasmtimeVersion", "hostAbiProfile", "dynamicDependencies")),
             "unsupported-upgrade-or-downgrade-no-files-changed")
+    retained = transaction_engine(old["engine"])
+    if retained is not None:
+        require(transaction_engine(new["engine"]) == retained,
+                "retained-transaction-format-change-requires-qualified-upgrade")
     require(len(state["releases"]) < 4 or new["version"] in state["releases"], "retained-release-limit")
 
 
