@@ -1,10 +1,19 @@
 //! One ordinary, successful Go root on the original activation budget.
-use super::*;
-use latent_wasmtime::development_go_lazy_owner_observer as witness;
 
 #[tokio::test]
 #[ignore = "requires the exact captured v2 Go checkpoint fixture"]
 async fn signed_go_first_owner_uses_original_lazy_backing() {
+    #[cfg(not(feature = "development-go-lazy-owner-observer"))]
+    panic!("requires the development-go-lazy-owner-observer feature");
+    #[cfg(feature = "development-go-lazy-owner-observer")]
+    run_signed_go_first_owner_uses_original_lazy_backing().await;
+}
+
+#[cfg(feature = "development-go-lazy-owner-observer")]
+async fn run_signed_go_first_owner_uses_original_lazy_backing() {
+    use super::*;
+    use latent_wasmtime::development_go_lazy_owner_observer as witness;
+
     assert_eq!(std::env::var("LSF_GUEST_SDK_LANGUAGE").as_deref(), Ok("go"));
     let input = std::path::PathBuf::from(
         std::env::var_os("LSF_GO_CHECKPOINT_FIXTURE").expect("captured checkpoint fixture"),
