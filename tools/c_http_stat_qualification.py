@@ -67,6 +67,7 @@ class RangePeer(Peer):
         self.unsolicited_requests = 0
         self.early_range_requests = 0
         self.oversized_requests = 0
+        self.wide_error_responses = 0
 
     def _start_request(self, stream, record):
         super()._start_request(stream, record)
@@ -83,13 +84,19 @@ class RangePeer(Peer):
                     self.early_range_requests += 1
 
     def _complete_request(self, stream, record):
-        if record.parser.method != b'GET' or record.vector.identity not in ('domain-json', 'method-bytes'):
+        wide_error = record.parser.method == b'HEAD' and record.vector.identity == 'http-404'
+        range_result = record.parser.method == b'GET' and record.vector.identity in ('domain-json', 'method-bytes')
+        if not (wide_error or range_result):
             return super()._complete_request(stream, record)
         body = record.parser.body
         record.observation.update(state='request-complete', bodyBytes=len(body),
                                   bodySha256='sha256:' + hashlib.sha256(body).hexdigest())
         self._event('request-complete', record, bodyBytes=len(body))
-        if record.vector.identity == 'method-bytes':
+        if wide_error:
+            # HEAD carries representation metadata but sends no response body.
+            output = head(404, 1 << 63)
+            self.wide_error_responses += 1
+        elif record.vector.identity == 'method-bytes':
             output = invalid_partial_response(record.parser, unsolicited=False)
         elif b'range' not in record.parser.headers:
             output = invalid_partial_response(record.parser, unsolicited=True)
@@ -461,6 +468,8 @@ def run_node(artifact, native, output, deadline):
             record['unsolicitedRequests'] = peer.unsolicited_requests
             record['earlyRangeRequests'] = peer.early_range_requests
             record['oversizedRequests'] = peer.oversized_requests
+            require(peer.wide_error_responses == 1, 'c-stat-one-wide-head-error')
+            record['wideErrorResponses'] = peer.wide_error_responses
             delete_all(client, [target['name']])
             record['afterDeletes'] = sample(client, probe, 'c-stat-after-deletes', 0)
             stop(client, node); record['nodeShutdown'] = stopped_record(node)

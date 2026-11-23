@@ -68,11 +68,11 @@ class StatQualificationControls(unittest.TestCase):
         token = b'Bearer ' + b'a' * 64
         peer = stat.RangePeer(token, maximum_seconds=10)
         try:
-            def exchange(path, *, send_range=True):
+            def exchange(path, *, send_range=True, method=b'GET'):
                 origin = peer.origin()
                 client = socket.create_connection(('127.0.0.1', origin['port']), timeout=2)
                 try:
-                    client.sendall(b'GET ' + path + b' HTTP/1.1\r\nHost: 127.0.0.1:' +
+                    client.sendall(method + b' ' + path + b' HTTP/1.1\r\nHost: 127.0.0.1:' +
                         str(origin['port']).encode() + b'\r\nAuthorization: ' + token +
                         b'\r\n' + (b'Range: bytes=5-\r\n' if send_range else b'') +
                         b'Connection: close\r\n\r\n')
@@ -106,6 +106,9 @@ class StatQualificationControls(unittest.TestCase):
             self.assertEqual(peer.range_requests, 3)
             self.assertEqual(peer.unsolicited_requests, 1)
             self.assertEqual(peer.early_range_requests, 1)
+            wide_error = exchange(b'/conformance/status/404', method=b'HEAD', send_range=False)
+            self.assertEqual(wide_error, stat.head(404, 9223372036854775808))
+            self.assertEqual(peer.wide_error_responses, 1)
             self.assertEqual(peer.observation()['openConnections'], 0)
         finally:
             peer.close()
