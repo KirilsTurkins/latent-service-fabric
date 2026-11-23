@@ -42,7 +42,8 @@ async fn configured_socket(
     assert_eq!(selected["automaticCloseDrain"], true);
     assert_eq!(selected["closeDrain"], "accepted-terminal-intent-only-v1");
     assert_eq!(selected["maximumRootCloseWaiters"], 1);
-    assert_eq!(selected["pausedEndRead"], "eof-only-unread-data-refuses");
+    assert_eq!(selected["pausedEndRead"], "one-window-until-resume");
+    assert_eq!(selected["maximumTransferWindowBytes"], 16 * 1024);
     let callee = packages::callee(42);
     let signers = package::Signers::typescript_with_echo_fixture();
     let tenant = TenantId("tenant-a".into());
