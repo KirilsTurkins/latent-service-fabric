@@ -6,6 +6,7 @@ use std::{
 };
 
 use latent_core::{DeploymentId, PlatformError, PlatformErrorCode, StateNamespaceId, TenantId};
+use latent_manifest::TransactionBinding;
 use latent_state::{
     embedded::StoreError,
     namespace::catalog::{NamespaceCatalog, NamespaceRead},
@@ -14,6 +15,7 @@ use latent_state::{
 };
 
 use super::{
+    compiler::RevisionRecord,
     error,
     rollouts::{
         comparison::{bundle, state::binding, MAX_PACKAGE},
@@ -24,6 +26,7 @@ use super::{
 
 const MAX_SCHEMAS_PER_APPLY: usize = 32;
 type Scope = (TenantId, StateNamespaceId);
+type UpdatedDeployment = (Arc<RevisionRecord>, Option<Arc<RevisionRecord>>);
 
 pub(super) struct Owner {
     store: Weak<ProtectedStoreOwner>,
@@ -86,11 +89,12 @@ impl DirectoryDeploymentRepository {
         &self,
         catalog: &CompiledCatalog,
         changed: &[&DeploymentId],
+        previous: Option<&CompiledCatalog>,
     ) -> Result<Option<PreparedSchemas>, PlatformError> {
         let Some(owner) = self.schema_owner.get() else {
             return Ok(None);
         };
-        let records = transaction_records(catalog, changed)?;
+        let records = transaction_records(catalog, changed, previous)?;
         if records.is_empty() {
             return Ok(None);
         }
@@ -98,35 +102,25 @@ impl DirectoryDeploymentRepository {
         let store = owner.store.upgrade().ok_or_else(unavailable)?;
         let namespaces = owner.namespaces.upgrade().ok_or_else(unavailable)?;
         let mut declared = BTreeMap::<Scope, String>::new();
-        for record in records {
+        for (record, prior) in records {
             let tenant = record
                 .deployment
                 .metadata
                 .tenant
                 .as_ref()
                 .ok_or_else(incompatible)?;
-            let release = &record.deployment.release;
-            let publication = record.publication.as_ref().ok_or_else(incompatible)?;
-            let eligibility = self
-                .artifacts
-                .execution_eligibility_selected(release, Some(publication))?
-                .ok_or_else(incompatible)?;
-            eligibility.authorize_tenant(tenant)?;
-            eligibility.check_current()?;
-            let source = self
-                .artifacts
-                .retained_package_source_selected(tenant, release, Some(publication), MAX_PACKAGE)
-                .await?
-                .ok_or_else(incompatible)?;
-            if eligibility.publication() != publication
-                || source.publication() != publication
-                || eligibility.package() != Some(source.package())
-                || eligibility.admission().is_none()
-            {
-                return Err(incompatible());
+            let declaration = self.transaction_binding(tenant, &record, true).await?;
+            if let Some(prior) = prior {
+                let before = self.transaction_binding(tenant, &prior, false).await?;
+                if before.namespace != declaration.namespace
+                    || !before
+                        .operations
+                        .iter()
+                        .all(|operation| declaration.operations.contains(operation))
+                {
+                    return Err(incompatible());
+                }
             }
-            let package = bundle(source, tenant, release, self.config.manifest_profile)?;
-            let declaration = binding(&package, &record.deployment.id)?.ok_or_else(incompatible)?;
             let scope = (tenant.clone(), StateNamespaceId(declaration.namespace));
             match declared.entry(scope) {
                 std::collections::btree_map::Entry::Vacant(entry) => {
@@ -170,15 +164,56 @@ impl DirectoryDeploymentRepository {
             _work: work,
         }))
     }
+
+    async fn transaction_binding(
+        &self,
+        tenant: &TenantId,
+        record: &RevisionRecord,
+        require_live: bool,
+    ) -> Result<TransactionBinding, PlatformError> {
+        let release = &record.deployment.release;
+        let publication = record.publication.as_ref().ok_or_else(incompatible)?;
+        let source = self
+            .artifacts
+            .retained_package_source_selected(tenant, release, Some(publication), MAX_PACKAGE)
+            .await?
+            .ok_or_else(incompatible)?;
+        if source.publication() != publication {
+            return Err(incompatible());
+        }
+        if require_live {
+            let eligibility = self
+                .artifacts
+                .execution_eligibility_selected(release, Some(publication))?
+                .ok_or_else(incompatible)?;
+            eligibility.authorize_tenant(tenant)?;
+            eligibility.check_current()?;
+            if eligibility.publication() != publication
+                || eligibility.package() != Some(source.package())
+                || eligibility.admission().is_none()
+            {
+                return Err(incompatible());
+            }
+        }
+        let package = bundle(source, tenant, release, self.config.manifest_profile)?;
+        binding(&package, &record.deployment.id)?.ok_or_else(incompatible)
+    }
 }
 
 fn transaction_records(
     catalog: &CompiledCatalog,
     changed: &[&DeploymentId],
-) -> Result<Vec<Arc<super::compiler::RevisionRecord>>, PlatformError> {
+    previous: Option<&CompiledCatalog>,
+) -> Result<Vec<UpdatedDeployment>, PlatformError> {
     let mut records = Vec::new();
     for id in changed {
         let record = catalog.record_by_id(id).ok_or_else(incompatible)?;
+        let prior = previous
+            .and_then(|previous| previous.record_by_id(id))
+            .filter(|prior| prior.transactional);
+        if prior.is_some() && !record.transactional {
+            return Err(incompatible());
+        }
         if record.transactional {
             if records.len() == MAX_SCHEMAS_PER_APPLY {
                 return Err(error(
@@ -186,7 +221,11 @@ fn transaction_records(
                     "deployment-schema-batch",
                 ));
             }
-            records.push(Arc::clone(record));
+            let replaced = prior.filter(|prior| {
+                prior.publication != record.publication
+                    || prior.deployment.release != record.deployment.release
+            });
+            records.push((Arc::clone(record), replaced.cloned()));
         }
     }
     Ok(records)

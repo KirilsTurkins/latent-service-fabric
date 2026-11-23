@@ -109,7 +109,7 @@ impl DirectoryDeploymentRepository {
             .await?;
             let changed: Vec<_> = seen.iter().collect();
             let schemas = self
-                .prepare_apply_schemas(compiled.catalog(), &changed)
+                .prepare_apply_schemas(compiled.catalog(), &changed, Some(previous))
                 .await?;
             self.commit_checked(
                 previous.generation,
@@ -186,7 +186,11 @@ impl DirectoryDeploymentRepository {
                 .ok_or_else(crate::deployment_operations::corrupt)?
                 .publication_reference(self.artifacts.as_ref())?;
             let schemas = self
-                .prepare_apply_schemas(compiled.catalog(), &[&receipt.deployment.manifest.id])
+                .prepare_apply_schemas(
+                    compiled.catalog(),
+                    &[&receipt.deployment.manifest.id],
+                    Some(previous),
+                )
                 .await?;
             let outcome = self.commit_checked(
                 previous.generation,

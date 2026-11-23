@@ -91,6 +91,7 @@ fn configured_deferred_events_require_the_original_installed_provider() {
 }
 
 pub(in crate::standalone::state) struct Setup {
+    signed: signed::Fixture,
     pub(in crate::standalone::state) fixture: KernelFixture,
     pub(in crate::standalone::state) services: InstalledStateServices,
     pub(in crate::standalone::state) policy: Arc<PolicyStore>,
@@ -357,6 +358,7 @@ impl Setup {
             http,
         };
         Self {
+            signed,
             fixture,
             services,
             policy,
@@ -605,6 +607,58 @@ async fn signed_apply_rejects_a_different_durable_namespace_schema_before_route_
             .generation,
         generation
     );
+    setup.finish().await;
+}
+
+#[tokio::test]
+async fn updating_the_same_deployment_cannot_select_a_different_signed_namespace() {
+    let setup = Setup::new().await;
+    let deployments = &setup.services.deployments;
+    deployments
+        .bind_transaction_schema_owner(
+            &setup.kernel.store,
+            &setup.kernel.namespaces,
+            &setup.kernel.native,
+        )
+        .unwrap();
+    let tenant = TenantId("tests".into());
+    let id = DeploymentId("deployment".into());
+    let original = deployments
+        .get_versioned(&tenant, &id)
+        .await
+        .unwrap()
+        .unwrap();
+    let mut document: serde_json::Value = serde_json::from_slice(&declaration()).unwrap();
+    document["namespace"] = "new-orders".into();
+    let signed = signed::Fixture::transactional_with_companion(
+        serde_json::to_vec(&document).unwrap(),
+        false,
+    );
+    let admitted = setup
+        .services
+        .artifacts
+        .admit_package(
+            &tenant,
+            setup.signed.resign_upload(signed.upload()),
+            &mut |_| Ok(()),
+        )
+        .await
+        .unwrap();
+    let mut updated = original.manifest.clone();
+    updated.release = admitted.descriptor.release_digest;
+    updated.publication = admitted.publication;
+    let refused = deployments
+        .apply_versioned(&tenant, updated, Some(original.generation))
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(refused.message, "deployment-state-schema-incompatible");
+    let current = deployments
+        .get_versioned(&tenant, &id)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(current.generation, original.generation);
     setup.finish().await;
 }
 

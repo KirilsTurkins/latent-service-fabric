@@ -393,7 +393,7 @@ impl DirectoryDeploymentRepository {
             } else {
                 &row.status.candidate
             };
-            self.prepare_apply_schemas(&next_routes, &[&selected.deployment_id])
+            self.prepare_apply_schemas(&next_routes, &[&selected.deployment_id], None)
                 .await?
         };
         row.status.previous_route_generation = previous.routes.generation;

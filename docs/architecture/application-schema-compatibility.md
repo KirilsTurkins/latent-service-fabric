@@ -26,9 +26,10 @@ schema and preserve the modes and formats of operations already serving traffic.
 An incompatible data format requires the explicit offline migration workflow.
 On a protected standalone node, deployment apply checks the exact admitted
 transaction binding against the durable namespace schema. An initial apply
-can precede namespace creation. At publication, a concurrent namespace
-creation or lifecycle change invalidates the captured observation and the
-operator can submit a fresh apply.
+can precede namespace creation. Updating an existing deployment ID preserves
+its signed namespace and existing operation modes and formats. A concurrent
+namespace creation or lifecycle change invalidates the observation before
+publication. The operator can then submit a fresh apply.
 
 Retained work uses its own exact format identities. `RetainedInventory` bounds
 the observed linked work to 128 identities, 65,536 observations and 128 MiB and

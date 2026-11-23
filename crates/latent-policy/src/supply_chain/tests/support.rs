@@ -384,6 +384,10 @@ impl Fixture {
         let mut manifest: Value = serde_json::from_slice(&upload.manifest).unwrap();
         manifest["annotations"]["tests.native-recovery-fence"] = annotation.into();
         upload.manifest = serde_json::to_vec(&manifest).unwrap();
+        self.resign_upload(upload)
+    }
+
+    pub fn resign_upload(&self, mut upload: PackageAdmissionUpload) -> PackageAdmissionUpload {
         let subject = PackageSigningSubject::from_package(
             &upload.manifest,
             &upload.configuration,

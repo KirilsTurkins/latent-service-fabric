@@ -178,7 +178,8 @@ impl DirectoryDeploymentRepository {
             result.publication.clone_from(&publication);
         }
         let schemas = if apply_result.is_some() {
-            self.prepare_apply_schemas(&next_routes, &[&id]).await?
+            self.prepare_apply_schemas(&next_routes, &[&id], Some(&previous.routes))
+                .await?
         } else {
             None
         };
