@@ -18,6 +18,14 @@ fn required(name: &str) -> String {
 #[ignore = "requires an explicitly provisioned separate signed node and current key version"]
 async fn command_commits_through_real_client_and_retires() {
     let tenant = required("LSF_401_TENANT");
+    let service = env::var_os("LSF_401_AGGREGATE_SERVICE").map_or_else(
+        || "examples/transaction-java-aggregate".into(),
+        |value| value.into_string().expect("aggregate service is UTF-8"),
+    );
+    let route = env::var_os("LSF_401_AGGREGATE_ROUTE").map_or_else(
+        || "transaction-java-aggregate".into(),
+        |value| value.into_string().expect("aggregate route is UTF-8"),
+    );
     let hex = required("LSF_401_EXPECTED_VERSION_HEX");
     assert!(hex.len() % 2 == 0 && !hex.is_empty());
     let version = (0..hex.len())
@@ -37,10 +45,10 @@ async fn command_commits_through_real_client_and_retires() {
             activation_id: Some("rust-sdk-direct-command".into()),
             target: Some(InvocationTarget {
                 tenant: tenant.clone(),
-                service: "examples/transaction-java-aggregate".into(),
+                service,
                 contract: "examples:transactional-aggregate/api@1.0.0".into(),
                 function: "update".into(),
-                route: Some("transaction-java-aggregate".into()),
+                route: Some(route),
             }),
             payload: br#"[{"delta":1,"reject":false}]"#.to_vec(),
             media_type: "application/vnd.latent.wit-values.v1+json".into(),
