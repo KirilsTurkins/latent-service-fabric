@@ -16,12 +16,31 @@ pub struct BrokerInputProgress {
     consumer: String,
     consumer_created: String,
     delivered_consumer_sequence: String,
-    delivered_stream_sequence: String,
+    #[serde(serialize_with = "sequence_text")]
+    delivered_stream_sequence: u64,
     acknowledgement_floor_consumer_sequence: String,
     acknowledgement_floor_stream_sequence: String,
     pending: String,
     acknowledgement_pending: String,
     waiting_pulls: String,
+}
+
+impl BrokerInputProgress {
+    #[must_use]
+    pub const fn delivered_stream_sequence(&self) -> u64 {
+        self.delivered_stream_sequence
+    }
+}
+
+#[expect(
+    clippy::trivially_copy_pass_by_ref,
+    reason = "Serde passes a borrowed field"
+)]
+fn sequence_text<S: serde::Serializer>(
+    sequence: &u64,
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error> {
+    serializer.collect_str(sequence)
 }
 
 #[derive(Deserialize)]
@@ -117,7 +136,7 @@ impl NatsTriggerInspector {
             consumer: binding.consumer.clone(),
             consumer_created: progress.created.into(),
             delivered_consumer_sequence: progress.delivered.consumer_seq.to_string(),
-            delivered_stream_sequence: progress.delivered.stream_seq.to_string(),
+            delivered_stream_sequence: progress.delivered.stream_seq,
             acknowledgement_floor_consumer_sequence: progress.ack_floor.consumer_seq.to_string(),
             acknowledgement_floor_stream_sequence: progress.ack_floor.stream_seq.to_string(),
             pending: progress.num_pending.to_string(),
