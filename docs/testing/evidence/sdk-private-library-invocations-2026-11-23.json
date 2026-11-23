@@ -1,0 +1,383 @@
+{
+  "schemaVersion": "latent.sdk.private-library-invocations.v1",
+  "issue": 694,
+  "observedOn": "2026-11-23",
+  "status": "passed",
+  "scope": "Developer-owned dependencies invoked through six signed greeting capsules on local Linux x86-64 nodes using demo signing.",
+  "guestBuilderRevision": "0f24bb56e90cdf797f33b2a3d8833eceb3c2a46d",
+  "nativeTuple": {
+    "sourceHead": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.9",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:5669d9660bb550f0347cdafc1a03a2a99547928e864eb87082f5c6c157760293",
+        "bytes": 78851920,
+        "actualFeatures": []
+      },
+      "latentd": {
+        "sha256": "sha256:b4bc0349c72b7fcce3a9aed476f989f4346d7e1ca157ba6e9203638ce1b858e9",
+        "bytes": 214257848,
+        "actualFeatures": []
+      },
+      "package": {
+        "sha256": "sha256:78ed627079f74622d6b07eb42f1e49ec264c6d2136d2bff56bb4a788cf36b695",
+        "bytes": 22183904,
+        "actualFeatures": []
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:556f9b3e47eb8270683d942580dccfead4c717b39080b0f87c2ec9594f7913dc",
+        "bytes": 15217168,
+        "actualFeatures": []
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:8d616dac1aee230330838bdb1048791c28ed8e08a9bfecb4698e9199ece88504",
+        "bytes": 28448736,
+        "actualFeatures": []
+      }
+    }
+  },
+  "calls": {
+    "export": "greeting.greet",
+    "arguments": [
+      "Ada",
+      " ",
+      "Fresh"
+    ],
+    "expectedExitCodes": [
+      0,
+      3,
+      0
+    ],
+    "declaredError": "Please enter a name."
+  },
+  "physicalObservations": {
+    "samplePhases": [
+      "empty",
+      "retired-0",
+      "retired-1",
+      "retired-2",
+      "deleted"
+    ],
+    "description": "Finite Linux process-tree samples with the node running. RSS includes prepared images and host memory. The final sample follows deployment deletion and precedes node shutdown."
+  },
+  "guests": [
+    {
+      "language": "rust",
+      "privateDependency": "outside-sdk-milestone-demo@1.0.0",
+      "lockDigest": "sha256:3733841b36128140c7e4e647ab0ee0b656f4ba2c97416d46c79bb3a0657c0e6b",
+      "sourceDigest": "sha256:87d67257514ff7dd963c7ef29e525af0989f2713bdf54f8c6421d5c84dc670b8",
+      "component": {
+        "sha256": "sha256:8ab9a015001270e736f511a8fbbf837a639dc5ccecef801029b57d590fb209b5",
+        "bytes": 20533
+      },
+      "buildSeconds": 117.841045,
+      "selection": {
+        "allFeatures": false,
+        "features": [],
+        "noDefaultFeatures": false,
+        "runtimeProfile": "wasm32-unknown-unknown-panic-abort-v1",
+        "target": "wasm32-unknown-unknown"
+      },
+      "captureArtifacts": 129,
+      "receiptDigest": "sha256:99a1ca7222c6ba4f33c57360abf471ba3c2608044b73b9106a793173e6c9a2c5",
+      "grantedRuntimeContracts": [],
+      "firstValue": "42",
+      "freshValue": "42",
+      "invocationsReaped": 3,
+      "nodeReaped": true,
+      "peerRequests": 0,
+      "idleSamplesWithZeroActiveOrQuarantinedCells": 5,
+      "emptyNode": {
+        "rssBytes": 75485184,
+        "highWaterRssBytes": 75485184,
+        "processes": 1,
+        "threads": 8,
+        "handles": 25,
+        "sockets": 3,
+        "tcpConnections": 0
+      },
+      "afterDeploymentDeletion": {
+        "rssBytes": 97959936,
+        "highWaterRssBytes": 97959936,
+        "processes": 1,
+        "threads": 8,
+        "handles": 26,
+        "sockets": 3,
+        "tcpConnections": 0
+      }
+    },
+    {
+      "language": "c",
+      "privateDependency": "milestone/outside-score/1.0.0",
+      "lockDigest": "sha256:a024a6a768cbf90a3a225d6be9f1db4c4ff24d5314dfc90fdb5f908b7a96e806",
+      "sourceDigest": "sha256:6806dbc2c80fcc76c73711e97e8cc32eb9aa5a4877eb48c7a7a5a374fffda823",
+      "component": {
+        "sha256": "sha256:9fa01a6b0eb7898e1b8f152454e43d1e667fbac6bfbfded6cd15efdebb523a69",
+        "bytes": 922395
+      },
+      "buildSeconds": 31.532912,
+      "selection": {
+        "target": "wasm32-wasi"
+      },
+      "captureArtifacts": 1,
+      "receiptDigest": "sha256:f8355ccf6721434964a3d27ea676fc1b91eaaacc4e5188d3d1a77961c80f6db1",
+      "grantedRuntimeContracts": [],
+      "firstValue": "42",
+      "freshValue": "42",
+      "invocationsReaped": 3,
+      "nodeReaped": true,
+      "peerRequests": 0,
+      "idleSamplesWithZeroActiveOrQuarantinedCells": 5,
+      "emptyNode": {
+        "rssBytes": 76689408,
+        "highWaterRssBytes": 76689408,
+        "processes": 1,
+        "threads": 8,
+        "handles": 25,
+        "sockets": 3,
+        "tcpConnections": 0
+      },
+      "afterDeploymentDeletion": {
+        "rssBytes": 105734144,
+        "highWaterRssBytes": 105734144,
+        "processes": 1,
+        "threads": 8,
+        "handles": 26,
+        "sockets": 3,
+        "tcpConnections": 0
+      }
+    },
+    {
+      "language": "typescript",
+      "privateDependency": "outside-sdk-milestone-demo@1.0.1",
+      "lockDigest": "sha256:9a9a3f3f1f257376ebed11650b98aecad4dea0c90ee142943854c316bf372a09",
+      "sourceDigest": "sha256:bd2df60d315f7f56a63f485d9df3014808ceda9bef68e79acbb9ed200e7e8ad6",
+      "component": {
+        "sha256": "sha256:5ce060d0aab2a3060f84ed47fbee1305ebd656a0be3d49ec84bd8bce7d1a7a15",
+        "bytes": 12473169
+      },
+      "buildSeconds": 27.723026,
+      "selection": {
+        "conditions": [],
+        "runtimeProfile": "spidermonkey-public-sync-v1",
+        "target": "wasm32-component"
+      },
+      "captureArtifacts": 2,
+      "receiptDigest": "sha256:23866efc77fb3a4a4806a29da150277cd02f751ea576da40f5b934d2ae1cb25f",
+      "grantedRuntimeContracts": [],
+      "firstValue": "42",
+      "freshValue": "42",
+      "invocationsReaped": 3,
+      "nodeReaped": true,
+      "peerRequests": 0,
+      "idleSamplesWithZeroActiveOrQuarantinedCells": 5,
+      "emptyNode": {
+        "rssBytes": 78143488,
+        "highWaterRssBytes": 78143488,
+        "processes": 1,
+        "threads": 8,
+        "handles": 25,
+        "sockets": 3,
+        "tcpConnections": 0
+      },
+      "afterDeploymentDeletion": {
+        "rssBytes": 442929152,
+        "highWaterRssBytes": 475443200,
+        "processes": 1,
+        "threads": 7,
+        "handles": 26,
+        "sockets": 3,
+        "tcpConnections": 0
+      }
+    },
+    {
+      "language": "go",
+      "privateDependency": "example.org/milestone/outside",
+      "lockDigest": "sha256:6143409f364882e6f7d19a9e2b0860874f1b11125cb638e91deae407abd63cfa",
+      "sourceDigest": "sha256:50d0c3e1228f671fbd450d98282d0038d908f1bafcdcc1447ed88d77d70165cb",
+      "component": {
+        "sha256": "sha256:55b92e42e3e406ea249c90ba78cac84622011ce31fd067e244996ac2eeffac6c",
+        "bytes": 2516827
+      },
+      "buildSeconds": 14.033921,
+      "selection": {
+        "runtimeProfile": "go-component-async-v1",
+        "tags": [],
+        "target": "wasip1/wasm"
+      },
+      "captureArtifacts": 4,
+      "receiptDigest": "sha256:53efea8954a00053154f2c470c7acce9c6cb3869fa7e09c1ffd5aa125c207f80",
+      "grantedRuntimeContracts": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:random/random@0.1.0"
+      ],
+      "withoutExplicitGrant": "permission-denied",
+      "firstValue": "Hello from my module, Ada!",
+      "freshValue": "Hello from my module, Fresh!",
+      "invocationsReaped": 3,
+      "nodeReaped": true,
+      "peerRequests": 0,
+      "idleSamplesWithZeroActiveOrQuarantinedCells": 5,
+      "emptyNode": {
+        "rssBytes": 75894784,
+        "highWaterRssBytes": 75894784,
+        "processes": 1,
+        "threads": 8,
+        "handles": 25,
+        "sockets": 3,
+        "tcpConnections": 0
+      },
+      "afterDeploymentDeletion": {
+        "rssBytes": 161726464,
+        "highWaterRssBytes": 162566144,
+        "processes": 1,
+        "threads": 8,
+        "handles": 26,
+        "sockets": 3,
+        "tcpConnections": 0
+      }
+    },
+    {
+      "language": "java",
+      "privateDependency": "outside-demo",
+      "lockDigest": "sha256:d81a48aa8ded4676de8e3d961b229952902b6890b18fcd0429723f1d494f2984",
+      "sourceDigest": "sha256:eac6318a4012ea45a5b0a6fb2cc21e99ec211e7911290b0f5f082799e7720456",
+      "component": {
+        "sha256": "sha256:fcff8ef11d7f0666a7294fa8981019c0608b8bf03f59db83a5853bea8444c82c",
+        "bytes": 502760
+      },
+      "buildSeconds": 53.075811,
+      "selection": {
+        "release": 25,
+        "runtimeProfile": "java-teavm-c"
+      },
+      "captureArtifacts": 1,
+      "receiptDigest": "sha256:fe8b1a2ba6b5282a2ba8ad193e4d72111ec79f322582de6a659b0540b2a137cc",
+      "grantedRuntimeContracts": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0"
+      ],
+      "withoutExplicitGrant": "permission-denied",
+      "firstValue": "42",
+      "freshValue": "42",
+      "invocationsReaped": 3,
+      "nodeReaped": true,
+      "peerRequests": 0,
+      "idleSamplesWithZeroActiveOrQuarantinedCells": 5,
+      "emptyNode": {
+        "rssBytes": 75530240,
+        "highWaterRssBytes": 75530240,
+        "processes": 1,
+        "threads": 8,
+        "handles": 25,
+        "sockets": 3,
+        "tcpConnections": 0
+      },
+      "afterDeploymentDeletion": {
+        "rssBytes": 107479040,
+        "highWaterRssBytes": 111575040,
+        "processes": 1,
+        "threads": 8,
+        "handles": 26,
+        "sockets": 3,
+        "tcpConnections": 0
+      }
+    },
+    {
+      "language": "dotnet",
+      "privateDependency": "Outside.Milestone.Local@1.0.0",
+      "lockDigest": "sha256:ac3de9dcd846ba18967bd21c38e5de4cdc44f3b8a1208a416d922aad9fccfe20",
+      "sourceDigest": "sha256:66979e62048020c11083b007794c4f282f13e0c81002e4bb2c7a7149ac475d11",
+      "component": {
+        "sha256": "sha256:c1861e51febf99c0188ea0a01d133ee4f325de95ab80be63bc7ab42f90646a6e",
+        "bytes": 1712295
+      },
+      "buildSeconds": 70.037193,
+      "selection": {
+        "framework": "net10.0",
+        "runtimeIdentifier": "wasi-wasm",
+        "runtimeProfile": "dotnet-native-aot-component-v1"
+      },
+      "captureArtifacts": 1,
+      "receiptDigest": "sha256:0065d7fc66e965aa14b4152baf50710d2f01e4067b5cfabe8d750b2993cccc8d",
+      "grantedRuntimeContracts": [
+        "latent:clock/monotonic@0.1.0"
+      ],
+      "withoutExplicitGrant": "permission-denied",
+      "firstValue": "Hello from my library, Ada!",
+      "freshValue": "Hello from my library, Fresh!",
+      "invocationsReaped": 3,
+      "nodeReaped": true,
+      "peerRequests": 0,
+      "idleSamplesWithZeroActiveOrQuarantinedCells": 5,
+      "emptyNode": {
+        "rssBytes": 75407360,
+        "highWaterRssBytes": 75407360,
+        "processes": 1,
+        "threads": 8,
+        "handles": 25,
+        "sockets": 3,
+        "tcpConnections": 0
+      },
+      "afterDeploymentDeletion": {
+        "rssBytes": 139849728,
+        "highWaterRssBytes": 190160896,
+        "processes": 1,
+        "threads": 8,
+        "handles": 27,
+        "sockets": 3,
+        "tcpConnections": 0
+      }
+    }
+  ],
+  "additionalCResourceAndHttp": {
+    "qualifier": "tools/qualify_c_standard_facilities.py --outside-capture",
+    "sourceRevision": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "receiptDigest": "sha256:c451c94b0d65e678b22d772bceb19da892d09fd29a8db31c1fd5ef4a773aa9bb",
+    "catalogueAbsent": true,
+    "variants": [
+      {
+        "dependencyIds": [
+          "shop-floor/price-card",
+          "shop-floor/card-policy"
+        ],
+        "resourceIndex": "sha256:d1d7f1ef0b8b34563216cb0316f0085f337ac287cadea24148eb43cfb402161a",
+        "component": {
+          "sha256": "sha256:8fb889eb4dd01bf3e12121387daaa3b82b7ca1467b06d54ed92c9d5b72ba716a",
+          "bytes": 128782
+        },
+        "originalsRemoved": true,
+        "completedHttpResponses": 1,
+        "openPeerConnections": 0,
+        "remainingPhysicalOwners": 0,
+        "remainingActiveProviderCounters": 0,
+        "nodeReaped": true
+      },
+      {
+        "dependencyIds": [
+          "warehouse/bin-label-reader",
+          "warehouse/label-policy"
+        ],
+        "resourceIndex": "sha256:5fe7938ca460fd11b823a06c4b4a9a01aeac60d1d3911cc94fce6284de4ec3f3",
+        "component": {
+          "sha256": "sha256:8fb889eb4dd01bf3e12121387daaa3b82b7ca1467b06d54ed92c9d5b72ba716a",
+          "bytes": 128782
+        },
+        "originalsRemoved": true,
+        "completedHttpResponses": 1,
+        "openPeerConnections": 0,
+        "remainingPhysicalOwners": 0,
+        "remainingActiveProviderCounters": 0,
+        "nodeReaped": true
+      }
+    ]
+  },
+  "remainingQualification": [
+    "Private library resource and HTTP paths across the other five languages",
+    "Two independently maintained published HTTP clients per language",
+    "Transitive scheduling, cancellation and in-flight physical measurements across the six runtime profiles",
+    "Packaged clean-host authoring"
+  ]
+}

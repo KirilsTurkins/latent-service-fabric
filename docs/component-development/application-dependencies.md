@@ -35,6 +35,14 @@ checkout. Keep that checkout separate from your application directory.
    fallback as `unsupported-reached` and verifies a fresh invocation after an
    uncaught call.
 
+Each walkthrough's language has run a developer-owned dependency in a signed
+greeting capsule. All six preserved the declared error on blank input and
+succeeded on a fresh call. The C resource example also fetched and parsed a
+price card after its original source directory was removed. The
+[six-language execution record](../testing/evidence/sdk-private-library-invocations-2026-11-23.json)
+includes the dependency locks, tool and component identities, grants, results
+and node measurements.
+
 ### Try a private JAR
 
 From a directory alongside the SDK checkout, start with a JDK 25 library of
