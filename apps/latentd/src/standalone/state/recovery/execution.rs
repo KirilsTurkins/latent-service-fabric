@@ -627,6 +627,11 @@ async fn metadata_action(
     settings: &crate::config::state::StateSettings,
 ) -> Result<serde_json::Value, PlatformError> {
     let worker = Arc::clone(&codecs);
+    let kind = if matches!(&codecs.action, Action::InspectNamespace {}) {
+        StoreIoKind::RecoveryRead
+    } else {
+        StoreIoKind::RecoveryWrite
+    };
     let memory = codecs
         .original
         .reserve_buffer(
@@ -634,7 +639,7 @@ async fn metadata_action(
             8 * 1024 * 1024,
         )
         .map_err(|_| super::capacity())?;
-    let job = store.with_store_retaining(StoreIoKind::RecoveryWrite, 8 * 1024 * 1024, Arc::clone(&codecs) as Arc<dyn std::any::Any + Send + Sync>, move |engine| {
+    let job = store.with_store_retaining(kind, 8 * 1024 * 1024, Arc::clone(&codecs) as Arc<dyn std::any::Any + Send + Sync>, move |engine| {
         let _memory = memory;
         let outcome = (|| {
             let view = engine.snapshot()?;
@@ -643,7 +648,15 @@ async fn metadata_action(
             let mut batch = AtomicBatch::default();
             let mut time_changed = false;
             let result = match &worker.action {
-                Action::InspectNamespace {} => serde_json::json!({"action":"inspect-namespace", "namespace":observed.namespace.encode().map_err(|_| StoreError::Corrupt)?, "history":observed.history.encode().map_err(|_| StoreError::Corrupt)?, "view":observed.view_token()?, "guard":observed.guard.as_ref().map(RecoveryGuard::encode).transpose()?, "reviewDigest":digest(worker.review)}),
+                Action::InspectNamespace {} => serde_json::json!({
+                    "action":"inspect-namespace",
+                    "namespace":observed.namespace.encode().map_err(|_| StoreError::Corrupt)?,
+                    "history":observed.history.encode().map_err(|_| StoreError::Corrupt)?,
+                    "view":observed.view_token()?,
+                    "guard":observed.guard.as_ref().map(RecoveryGuard::encode).transpose()?,
+                    "reviewDigest":digest(worker.review),
+                    "publicationEffects":publication_effects(&worker, &view)?
+                }),
                 Action::InspectCloseEffects { operation_id, effect_ids, reason } => {
                     let plan = inspect(&view, close_scope(&worker), worker.authority.actor.clone(), operation_id.clone(), effect_ids.clone(), reason.clone())?;
                     serde_json::json!({"action":"inspect-close-effects", "acknowledgement":digest(plan.digest()?), "plan":plan})
@@ -689,6 +702,33 @@ async fn metadata_action(
         seal(store, &codecs, settings).await?;
     }
     Ok(result)
+}
+
+fn publication_effects(
+    codecs: &Codecs,
+    view: &latent_state::embedded::ReadView,
+) -> Result<serde_json::Value, StoreError> {
+    let operation = &codecs.catalog.primary().operation;
+    let publication = operation.publication().publication().as_str();
+    let counts = DispatchCatalog::publication_counts(
+        view,
+        &operation.target().tenant.0,
+        operation.namespace(),
+        operation.incarnation(),
+        publication,
+        &mut || codecs.check(),
+    )?;
+    Ok(serde_json::json!({
+        "publication":publication,
+        "pending":counts.pending.to_string(),
+        "dispatching":counts.active.to_string(),
+        "knownFailed":counts.known_failed.to_string(),
+        "uncertain":counts.uncertain.to_string(),
+        "retryScheduled":counts.retry_scheduled.to_string(),
+        "policyBlocked":counts.blocked.to_string(),
+        "unresolvedPayloadBytes":counts.payload_bytes.to_string(),
+        "hasUnresolvedEffects":counts.oldest_unresolved_millis.is_some()
+    }))
 }
 
 async fn seal(
