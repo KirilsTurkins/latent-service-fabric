@@ -51,7 +51,9 @@ inspection returns encoded `namespace`, `history`, current `view`, optional
 pending, dispatching, uncertain, blocked and retry counts before retiring it.
 These counts describe the authorized namespace view and leave retained work
 available for drain or explicit reconciliation. Run the check while the
-publication still has inspection authority.
+publication still has inspection authority. The bounded `retainedFormats` array names
+each retained decoder dependency and reports its row, byte and unresolved
+counts as decimal strings. One record can require more than one decoder.
 
 Namespace inspection reports the protected file through `storeCapacity`, including
 its observed length, configured limit, growth headroom and compaction activity.

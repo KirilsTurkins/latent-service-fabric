@@ -18,6 +18,12 @@ async fn protected_result_sweep_checks_the_inspected_generation() {
         .await
         .unwrap();
     assert!(read["resultMaintenance"].is_null());
+    let formats = read["retainedFormats"].as_array().unwrap();
+    assert!(formats.iter().any(|format| {
+        format["kind"] == "migration-checkpoint"
+            && format["rows"].as_str().unwrap().parse::<u64>().unwrap() > 0
+            && format["bytes"].as_str().unwrap().parse::<u64>().unwrap() > 0
+    }));
     let view: Vec<u8> = serde_json::from_value(read["view"].clone()).unwrap();
     fixture.idle().await;
 

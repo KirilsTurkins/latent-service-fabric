@@ -642,7 +642,7 @@ async fn metadata_action(
         let _memory = memory;
         let outcome = (|| {
             let view = engine.snapshot()?;
-            worker.closure(&view)?;
+            let closure = worker.closure(&view)?;
             let observed = worker.selected_view(&view)?;
             let mut batch = AtomicBatch::default();
             let mut time_changed = false;
@@ -655,6 +655,7 @@ async fn metadata_action(
                     "guard":observed.guard.as_ref().map(RecoveryGuard::encode).transpose()?,
                     "reviewDigest":digest(worker.review),
                     "publicationEffects":publication_effects(&worker, &view)?,
+                    "retainedFormats":retained_formats(&closure.inventory),
                     "storeCapacity":store_capacity(engine)?,
                     "resultMaintenance":retention::inspect(&view)?
                 }),
@@ -670,14 +671,13 @@ async fn metadata_action(
                     serde_json::json!({"action":"close-effects", "receipt":prepared.receipt, "replay":prepared.replay})
                 },
                 Action::Review {} => {
-                    worker.closure(&view)?.inventory.require_retirement_drained().map_err(|_| StoreError::Unavailable)?;
+                    closure.inventory.require_retirement_drained().map_err(|_| StoreError::Unavailable)?;
                     let guard = observed.guard.as_ref().ok_or(StoreError::Unavailable)?;
                     batch = guard.prepare_reviewed(&view, worker.review, |_, _, _| worker.check())?;
                     serde_json::json!({"action":"review", "reviewDigest":digest(worker.review)})
                 },
                 Action::Resume { operation_id, expected_view } => {
                     let request = NamespaceResumeRequest { scope: observed.scope(), operation_id: operation_id.clone(), operator_id: worker.authority.actor.clone(), expected_view: expected_view.clone(), review_digest: worker.review };
-                    let closure = worker.closure(&view)?;
                     let plan = super::original_resume::prepare(&view, &request, &closure.inventory, worker.authority.deadline, || worker.check())?;
                     let result = serde_json::json!({"action":"resume", "receipt":plan.receipt().encode()?, "view":plan.receipt().view_token()?, "replay":plan.replayed()});
                     batch = plan.into_batch();
@@ -703,6 +703,24 @@ async fn metadata_action(
         seal(store, &codecs, settings).await?;
     }
     Ok(result)
+}
+
+fn retained_formats(
+    inventory: &latent_state::namespace::compatibility::RetainedInventory,
+) -> Vec<serde_json::Value> {
+    inventory
+        .entries()
+        .iter()
+        .map(|(format, count)| {
+            serde_json::json!({
+                "kind": format.kind,
+                "identity": format.identity,
+                "rows": count.rows.to_string(),
+                "bytes": count.bytes.to_string(),
+                "unresolved": count.unresolved.to_string(),
+            })
+        })
+        .collect()
 }
 
 fn publication_effects(
