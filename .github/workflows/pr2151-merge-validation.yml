@@ -1,0 +1,198 @@
+name: PR 2151 exact merge validation
+'on':
+  push:
+    branches: [work/pr2151-merge-validation-20261123]
+    paths: [.github/workflows/pr2151-merge-validation.yml]
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      tree: ${{ steps.merge.outputs.tree }}
+      manifest: ${{ steps.merge.outputs.manifest_sha256 }}
+    steps:
+    - uses: KirilsTurkins/lsf-checkout@4d310727149d3abacc52b5dcb0a1c4d18b345d13
+      with:
+        ref: f881e760dfb527e341b2b43b60d99f217ad2d8ae
+        fetch-depth: 0
+        persist-credentials: false
+    - uses: KirilsTurkins/lsf-setup-python@e0788870ab0f74690a1d3f187ba206c395748aee
+      with:
+        python-version: 3.13.5
+    - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2
+      with:
+        distribution: temurin
+        java-version: 25.0.4+101.0.LTS
+    - name: Reconcile exact parents and authenticate every replacement
+      id: merge
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        python3 - <<'PY'
+        import base64, hashlib, json, os, pathlib, shutil, subprocess, tempfile, urllib.request, zlib
+        HEAD='f881e760dfb527e341b2b43b60d99f217ad2d8ae'
+        DEV='702bd725f259a241a9b92aecde9b1a5787b94f94'
+        BASE='57d4a349dbb70c2511be1cd15f41e5915d6ba5b9'
+        repo='KirilsTurkins/latent-service-fabric'
+        root=pathlib.Path.cwd(); out=pathlib.Path(os.environ['RUNNER_TEMP'])/'pr2151-merge';out.mkdir()
+        def git(*args):return subprocess.check_output(['git',*args])
+        def blob(data):return hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+        assert git('rev-parse','HEAD').decode().strip()==HEAD
+        assert git('rev-parse','origin/development').decode().strip()==DEV
+        assert git('rev-parse','origin/fix/sdk-java-cached-idle-handoff-20261117').decode().strip()==HEAD
+        assert git('merge-base',HEAD,DEV).decode().strip()==BASE
+        req=urllib.request.Request('https://api.github.com/repos/'+repo+'/git/blobs/556813db3ec7227f9693dc1d6454a5797feca6a1',headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json'})
+        with urllib.request.urlopen(req,timeout=60) as response: stored=json.load(response)
+        encoded=base64.b64decode(stored['content']);assert blob(encoded)=='556813db3ec7227f9693dc1d6454a5797feca6a1'
+        # Correct one authenticated serialization duplication, then require the original payload identity.
+        assert encoded.count(b'qhsKqKgc2SL')==1
+        encoded=encoded.replace(b'qhsKqKgc2SL',b'qhsKqgc2SL')
+        assert blob(encoded)=='27f4a0fea23fc40b4809554df0b995868a231de1'
+        raw=zlib.decompress(base64.b64decode(encoded,validate=True))
+        assert len(raw)==33860 and hashlib.sha256(raw).hexdigest()=='6039f248130878fffcce52b6c1d48cc058703b55a1df52e152e430f29937ece4'
+        payload=json.loads(raw);rows=payload['files'];assert len(rows)==16
+        paths=[row['path'] for row in rows];assert len(set(paths))==16
+        with tempfile.TemporaryDirectory(prefix='pr2151-preimages-') as temporary:
+         stage=pathlib.Path(temporary)
+         for row in rows:
+          name=row['path'];p=pathlib.PurePosixPath(name)
+          assert not p.is_absolute() and '..' not in p.parts and row['ref'] in (HEAD,DEV)
+          original=git('show',row['ref']+':'+name);assert blob(original)==row['before'],name
+          target=stage/name;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(original)
+         patch=out/'resolution.patch';patch.write_text(payload['patch'])
+         subprocess.run(['git','apply','--check',str(patch)],cwd=stage,check=True)
+         subprocess.run(['git','apply',str(patch)],cwd=stage,check=True)
+         for row in rows:
+          data=(stage/row['path']).read_bytes()
+          assert len(data)==row['bytes'] and blob(data)==row['after'] and hashlib.sha256(data).hexdigest()==row['sha256'],row['path']
+         subprocess.run(['git','config','user.name','LSF merge qualification'],check=True)
+         subprocess.run(['git','config','user.email','41898282+github-actions[bot]@users.noreply.github.com'],check=True)
+         merge=subprocess.run(['git','merge','--no-commit','--no-ff',DEV],stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+         (out/'merge.log').write_bytes(merge.stdout);assert merge.returncode in (0,1)
+         conflicts=git('diff','--name-only','--diff-filter=U','-z').decode().strip('\0').split('\0')
+         conflicts=[x for x in conflicts if x];assert set(conflicts)<=set(paths),conflicts
+         for row in rows:
+          dest=root/row['path'];dest.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(stage/row['path'],dest)
+         subprocess.run(['git','add','--',*paths],check=True)
+        assert not git('diff','--name-only','--diff-filter=U').strip()
+        subprocess.run(['git','diff','--cached','--check'],check=True)
+        ours=['sdk/java-guest/fibers/dev/latent/guest/runtime/concurrent/ManagedExecutor.java','sdk/java-guest/fibers/conformance/shutdown-now/Capsule.java','tools/java_guest/field_read_patch.py','tools/java_guest/coroutine_patch.py','tools/java_standard_http_library.py','tools/qualify_java_dependency_suite.py']
+        for name in ours:assert git('show',':'+name)==git('show',HEAD+':'+name),name
+        inherited=['Cargo.lock','crates/vendor/wasmtime/UPSTREAM.latent.json','sdk/typescript-guest/probes/fetch-runtime/main.ts','sdk/typescript-guest/activation/runtime-globals.d.ts','tools/typescript_guest/source_splicer.mjs','tools/typescript_guest/abort_engine.py','tools/java_guest/exception_slots.py','crates/latent-wasmtime/src/native_stacks.rs','tools/tests/test_runtime_merge_integration.py','tools/tests/test_java_exception_frames.py']
+        for name in inherited:assert git('show',':'+name)==git('show',DEV+':'+name),name
+        subprocess.run(['git','commit','-m','Validate PR 2151 reconciliation with development 702bd725'],check=True)
+        assert git('show','-s','--format=%P','HEAD').decode().strip().split()==[HEAD,DEV]
+        tree=git('rev-parse','HEAD^{tree}').decode().strip();entries=[]
+        known={row['after'] for row in rows}
+        for name in git('diff','--name-only','-z',DEV,'HEAD').decode().strip('\0').split('\0'):
+         info=git('ls-tree','HEAD','--',name).decode().strip().split(None,3)
+         assert len(info)==4 and info[1]=='blob' and info[0] in ('100644','100755'),name
+         mode,_,sha,_=info;entry={'path':name,'mode':mode,'type':'blob','sha':sha}
+         old=subprocess.run(['git','rev-parse',HEAD+':'+name],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+         if old.returncode or old.stdout.decode().strip()!=sha:
+          assert sha in known,('unreviewed-new-merge-blob',name,sha)
+          data=git('cat-file','blob',sha);assert blob(data)==sha
+          dest=out/'objects'/sha;dest.parent.mkdir(exist_ok=True);dest.write_bytes(data)
+          entry['sha256']=hashlib.sha256(data).hexdigest();entry['bytes']=len(data)
+         entries.append(entry)
+        manifest={'head':HEAD,'development':DEV,'tree':tree,'files':entries,'conflicts':conflicts,'localCommit':git('rev-parse','HEAD').decode().strip()}
+        text=json.dumps(manifest,indent=2,sort_keys=True)+'\n';(out/'manifest.json').write_text(text)
+        with open(os.environ['GITHUB_OUTPUT'],'a') as handle:
+         handle.write('tree='+tree+'\nmanifest_sha256='+hashlib.sha256(text.encode()).hexdigest()+'\n')
+        print(json.dumps({'tree':tree,'conflicts':conflicts,'overlays':len(entries)},indent=2))
+        PY
+    - name: Install repository-pinned Python prerequisites
+      run: python3 -m pip install --requirement tools/requirements.lock
+    - name: Validate the immutable combined source with pinned JDK 25
+      env:
+        LSF_PYTHON_POLICY_BASE: 702bd725f259a241a9b92aecde9b1a5787b94f94
+      run: |
+        python3 - <<'PY'
+        import json,os,pathlib,subprocess,sys
+        root=pathlib.Path.cwd();out=pathlib.Path(os.environ['RUNNER_TEMP'])/'pr2151-merge'
+        manifest=json.loads((out/'manifest.json').read_text());commit=manifest['localCommit']
+        def unchanged():
+         assert subprocess.check_output(['git','rev-parse','HEAD']).decode().strip()==commit
+         assert not subprocess.check_output(['git','status','--porcelain','--untracked-files=normal']).strip()
+         unchanged_tree=subprocess.check_output(['git','write-tree']).decode().strip()
+         assert unchanged_tree==manifest['tree']
+        groups=[
+         ('focused',['-m','unittest','tools.tests.test_java_enum_guard','tools.tests.test_java_date_link_guard','tools.tests.test_java_exception_slots','tools.tests.test_java_linear_stack','tools.tests.test_typescript_event_ownership','tools.tests.test_typescript_abort_lazy_algorithms','tools.tests.test_typescript_native_object_pressure','tools.tests.test_typescript_native_task_meta','tools.tests.test_native_fixture_toolchain','tools.tests.test_java_exception_frames','tools.tests.test_runtime_merge_integration','-v']),
+         ('adjacent',['-m','unittest','tools.tests.test_java_compiler_acquisition','tools.tests.test_java_dependency_suite','tools.tests.test_java_resource_runtime','tools.tests.test_java_standard_http_ownership','tools.tests.test_java_teavm_failure_trace','tools.tests.test_typescript_abort_any_ownership','tools.tests.test_typescript_abort_stack_integration','tools.tests.test_typescript_record_retirement','tools.tests.test_typescript_abort_declarations','-v']),
+         ('sdk',['-m','unittest','discover','-s','sdk/java-guest/tests','-v']),
+         ('handoff',['-m','unittest','tools.tests.test_java_checkpoint_context','tools.tests.test_java_future_cancel_interrupt','tools.tests.test_java_http_fibers','tools.tests.test_java_owner_admission','tools.tests.test_java_scheduled_library','-v']),
+         ('repository',['tools/validate_repository.py']),
+         ('ci-inventory',['tools/ci_coverage.py','--receipt','target/ci/pr2151-merge.json'])]
+        for name,args in groups:
+         unchanged()
+         with (out/(name+'.log')).open('wb') as log: result=subprocess.run([sys.executable,'-B',*args],stdout=log,stderr=subprocess.STDOUT,timeout=300)
+         print(name,result.returncode,flush=True)
+         print((out/(name+'.log')).read_text()[-2000:],flush=True)
+         assert result.returncode==0,name
+         unchanged()
+        (out/'VALIDATED.json').write_text(json.dumps({'tree':manifest['tree'],'localCommit':commit,'groups':[x[0] for x in groups],'passed':True},indent=2)+'\n')
+        PY
+    - name: Retain merge identities and validation evidence
+      if: always()
+      uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+      with:
+        name: pr2151-validated-merge
+        path: ${{ runner.temp }}/pr2151-merge/
+        retention-days: 7
+        if-no-files-found: error
+  store:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: read
+    steps:
+    - uses: KirilsTurkins/lsf-download-artifact@fc27fb5305d2042f110912a9d6a2924a98084389
+      with:
+        name: pr2151-validated-merge
+        path: ${{ runner.temp }}/pr2151-merge
+    - name: Store only authenticated Git objects without moving any ref
+      env:
+        GH_TOKEN: ${{ github.token }}
+        MANIFEST_SHA: ${{ needs.prepare.outputs.manifest }}
+        EXPECTED_TREE: ${{ needs.prepare.outputs.tree }}
+      run: |
+        python3 - <<'PY'
+        import base64,hashlib,json,os,pathlib,re,urllib.request
+        root=pathlib.Path(os.environ['RUNNER_TEMP'])/'pr2151-merge'
+        raw=(root/'manifest.json').read_bytes();assert hashlib.sha256(raw).hexdigest()==os.environ['MANIFEST_SHA']
+        m=json.loads(raw);v=json.loads((root/'VALIDATED.json').read_text())
+        assert m['head']=='f881e760dfb527e341b2b43b60d99f217ad2d8ae' and m['development']=='702bd725f259a241a9b92aecde9b1a5787b94f94'
+        assert m['tree']==os.environ['EXPECTED_TREE']==v['tree'] and v['passed'] is True
+        assert 1<=len(m['files'])<=100
+        api='https://api.github.com/repos/KirilsTurkins/latent-service-fabric'
+        def request(path,data=None):
+         body=None if data is None else json.dumps(data).encode()
+         req=urllib.request.Request(api+path,data=body,headers={'Authorization':'Bearer '+os.environ['GH_TOKEN'],'Accept':'application/vnd.github+json','Content-Type':'application/json'})
+         with urllib.request.urlopen(req,timeout=60) as response:return json.load(response)
+        def blob(data):return hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+        assert request('/git/ref/heads/fix/sdk-java-cached-idle-handoff-20261117')['object']['sha']==m['head']
+        assert request('/git/ref/heads/development')['object']['sha']==m['development']
+        entries=[];seen=set()
+        for e in m['files']:
+         p=pathlib.PurePosixPath(e['path']);assert not p.is_absolute() and '..' not in p.parts and str(p) not in seen;seen.add(str(p))
+         assert e['mode'] in ('100644','100755') and e['type']=='blob' and re.fullmatch('[0-9a-f]{40}',e['sha'])
+         if 'sha256' in e:
+          b=(root/'objects'/e['sha']).read_bytes()
+          assert len(b)==e['bytes']<=100000 and hashlib.sha256(b).hexdigest()==e['sha256'] and blob(b)==e['sha']
+          stored=request('/git/blobs',{'content':base64.b64encode(b).decode(),'encoding':'base64'});assert stored['sha']==e['sha']
+         entries.append({k:e[k] for k in ('path','mode','type','sha')})
+        base=request('/git/commits/'+m['development'])['tree']['sha']
+        result=request('/git/trees',{'base_tree':base,'tree':entries});assert result['sha']==m['tree']
+        receipt={'tree':result['sha'],'head':m['head'],'development':m['development'],'manifestSha256':os.environ['MANIFEST_SHA'],'refsChanged':False}
+        (root/'STORED.json').write_text(json.dumps(receipt,indent=2)+'\n');print(json.dumps(receipt,indent=2))
+        PY
+    - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
+      with:
+        name: pr2151-stored-tree
+        path: ${{ runner.temp }}/pr2151-merge/STORED.json
+        retention-days: 7
+        if-no-files-found: error
