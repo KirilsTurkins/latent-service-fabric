@@ -31,6 +31,38 @@ python tools/rust_capsule.py dependencies ./my-rust
 python tools/rust_capsule.py build ./my-rust --offline --output ./my-rust/target/build-1 --repository https://github.com/example/application
 ```
 
+## Call a local crate from the greeting handler
+
+Create a crate outside the capsule project. In its `Cargo.toml`, set the
+package name to `outside-sdk-milestone-demo`, the version to `1.0.0` and the
+edition to `2021`. Give it this `src/lib.rs`.
+
+```rust
+pub fn calculate(value: u32) -> u32 {
+    value + 17
+}
+```
+
+Set `$privateCrate` to the absolute path of the crate and add it.
+
+```powershell
+python tools/rust_capsule.py add ./my-rust outside-sdk-milestone-demo --version 1.0.0 --path $privateCrate --cargo ./reviewed-rust/bin/cargo
+```
+
+Run `lock`, `resolve`, `review-lock` and `dependencies` as above. Omit
+`--features pure` for this crate. In the greeting capsule's `src/lib.rs`, keep
+its input validation and replace the final success expression with this call.
+
+```rust
+Ok(outside_sdk_milestone_demo::calculate(25).to_string())
+```
+
+Build with `--offline`. After signing and deploying the package, call `greet`
+with `Ada`. The success value is the string `42`. A blank name still returns
+the handler's declared error, `Please enter a name.`.
+
+## What capture and build verify
+
 The separate fetch stage runs native `cargo metadata` and `cargo vendor --locked` from an owned working directory and empty Cargo home. It records the complete resolver graph, selected target graph, enabled/default features, native lock, package/source/target/license metadata and tool bytes in `cargo-resolved.lock.json`. Private registry tokens are read only by this explicit resolver and are absent from compilation environments and public evidence. Private registry endpoint configuration must be explicitly supplied to the resolver; ambient home/project Cargo configurations are not consumed.
 
 Before vendoring or publishing a candidate, capture checks both native metadata

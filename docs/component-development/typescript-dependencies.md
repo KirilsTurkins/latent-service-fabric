@@ -14,6 +14,40 @@ python tools/typescript_capsule.py dependencies ./my-typescript
 python tools/typescript_capsule.py build ./my-typescript --tools ./reviewed-typescript-tools --output ./my-typescript/target/build-1 --repository https://github.com/example/application
 ```
 
+## Call a local JavaScript library from TypeScript
+
+Create a library outside the capsule project with these three files. The
+`types` entry lets the strict TypeScript compiler check the exported function
+when the capsule imports it.
+
+| File | Contents |
+| --- | --- |
+| `package.json` | `{"name":"outside-sdk-milestone-demo","version":"1.0.1","main":"index.js","types":"index.d.ts"}` |
+| `index.js` | `exports.calculate = value => value + 17;` |
+| `index.d.ts` | `export function calculate(value: number): number;` |
+
+Set `$privatePackage` to the absolute path of the library and add it.
+
+```powershell
+python tools/typescript_capsule.py add ./my-typescript outside-sdk-milestone-demo --path $privatePackage
+```
+
+Run `lock`, `resolve`, `review-lock` and `dependencies` as above. Add this import
+to the greeting capsule's `src/main.ts`.
+
+```ts
+import { calculate } from 'outside-sdk-milestone-demo';
+```
+
+Keep the handler's input checks and change its success expression to
+`return String(calculate(25));`. Build from the reviewed capture, sign the
+package and deploy it. Calling `greet` with `Ada` returns `42` as a string.
+A blank name returns `Please enter a name.`. If the compiler reports TS7016,
+check that the package exposes its declaration and that the reviewed lock
+includes that file.
+
+## What capture and build verify
+
 `add`, `update` and `remove` edit only application declarations and preserve the accepted lock and SDK. Versions are exact; `--section` selects dependencies, development, optional or peer declarations. `lock` explicitly regenerates the native lock in a private fetch attempt with ignored lifecycle scripts, executable links disabled and strict peer resolution. It observes direct and transitive local inputs, mirrors their relative layout, rejects SDK/project overlap and unobserved local selections, and rechecks source, tools and registry policy before atomic native-lock replacement. Native failure leaves the previous lock intact. This step does not accept a captured closure: run `resolve`, inspect its fresh candidate and explicitly `review-lock` afterward.
 
 The project-owned explicit runtime profile is inherited by direct resolution as well as the CLI. An explicit conflicting capture profile fails before a native command. Candidate profile selection retains its current qualification state; it does not establish Promise, timer or networking support.
