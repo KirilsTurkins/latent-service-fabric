@@ -32,6 +32,8 @@ Current action fields are:
 | --- | --- |
 | `snapshot` | `operationId`, `file: {root,name}` |
 | `inspect-namespace` | none |
+| `inspect-inbox-source` | `binding` |
+| `enroll-inbox-source` | `binding`, `expectedScope`, `expectedView`, `expectedCheckpointGeneration` |
 | `inspect-restore` | `file`, `destinationRoot`, `destinationCheckpointRoot`, `operationId`, `snapshotDigest`, `manifestDigest`, optional `destinationStoreIdentity` |
 | `restore` | the inspect fields plus exact `windowAcknowledgement` |
 | `inspect-close-effects` | `operationId`, `effectIds`, `reason` |
@@ -87,6 +89,28 @@ original Boolean retryability. Store retirement independently records `clean`,
 Retirement never converts an uncertain write into a known abort. Early
 configuration/authentication/admission failure may refuse the process before a
 store report exists. The collector must retain that failed attempt.
+
+## Enroll a transactional inbox source
+
+Stop the node. Use its protected configuration containing the transactional
+trigger binding and select the corresponding current signed command
+publication. Use `inspect-inbox-source` under the `namespace-inspect` policy.
+It returns the configured source's `inputBinding` (64 lowercase hex digits),
+the exact namespace `view` byte array, the `checkpointGeneration`, and whether
+the source is already enrolled.
+
+To approve a new logical source, run `enroll-inbox-source` under the
+`namespace-enroll-inbox-source` policy. Supply the reported `inputBinding` as
+`expectedScope`, `view` as `expectedView`, and `checkpointGeneration` as
+`expectedCheckpointGeneration`. Keep the same binding and publication in both
+requests. Enrollment preserves the dispatch floor and advances the protected
+checkpoint by one source. Restart the node after the recovery report confirms
+success and clean physical retirement. The broker qualifies the configured
+stream incarnation and consumer during delivery.
+
+A stale inspection requires a fresh read. If an interrupted write leaves a
+checkpoint mismatch, startup and offline enrollment hold the source for
+reconciliation. Keep both the original database and external checkpoint.
 
 ## Finite current ownership
 
