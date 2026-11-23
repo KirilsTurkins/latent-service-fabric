@@ -39,7 +39,7 @@ Current action fields are:
 | `restore` | the inspect fields plus exact `windowAcknowledgement` |
 | `inspect-close-effects` | `operationId`, `effectIds`, `reason` |
 | `close-effects` | `operationId`, exact inspected `plan`, `acknowledgement` |
-| `review` | none |
+| `review` | exact `expectedView`, `snapshotDigest` and `windowAcknowledgement` |
 | `resume` | `operationId`, exact `expectedView` byte array |
 | `stage-migration`, `complete-migration` | `operationId`, `file`, `expectedView`, `checkpointDigest`, `checkpointManifestDigest` |
 | `resume-migration` | `operationId`, `migrationOperationId`, `file`, `expectedView`, `migrationExpectedView`, `checkpointDigest`, `checkpointManifestDigest` |
@@ -53,6 +53,13 @@ pending, dispatching, uncertain, blocked and retry counts before retiring it.
 These counts describe the authorized namespace view and leave retained work
 available for drain or explicit reconciliation. Run the check while the
 publication still has inspection authority.
+
+To review a staged restore, use the restored namespace's inspected `view` as
+`expectedView`, the original snapshot digest and the restore's acknowledged
+window digest. Review requires the same paused namespace and current authority
+after all required work is reconciled. Resending the identical review after a
+lost response recovers its original approval while that exact view remains
+current. Start a separate explicit resume after reviewing the receipt.
 
 Migration resume returns action `resume-migration`,
 encoded current `receipt`, current `view`, and `resourcePhysicallyRetired`.
