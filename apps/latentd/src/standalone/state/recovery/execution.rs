@@ -691,9 +691,36 @@ async fn metadata_action(
 
 async fn seal(
     store: &ProtectedStoreOwner,
-    codecs: &Codecs,
+    codecs: &Arc<Codecs>,
     settings: &crate::config::state::StateSettings,
 ) -> Result<(), PlatformError> {
+    if codecs.checkpoint.inbox_custody().is_some() {
+        let (checkpoint, current) =
+            super::operation::inspect_checkpoint(store, settings, &codecs.original).await?;
+        if current != codecs.checkpoint {
+            checkpoint.retire().await;
+            return Err(storage(StoreError::Conflict));
+        }
+        let worker = Arc::clone(codecs);
+        let (checkpoint, result) = awaited(
+            store
+                .advance_checkpoint_with_inbox_inventory(
+                    checkpoint,
+                    Some(current),
+                    codecs.authority.clock.covered_epoch()?,
+                    Arc::clone(&codecs.original),
+                    crate::config::state::STARTUP_VALIDATOR_BYTES,
+                    DispatchCatalog::checkpoint,
+                    move |view| worker.inbox_custody(view),
+                )
+                .map_err(protected)?,
+            codecs,
+        )
+        .await?;
+        let result = result.map_err(protected);
+        checkpoint.retire().await;
+        return result.map(|_| ());
+    }
     let (checkpoint, opened) = awaited(
         store
             .open_checkpoint(

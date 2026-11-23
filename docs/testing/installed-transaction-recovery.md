@@ -98,6 +98,9 @@ digest observed during export. Restore inspection compares the archived
 inventory with the retained sources before offering a loss window. Staging
 preserves an exact match in the new protected checkpoint and keeps delivery
 paused for reconciliation. An archive with different source history is refused.
+Operators can inspect and close deferred effects using the existing recovery
+plans; the clock checkpoint advances with the same verified inbox inventory.
+The inbox requires its own reconciliation before delivery resumes.
 
 The existing Java declaration remains 96 MiB native recovery capacity with a
 32 MiB maximum reservation, 16 MiB retained store recovery capacity, an

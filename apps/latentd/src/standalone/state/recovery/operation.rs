@@ -148,6 +148,8 @@ async fn prepare(
                 | Action::Snapshot { .. }
                 | Action::InspectRestore { .. }
                 | Action::Restore { .. }
+                | Action::InspectCloseEffects { .. }
+                | Action::CloseEffects { .. }
         )
     {
         // Recovery and resume require explicit inbox reconciliation.
