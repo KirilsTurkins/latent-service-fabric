@@ -38,8 +38,10 @@ checkout. Keep that checkout separate from your application directory.
 Each walkthrough's language has run a developer-owned dependency in a signed
 greeting capsule. All six preserved the declared error on blank input and
 succeeded on a fresh call. The C example fetched and parsed a price card, and a
-Java HTTP client read a resource from its transitive JAR. Both used only their
-captures after removal of the original libraries. The
+Java HTTP client read a resource from its transitive JAR. The Go example
+ran Sling and Requests with their default clients and a private module that
+read a `//go:embed` resource from a goroutine. Both Go module coordinates
+passed all 30 HTTP cases after capture. The
 [six-language execution record](../testing/evidence/sdk-private-library-invocations-2026-11-23.json)
 includes the dependency locks, tool and component identities, grants, results
 and node measurements.

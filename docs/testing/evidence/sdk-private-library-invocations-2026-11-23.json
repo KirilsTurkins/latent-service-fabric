@@ -481,6 +481,149 @@
       }
     ]
   },
+  "additionalGoResourceAndHttp": {
+    "qualifier": "tools/qualify_go_http_libraries.py",
+    "sourceRevision": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+    "receiptDigest": "sha256:57a1f35af4e211c0854dd11a9e859b289b9a5dd66413944ac28552577104bac6",
+    "normalGoQualification": {
+      "qualifier": "tools/qualify_go_capsules.py",
+      "receiptDigest": "sha256:3db1600df3dd46b6f54903b25c98437f52d5f2cc372af93e40f7474b739f8ba0",
+      "nodeReceiptDigest": "sha256:e09162e331bd7bd7f3d66dc73caf66010eeaed927d3396513fcaffef578c76f3",
+      "signedInvocations": 27,
+      "templates": [
+        "greeting",
+        "word-count",
+        "shipping",
+        "http-status",
+        "recovery"
+      ],
+      "nodeReaped": true
+    },
+    "casesPerVariant": [
+      "sling-json",
+      "sling-http404",
+      "sling-http500",
+      "sling-truncated",
+      "sling-oversized",
+      "sling-malformed-json",
+      "sling-forbidden",
+      "sling-cancel-headers",
+      "sling-partial-context-cancel",
+      "sling-post",
+      "sling-uncertain",
+      "sling-alternate-denied",
+      "sling-pre-cancelled",
+      "sling-sibling-cancel",
+      "sling-fresh",
+      "requests-json",
+      "requests-http404",
+      "requests-http500",
+      "requests-truncated",
+      "requests-oversized",
+      "requests-malformed-json",
+      "requests-forbidden",
+      "requests-cancel-headers",
+      "requests-partial-context-cancel",
+      "requests-post",
+      "requests-uncertain",
+      "requests-alternate-denied",
+      "requests-pre-cancelled",
+      "requests-sibling-cancel",
+      "requests-fresh"
+    ],
+    "variants": [
+      {
+        "coordinate": "outside.example.test/http-library/original-coordinate",
+        "component": {
+          "sha256": "sha256:78ef8a3cec6d8c35b9c76e701f069007b1a9bd1e129c563b1ffe20d0a20518f2",
+          "bytes": 10521268
+        },
+        "sourceDigest": "sha256:c38c21864faeef83da2ea6b34bd939bc1b72959c0ff882d1581ba38e1ff9cf5c",
+        "nativeGraphDigest": "sha256:13b051b93d00d7844c0ea3069207bc937eda9f0dd633b76d6e583b3889f1643d",
+        "runtimeProfile": "go-component-activation-v4",
+        "clients": [
+          {
+            "module": "github.com/dghubble/sling",
+            "version": "v1.4.0",
+            "ordinaryApi": "sling.New/Request/Do with its default http.Client"
+          },
+          {
+            "module": "github.com/carlmjohnson/requests",
+            "version": "v0.24.3",
+            "ordinaryApi": "requests.URL/ToJSON/Fetch with its default http.Client"
+          },
+          {
+            "module": "outside.example.test/http-library/original-coordinate",
+            "version": "v0.0.0",
+            "ordinaryApi": "private.Marker ordinary goroutine/WaitGroup/time.Sleep/embed"
+          }
+        ],
+        "privateOriginUnavailable": true,
+        "originalLibrarySourcesChanged": false,
+        "catalogueDispatch": false,
+        "transportInjection": false,
+        "nodeReceiptDigest": "sha256:1b1b74a1fc7fe29b609bc1652c1f9588d7cc5b28ea585ce51026f26de46ce0a2",
+        "entryResults": [
+          "library-entered",
+          "private-marker-ready"
+        ],
+        "signedHttpCases": 30,
+        "casesWithSettledCellsAndQuotas": 30,
+        "peer": {
+          "startedRequests": 24,
+          "committedMutations": 2,
+          "openConnections": 0
+        },
+        "nodeReaped": true,
+        "peerReaped": true
+      },
+      {
+        "coordinate": "outside.example.test/http-library/renamed-coordinate",
+        "component": {
+          "sha256": "sha256:b73dc3ac3189405a8da29599b206d212c4e3c06f0cc1669301e3ed74f0446a1c",
+          "bytes": 10521227
+        },
+        "sourceDigest": "sha256:63a219cd9dec1d02ade6ce8707f73ce7b5c7eef02ccd533135bf56a91aa7d6df",
+        "nativeGraphDigest": "sha256:a2073241cf481ad50d1605055154f6b0ba586afef009d51d90a33ac78ab7edea",
+        "runtimeProfile": "go-component-activation-v4",
+        "clients": [
+          {
+            "module": "github.com/dghubble/sling",
+            "version": "v1.4.0",
+            "ordinaryApi": "sling.New/Request/Do with its default http.Client"
+          },
+          {
+            "module": "github.com/carlmjohnson/requests",
+            "version": "v0.24.3",
+            "ordinaryApi": "requests.URL/ToJSON/Fetch with its default http.Client"
+          },
+          {
+            "module": "outside.example.test/http-library/renamed-coordinate",
+            "version": "v0.0.0",
+            "ordinaryApi": "private.Marker ordinary goroutine/WaitGroup/time.Sleep/embed"
+          }
+        ],
+        "privateOriginUnavailable": true,
+        "originalLibrarySourcesChanged": false,
+        "catalogueDispatch": false,
+        "transportInjection": false,
+        "nodeReceiptDigest": "sha256:f2d21e22eb972649254f8409a5759f91d5d8ea34a53b67f2085d63547bec9670",
+        "entryResults": [
+          "library-entered",
+          "private-marker-ready"
+        ],
+        "signedHttpCases": 30,
+        "casesWithSettledCellsAndQuotas": 30,
+        "peer": {
+          "startedRequests": 24,
+          "committedMutations": 2,
+          "openConnections": 0
+        },
+        "nodeReaped": true,
+        "peerReaped": true
+      }
+    ]
+  },
   "publishedClientReferences": {
     "scope": "Each original signed programme retains its own compiler, component and native host identities in the referenced evidence. The workflow head identifies the successful job.",
     "programmes": [
