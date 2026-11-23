@@ -92,6 +92,7 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
                            "namespace-quiesce", "namespace-retire", "namespace-destroy", "namespace-recreate",
                            "namespace-snapshot", "namespace-inspect-restore", "namespace-restore",
                            "namespace-schema-migrate", "namespace-review-recovery", "namespace-resume",
+                           "namespace-enroll-inbox-source",
                            "effect-plan", "effect-reconcile", "effect-redrive", "effect-terminate",
                            "state-checkpoint", "purge-expired-payload"}
         self.assertTrue(expected["latent:state/key-value@0.2.0"].isdisjoint(host_operations))
@@ -149,7 +150,7 @@ class CapabilityPolicySchemaTests(unittest.TestCase):
         policy = self.validator("capability-policy")
         policy.validate({"formatVersion": 1, "tenant": "a", "rules": [rule]})
         for operation in ("effect-plan", "effect-reconcile", "effect-redrive", "effect-terminate",
-                          "state-checkpoint", "purge-expired-payload"):
+                          "state-checkpoint", "purge-expired-payload", "namespace-enroll-inbox-source"):
             with self.subTest(operation=operation):
                 policy.validate({"formatVersion": 1, "tenant": "a",
                                  "rules": [{**rule, "operations": [operation]}]})
