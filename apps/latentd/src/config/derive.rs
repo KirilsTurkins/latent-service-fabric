@@ -17,16 +17,12 @@ use super::{
 
 #[expect(
     clippy::too_many_lines,
-    reason = "Keep the complete validated startup settings and trigger custody gate together"
+    reason = "Keep the complete validated startup settings together"
 )]
 pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformError> {
     super::security::validate(config)?;
     let state = super::state::derive_optional(config)?;
     let transactional_triggers = super::triggers::derive(config)?;
-    // Fail closed until stream incarnation and replay scope have durable custody.
-    if transactional_triggers.is_some() {
-        return Err(invalid("transactionalTriggers.scopeCustodyUnavailable"));
-    }
     let capacity = validation::validate(config)?;
     let wasmtime = runtime::wasmtime(config, &capacity)?;
     let admission = policy::admission(config, &capacity, &wasmtime)?;
