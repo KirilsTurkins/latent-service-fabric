@@ -31,8 +31,10 @@ staging and dispatcher grants described by the
 
 Use the [reference deployment workflow](../../examples/stateful-reference/README.md)
 to derive the shared ingress routes from the signed companion and actual
-publication, revision and generation. The command, query and original-result
-routes have separate permissions. The Angular renderer needs narrowly scoped
+publication, revision and generation. The
+[transaction HTTP binding](../development/transaction-http-v1.md) defines the
+command, query and original-result routes and their separate permissions.
+The Angular renderer needs narrowly scoped
 read credentials for its two installed draft query routes. Keep those
 credentials in the protected renderer configuration.
 
@@ -67,6 +69,12 @@ notification intents. A fresh query displays the new revision. Open the draft
 in two tabs before saving to exercise a stale edit. After the first tab commits,
 the second tab's original revision can conflict. Use a fresh query before
 choosing a new edit.
+
+Select **Reject this edit** before saving to exercise a durable business
+rejection. Check that the revision and units stay the same and the original
+command has an empty effect list. Recover that command again after another
+authorized edit changes the draft. The result route returns the original
+rejection.
 
 ## Recover the original result
 
