@@ -31,6 +31,7 @@ fn incoming_configuration_requires_private_leaf_before_runtime_custody_check() {
     config.transactional_triggers = Some(super::super::TriggerInstallation {
         id: "incoming".into(),
         epoch: 1,
+        start_paused: true,
         configuration_file: path.clone(),
         credential_directory: directory.path().to_path_buf(),
         credentials: vec![super::super::TriggerCredentialFile {
@@ -42,7 +43,8 @@ fn incoming_configuration_requires_private_leaf_before_runtime_custody_check() {
     });
     assert!(super::super::triggers::derive(&config).unwrap().is_some());
     // Deriving settings does not open the store or admit the input owner.
-    assert!(config.derive().unwrap().transactional_triggers.is_some());
+    let selected = config.derive().unwrap().transactional_triggers.unwrap();
+    assert!(selected.installation.start_paused);
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
     assert!(failure(config.derive())
         .message

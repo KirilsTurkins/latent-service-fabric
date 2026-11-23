@@ -92,11 +92,11 @@ impl TriggerOwner {
                 "transactional-input-owner-stopped",
             ));
         }
-        self.start_accepting();
+        self.accepting.send_replace(true);
         Ok(self.snapshot())
     }
-    pub fn start_accepting(&self) {
-        self.accepting.send_replace(true);
+    pub fn publish_ready(&self, start_paused: bool) {
+        self.accepting.send_replace(!start_paused);
     }
     pub fn stop_accepting(&self) {
         self.accepting.send_replace(false);

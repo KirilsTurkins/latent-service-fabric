@@ -78,6 +78,7 @@ async fn owner() -> (
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn original_incoming_owner_pauses_before_pull_and_resumes_without_replacing_scope_or_task() {
     let (_root, node, secret) = owner().await;
+    node.triggers.as_ref().unwrap().publish_ready(true);
     let original = node.transactional_trigger_status().unwrap();
     assert!(!original.accepting);
     assert_eq!(

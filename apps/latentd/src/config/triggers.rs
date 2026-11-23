@@ -10,6 +10,8 @@ use std::path::{Component, Path, PathBuf};
 pub struct TriggerInstallation {
     pub id: String,
     pub epoch: u64,
+    #[serde(default)]
+    pub start_paused: bool,
     pub configuration_file: PathBuf,
     pub credential_directory: PathBuf,
     pub credentials: Vec<TriggerCredentialFile>,

@@ -843,7 +843,11 @@ impl StandaloneNode {
         }
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         if let Some(triggers) = &self.triggers {
-            triggers.start_accepting();
+            let start_paused = settings
+                .transactional_triggers
+                .as_ref()
+                .is_some_and(|selected| selected.installation.start_paused);
+            triggers.publish_ready(start_paused);
         }
         self.startup_deadline = None;
         Ok(())
