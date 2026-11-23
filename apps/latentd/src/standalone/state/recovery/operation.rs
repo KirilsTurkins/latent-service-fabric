@@ -51,11 +51,12 @@ pub(in crate::standalone) async fn recover(
     if !settings.credentials_from_protected_file
         || principal.kind != PrincipalKind::Administrator
         || !bootstrap.matches_local_payload(settings)
-        || state.tenant_quotas.len() != 1
-        || principal.tenant.as_ref()
-            != Some(&latent_core::TenantId(
-                state.tenant_quotas[0].tenant.clone(),
-            ))
+        || (request.request.inbox_binding().is_none()
+            && (state.tenant_quotas.len() != 1
+                || principal.tenant.as_ref()
+                    != Some(&latent_core::TenantId(
+                        state.tenant_quotas[0].tenant.clone(),
+                    ))))
         || !state.operations.iter().any(|operation| {
             operation.publication.as_str() == request.publication
                 && Some(&operation.tenant) == principal.tenant.as_ref()
@@ -88,16 +89,24 @@ pub(in crate::standalone) async fn recover(
         .reserve_buffer(NativeBufferClass::Response, 2 * 1024 * 1024)
         .map_err(|_| super::capacity())?;
     let store = bootstrap.open_store_offline(state).await?;
-    let prepared = prepare(
-        state, principal, request, &owners, &store, &bootstrap, &original,
-    )
-    .await;
-    let (outcome, pins) = match prepared {
-        Ok(codecs) => {
-            let result = super::execution::execute(&store, Arc::clone(&codecs), state).await;
-            (result, Some(codecs))
+    let (outcome, pins) = if request.request.inbox_binding().is_some() {
+        let result = super::inbox_enrollment::run(
+            settings, state, principal, &request, &owners, &store, &bootstrap, &original,
+        )
+        .await;
+        (result, None)
+    } else {
+        match prepare(
+            state, principal, request, &owners, &store, &bootstrap, &original,
+        )
+        .await
+        {
+            Ok(codecs) => {
+                let result = super::execution::execute(&store, Arc::clone(&codecs), state).await;
+                (result, Some(codecs))
+            }
+            Err(error) => (Err(error), None),
         }
-        Err(error) => (Err(error), None),
     };
     store.close();
     let cutoff = Instant::now() + settings.shutdown_grace();
@@ -119,6 +128,23 @@ pub(in crate::standalone) async fn recover(
     ))
 }
 
+pub(super) async fn require_installed_marker(
+    store: &ProtectedStoreOwner,
+    state: &StateSettings,
+    original: &Arc<NativeReservation>,
+) -> Result<(), PlatformError> {
+    let marker = store
+        .ensure_state_mode_marker(state.store_identity.clone(), Arc::clone(original))
+        .map_err(|_| super::denied())?
+        .await
+        .map_err(|_| super::denied())?
+        .map_err(|_| super::denied())?;
+    if marker.created_here {
+        return Err(super::denied());
+    }
+    Ok(())
+}
+
 #[expect(
     clippy::too_many_lines,
     reason = "Original checkpoint, signed selections, installed clock and purpose decisions remain one admission construction"
@@ -132,15 +158,7 @@ async fn prepare(
     bootstrap: &StateBootstrap,
     original: &Arc<NativeReservation>,
 ) -> Result<Arc<Codecs>, PlatformError> {
-    let marker = store
-        .ensure_state_mode_marker(state.store_identity.clone(), Arc::clone(original))
-        .map_err(|_| super::denied())?
-        .await
-        .map_err(|_| super::denied())?
-        .map_err(|_| super::denied())?;
-    if marker.created_here {
-        return Err(super::denied());
-    }
+    require_installed_marker(store, state, original).await?;
     let payloads = if matches!(&request.request, Action::InspectNamespace {}) {
         bootstrap
             .local_payload_selection
@@ -149,9 +167,20 @@ async fn prepare(
     } else {
         None
     };
-    let (checkpoint, floor) = inspect_checkpoint(store, state, original, payloads.as_ref()).await?;
-    if floor.inbox_custody().is_some() && !matches!(&request.request, Action::InspectNamespace {}) {
-        // Export and recovery writes need an inbox-aware restore contract.
+    let (checkpoint, floor) =
+        inspect_checkpoint_with_payloads(store, state, original, payloads.as_ref()).await?;
+    if floor.inbox_custody().is_some()
+        && !matches!(
+            &request.request,
+            Action::InspectNamespace {}
+                | Action::Snapshot { .. }
+                | Action::InspectRestore { .. }
+                | Action::Restore { .. }
+                | Action::InspectCloseEffects { .. }
+                | Action::CloseEffects { .. }
+        )
+    {
+        // Recovery and resume require explicit inbox reconciliation.
         return Err(super::denied());
     }
     let clock = ProtectedEffectClock::admit(
@@ -300,6 +329,14 @@ async fn prepare(
 }
 
 pub(in crate::standalone::state) async fn inspect_checkpoint(
+    store: &ProtectedStoreOwner,
+    state: &StateSettings,
+    original: &Arc<NativeReservation>,
+) -> Result<(ProtectedCheckpoint, ExternalCheckpoint), PlatformError> {
+    inspect_checkpoint_with_payloads(store, state, original, None).await
+}
+
+async fn inspect_checkpoint_with_payloads(
     store: &ProtectedStoreOwner,
     state: &StateSettings,
     original: &Arc<NativeReservation>,

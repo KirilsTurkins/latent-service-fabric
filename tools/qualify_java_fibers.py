@@ -1340,7 +1340,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ManagedFirstAdmissionReferenceControl').strip()
     if result != expected_managed_first: raise ValueError('Java managed first admission reference did not complete')
     expected_managed_cached = ('MANAGED_CACHED_FACTORY PASS nested;shutdown-thread-null-throw;refusal;committed;'
-        'idle-reuse;growth;concurrent-reservations;idle-shutdown-handoff;two-handoffs;live-thread')
+        'idle-reuse;growth;concurrent-reservations;idle-shutdown-handoff;two-handoffs;live-thread;factory-names')
     result = compiler.run('managed-cached-factory-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ManagedCachedFactoryReferenceControl', 'jdk').strip()
     if result != expected_managed_cached: raise ValueError('Java managed cached factory reference did not complete')

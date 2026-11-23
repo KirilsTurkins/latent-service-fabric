@@ -298,6 +298,12 @@ typedef struct latent_transaction_dispatcher_snapshot {
     uint64_t dead_letter_effects;
     uint64_t counts_observed_at_unix_millis;
     bool clock_continuity_proven;
+    bool has_dispatching_effects;
+    uint64_t dispatching_effects;
+    bool has_unresolved_payload_bytes;
+    uint64_t unresolved_payload_bytes;
+    bool has_oldest_unresolved_age_millis;
+    uint64_t oldest_unresolved_age_millis;
 } latent_transaction_dispatcher_snapshot;
 
 typedef struct latent_transaction_get_effect_request {

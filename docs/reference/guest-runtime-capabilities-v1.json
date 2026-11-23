@@ -1,6 +1,6 @@
 {
   "schemaVersion": "latent.guest.runtime-capabilities.v1",
-  "sourceBaseline": "5a2888acffbd3579083da35c08dc1630c2096ead",
+  "sourceBaseline": "a48ac1f75ce06c2a2f68a1dd501d60de9367be02",
   "informationalOnly": true,
   "usedByResolutionBuildAdmission": false,
   "qualifiedStatusMeaning": "Only the exact finite original programme linked in evidence; source-bound historical receipts are not current-host rebuild claims.",
@@ -270,6 +270,32 @@
     },
     {
       "language": "rust",
+      "api": "Fixed-image ThreadPool siblings using Waki and Golem HTTP",
+      "status": "qualified-finite-programme",
+      "ownerIssue": 743,
+      "sourceBaseline": "a8dea35261e951f7bd3076f9129bd57aa3bc82ca",
+      "sources": {
+        "sdk/wasi-http-runtime/pump.rs": {
+          "sha256": "sha256:9da8cc897b16655953f831613c7d5b548917eab0be02440dc9cc4a395755219f",
+          "bytes": 8018
+        },
+        "tools/rust_thread_http_combined_node.py": {
+          "sha256": "sha256:9fc9fd18225c77336eb6a44faaf9016b868e03ced6a42304173782d52ecdc927",
+          "bytes": 15308
+        },
+        "tools/rust_thread_http_combined_package.py": {
+          "sha256": "sha256:75afaca68ad37234292706208a9b0dd4b2b018cf791a9aef03f630d55ff939b6",
+          "bytes": 17310
+        }
+      },
+      "evidence": [
+        "docs/testing/rust-combined-http-diagnostic.md"
+      ],
+      "finiteBounds": "One signed diagnostic component used eight Tasks and ten Native owners. Its sibling completed a JSON response and issued another request while the original response headers were held. The peer observed four requests.",
+      "remaining": "The normal builder, the ordinary eight-Native-owner configuration and arbitrary Rust dependencies still require qualification."
+    },
+    {
+      "language": "rust",
       "api": "std::thread, synchronization and executor progress",
       "status": "proposed",
       "ownerIssue": 743,
@@ -325,20 +351,28 @@
     {
       "language": "c",
       "api": "Ordinary unchanged HTTP libraries",
-      "status": "proposed",
+      "status": "qualified-finite-programme",
       "ownerIssue": 690,
-      "sourceBaseline": "6c88d8b9fde61fa8b94b1bf05c20494933017f64",
+      "sourceBaseline": "72fb8969352b37eb5c9f4f9cd0cfec9845fc9f1a",
       "sources": {
-        "tools/c_capsule_build.py": {
-          "sha256": "sha256:7e92acff53c63d106c886814b492277e499560ce8771efeb84f8e1b64f9c2612",
-          "bytes": 16148
+        "sdk/c-guest/src/libfetch/http.c": {
+          "sha256": "sha256:f3f495e024a79d5221c0fd42b321c33105295c90d085756e8a36af5f8f89f5a2",
+          "bytes": 16361
+        },
+        "sdk/c-guest/runtime-fixtures/libfetch/probe.c": {
+          "sha256": "sha256:1bcaf1f54e54dee5f48f6bbc3b049bb5160b4c4bb22211db8d0097aade968d29",
+          "bytes": 6100
+        },
+        "sdk/c-guest/runtime-fixtures/libucl/probe.c": {
+          "sha256": "sha256:f2fc602f4e09800e43818af056f835964d5b2bc13f4a6afd3ffc517b551a807c",
+          "bytes": 4221
         }
       },
       "evidence": [
-        "docs/component-development/library-compatibility.md"
+        "docs/testing/evidence/c-http-pair-signed-2026-10-31.json"
       ],
-      "finiteBounds": "Final import/profile validation and explicit grants remain mandatory.",
-      "remaining": "Two required unchanged default clients and their libc/socket/TLS runtime path remain unqualified."
+      "finiteBounds": "Five signed cases each exercised the FreeBSD libfetch front end and libucl with the maintained LSF HTTP backend. Each case recorded zero remaining physical owners and active provider counters.",
+      "remaining": "The complete callback, cancellation and uncertain-POST matrix, native poll-Pending observation, C cost model and standard socket/TLS path remain open."
     },
     {
       "language": "c",

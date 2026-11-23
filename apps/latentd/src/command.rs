@@ -1,6 +1,7 @@
 //! Product command dispatch.
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod inspection;
+mod recovery;
 #[cfg(target_os = "linux")]
 mod serve;
 #[cfg(any(target_os = "linux", test))]
@@ -13,6 +14,7 @@ use std::process::ExitCode;
 
 use clap::{error::ErrorKind, Parser, Subcommand};
 use latent_core::PlatformErrorCode;
+pub use recovery::transaction_recovery_example_entry;
 
 #[derive(Parser)]
 #[command(
@@ -52,6 +54,8 @@ enum Command {
         #[arg(long, value_name = "PATH")]
         config: PathBuf,
     },
+    /// Inspect and recover protected transaction state while the node is offline.
+    TransactionRecovery(recovery::Arguments),
 }
 
 /// Handles the supported standalone node commands.
@@ -81,6 +85,7 @@ pub fn main_entry() -> ExitCode {
         Command::InspectTransactionHosts { config } => run_inspection(&config),
         Command::InspectConfiguredHttpEffects { config } => run_http_effect_inspection(&config),
         Command::InspectConfiguredEventEffects { config } => run_event_effect_inspection(&config),
+        Command::TransactionRecovery(args) => recovery::installed(args),
     };
     match result {
         Ok(()) => ExitCode::SUCCESS,

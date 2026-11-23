@@ -1,5 +1,6 @@
 //! Recover a lost completed-stage response without another write or activation.
 use super::*;
+use crate::protected_store::checkpoint::InventoryObservation;
 use crate::recovery::{RecoveryGuard, RecoveryStatus};
 
 impl ProtectedStoreOwner {
@@ -89,6 +90,9 @@ fn recover(
         .engine()
         .snapshot()
         .map_err(RestoreStageError::Review)?;
+    input
+        .verify_inbox_custody(&current_view)
+        .map_err(RestoreStageError::Review)?;
     let window = RestoreWindow::capture(&current_view, &actual, file.deadline(), || {
         current_store(file, owners.as_ref())
     })
@@ -103,6 +107,9 @@ fn recover(
         .store
         .engine()
         .snapshot()
+        .map_err(RestoreStageError::Review)?;
+    input
+        .verify_inbox_custody(&view)
         .map_err(RestoreStageError::Review)?;
     verify_import(file, &view, &actual, &window, owners.as_ref())
         .map_err(RestoreStageError::Review)?;
@@ -136,7 +143,12 @@ fn recover(
         != completed.checkpoint.protected_clock_epoch()
         || destination
             .checkpoint
-            .inspect(&view, Some(dispatch))
+            .inspect_with_inventory(
+                &view,
+                Some(dispatch),
+                InventoryObservation::Observed(input.inbox_custody()),
+                &input.original(),
+            )
             .map_err(RestoreStageError::Checkpoint)?
             .checkpoint
             .as_ref()

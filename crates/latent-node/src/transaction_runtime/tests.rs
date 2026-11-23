@@ -41,6 +41,7 @@ async fn scoped_inbox_requires_existing_source_before_guest_and_replays_after_co
         tenant: "a".into(),
         namespace: "orders".into(),
         incarnation: 1,
+        entity: None,
         processing_scope: "primary".into(),
         provider: "input".into(),
         stream: "orders".into(),
@@ -772,9 +773,15 @@ async fn duplicates_queued_before_the_first_claim_replay_when_that_claim_is_publ
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
 async fn cold_entity_admission_progresses_while_the_hot_entity_waits() {
-    let fixture = Fixture::new().await;
+    let wait_limit = std::time::Duration::from_secs(5);
+    let fixture = tokio::time::timeout(wait_limit, Fixture::new())
+        .await
+        .expect("entity fixture did not start");
     let (hot, hot_envelope, hot_budget) = fixture.entity_invocation("hot-one", "hot");
-    hot.admit(&hot_envelope, &hot_budget).await.unwrap();
+    tokio::time::timeout(wait_limit, hot.admit(&hot_envelope, &hot_budget))
+        .await
+        .expect("the original hot command did not enter its lane")
+        .unwrap();
     let TransactionAdmissionResult::Command {
         claim: hot_claim,
         host: hot_host,
@@ -792,27 +799,29 @@ async fn cold_entity_admission_progresses_while_the_hot_entity_waits() {
             .admit_controlled(&queued_envelope, &waiting_budget, control)
             .await
     });
-    tokio::time::timeout(std::time::Duration::from_secs(5), async {
+    tokio::time::timeout(wait_limit, async {
         while fixture.owners.lanes.snapshot().queued < 1 {
             tokio::task::yield_now().await;
         }
     })
     .await
-    .unwrap();
+    .expect("the next hot command did not reach the queue");
     let (overflow, overflow_envelope, overflow_budget) =
         fixture.entity_invocation("hot-overflow", "hot");
-    let rejected = overflow.admit(&overflow_envelope, &overflow_budget).await;
+    let rejected = tokio::time::timeout(
+        wait_limit,
+        overflow.admit(&overflow_envelope, &overflow_budget),
+    )
+    .await
+    .expect("the full hot queue did not refuse another command");
     assert!(matches!(rejected, Err(error)
         if error.code == latent_core::PlatformErrorCode::ResourceExhausted
             && error.message == "entity-queue-backpressure"));
     let (cold, cold_envelope, cold_budget) = fixture.entity_invocation("cold-one", "cold");
-    tokio::time::timeout(
-        std::time::Duration::from_secs(5),
-        cold.admit(&cold_envelope, &cold_budget),
-    )
-    .await
-    .unwrap()
-    .unwrap();
+    tokio::time::timeout(wait_limit, cold.admit(&cold_envelope, &cold_budget))
+        .await
+        .expect("the cold command did not progress while hot work was queued")
+        .unwrap();
     assert!(!waiting.is_finished());
     assert_eq!(fixture.owners.lanes.snapshot().active, 2);
     assert!(
@@ -827,13 +836,20 @@ async fn cold_entity_admission_progresses_while_the_hot_entity_waits() {
         panic!("cold command host absent");
     };
     fixture.cancel_original(&waiting_envelope);
+    let cancelled = tokio::time::timeout(wait_limit, waiting)
+        .await
+        .expect("the cancelled hot command did not leave the queue")
+        .unwrap();
     assert!(
-        matches!(waiting.await.unwrap(), Err(error) if error.code == latent_core::PlatformErrorCode::Cancelled)
+        matches!(cancelled, Err(error) if error.code == latent_core::PlatformErrorCode::Cancelled)
     );
     for (claim, host) in [(hot_claim, hot_host), (cold_claim, cold_host)] {
         let retirement = claim.retirement();
         host.finish_guest_access();
-        host.retire().await.unwrap();
+        tokio::time::timeout(wait_limit, host.retire())
+            .await
+            .expect("the original command host did not retire")
+            .unwrap();
         drop(claim);
         assert!(retirement.proven_noncommit().is_ok());
         host.retire_command_role().unwrap();

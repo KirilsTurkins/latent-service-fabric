@@ -66,6 +66,41 @@ class StatefulReferenceDeployment(unittest.TestCase):
                               result_policy="alice-results", state_policies=["alice-state"])
         self.validator.validate(self.derive(incarnation="18446744073709551615")["triggers"][0])
 
+    def test_inbox_source_uses_the_same_fixed_edit_target_and_rejects_an_override(self):
+        source = {
+            "id": "alice-order-input", "principalSubject": "alice-order-producer",
+            "stream": "ORDER_INPUT", "consumer": "ORDER_NODE", "filterSubject": "drafts.alice.edit",
+            "processingScope": "alice-edits", "duplicateWindowMillis": 30_000,
+            "qualification": {
+                "formatVersion": 1, "serverVersion": "2.14.6", "streamCreated": "2026-10-06T00:00:00Z",
+                "maximumMessages": 1_000, "maximumBytes": 8_388_608, "maximumAgeMillis": 0,
+                "maximumMessageBytes": 16_384,
+            },
+            "budget": {
+                "cpuFuel": 1_000_000, "memoryBytes": 16_777_216, "wallTimeMillis": 500,
+                "childCalls": 0, "outboundRequests": 0, "blobReadBytes": 0, "blobWriteBytes": 0, "logBytes": 512,
+            },
+        }
+        self.assertNotIn("transactionalTrigger", self.derive())
+        derived = self.derive(incarnation="8", inbox_source=source)
+        inbox = derived["transactionalTrigger"]
+        target = derived["triggers"][0]["spec"]["target"]
+        for key in ("service", "contract", "function", "route"):
+            self.assertEqual(inbox[key], target[key])
+        self.assertEqual(inbox["tenant"], "examples")
+        self.assertEqual(inbox["filterSubject"], "drafts.alice.edit")
+        self.assertEqual(inbox["transaction"], {
+            "namespace": "order-drafts-alice", "incarnation": 8, "entity": "alice",
+            "processingScope": "alice-edits", "qualification": source["qualification"],
+            "duplicateWindowMillis": 30_000, "stateReadBytes": 4096, "stateWriteBytes": 1024, "effectCount": 2,
+        })
+        with self.assertRaisesRegex(ValueError, "closed"):
+            self.derive(inbox_source=dict(source, entity="bob"))
+        with self.assertRaisesRegex(ValueError, "filterSubject"):
+            self.derive(inbox_source=dict(source, filterSubject="drafts.*.edit"))
+        with self.assertRaisesRegex(ValueError, "activation budget"):
+            self.derive(inbox_source=dict(source, budget=dict(source["budget"], outboundRequests=1)))
+
     def test_shared_profile_rejects_wrong_methods_profiles_links_and_extra_fields(self):
         originals = self.derive()["triggers"]
         for index, method in ((0, "GET"), (1, "POST"), (2, "HEAD")):

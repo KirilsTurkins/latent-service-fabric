@@ -1,5 +1,82 @@
 # Captured application dependencies
 
+## Add a library to your capsule
+
+Start in your application project and choose the guide for its language. The
+commands in these guides use the authoring tools from the `development` source
+checkout. Keep that checkout separate from your application directory.
+
+| Language | What you add to the project | Walkthrough |
+| --- | --- | --- |
+| Rust | A Cargo dependency from a registry, Git revision or local crate path | [Add a Cargo dependency, lock it and build offline](rust-dependencies.md) |
+| C | An artifact declaration naming the sources or target archive, include directories and transitive inputs | [Add a C library and its headers](c-dependencies.md#capturing-c-libraries) |
+| TypeScript | A dependency in `package.json` with its npm lock | [Add, lock and bundle an npm dependency](typescript-dependencies.md) |
+| Go | A module requirement in `go.mod`, with a local replacement when appropriate | [Add a Go module, capture its graph and build](go-dependencies.md) |
+| Java | A Maven coordinate and scope, or a local JAR | [Add a Maven dependency or capture a local JAR](java-dependencies.md) |
+| C# / .NET | A `PackageReference` in `Capsule.csproj` | [Add a NuGet package and build with NativeAOT](dotnet-dependencies.md) |
+
+1. **Declare the dependency.** Use the editor for your input type. For example,
+   Java uses `add` for Maven coordinates and `add-local` for a local JAR. Include the transitive
+   inputs your library uses. Public, private and local dependencies use the
+   same capture mechanism.
+2. **Review the lock.** Run the guide's native lock step where applicable, then
+   `resolve` to a fresh candidate. Inspect the selected graph, source digests,
+   features and build tools. Pass the digest of the candidate you reviewed to
+   `review-lock`. Run `dependencies` to inspect the accepted selection.
+3. **Build and exercise a real library call.** Call the dependency from your
+   capsule's handler and use the result in its response. Build from the accepted
+   capture and run the handler through the normal package and deployment path.
+   For library data files, declare the [packaged resources](packaged-resources.md)
+   the handler reads. For network calls, select the language's supported runtime
+   profile and grant the deployed capsule the required destination and operation.
+   Inspect the [compatibility report](library-compatibility.md) for an unsupported
+   operation. For example, on the closed Rust profile, `Builder::spawn` returns
+   an error the application can handle. The signed example records the executed
+   fallback as `unsupported-reached` and verifies a fresh invocation after an
+   uncaught call.
+
+### Try a private JAR
+
+From a directory alongside the SDK checkout, start with a JDK 25 library of
+your own. This example calls `outside.sdkdemo.Library.calculate(25)` from the
+generated greeting handler and expects `42`. Put the following in `Library.java`.
+
+```java
+package outside.sdkdemo;
+
+public final class Library {
+    public static int calculate(int value) {
+        return value + 17;
+    }
+}
+```
+
+In PowerShell, build the library, create the application and review its capture.
+Set `$sdk` to the path of your SDK checkout.
+
+```powershell
+$sdk = (Resolve-Path ../latent-service-fabric).Path
+$author = Join-Path $sdk tools/java_capsule.py
+New-Item -ItemType Directory -Path classes | Out-Null
+javac --release 25 -d classes Library.java
+jar --create --file outside-library.jar -C classes .
+python $author new ./my-java
+python $author add-local ./my-java --id outside-demo --jar ./outside-library.jar
+python $author resolve ./my-java --candidate ./candidate.json
+Get-Content -Raw ./candidate.json
+$digest = 'sha256:' + (Get-FileHash ./candidate.json -Algorithm SHA256).Hash.ToLowerInvariant()
+python $author review-lock ./my-java --candidate ./candidate.json --expect $digest
+python $author dependencies ./my-java
+```
+
+In `my-java/src/dev/latent/app/Capsule.java`, use
+`return Result.ok(Integer.toString(outside.sdkdemo.Library.calculate(25)));`
+as the successful return in `greet`. Follow the offline build and package steps
+in the [Java dependency guide](java-dependencies.md). Invoke the deployed
+`greet` with a nonempty name and check that the response is `"42"`.
+
+## How the capture is stored
+
 Application dependency capture is separate from the immutable SDK and compiler
 locks. The shared capture store accepts a selected, closed native ecosystem
 graph; package identity supplies provenance and never grants application or

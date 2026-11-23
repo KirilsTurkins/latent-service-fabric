@@ -47,6 +47,7 @@ pub(super) fn snapshot(
         Some("configuration") => c::DispatcherFailure::Configuration,
         _ => return Err(unsupported()),
     };
+    let observed = value.counts_observed_at_millis != 0;
     Ok(c::DispatcherSnapshot {
         generation: Some(generation(value.control.generation)),
         paused: value.paused,
@@ -70,5 +71,8 @@ pub(super) fn snapshot(
         dead_letter_effects: value.durable.dead_lettered,
         counts_observed_at_unix_millis: value.counts_observed_at_millis,
         clock_continuity_proven,
+        dispatching_effects: observed.then_some(value.durable.active),
+        unresolved_payload_bytes: observed.then_some(value.durable.payload_bytes),
+        oldest_unresolved_age_millis: value.oldest_unresolved_age_millis,
     })
 }

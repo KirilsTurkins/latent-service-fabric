@@ -295,6 +295,9 @@ type DispatcherSnapshot struct {
 	DeadLetterEffects          uint64
 	CountsObservedAtUnixMillis uint64
 	ClockContinuityProven      bool
+	DispatchingEffects         *uint64
+	UnresolvedPayloadBytes     *uint64
+	OldestUnresolvedAgeMillis  *uint64
 }
 
 type GetEffectRequest struct {

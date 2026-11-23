@@ -267,6 +267,7 @@ impl NativeTransactionAdmission {
                 selection.retry.is_none()
                     && selection.namespace == scope.namespace
                     && selection.incarnation == scope.incarnation
+                    && selection.entity == scope.entity
             }
             _ => false,
         };

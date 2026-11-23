@@ -25,5 +25,8 @@ pub(super) fn snapshot(value: &c::DispatcherSnapshot) -> Value {
         "uncertainEffects":value.uncertain_effects.to_string(),"blockedEffects":value.blocked_effects.to_string(),
         "deadLetterEffects":value.dead_letter_effects.to_string(),
         "countsObservedAtUnixMillis":value.counts_observed_at_unix_millis.to_string(),
-        "clockContinuityProven":value.clock_continuity_proven})
+        "clockContinuityProven":value.clock_continuity_proven,
+        "dispatchingEffects":value.dispatching_effects.map(|count| count.to_string()),
+        "unresolvedPayloadBytes":value.unresolved_payload_bytes.map(|bytes| bytes.to_string()),
+        "oldestUnresolvedAgeMillis":value.oldest_unresolved_age_millis.map(|age| age.to_string())})
 }

@@ -166,6 +166,33 @@ impl SnapshotFile {
             self.profile.namespaces(),
         )
     }
+
+    pub(in crate::protected_store) fn inspect_inbox_custody(
+        &self,
+        row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+        mut observe: impl FnMut(&RowKey, &[u8]),
+    ) -> Result<
+        (
+            SnapshotReceipt,
+            Option<crate::store_identity::InboxCustodyWatermark>,
+        ),
+        StoreError,
+    > {
+        let mut inventory = crate::inbox_scope::InboxScopeInventory::default();
+        let receipt = crate::recovery::snapshot::inspect_snapshot_bounded_with_visit(
+            &mut self.cursor(),
+            self.deadline(),
+            row,
+            self.profile.row_bytes(),
+            self.profile.namespaces(),
+            |key, bytes| {
+                inventory.observe(&key, &bytes)?;
+                observe(&key, &bytes);
+                Ok(())
+            },
+        )?;
+        Ok((receipt, inventory.finish()?))
+    }
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     fn open_native(
         store: &PhysicalStore,

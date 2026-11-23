@@ -11,6 +11,34 @@ use serde_json::{json, Value};
 
 use support::{configuration, Process, TOKEN};
 
+#[cfg(target_arch = "x86_64")]
+#[test]
+fn installed_transaction_recovery_rejects_an_unprotected_credential_before_startup() {
+    use std::{os::unix::fs::PermissionsExt, process::Command};
+
+    let directory = tempfile::tempdir().unwrap();
+    let config = configuration(directory.path());
+    let credential = directory.path().join("operator.credential");
+    fs::write(&credential, TOKEN).unwrap();
+    fs::set_permissions(&credential, fs::Permissions::from_mode(0o644)).unwrap();
+
+    let mut command = Command::new(env!("CARGO_BIN_EXE_latentd"));
+    command
+        .args(["transaction-recovery", "--config"])
+        .arg(config)
+        .arg("--credential-file")
+        .arg(credential)
+        .args(["--tenant", "acme", "--diagnose-startup"]);
+    let mut process = Process::spawn(command);
+    assert_eq!(process.wait().code(), Some(1));
+    assert!(process.records().is_empty());
+    assert!(process
+        .error_text()
+        .contains("protected-credential-refused"));
+    assert!(!process.error_text().contains(TOKEN));
+    assert!(!directory.path().join("data").exists());
+}
+
 #[test]
 fn invalid_configuration_and_corrupt_catalog_fail_before_started() {
     let invalid = tempfile::tempdir().unwrap();

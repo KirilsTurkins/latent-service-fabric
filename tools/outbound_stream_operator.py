@@ -732,15 +732,17 @@ class StreamOperator:
                         "outcome": "client-token-adopted-original-operation-pending"}
             return {"executionPermission": False, "outcome": "client-token-adopted-original-grants-retained"}
 
-    def inspect(self, deployment):
+    def inspect(self, deployment, *, tenant_only=False):
         _token(deployment)
         with state.lock(self.root, "stream-operator.lock"):
             self._owned()
+            usage = () if tenant_only else ("--include-node-usage",)
             result = self.client.call("capability", "list", "--deployment", deployment,
-                "--provider", PROFILE, "--contract-prefix", CAPABILITY,
-                "--include-node-usage", "--page-size", "1")
+                "--provider", PROFILE, "--contract-prefix", CAPABILITY, *usage, "--page-size", "1")
             self._owned()
             value = successful(result)
+            require(not tenant_only or value.get("nodeUsage") is None,
+                    "stream-operator-inspection-scope-changed")
             revision = value.get("revision")
             require(value.get("executionPermission") is False
                     and isinstance(revision, dict) and revision.get("deploymentId") == deployment,
@@ -772,6 +774,8 @@ def main(argv=None):
     parser.add_argument("--state-dir", type=Path)
     parser.add_argument("--specification", type=Path)
     parser.add_argument("--deployment")
+    parser.add_argument("--tenant-only", action="store_true",
+                        help="inspect the deployment with tenant authority and omit node-wide usage")
     parser.add_argument("--provider-record", type=Path)
     parser.add_argument("--replacement-client-config", type=Path)
     parser.add_argument("--preserve-pending", action="store_true",
@@ -788,6 +792,8 @@ def main(argv=None):
                 "stream-operator-replacement-client-only-for-adoption")
         require(not args.preserve_pending or args.command == "adopt-client",
                 "stream-operator-preserve-pending-only-for-client-adoption")
+        require(not args.tenant_only or args.command == "inspect",
+                "stream-operator-tenant-only-for-inspection")
         preparing = args.command in {"prepare", "prepare-rotation"}
         rotating = args.command == "prepare-rotation"
         policy_arguments = (args.cli, args.client_config, args.state_dir, args.specification)
@@ -826,7 +832,7 @@ def main(argv=None):
                 if key not in {"bindingId", "policyId"}}, binding_id=specification["bindingId"],
                 policy_id=specification["policyId"])
             if args.command == "inspect":
-                result = operator.inspect(args.deployment)
+                result = operator.inspect(args.deployment, tenant_only=args.tenant_only)
             elif args.command == "adopt":
                 result = operator.adopt_provider(decode(_private_read(args.provider_record.absolute()), 65536))
             elif args.command == "adopt-client":

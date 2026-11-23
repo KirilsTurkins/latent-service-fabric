@@ -557,6 +557,9 @@ fn review_stage(
         .engine()
         .snapshot()
         .map_err(RestoreStageError::Review)?;
+    input
+        .verify_inbox_custody(&current_view)
+        .map_err(RestoreStageError::Review)?;
     let window = RestoreWindow::capture(&current_view, &actual, file.deadline(), || {
         check_owners(owners.as_ref())?;
         file.original()
@@ -848,6 +851,9 @@ fn complete_and_seal(
         .engine()
         .snapshot()
         .map_err(RestoreStageError::Review)?;
+    input
+        .verify_inbox_custody(&view)
+        .map_err(RestoreStageError::Review)?;
     let completed = RecoveryGuard::capture(&view)
         .map_err(RestoreStageError::Review)?
         .ok_or(RestoreStageError::Review(StoreError::Corrupt))?;
@@ -871,6 +877,7 @@ fn complete_and_seal(
             &view,
             epoch,
             dispatch,
+            input.inbox_custody(),
             || current_store(file, owners),
             || {
                 accept(

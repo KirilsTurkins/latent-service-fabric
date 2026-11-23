@@ -411,16 +411,20 @@ fn assert_dispatcher_operation_projection(
             pending_control: true,
             retained_attempt_bytes: u64::MAX,
             counts_observed_at_unix_millis: u64::MAX,
+            dispatching_effects: Some(0),
+            unresolved_payload_bytes: Some(u64::MAX),
             failure: c::DispatcherFailure::None as i32,
             ..Default::default()
         }),
         audit_ack: audit,
     });
     response.validate_for(&inspect).unwrap();
-    assert_eq!(
-        projection::response(&response)["dispatcher"]["retainedAttemptBytes"],
-        u64::MAX.to_string()
-    );
+    let projected = projection::response(&response);
+    let snapshot = &projected["dispatcher"];
+    assert_eq!(snapshot["retainedAttemptBytes"], u64::MAX.to_string());
+    assert_eq!(snapshot["dispatchingEffects"], "0");
+    assert_eq!(snapshot["unresolvedPayloadBytes"], u64::MAX.to_string());
+    assert!(snapshot["oldestUnresolvedAgeMillis"].is_null());
 }
 
 fn assert_effect_plan_projection(audit: Option<c::AuditAck>) {

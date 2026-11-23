@@ -161,6 +161,7 @@ impl CheckpointFile {
         view: &ReadView,
         protected_clock_epoch: u64,
         dispatch: (u64, u64),
+        inbox_custody: Option<crate::store_identity::InboxCustodyWatermark>,
         mut current: impl FnMut() -> Result<(), StoreError>,
         accept: impl FnOnce() -> Result<(), StoreError>,
     ) -> Result<ExternalCheckpoint, StoreError> {
@@ -176,11 +177,12 @@ impl CheckpointFile {
             }
             self.exact_current(recorded.as_ref())?;
         }
-        let next = ExternalCheckpoint::initial(
+        let next = ExternalCheckpoint::initial_with_inbox_custody(
             self.identity.clone(),
             protected_clock_epoch,
             dispatch.0,
             dispatch.1,
+            inbox_custody,
         )?;
         let encoded = next.encode();
         self.root
@@ -223,6 +225,7 @@ impl CheckpointFile {
         _: &ReadView,
         _: u64,
         _: (u64, u64),
+        _: Option<crate::store_identity::InboxCustodyWatermark>,
         _: impl FnMut() -> Result<(), StoreError>,
         _: impl FnOnce() -> Result<(), StoreError>,
     ) -> Result<ExternalCheckpoint, StoreError> {
@@ -563,6 +566,38 @@ impl CheckpointFile {
             }
             ExternalCheckpoint::initial(self.identity.clone(), protected_clock_epoch, epoch, floor)?
         };
+        self.write_current(&next, after_write)?;
+        *current = Some(next.clone());
+        Ok(next)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(super) fn seal_enrolled_inbox_source(
+        &self,
+        view: &ReadView,
+        expected: &ExternalCheckpoint,
+        watermark: crate::store_identity::InboxCustodyWatermark,
+        keeper: &Arc<NativeReservation>,
+    ) -> Result<ExternalCheckpoint, StoreError> {
+        self.require_original(keeper)?;
+        self.check_identity(view)?;
+        let mut current = self.current.lock().map_err(|_| StoreError::Unavailable)?;
+        self.exact_current(current.as_ref())?;
+        if current.as_ref() != Some(expected) {
+            return Err(StoreError::Conflict);
+        }
+        let next = expected.advance_inbox_custody(watermark)?;
+        self.write_current(&next, || {})?;
+        *current = Some(next.clone());
+        Ok(next)
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn write_current(
+        &self,
+        next: &ExternalCheckpoint,
+        after_write: impl FnOnce(),
+    ) -> Result<(), StoreError> {
         let encoded = next.encode();
         let file = self.file.as_ref().expect("worker-owned checkpoint file");
         // From this point every error may follow a partial write. Never report
@@ -574,11 +609,10 @@ impl CheckpointFile {
         after_write();
         file.sync_all().map_err(|_| StoreError::CommitUncertain)?;
         self.check().map_err(|_| StoreError::CommitUncertain)?;
-        if read_record(file).map_err(|_| StoreError::CommitUncertain)? != next {
+        if &read_record(file).map_err(|_| StoreError::CommitUncertain)? != next {
             return Err(StoreError::CommitUncertain);
         }
-        *current = Some(next.clone());
-        Ok(next)
+        Ok(())
     }
 
     #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
