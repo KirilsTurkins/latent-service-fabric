@@ -31,6 +31,7 @@ pub const OPERATIONS: [&str; 11] = [
     "timer-stop",
 ];
 static GENERATION: AtomicU64 = AtomicU64::new(1);
+const MAX_OWNER_SLOTS: u16 = 8192;
 
 /// Finite operator-selected ceilings. There is deliberately no product default:
 /// language qualification determines the selected limits and native costs.
@@ -47,7 +48,7 @@ pub struct RuntimeLimits {
 impl RuntimeLimits {
     pub fn validate(self) -> Result<(), PlatformError> {
         let total: u64 = self.values().into_iter().map(u64::from).sum();
-        if total == 0 || total > 8192 {
+        if total == 0 || total > u64::from(MAX_OWNER_SLOTS) {
             return Err(error(PlatformErrorCode::InvalidArgument, "runtime-limits"));
         }
         Ok(())
@@ -149,10 +150,10 @@ struct Inner {
 struct State {
     phase: RuntimePhase,
     next_id: u64,
-    owners: [u32; 7],
-    // Committed record counts maintained under this same state lock.
-    parked_tasks: u32,
-    managed_idle_workers: u32,
+    // Every count is bounded by the validated total of MAX_OWNER_SLOTS.
+    owners: [u16; 7],
+    parked_tasks: u16,
+    managed_idle_workers: u16,
     slab: Option<Slab>,
     admission_failures: u64,
     stale_wakes: u64,
@@ -357,7 +358,7 @@ impl ActivationRuntime {
             }
         }
         let index = kind.index();
-        if state.owners[index] >= self.inner.limits.values()[index] {
+        if u32::from(state.owners[index]) >= self.inner.limits.values()[index] {
             let mut observed = crate::diagnostic::ActivationDiagnostic::new(
                 crate::diagnostic::DiagnosticStage::Execution,
                 kind.limit_reason(),
@@ -566,7 +567,7 @@ impl ActivationRuntime {
             state.slab.as_ref().expect("checked slab").records[slot].expect("checked owner");
         let newly_parked_task = record.kind.index() == 0 && !record.parked;
         let should_wait = state.phase == RuntimePhase::Running
-            && state.owners[0] == state.parked_tasks + u32::from(newly_parked_task);
+            && state.owners[0] == state.parked_tasks + u16::from(newly_parked_task);
         let publication = self.inner.budget.runtime_publication_guard();
         self.check_commit_ledger_locked(&mut state)?;
         #[cfg(test)]
@@ -591,7 +592,7 @@ impl ActivationRuntime {
             drop(publication);
             return Err(error(PlatformErrorCode::Cancelled, "runtime-cancelled"));
         }
-        state.parked_tasks += u32::from(newly_parked_task);
+        state.parked_tasks += u16::from(newly_parked_task);
         #[cfg(test)]
         hook(ReadinessStep::Committed);
         drop(publication);
@@ -659,7 +660,7 @@ impl ActivationRuntime {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         if state.owners.iter().any(|n| *n != 0) {
             let failure = error(PlatformErrorCode::Internal, "runtime-lifecycle-unproven");
-            let owners = state.owners;
+            let owners = state.owners.map(u32::from);
             drop(state);
             owner_refusal::record(owners);
             return Err(failure);
@@ -789,9 +790,9 @@ impl ActivationRuntime {
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         RuntimeSnapshot {
             phase: state.phase,
-            owners: state.owners,
-            parked_tasks: state.parked_tasks,
-            managed_idle_workers: state.managed_idle_workers,
+            owners: state.owners.map(u32::from),
+            parked_tasks: u32::from(state.parked_tasks),
+            managed_idle_workers: u32::from(state.managed_idle_workers),
             host_memory_bytes: self.inner.budget.host_memory_bytes(),
             admission_failures: state.admission_failures,
             stale_wakes: state.stale_wakes,
