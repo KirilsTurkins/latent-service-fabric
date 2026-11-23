@@ -163,7 +163,8 @@ class PendingRecoveryControls(unittest.TestCase):
         runner.inspect, runner.resume = Mock(), Mock()
         runner.node = SimpleNamespace(start=Mock())
         with self.assertRaisesRegex(ValueError, 'replay-is-immutable'):
-            runner.close_original({'effect-ids': ['e' * 64]}, {'view': view()}, 'sha256:' + '2' * 64)
+            runner.close_original({'effect-ids': ['e' * 64]}, {'view': view()},
+                                  'sha256:' + '2' * 64, 'sha256:' + '3' * 64)
         self.assertEqual(runner.action.call_count, 3)
         runner.inspect.assert_not_called()
         runner.resume.assert_not_called()
