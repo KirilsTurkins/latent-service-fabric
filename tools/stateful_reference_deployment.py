@@ -1,4 +1,4 @@
-"""Derive exact app HTTP triggers and installed targets from published inputs."""
+"""Derive exact app HTTP triggers, optional inbox binding and installed targets."""
 from __future__ import annotations
 
 import argparse
@@ -19,6 +19,12 @@ CONTRACT = "examples:order-draft/api@1.0.0"
 HOST = "stateful.test:19092"
 MAX_U64 = (1 << 64) - 1
 ENTITIES = ("alice", "bob")
+INBOX_FIELDS = {"id", "principalSubject", "stream", "consumer", "filterSubject",
+                "processingScope", "qualification", "duplicateWindowMillis", "budget"}
+QUALIFICATION_FIELDS = {"formatVersion", "serverVersion", "streamCreated", "maximumMessages",
+                        "maximumBytes", "maximumAgeMillis", "maximumMessageBytes"}
+BUDGET_FIELDS = {"cpuFuel", "memoryBytes", "wallTimeMillis", "childCalls", "outboundRequests",
+                 "blobReadBytes", "blobWriteBytes", "logBytes"}
 
 
 def digest(value: bytes) -> str:
@@ -36,8 +42,42 @@ def pinned(value: object, prefix: str) -> str:
     return value
 
 
+def inbox_binding(source: dict, command: dict, namespace: str, incarnation: int, entity: str) -> dict:
+    require(isinstance(source, dict) and set(source) == INBOX_FIELDS, "inbox inputs must be closed")
+    for key in ("id", "principalSubject"):
+        value = source[key]
+        require(isinstance(value, str) and re.fullmatch(r"[^\x00-\x1f\x7f]{1,128}", value) is not None
+                and len(value.encode()) <= 128, f"invalid inbox {key}")
+    for key in ("stream", "consumer", "processingScope", "filterSubject"):
+        value = source[key]
+        pattern = r"[a-zA-Z0-9-][a-zA-Z0-9_-]*(?:\.[a-zA-Z0-9_-]+)*" if key == "filterSubject" else (
+            r"[a-zA-Z0-9-][a-zA-Z0-9_-]*"
+        )
+        require(isinstance(value, str) and len(value) <= 128 and re.fullmatch(pattern, value) is not None,
+                f"invalid inbox {key}")
+    qualification = source["qualification"]
+    require(isinstance(qualification, dict) and set(qualification) == QUALIFICATION_FIELDS,
+            "inbox stream qualification must be closed")
+    budget = source["budget"]
+    require(isinstance(budget, dict) and set(budget) == BUDGET_FIELDS
+            and all(type(value) is int and 0 <= value <= MAX_U64 for value in budget.values())
+            and all(budget[key] > 0 for key in ("cpuFuel", "memoryBytes", "wallTimeMillis"))
+            and budget["childCalls"] == budget["outboundRequests"] == 0, "invalid strict inbox activation budget")
+    window = source["duplicateWindowMillis"]
+    require(type(window) is int and 1000 <= window <= 86_400_000, "invalid inbox duplicate window")
+    return {key: source[key] for key in ("id", "principalSubject", "stream", "consumer", "filterSubject")} | {
+        "tenant": command["metadata"]["tenant"],
+        **{key: command["spec"]["target"][key] for key in ("service", "contract", "function", "route")},
+        "budget": dict(budget),
+        "transaction": {"namespace": namespace, "incarnation": incarnation, "entity": entity,
+                        "processingScope": source["processingScope"], "qualification": dict(qualification),
+                        "duplicateWindowMillis": window, "stateReadBytes": 4096, "stateWriteBytes": 1024,
+                        "effectCount": 2},
+    }
+
+
 def derive(companion: bytes, published: dict, *, entity: str, incarnation: str,
-           result_policy: str, state_policies: list[str]) -> dict:
+           result_policy: str, state_policies: list[str], inbox_source: dict | None = None) -> dict:
     """Emit constraints only. Signing, namespace creation and grants stay separate."""
     require(entity in ENTITIES, "only the two finite synthetic draft entities are supported")
     require(isinstance(incarnation, str) and re.fullmatch(r"[1-9][0-9]{0,19}", incarnation) is not None
@@ -97,9 +137,14 @@ def derive(companion: bytes, published: dict, *, entity: str, incarnation: str,
             "route": declaration["deployment"], "binding": declaration["binding"], "companionDigest": companion_digest,
             "incarnation": int(incarnation), "resultPolicy": result_policy, "statePolicies": list(state_policies),
             "entity": entity})
-    return {"schemaVersion": "latent.stateful-reference.deployment-inputs.v1", "entity": entity,
-            "namespace": declaration["namespace"], "triggers": triggers, "stateOperations": operations,
-            "createsGrants": False, "signed": False, "nodeQualified": False}
+    inputs = {"schemaVersion": "latent.stateful-reference.deployment-inputs.v1", "entity": entity,
+              "namespace": declaration["namespace"], "triggers": triggers, "stateOperations": operations,
+              "createsGrants": False, "signed": False, "nodeQualified": False}
+    if inbox_source is not None:
+        inputs["transactionalTrigger"] = inbox_binding(
+            inbox_source, triggers[0], declaration["namespace"], int(incarnation), entity
+        )
+    return inputs
 
 
 def main() -> int:
@@ -110,14 +155,22 @@ def main() -> int:
     parser.add_argument("--incarnation", required=True)
     parser.add_argument("--result-policy", required=True)
     parser.add_argument("--state-policy", action="append", required=True)
+    parser.add_argument("--inbox-binding", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     require(args.companion.is_file() and not args.companion.is_symlink()
             and args.companion.stat().st_size <= 128 * 1024, "companion must be a bounded regular file")
     require(args.published.is_file() and not args.published.is_symlink()
             and args.published.stat().st_size <= 16384, "publication inputs must be a bounded regular file")
+    inbox_source = None
+    if args.inbox_binding is not None:
+        require(args.inbox_binding.is_file() and not args.inbox_binding.is_symlink()
+                and args.inbox_binding.stat().st_size <= 16384, "inbox binding must be a bounded regular file")
+        inbox_source = json.loads(args.inbox_binding.read_bytes())
+        require(isinstance(inbox_source, dict), "inbox binding must be an object")
     value = derive(args.companion.read_bytes(), json.loads(args.published.read_bytes()), entity=args.entity,
-                   incarnation=args.incarnation, result_policy=args.result_policy, state_policies=args.state_policy)
+                   incarnation=args.incarnation, result_policy=args.result_policy, state_policies=args.state_policy,
+                   inbox_source=inbox_source)
     with args.output.open("x", encoding="utf8", newline="\n") as stream:
         stream.write(json.dumps(value, indent=2) + "\n")
     return 0

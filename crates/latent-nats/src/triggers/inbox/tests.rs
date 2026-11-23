@@ -9,6 +9,7 @@ fn config() -> TriggerConfig {
         processing_scope: "order-processing".into(),
         namespace: "orders".into(),
         incarnation: 1,
+        entity: None,
         qualification: JetStreamQualification {
             format_version: 1,
             server_version: "2.14.6".into(),

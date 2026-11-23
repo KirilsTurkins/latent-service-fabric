@@ -400,6 +400,7 @@ async fn checkpoint_with_matching_source_inventory_survives_restart() {
         tenant: "a".into(),
         namespace: "orders".into(),
         incarnation: 1,
+        entity: None,
         processing_scope: "primary".into(),
         provider: "private-nats".into(),
         stream: "orders".into(),

@@ -41,6 +41,7 @@ async fn scoped_inbox_requires_existing_source_before_guest_and_replays_after_co
         tenant: "a".into(),
         namespace: "orders".into(),
         incarnation: 1,
+        entity: None,
         processing_scope: "primary".into(),
         provider: "input".into(),
         stream: "orders".into(),
