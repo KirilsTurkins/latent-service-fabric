@@ -166,6 +166,20 @@ bool acknowledge_promise_retirement(JSContext* cx) {
          }) && reactions.checkpoint(cx) && promises.checkpoint(cx);
 }
 
+bool prepare_native_object_allocation(JSContext* cx) {
+  if (JS_IsExceptionPending(cx)) return false;
+  if (!effects_allowed(cx) || native_objects.stopped()) {
+    JS_ReportErrorASCII(cx, "activation-runtime-native-object-phase-or-admission-denied");
+    return false;
+  }
+  // Synchronous Abort/Event construction need not allocate another Promise.
+  // Observe dead native graphs and intrinsic records before admitting the next
+  // graph, using the same pressure threshold and original broker accounting.
+  // Callers enter here before obtaining native pointers/iterators: a collection
+  // may relocate JS objects and sweep registered weak sets.
+  return collect_before_native_allocation(cx);
+}
+
 bool admit_native_object(JSContext* cx, NativeObjectLease& lease) {
   // Mutable Abort/Event graphs carry invocation-local listeners/weak links.
   // They are never admitted while creating a shared compiler snapshot.

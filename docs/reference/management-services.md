@@ -63,7 +63,11 @@ owner, authenticated policy calls return `Unimplemented`.
 [Capability inspection](../runtime/capability-audit.md#bounded-management-inspection)
 shares the policy control runtime and response leases. It requires an explicit
 deployment within the authenticated tenant; node usage additionally requires the
-trusted operator claim. Missing inspection configuration returns `Unimplemented`.
+trusted operator claim. In node scope, the optional `stream_quarantined_connections`
+field reports retained connections already included in the stream owner and
+connection counts. An absent field means no usable observation. The samples
+can span a concurrent ownership change. [Stream inspection](../reference/standalone-streams.md)
+Missing inspection configuration returns `Unimplemented`.
 
 The listener supplies an `AuthenticatedInvocationContext` request extension,
 using the same principal boundary as the [invocation service](../protocol/invocation-service.md).

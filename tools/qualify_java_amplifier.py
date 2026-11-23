@@ -96,7 +96,7 @@ def alter_emitter(source: Path, destination: Path) -> dict:
 def observed_sources() -> list[Path]:
     paths = (CONTROL, SPLIT, PLUGIN, WORKER, MATH, MATH_REFERENCE, FINDER, LOCK, VERIFICATION, ROOT / 'tools/toolchain.toml',
         ROOT / 'sdk/java-guest/tools/dependencies.py', ROOT / 'sdk/java-guest/tools/feasibility.py',
-        ROOT / 'tools/java_guest/coroutine_patch.py', ROOT / 'tools/java_guest/compiler.py',
+        ROOT / 'tools/java_guest/coroutine_patch.py', ROOT / 'tools/java_guest/field_read_patch.py', ROOT / 'tools/java_guest/compiler.py',
         ROOT / 'tools/qualify_java_checkpoint_context.py', ROOT / 'tools/qualify_java_fibers.py',
         ROOT / 'tools/rust_capsule_project.py', ROOT / 'tools/rust_capsule_build.py',
         ROOT / 'tools/phase2_operator_process.py', ROOT / 'tools/phase3_resource_identity.py',

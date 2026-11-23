@@ -9,18 +9,23 @@ public final class Wire {
     private Wire() { }
 
     public static latent.control.v1.Common.ResourceBudget toWire(Management.ResourceBudget value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Common.ResourceBudget toWire(Management.ResourceBudget value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Common.ResourceBudget.newBuilder();
-        result.setCpuFuel(value.cpuFuel());
-        result.setMemoryBytes(value.memoryBytes());
-        result.setChildCalls(value.childCalls());
-        result.setOutboundRequests(value.outboundRequests());
-        result.setStateReadBytes(value.stateReadBytes());
-        result.setStateWriteBytes(value.stateWriteBytes());
-        result.setBlobReadBytes(value.blobReadBytes());
-        result.setBlobWriteBytes(value.blobWriteBytes());
-        result.setLogBytes(value.logBytes());
-        result.setEffectCount(value.effectCount());
-        if (value.wallTimeLimitMillis().isPresent()) result.setWallTimeLimitMillis(value.wallTimeLimitMillis().get());
+        result.setCpuFuel(budget.scalar(value.cpuFuel()));
+        result.setMemoryBytes(budget.scalar(value.memoryBytes()));
+        result.setChildCalls(budget.scalar(value.childCalls()));
+        result.setOutboundRequests(budget.scalar(value.outboundRequests()));
+        result.setStateReadBytes(budget.scalar(value.stateReadBytes()));
+        result.setStateWriteBytes(budget.scalar(value.stateWriteBytes()));
+        result.setBlobReadBytes(budget.scalar(value.blobReadBytes()));
+        result.setBlobWriteBytes(budget.scalar(value.blobWriteBytes()));
+        result.setLogBytes(budget.scalar(value.logBytes()));
+        result.setEffectCount(budget.scalar(value.effectCount()));
+        if (value.wallTimeLimitMillis().isPresent()) result.setWallTimeLimitMillis(budget.scalar(value.wallTimeLimitMillis().get()));
         return result.build();
     }
 
@@ -40,9 +45,14 @@ public final class Wire {
     }
 
     public static latent.control.v1.Common.ErrorDetail toWire(Management.ErrorDetail value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Common.ErrorDetail toWire(Management.ErrorDetail value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Common.ErrorDetail.newBuilder();
-        result.setKind(value.kind());
-        result.putAllFields(value.fields());
+        result.setKind(budget.text(value.kind()));
+        result.putAllFields(budget.map(value.fields()));
         return result.build();
     }
 
@@ -53,11 +63,16 @@ public final class Wire {
     }
 
     public static latent.control.v1.Common.PlatformError toWire(Management.PlatformError value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Common.PlatformError toWire(Management.PlatformError value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Common.PlatformError.newBuilder();
-        result.setCode(value.code());
-        result.setMessage(value.message());
-        result.setRetryable(value.retryable());
-        for (var item : value.detailItems()) result.addDetailItems(toWire(item));
+        result.setCode(budget.text(value.code()));
+        result.setMessage(budget.text(value.message()));
+        result.setRetryable(budget.scalar(value.retryable()));
+        for (var item : budget.list(value.detailItems(), 128)) result.addDetailItems(toWire(item, budget, depth + 1));
         return result.build();
     }
 
@@ -70,12 +85,17 @@ public final class Wire {
     }
 
     public static latent.control.v1.Common.ObjectMetadata toWire(Management.ObjectMetadata value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Common.ObjectMetadata toWire(Management.ObjectMetadata value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Common.ObjectMetadata.newBuilder();
-        result.setName(value.name());
-        if (value.tenant().isPresent()) result.setTenant(value.tenant().get());
-        if (value.namespace().isPresent()) result.setNamespace(value.namespace().get());
-        result.putAllLabels(value.labels());
-        result.putAllAnnotations(value.annotations());
+        result.setName(budget.text(value.name()));
+        if (value.tenant().isPresent()) result.setTenant(budget.text(value.tenant().get()));
+        if (value.namespace().isPresent()) result.setNamespace(budget.text(value.namespace().get()));
+        result.putAllLabels(budget.map(value.labels()));
+        result.putAllAnnotations(budget.map(value.annotations()));
         return result.build();
     }
 
@@ -89,9 +109,14 @@ public final class Wire {
     }
 
     public static latent.control.v1.Common.PageRequest toWire(Management.PageRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Common.PageRequest toWire(Management.PageRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Common.PageRequest.newBuilder();
-        result.setPageSize(value.pageSize());
-        if (value.pageToken().isPresent()) result.setPageToken(value.pageToken().get());
+        result.setPageSize(budget.scalar(value.pageSize()));
+        if (value.pageToken().isPresent()) result.setPageToken(budget.text(value.pageToken().get()));
         return result.build();
     }
 
@@ -102,8 +127,13 @@ public final class Wire {
     }
 
     public static latent.control.v1.Common.PageResponse toWire(Management.PageResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Common.PageResponse toWire(Management.PageResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Common.PageResponse.newBuilder();
-        if (value.nextPageToken().isPresent()) result.setNextPageToken(value.nextPageToken().get());
+        if (value.nextPageToken().isPresent()) result.setNextPageToken(budget.text(value.nextPageToken().get()));
         return result.build();
     }
 
@@ -113,9 +143,14 @@ public final class Wire {
     }
 
     public static latent.control.v1.Common.AuditAck toWire(Management.AuditAck value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Common.AuditAck toWire(Management.AuditAck value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Common.AuditAck.newBuilder();
-        result.setStatusValue(value.status().value());
-        if (value.attemptSequence().isPresent()) result.setAttemptSequence(value.attemptSequence().get());
+        result.setStatusValue(budget.scalar(value.status().value()));
+        if (value.attemptSequence().isPresent()) result.setAttemptSequence(budget.scalar(value.attemptSequence().get()));
         return result.build();
     }
 
@@ -126,12 +161,17 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.InvocationTarget toWire(Management.InvocationTarget value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.InvocationTarget toWire(Management.InvocationTarget value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.InvocationTarget.newBuilder();
-        result.setTenant(value.tenant());
-        result.setService(value.service());
-        result.setContract(value.contract());
-        result.setFunction(value.function());
-        if (value.route().isPresent()) result.setRoute(value.route().get());
+        result.setTenant(budget.text(value.tenant()));
+        result.setService(budget.text(value.service()));
+        result.setContract(budget.text(value.contract()));
+        result.setFunction(budget.text(value.function()));
+        if (value.route().isPresent()) result.setRoute(budget.text(value.route().get()));
         return result.build();
     }
 
@@ -145,18 +185,23 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.InvokeRequest toWire(Management.InvokeRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.InvokeRequest toWire(Management.InvokeRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.InvokeRequest.newBuilder();
-        if (value.activationId().isPresent()) result.setActivationId(value.activationId().get());
-        if (value.parentActivationId().isPresent()) result.setParentActivationId(value.parentActivationId().get());
-        if (value.rootActivationId().isPresent()) result.setRootActivationId(value.rootActivationId().get());
-        if (value.target().isPresent()) result.setTarget(toWire(value.target().get()));
-        result.setPayload(ByteString.copyFrom(value.payload().asReadOnlyBuffer()));
-        result.setMediaType(value.mediaType());
-        if (value.deadlineUnixMillis().isPresent()) result.setDeadlineUnixMillis(value.deadlineUnixMillis().get());
-        result.setPriority(value.priority());
-        if (value.idempotencyKey().isPresent()) result.setIdempotencyKey(value.idempotencyKey().get());
-        if (value.budget().isPresent()) result.setBudget(toInvocationResourceBudget(value.budget().get()));
-        result.putAllMetadata(value.metadata());
+        if (value.activationId().isPresent()) result.setActivationId(budget.text(value.activationId().get()));
+        if (value.parentActivationId().isPresent()) result.setParentActivationId(budget.text(value.parentActivationId().get()));
+        if (value.rootActivationId().isPresent()) result.setRootActivationId(budget.text(value.rootActivationId().get()));
+        if (value.target().isPresent()) result.setTarget(toWire(value.target().get(), budget, depth + 1));
+        result.setPayload(budget.bytes(value.payload()));
+        result.setMediaType(budget.text(value.mediaType()));
+        if (value.deadlineUnixMillis().isPresent()) result.setDeadlineUnixMillis(budget.scalar(value.deadlineUnixMillis().get()));
+        result.setPriority(budget.scalar(value.priority()));
+        if (value.idempotencyKey().isPresent()) result.setIdempotencyKey(budget.text(value.idempotencyKey().get()));
+        if (value.budget().isPresent()) result.setBudget(toInvocationResourceBudget(value.budget().get(), budget, depth + 1));
+        result.putAllMetadata(budget.map(value.metadata()));
         return result.build();
     }
 
@@ -176,18 +221,23 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.BudgetConsumption toWire(Management.BudgetConsumption value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.BudgetConsumption toWire(Management.BudgetConsumption value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.BudgetConsumption.newBuilder();
-        result.setCpuFuel(value.cpuFuel());
-        result.setPeakMemoryBytes(value.peakMemoryBytes());
-        result.setWallTimeMicros(value.wallTimeMicros());
-        result.setChildCalls(value.childCalls());
-        result.setOutboundRequests(value.outboundRequests());
-        result.setStateReadBytes(value.stateReadBytes());
-        result.setStateWriteBytes(value.stateWriteBytes());
-        result.setBlobReadBytes(value.blobReadBytes());
-        result.setBlobWriteBytes(value.blobWriteBytes());
-        result.setLogBytes(value.logBytes());
-        result.setEffectCount(value.effectCount());
+        result.setCpuFuel(budget.scalar(value.cpuFuel()));
+        result.setPeakMemoryBytes(budget.scalar(value.peakMemoryBytes()));
+        result.setWallTimeMicros(budget.scalar(value.wallTimeMicros()));
+        result.setChildCalls(budget.scalar(value.childCalls()));
+        result.setOutboundRequests(budget.scalar(value.outboundRequests()));
+        result.setStateReadBytes(budget.scalar(value.stateReadBytes()));
+        result.setStateWriteBytes(budget.scalar(value.stateWriteBytes()));
+        result.setBlobReadBytes(budget.scalar(value.blobReadBytes()));
+        result.setBlobWriteBytes(budget.scalar(value.blobWriteBytes()));
+        result.setLogBytes(budget.scalar(value.logBytes()));
+        result.setEffectCount(budget.scalar(value.effectCount()));
         return result.build();
     }
 
@@ -207,17 +257,22 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.InvokeResponse toWire(Management.InvokeResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.InvokeResponse toWire(Management.InvokeResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.InvokeResponse.newBuilder();
         if ((value.success().isPresent() ? 1 : 0) + (value.declaredError().isPresent() ? 1 : 0) + (value.platformFailure().isPresent() ? 1 : 0) > 1) throw new IllegalArgumentException("contradictory oneof");
-        result.setActivationId(value.activationId());
-        result.setRevisionId(value.revisionId());
-        result.setReleaseDigest(value.releaseDigest());
-        result.setRouteGeneration(value.routeGeneration());
-        if (value.success().isPresent()) result.setSuccess(toWire(value.success().get()));
-        if (value.declaredError().isPresent()) result.setDeclaredError(toWire(value.declaredError().get()));
-        if (value.platformFailure().isPresent()) result.setPlatformFailure(toInvocationPlatformError(value.platformFailure().get()));
-        if (value.consumption().isPresent()) result.setConsumption(toWire(value.consumption().get()));
-        if (value.publicationId().isPresent()) result.setPublicationId(value.publicationId().get());
+        result.setActivationId(budget.text(value.activationId()));
+        result.setRevisionId(budget.text(value.revisionId()));
+        result.setReleaseDigest(budget.text(value.releaseDigest()));
+        result.setRouteGeneration(budget.scalar(value.routeGeneration()));
+        if (value.success().isPresent()) result.setSuccess(toWire(value.success().get(), budget, depth + 1));
+        if (value.declaredError().isPresent()) result.setDeclaredError(toWire(value.declaredError().get(), budget, depth + 1));
+        if (value.platformFailure().isPresent()) result.setPlatformFailure(toInvocationPlatformError(value.platformFailure().get(), budget, depth + 1));
+        if (value.consumption().isPresent()) result.setConsumption(toWire(value.consumption().get(), budget, depth + 1));
+        if (value.publicationId().isPresent()) result.setPublicationId(budget.text(value.publicationId().get()));
         return result.build();
     }
 
@@ -235,12 +290,17 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.Success toWire(Management.Success value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.Success toWire(Management.Success value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.Success.newBuilder();
-        result.setPayload(ByteString.copyFrom(value.payload().asReadOnlyBuffer()));
-        result.setMediaType(value.mediaType());
-        if (value.committedStateVersion().isPresent()) result.setCommittedStateVersion(value.committedStateVersion().get());
-        for (var item : value.effectIds()) result.addEffectIds(item);
-        result.putAllMetadata(value.metadata());
+        result.setPayload(budget.bytes(value.payload()));
+        result.setMediaType(budget.text(value.mediaType()));
+        if (value.committedStateVersion().isPresent()) result.setCommittedStateVersion(budget.text(value.committedStateVersion().get()));
+        for (var item : budget.list(value.effectIds(), 128)) result.addEffectIds(budget.text(item));
+        result.putAllMetadata(budget.map(value.metadata()));
         return result.build();
     }
 
@@ -254,12 +314,17 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.DeclaredError toWire(Management.DeclaredError value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.DeclaredError toWire(Management.DeclaredError value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.DeclaredError.newBuilder();
-        result.setCode(value.code());
-        result.setMessage(value.message());
-        result.setPayload(ByteString.copyFrom(value.payload().asReadOnlyBuffer()));
-        result.setMediaType(value.mediaType());
-        result.putAllMetadata(value.metadata());
+        result.setCode(budget.text(value.code()));
+        result.setMessage(budget.text(value.message()));
+        result.setPayload(budget.bytes(value.payload()));
+        result.setMediaType(budget.text(value.mediaType()));
+        result.putAllMetadata(budget.map(value.metadata()));
         return result.build();
     }
 
@@ -273,9 +338,14 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.CancelRequest toWire(Management.CancelRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.CancelRequest toWire(Management.CancelRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.CancelRequest.newBuilder();
-        result.setActivationId(value.activationId());
-        result.setReason(value.reason());
+        result.setActivationId(budget.text(value.activationId()));
+        result.setReason(budget.text(value.reason()));
         return result.build();
     }
 
@@ -286,9 +356,14 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.CancelResponse toWire(Management.CancelResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.CancelResponse toWire(Management.CancelResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.CancelResponse.newBuilder();
-        result.setDispositionValue(value.disposition().value());
-        if (value.terminalState().isPresent()) result.setTerminalState(value.terminalState().get());
+        result.setDispositionValue(budget.scalar(value.disposition().value()));
+        if (value.terminalState().isPresent()) result.setTerminalState(budget.text(value.terminalState().get()));
         return result.build();
     }
 
@@ -299,8 +374,13 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.GetActivationRequest toWire(Management.GetActivationRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.GetActivationRequest toWire(Management.GetActivationRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.GetActivationRequest.newBuilder();
-        result.setActivationId(value.activationId());
+        result.setActivationId(budget.text(value.activationId()));
         return result.build();
     }
 
@@ -310,18 +390,23 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.ActivationStatus toWire(Management.ActivationStatus value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.ActivationStatus toWire(Management.ActivationStatus value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.ActivationStatus.newBuilder();
         if ((value.succeeded().isPresent() ? 1 : 0) + (value.declaredError().isPresent() ? 1 : 0) + (value.platformFailure().isPresent() ? 1 : 0) > 1) throw new IllegalArgumentException("contradictory oneof");
-        result.setActivationId(value.activationId());
-        result.setPhase(value.phase());
-        if (value.terminalState().isPresent()) result.setTerminalState(value.terminalState().get());
-        result.setLastUpdatedUnixMillis(value.lastUpdatedUnixMillis());
-        result.putAllMetadata(value.metadata());
-        if (value.succeeded().isPresent()) result.setSucceeded(toWire(value.succeeded().get()));
-        if (value.declaredError().isPresent()) result.setDeclaredError(toWire(value.declaredError().get()));
-        if (value.platformFailure().isPresent()) result.setPlatformFailure(toInvocationPlatformError(value.platformFailure().get()));
-        if (value.finalConsumption().isPresent()) result.setFinalConsumption(toWire(value.finalConsumption().get()));
-        if (value.terminalAtUnixMillis().isPresent()) result.setTerminalAtUnixMillis(value.terminalAtUnixMillis().get());
+        result.setActivationId(budget.text(value.activationId()));
+        result.setPhase(budget.text(value.phase()));
+        if (value.terminalState().isPresent()) result.setTerminalState(budget.text(value.terminalState().get()));
+        result.setLastUpdatedUnixMillis(budget.scalar(value.lastUpdatedUnixMillis()));
+        result.putAllMetadata(budget.map(value.metadata()));
+        if (value.succeeded().isPresent()) result.setSucceeded(toWire(value.succeeded().get(), budget, depth + 1));
+        if (value.declaredError().isPresent()) result.setDeclaredError(toWire(value.declaredError().get(), budget, depth + 1));
+        if (value.platformFailure().isPresent()) result.setPlatformFailure(toInvocationPlatformError(value.platformFailure().get(), budget, depth + 1));
+        if (value.finalConsumption().isPresent()) result.setFinalConsumption(toWire(value.finalConsumption().get(), budget, depth + 1));
+        if (value.terminalAtUnixMillis().isPresent()) result.setTerminalAtUnixMillis(budget.scalar(value.terminalAtUnixMillis().get()));
         return result.build();
     }
 
@@ -340,10 +425,15 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.ActivationSuccessSummary toWire(Management.ActivationSuccessSummary value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.ActivationSuccessSummary toWire(Management.ActivationSuccessSummary value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.ActivationSuccessSummary.newBuilder();
-        if (value.committedStateVersion().isPresent()) result.setCommittedStateVersion(value.committedStateVersion().get());
-        for (var item : value.effectIds()) result.addEffectIds(item);
-        result.putAllMetadata(value.metadata());
+        if (value.committedStateVersion().isPresent()) result.setCommittedStateVersion(budget.text(value.committedStateVersion().get()));
+        for (var item : budget.list(value.effectIds(), 128)) result.addEffectIds(budget.text(item));
+        result.putAllMetadata(budget.map(value.metadata()));
         return result.build();
     }
 
@@ -355,15 +445,20 @@ public final class Wire {
     }
 
     public static latent.control.v1.PolicyOuterClass.Policy toWire(Management.Policy value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.PolicyOuterClass.Policy toWire(Management.Policy value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.PolicyOuterClass.Policy.newBuilder();
-        result.setId(value.id());
-        if (value.metadata().isPresent()) result.setMetadata(toWire(value.metadata().get()));
-        result.setDocument(value.document());
-        result.setGeneration(value.generation());
-        result.setLanguage(value.language());
-        result.setRecordKindValue(value.recordKind().value());
-        result.setContentDigest(value.contentDigest());
-        result.setRevoked(value.revoked());
+        result.setId(budget.text(value.id()));
+        if (value.metadata().isPresent()) result.setMetadata(toWire(value.metadata().get(), budget, depth + 1));
+        result.setDocument(budget.text(value.document()));
+        result.setGeneration(budget.scalar(value.generation()));
+        result.setLanguage(budget.text(value.language()));
+        result.setRecordKindValue(budget.scalar(value.recordKind().value()));
+        result.setContentDigest(budget.text(value.contentDigest()));
+        result.setRevoked(budget.scalar(value.revoked()));
         return result.build();
     }
 
@@ -380,10 +475,15 @@ public final class Wire {
     }
 
     public static latent.control.v1.PolicyOuterClass.ApplyPolicyRequest toWire(Management.ApplyPolicyRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.PolicyOuterClass.ApplyPolicyRequest toWire(Management.ApplyPolicyRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.PolicyOuterClass.ApplyPolicyRequest.newBuilder();
-        if (value.policy().isPresent()) result.setPolicy(toWire(value.policy().get()));
-        if (value.expectedGeneration().isPresent()) result.setExpectedGeneration(value.expectedGeneration().get());
-        result.setOperationId(value.operationId());
+        if (value.policy().isPresent()) result.setPolicy(toWire(value.policy().get(), budget, depth + 1));
+        if (value.expectedGeneration().isPresent()) result.setExpectedGeneration(budget.scalar(value.expectedGeneration().get()));
+        result.setOperationId(budget.text(value.operationId()));
         return result.build();
     }
 
@@ -395,9 +495,14 @@ public final class Wire {
     }
 
     public static latent.control.v1.PolicyOuterClass.ApplyPolicyResponse toWire(Management.ApplyPolicyResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.PolicyOuterClass.ApplyPolicyResponse toWire(Management.ApplyPolicyResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.PolicyOuterClass.ApplyPolicyResponse.newBuilder();
-        if (value.policy().isPresent()) result.setPolicy(toWire(value.policy().get()));
-        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get()));
+        if (value.policy().isPresent()) result.setPolicy(toWire(value.policy().get(), budget, depth + 1));
+        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -408,9 +513,14 @@ public final class Wire {
     }
 
     public static latent.control.v1.PolicyOuterClass.GetPolicyRequest toWire(Management.GetPolicyRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.PolicyOuterClass.GetPolicyRequest toWire(Management.GetPolicyRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.PolicyOuterClass.GetPolicyRequest.newBuilder();
-        result.setId(value.id());
-        result.setRecordKindValue(value.recordKind().value());
+        result.setId(budget.text(value.id()));
+        result.setRecordKindValue(budget.scalar(value.recordKind().value()));
         return result.build();
     }
 
@@ -421,8 +531,13 @@ public final class Wire {
     }
 
     public static latent.control.v1.PolicyOuterClass.GetPolicyResponse toWire(Management.GetPolicyResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.PolicyOuterClass.GetPolicyResponse toWire(Management.GetPolicyResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.PolicyOuterClass.GetPolicyResponse.newBuilder();
-        if (value.policy().isPresent()) result.setPolicy(toWire(value.policy().get()));
+        if (value.policy().isPresent()) result.setPolicy(toWire(value.policy().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -432,14 +547,19 @@ public final class Wire {
     }
 
     public static latent.control.v1.PolicyOuterClass.CapabilityPolicyOperation toWire(Management.CapabilityPolicyOperation value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.PolicyOuterClass.CapabilityPolicyOperation toWire(Management.CapabilityPolicyOperation value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.PolicyOuterClass.CapabilityPolicyOperation.newBuilder();
-        result.setOperationId(value.operationId());
-        result.setTenant(value.tenant());
-        result.setId(value.id());
-        result.setRecordKindValue(value.recordKind().value());
-        result.setGeneration(value.generation());
-        result.setContentDigest(value.contentDigest());
-        result.setRevoked(value.revoked());
+        result.setOperationId(budget.text(value.operationId()));
+        result.setTenant(budget.text(value.tenant()));
+        result.setId(budget.text(value.id()));
+        result.setRecordKindValue(budget.scalar(value.recordKind().value()));
+        result.setGeneration(budget.scalar(value.generation()));
+        result.setContentDigest(budget.text(value.contentDigest()));
+        result.setRevoked(budget.scalar(value.revoked()));
         return result.build();
     }
 
@@ -455,8 +575,13 @@ public final class Wire {
     }
 
     public static latent.control.v1.PolicyOuterClass.GetPolicyOperationRequest toWire(Management.GetPolicyOperationRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.PolicyOuterClass.GetPolicyOperationRequest toWire(Management.GetPolicyOperationRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.PolicyOuterClass.GetPolicyOperationRequest.newBuilder();
-        result.setOperationId(value.operationId());
+        result.setOperationId(budget.text(value.operationId()));
         return result.build();
     }
 
@@ -466,8 +591,13 @@ public final class Wire {
     }
 
     public static latent.control.v1.PolicyOuterClass.GetPolicyOperationResponse toWire(Management.GetPolicyOperationResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.PolicyOuterClass.GetPolicyOperationResponse toWire(Management.GetPolicyOperationResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.PolicyOuterClass.GetPolicyOperationResponse.newBuilder();
-        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get()));
+        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -477,9 +607,14 @@ public final class Wire {
     }
 
     public static latent.control.v1.PolicyOuterClass.ListPoliciesRequest toWire(Management.ListPoliciesRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.PolicyOuterClass.ListPoliciesRequest toWire(Management.ListPoliciesRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.PolicyOuterClass.ListPoliciesRequest.newBuilder();
-        result.setRecordKindValue(value.recordKind().value());
-        if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
+        result.setRecordKindValue(budget.scalar(value.recordKind().value()));
+        if (value.page().isPresent()) result.setPage(toWire(value.page().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -490,10 +625,15 @@ public final class Wire {
     }
 
     public static latent.control.v1.PolicyOuterClass.ListPoliciesResponse toWire(Management.ListPoliciesResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.PolicyOuterClass.ListPoliciesResponse toWire(Management.ListPoliciesResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.PolicyOuterClass.ListPoliciesResponse.newBuilder();
-        for (var item : value.policies()) result.addPolicies(toWire(item));
-        result.setCatalogGeneration(value.catalogGeneration());
-        if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
+        for (var item : budget.list(value.policies(), 128)) result.addPolicies(toWire(item, budget, depth + 1));
+        result.setCatalogGeneration(budget.scalar(value.catalogGeneration()));
+        if (value.page().isPresent()) result.setPage(toWire(value.page().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -505,13 +645,18 @@ public final class Wire {
     }
 
     public static latent.control.v1.Capability.CapabilityDescriptor toWire(Management.CapabilityDescriptor value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Capability.CapabilityDescriptor toWire(Management.CapabilityDescriptor value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Capability.CapabilityDescriptor.newBuilder();
-        result.setId(value.id());
-        result.setContract(value.contract());
-        result.setProvider(value.provider());
-        for (var item : value.operations()) result.addOperations(item);
-        result.putAllAttributes(value.attributes());
-        if (value.inspection().isPresent()) result.setInspection(toWire(value.inspection().get()));
+        result.setId(budget.text(value.id()));
+        result.setContract(budget.text(value.contract()));
+        result.setProvider(budget.text(value.provider()));
+        for (var item : budget.list(value.operations(), 128)) result.addOperations(budget.text(item));
+        result.putAllAttributes(budget.map(value.attributes()));
+        if (value.inspection().isPresent()) result.setInspection(toWire(value.inspection().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -526,12 +671,17 @@ public final class Wire {
     }
 
     public static latent.control.v1.Capability.ListCapabilitiesRequest toWire(Management.ListCapabilitiesRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Capability.ListCapabilitiesRequest toWire(Management.ListCapabilitiesRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Capability.ListCapabilitiesRequest.newBuilder();
-        if (value.contractPrefix().isPresent()) result.setContractPrefix(value.contractPrefix().get());
-        if (value.provider().isPresent()) result.setProvider(value.provider().get());
-        if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
-        result.setDeploymentId(value.deploymentId());
-        result.setIncludeNodeUsage(value.includeNodeUsage());
+        if (value.contractPrefix().isPresent()) result.setContractPrefix(budget.text(value.contractPrefix().get()));
+        if (value.provider().isPresent()) result.setProvider(budget.text(value.provider().get()));
+        if (value.page().isPresent()) result.setPage(toWire(value.page().get(), budget, depth + 1));
+        result.setDeploymentId(budget.text(value.deploymentId()));
+        result.setIncludeNodeUsage(budget.scalar(value.includeNodeUsage()));
         return result.build();
     }
 
@@ -545,13 +695,18 @@ public final class Wire {
     }
 
     public static latent.control.v1.Capability.ListCapabilitiesResponse toWire(Management.ListCapabilitiesResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Capability.ListCapabilitiesResponse toWire(Management.ListCapabilitiesResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Capability.ListCapabilitiesResponse.newBuilder();
-        for (var item : value.capabilities()) result.addCapabilities(toWire(item));
-        if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
-        if (value.revision().isPresent()) result.setRevision(toWire(value.revision().get()));
-        if (value.tenantUsage().isPresent()) result.setTenantUsage(toWire(value.tenantUsage().get()));
-        if (value.nodeUsage().isPresent()) result.setNodeUsage(toWire(value.nodeUsage().get()));
-        result.setState(value.state());
+        for (var item : budget.list(value.capabilities(), 128)) result.addCapabilities(toWire(item, budget, depth + 1));
+        if (value.page().isPresent()) result.setPage(toWire(value.page().get(), budget, depth + 1));
+        if (value.revision().isPresent()) result.setRevision(toWire(value.revision().get(), budget, depth + 1));
+        if (value.tenantUsage().isPresent()) result.setTenantUsage(toWire(value.tenantUsage().get(), budget, depth + 1));
+        if (value.nodeUsage().isPresent()) result.setNodeUsage(toWire(value.nodeUsage().get(), budget, depth + 1));
+        result.setState(budget.text(value.state()));
         return result.build();
     }
 
@@ -566,13 +721,18 @@ public final class Wire {
     }
 
     public static latent.control.v1.Capability.CapabilityInspectionRevision toWire(Management.CapabilityInspectionRevision value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Capability.CapabilityInspectionRevision toWire(Management.CapabilityInspectionRevision value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Capability.CapabilityInspectionRevision.newBuilder();
-        result.setDeploymentId(value.deploymentId());
-        result.setRevisionId(value.revisionId());
-        result.setComponentDigest(value.componentDigest());
-        if (value.publicationId().isPresent()) result.setPublicationId(value.publicationId().get());
-        result.setRouteGeneration(value.routeGeneration());
-        result.setCatalogTransaction(value.catalogTransaction());
+        result.setDeploymentId(budget.text(value.deploymentId()));
+        result.setRevisionId(budget.text(value.revisionId()));
+        result.setComponentDigest(budget.text(value.componentDigest()));
+        if (value.publicationId().isPresent()) result.setPublicationId(budget.text(value.publicationId().get()));
+        result.setRouteGeneration(budget.scalar(value.routeGeneration()));
+        result.setCatalogTransaction(budget.scalar(value.catalogTransaction()));
         return result.build();
     }
 
@@ -587,10 +747,15 @@ public final class Wire {
     }
 
     public static latent.control.v1.Capability.CapabilityInspectionPolicy toWire(Management.CapabilityInspectionPolicy value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Capability.CapabilityInspectionPolicy toWire(Management.CapabilityInspectionPolicy value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Capability.CapabilityInspectionPolicy.newBuilder();
-        result.setId(value.id());
-        result.setRevision(value.revision());
-        result.setDigest(value.digest());
+        result.setId(budget.text(value.id()));
+        result.setRevision(budget.scalar(value.revision()));
+        result.setDigest(budget.text(value.digest()));
         return result.build();
     }
 
@@ -602,14 +767,19 @@ public final class Wire {
     }
 
     public static latent.control.v1.Capability.CapabilityBindingInspection toWire(Management.CapabilityBindingInspection value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Capability.CapabilityBindingInspection toWire(Management.CapabilityBindingInspection value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Capability.CapabilityBindingInspection.newBuilder();
-        if (value.definitionDigest().isPresent()) result.setDefinitionDigest(value.definitionDigest().get());
-        if (value.providerBinding().isPresent()) result.setProviderBinding(toWire(value.providerBinding().get()));
-        for (var item : value.policies()) result.addPolicies(toWire(item));
-        result.setProviderProfile(value.providerProfile());
-        result.setProviderConfigurationDigest(value.providerConfigurationDigest());
-        result.setProviderConfigurationEpoch(value.providerConfigurationEpoch());
-        result.setState(value.state());
+        if (value.definitionDigest().isPresent()) result.setDefinitionDigest(budget.text(value.definitionDigest().get()));
+        if (value.providerBinding().isPresent()) result.setProviderBinding(toWire(value.providerBinding().get(), budget, depth + 1));
+        for (var item : budget.list(value.policies(), 128)) result.addPolicies(toWire(item, budget, depth + 1));
+        result.setProviderProfile(budget.text(value.providerProfile()));
+        result.setProviderConfigurationDigest(budget.text(value.providerConfigurationDigest()));
+        result.setProviderConfigurationEpoch(budget.scalar(value.providerConfigurationEpoch()));
+        result.setState(budget.text(value.state()));
         return result.build();
     }
 
@@ -625,11 +795,16 @@ public final class Wire {
     }
 
     public static latent.control.v1.Capability.CapabilityInspectionCeiling toWire(Management.CapabilityInspectionCeiling value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Capability.CapabilityInspectionCeiling toWire(Management.CapabilityInspectionCeiling value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Capability.CapabilityInspectionCeiling.newBuilder();
-        result.setOperations(value.operations());
-        result.setInputBytes(value.inputBytes());
-        result.setOutputBytes(value.outputBytes());
-        result.setWallTimeMillis(value.wallTimeMillis());
+        result.setOperations(budget.scalar(value.operations()));
+        result.setInputBytes(budget.scalar(value.inputBytes()));
+        result.setOutputBytes(budget.scalar(value.outputBytes()));
+        result.setWallTimeMillis(budget.scalar(value.wallTimeMillis()));
         return result.build();
     }
 
@@ -642,11 +817,16 @@ public final class Wire {
     }
 
     public static latent.control.v1.Capability.CapabilityResourceUsage toWire(Management.CapabilityResourceUsage value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Capability.CapabilityResourceUsage toWire(Management.CapabilityResourceUsage value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Capability.CapabilityResourceUsage.newBuilder();
-        result.setScope(value.scope());
-        result.putAllCounters(value.counters());
-        for (var item : value.unavailable()) result.addUnavailable(item);
-        if (value.streamQuarantinedConnections().isPresent()) result.setStreamQuarantinedConnections(value.streamQuarantinedConnections().get());
+        result.setScope(budget.text(value.scope()));
+        result.putAllCounters(budget.map(value.counters()));
+        for (var item : budget.list(value.unavailable(), 128)) result.addUnavailable(budget.text(item));
+        if (value.streamQuarantinedConnections().isPresent()) result.setStreamQuarantinedConnections(budget.scalar(value.streamQuarantinedConnections().get()));
         return result.build();
     }
 
@@ -659,9 +839,14 @@ public final class Wire {
     }
 
     public static latent.control.v1.Release.PublicationRef toWire(Management.PublicationRef value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Release.PublicationRef toWire(Management.PublicationRef value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Release.PublicationRef.newBuilder();
-        result.setId(value.id());
-        result.setTenant(value.tenant());
+        result.setId(budget.text(value.id()));
+        result.setTenant(budget.text(value.tenant()));
         return result.build();
     }
 
@@ -672,17 +857,22 @@ public final class Wire {
     }
 
     public static latent.control.v1.Node.ActivationDiagnostic toWire(Management.ActivationDiagnostic value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Node.ActivationDiagnostic toWire(Management.ActivationDiagnostic value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Node.ActivationDiagnostic.newBuilder();
-        result.setSchemaVersion(value.schemaVersion());
-        result.setStageValue(value.stage().value());
-        result.setReasonValue(value.reason().value());
-        if (value.profile().isPresent()) result.setProfileValue(value.profile().get().value());
-        if (value.profileDigest().isPresent()) result.setProfileDigest(value.profileDigest().get());
-        if (value.configuredBound().isPresent()) result.setConfiguredBound(value.configuredBound().get());
-        if (value.calculatedRequirement().isPresent()) result.setCalculatedRequirement(value.calculatedRequirement().get());
-        if (value.fixedBytes().isPresent()) result.setFixedBytes(value.fixedBytes().get());
-        if (value.liftingFuel().isPresent()) result.setLiftingFuel(value.liftingFuel().get());
-        if (value.liftMultiplier().isPresent()) result.setLiftMultiplier(value.liftMultiplier().get());
+        result.setSchemaVersion(budget.scalar(value.schemaVersion()));
+        result.setStageValue(budget.scalar(value.stage().value()));
+        result.setReasonValue(budget.scalar(value.reason().value()));
+        if (value.profile().isPresent()) result.setProfileValue(budget.scalar(value.profile().get().value()));
+        if (value.profileDigest().isPresent()) result.setProfileDigest(budget.text(value.profileDigest().get()));
+        if (value.configuredBound().isPresent()) result.setConfiguredBound(budget.scalar(value.configuredBound().get()));
+        if (value.calculatedRequirement().isPresent()) result.setCalculatedRequirement(budget.scalar(value.calculatedRequirement().get()));
+        if (value.fixedBytes().isPresent()) result.setFixedBytes(budget.scalar(value.fixedBytes().get()));
+        if (value.liftingFuel().isPresent()) result.setLiftingFuel(budget.scalar(value.liftingFuel().get()));
+        if (value.liftMultiplier().isPresent()) result.setLiftMultiplier(budget.scalar(value.liftMultiplier().get()));
         return result.build();
     }
 
@@ -701,17 +891,22 @@ public final class Wire {
     }
 
     public static latent.control.v1.Node.TransactionStagingWitness toWire(Management.TransactionStagingWitness value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Node.TransactionStagingWitness toWire(Management.TransactionStagingWitness value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Node.TransactionStagingWitness.newBuilder();
-        result.setSchemaVersion(value.schemaVersion());
-        result.setActivationSerial(value.activationSerial());
-        result.setCommandId(value.commandId());
-        result.setAttemptId(value.attemptId());
-        result.setTransactionId(value.transactionId());
-        result.setPublicationId(value.publicationId());
-        result.setStagedMutations(value.stagedMutations());
-        result.setCapturedIntents(value.capturedIntents());
-        result.setStateWriteBytes(value.stateWriteBytes());
-        result.setObservedAtUnixMillis(value.observedAtUnixMillis());
+        result.setSchemaVersion(budget.scalar(value.schemaVersion()));
+        result.setActivationSerial(budget.scalar(value.activationSerial()));
+        result.setCommandId(budget.text(value.commandId()));
+        result.setAttemptId(budget.text(value.attemptId()));
+        result.setTransactionId(budget.text(value.transactionId()));
+        result.setPublicationId(budget.text(value.publicationId()));
+        result.setStagedMutations(budget.scalar(value.stagedMutations()));
+        result.setCapturedIntents(budget.scalar(value.capturedIntents()));
+        result.setStateWriteBytes(budget.scalar(value.stateWriteBytes()));
+        result.setObservedAtUnixMillis(budget.scalar(value.observedAtUnixMillis()));
         return result.build();
     }
 
@@ -730,22 +925,27 @@ public final class Wire {
     }
 
     public static latent.control.v1.Node.ActivationTreeNode toWire(Management.ActivationTreeNode value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Node.ActivationTreeNode toWire(Management.ActivationTreeNode value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Node.ActivationTreeNode.newBuilder();
-        result.setActivationId(value.activationId());
-        if (value.parentActivationId().isPresent()) result.setParentActivationId(value.parentActivationId().get());
-        result.setRootActivationId(value.rootActivationId());
-        result.setPhase(value.phase());
-        if (value.terminalState().isPresent()) result.setTerminalState(value.terminalState().get());
-        result.setLastUpdatedUnixMillis(value.lastUpdatedUnixMillis());
-        if (value.diagnostic().isPresent()) result.setDiagnostic(toWire(value.diagnostic().get()));
-        result.setPrincipalKind(value.principalKind());
-        if (value.callerService().isPresent()) result.setCallerService(value.callerService().get());
-        if (value.grantedBudget().isPresent()) result.setGrantedBudget(toWire(value.grantedBudget().get()));
-        if (value.effectiveDeadlineUnixMillis().isPresent()) result.setEffectiveDeadlineUnixMillis(value.effectiveDeadlineUnixMillis().get());
-        result.setDiagnosticIsTerminal(value.diagnosticIsTerminal());
-        result.setTargetService(value.targetService());
-        result.setReceivedAtUnixMillis(value.receivedAtUnixMillis());
-        if (value.transactionStaging().isPresent()) result.setTransactionStaging(toWire(value.transactionStaging().get()));
+        result.setActivationId(budget.text(value.activationId()));
+        if (value.parentActivationId().isPresent()) result.setParentActivationId(budget.text(value.parentActivationId().get()));
+        result.setRootActivationId(budget.text(value.rootActivationId()));
+        result.setPhase(budget.text(value.phase()));
+        if (value.terminalState().isPresent()) result.setTerminalState(budget.text(value.terminalState().get()));
+        result.setLastUpdatedUnixMillis(budget.scalar(value.lastUpdatedUnixMillis()));
+        if (value.diagnostic().isPresent()) result.setDiagnostic(toWire(value.diagnostic().get(), budget, depth + 1));
+        result.setPrincipalKind(budget.text(value.principalKind()));
+        if (value.callerService().isPresent()) result.setCallerService(budget.text(value.callerService().get()));
+        if (value.grantedBudget().isPresent()) result.setGrantedBudget(toWire(value.grantedBudget().get(), budget, depth + 1));
+        if (value.effectiveDeadlineUnixMillis().isPresent()) result.setEffectiveDeadlineUnixMillis(budget.scalar(value.effectiveDeadlineUnixMillis().get()));
+        result.setDiagnosticIsTerminal(budget.scalar(value.diagnosticIsTerminal()));
+        result.setTargetService(budget.text(value.targetService()));
+        result.setReceivedAtUnixMillis(budget.scalar(value.receivedAtUnixMillis()));
+        if (value.transactionStaging().isPresent()) result.setTransactionStaging(toWire(value.transactionStaging().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -769,11 +969,16 @@ public final class Wire {
     }
 
     public static latent.control.v1.Node.InspectActivationTreeRequest toWire(Management.InspectActivationTreeRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Node.InspectActivationTreeRequest toWire(Management.InspectActivationTreeRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Node.InspectActivationTreeRequest.newBuilder();
-        result.setActivationId(value.activationId());
-        if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
-        if (value.service().isPresent()) result.setService(value.service().get());
-        if (value.fromUnixMillis().isPresent()) result.setFromUnixMillis(value.fromUnixMillis().get());
+        result.setActivationId(budget.text(value.activationId()));
+        if (value.page().isPresent()) result.setPage(toWire(value.page().get(), budget, depth + 1));
+        if (value.service().isPresent()) result.setService(budget.text(value.service().get()));
+        if (value.fromUnixMillis().isPresent()) result.setFromUnixMillis(budget.scalar(value.fromUnixMillis().get()));
         return result.build();
     }
 
@@ -786,13 +991,18 @@ public final class Wire {
     }
 
     public static latent.control.v1.Node.InspectActivationTreeResponse toWire(Management.InspectActivationTreeResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Node.InspectActivationTreeResponse toWire(Management.InspectActivationTreeResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Node.InspectActivationTreeResponse.newBuilder();
-        result.setSchemaVersion(value.schemaVersion());
-        for (var item : value.nodes()) result.addNodes(toWire(item));
-        if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
-        result.setHistoryAvailable(value.historyAvailable());
-        result.setCursorExpired(value.cursorExpired());
-        result.setRetainedHistoryOnly(value.retainedHistoryOnly());
+        result.setSchemaVersion(budget.scalar(value.schemaVersion()));
+        for (var item : budget.list(value.nodes(), 128)) result.addNodes(toWire(item, budget, depth + 1));
+        if (value.page().isPresent()) result.setPage(toWire(value.page().get(), budget, depth + 1));
+        result.setHistoryAvailable(budget.scalar(value.historyAvailable()));
+        result.setCursorExpired(budget.scalar(value.cursorExpired()));
+        result.setRetainedHistoryOnly(budget.scalar(value.retainedHistoryOnly()));
         return result.build();
     }
 
@@ -807,16 +1017,21 @@ public final class Wire {
     }
 
     public static latent.control.v1.Node.InspectHttpTargetRequest toWire(Management.InspectHttpTargetRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Node.InspectHttpTargetRequest toWire(Management.InspectHttpTargetRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Node.InspectHttpTargetRequest.newBuilder();
-        result.setService(value.service());
-        result.setContract(value.contract());
-        result.setFunction(value.function());
-        if (value.route().isPresent()) result.setRoute(value.route().get());
-        if (value.revisionId().isPresent()) result.setRevisionId(value.revisionId().get());
-        if (value.publication().isPresent()) result.setPublication(toWire(value.publication().get()));
-        if (value.routingKey().isPresent()) result.setRoutingKey(value.routingKey().get());
-        result.setIncludePreparation(value.includePreparation());
-        result.setMaximumWaitMillis(value.maximumWaitMillis());
+        result.setService(budget.text(value.service()));
+        result.setContract(budget.text(value.contract()));
+        result.setFunction(budget.text(value.function()));
+        if (value.route().isPresent()) result.setRoute(budget.text(value.route().get()));
+        if (value.revisionId().isPresent()) result.setRevisionId(budget.text(value.revisionId().get()));
+        if (value.publication().isPresent()) result.setPublication(toWire(value.publication().get(), budget, depth + 1));
+        if (value.routingKey().isPresent()) result.setRoutingKey(budget.text(value.routingKey().get()));
+        result.setIncludePreparation(budget.scalar(value.includePreparation()));
+        result.setMaximumWaitMillis(budget.scalar(value.maximumWaitMillis()));
         return result.build();
     }
 
@@ -834,15 +1049,20 @@ public final class Wire {
     }
 
     public static latent.control.v1.Node.TargetDependency toWire(Management.TargetDependency value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Node.TargetDependency toWire(Management.TargetDependency value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Node.TargetDependency.newBuilder();
-        result.setCapability(value.capability());
-        result.setState(value.state());
-        result.setPolicyIdentityDigest(value.policyIdentityDigest());
-        result.setProviderConfigurationEpoch(value.providerConfigurationEpoch());
-        if (value.binding().isPresent()) result.setBinding(toWire(value.binding().get()));
-        for (var item : value.policies()) result.addPolicies(toWire(item));
-        result.setProviderProfile(value.providerProfile());
-        result.setConfigurationDigest(value.configurationDigest());
+        result.setCapability(budget.text(value.capability()));
+        result.setState(budget.text(value.state()));
+        result.setPolicyIdentityDigest(budget.text(value.policyIdentityDigest()));
+        result.setProviderConfigurationEpoch(budget.scalar(value.providerConfigurationEpoch()));
+        if (value.binding().isPresent()) result.setBinding(toWire(value.binding().get(), budget, depth + 1));
+        for (var item : budget.list(value.policies(), 128)) result.addPolicies(toWire(item, budget, depth + 1));
+        result.setProviderProfile(budget.text(value.providerProfile()));
+        result.setConfigurationDigest(budget.text(value.configurationDigest()));
         return result.build();
     }
 
@@ -859,10 +1079,15 @@ public final class Wire {
     }
 
     public static latent.control.v1.Node.TargetDependencyRevision toWire(Management.TargetDependencyRevision value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Node.TargetDependencyRevision toWire(Management.TargetDependencyRevision value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Node.TargetDependencyRevision.newBuilder();
-        result.setId(value.id());
-        result.setDigest(value.digest());
-        result.setRevision(value.revision());
+        result.setId(budget.text(value.id()));
+        result.setDigest(budget.text(value.digest()));
+        result.setRevision(budget.scalar(value.revision()));
         return result.build();
     }
 
@@ -874,9 +1099,14 @@ public final class Wire {
     }
 
     public static latent.control.v1.Node.PreparedTargetExport toWire(Management.PreparedTargetExport value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Node.PreparedTargetExport toWire(Management.PreparedTargetExport value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Node.PreparedTargetExport.newBuilder();
-        result.setContract(value.contract());
-        result.setFunction(value.function());
+        result.setContract(budget.text(value.contract()));
+        result.setFunction(budget.text(value.function()));
         return result.build();
     }
 
@@ -887,24 +1117,29 @@ public final class Wire {
     }
 
     public static latent.control.v1.Node.TargetPreparation toWire(Management.TargetPreparation value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Node.TargetPreparation toWire(Management.TargetPreparation value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Node.TargetPreparation.newBuilder();
-        result.setStateValue(value.state().value());
-        if (value.diagnostic().isPresent()) result.setDiagnostic(toWire(value.diagnostic().get()));
-        if (value.profile().isPresent()) result.setProfileValue(value.profile().get().value());
-        if (value.engineVersion().isPresent()) result.setEngineVersion(value.engineVersion().get());
-        if (value.engineConfigurationDigest().isPresent()) result.setEngineConfigurationDigest(value.engineConfigurationDigest().get());
-        if (value.targetTriple().isPresent()) result.setTargetTriple(value.targetTriple().get());
-        if (value.cpuFeatureSet().isPresent()) result.setCpuFeatureSet(value.cpuFeatureSet().get());
-        if (value.sealedMetadataFingerprint().isPresent()) result.setSealedMetadataFingerprint(value.sealedMetadataFingerprint().get());
-        if (value.importCount().isPresent()) result.setImportCount(value.importCount().get());
-        if (value.functionCount().isPresent()) result.setFunctionCount(value.functionCount().get());
-        if (value.hostcallFuel().isPresent()) result.setHostcallFuel(value.hostcallFuel().get());
-        if (value.maximumLiftedBytes().isPresent()) result.setMaximumLiftedBytes(value.maximumLiftedBytes().get());
-        if (value.maximumTypeNodes().isPresent()) result.setMaximumTypeNodes(value.maximumTypeNodes().get());
-        if (value.declaredBudget().isPresent()) result.setDeclaredBudget(toWire(value.declaredBudget().get()));
-        for (var item : value.imports()) result.addImports(item);
-        for (var item : value.exports()) result.addExports(toWire(item));
-        for (var item : value.typeImports()) result.addTypeImports(item);
+        result.setStateValue(budget.scalar(value.state().value()));
+        if (value.diagnostic().isPresent()) result.setDiagnostic(toWire(value.diagnostic().get(), budget, depth + 1));
+        if (value.profile().isPresent()) result.setProfileValue(budget.scalar(value.profile().get().value()));
+        if (value.engineVersion().isPresent()) result.setEngineVersion(budget.text(value.engineVersion().get()));
+        if (value.engineConfigurationDigest().isPresent()) result.setEngineConfigurationDigest(budget.text(value.engineConfigurationDigest().get()));
+        if (value.targetTriple().isPresent()) result.setTargetTriple(budget.text(value.targetTriple().get()));
+        if (value.cpuFeatureSet().isPresent()) result.setCpuFeatureSet(budget.text(value.cpuFeatureSet().get()));
+        if (value.sealedMetadataFingerprint().isPresent()) result.setSealedMetadataFingerprint(budget.text(value.sealedMetadataFingerprint().get()));
+        if (value.importCount().isPresent()) result.setImportCount(budget.scalar(value.importCount().get()));
+        if (value.functionCount().isPresent()) result.setFunctionCount(budget.scalar(value.functionCount().get()));
+        if (value.hostcallFuel().isPresent()) result.setHostcallFuel(budget.scalar(value.hostcallFuel().get()));
+        if (value.maximumLiftedBytes().isPresent()) result.setMaximumLiftedBytes(budget.scalar(value.maximumLiftedBytes().get()));
+        if (value.maximumTypeNodes().isPresent()) result.setMaximumTypeNodes(budget.scalar(value.maximumTypeNodes().get()));
+        if (value.declaredBudget().isPresent()) result.setDeclaredBudget(toWire(value.declaredBudget().get(), budget, depth + 1));
+        for (var item : budget.list(value.imports(), 128)) result.addImports(budget.text(item));
+        for (var item : budget.list(value.exports(), 128)) result.addExports(toWire(item, budget, depth + 1));
+        for (var item : budget.list(value.typeImports(), 128)) result.addTypeImports(budget.text(item));
         return result.build();
     }
 
@@ -930,24 +1165,29 @@ public final class Wire {
     }
 
     public static latent.control.v1.Node.TargetCandidate toWire(Management.TargetCandidate value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Node.TargetCandidate toWire(Management.TargetCandidate value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Node.TargetCandidate.newBuilder();
-        result.setDeploymentId(value.deploymentId());
-        result.setDeploymentGeneration(value.deploymentGeneration());
-        result.setRevisionId(value.revisionId());
-        result.setComponentDigest(value.componentDigest());
-        if (value.publication().isPresent()) result.setPublication(toWire(value.publication().get()));
-        if (value.requestedPublication().isPresent()) result.setRequestedPublication(toWire(value.requestedPublication().get()));
-        if (value.packageDigest().isPresent()) result.setPackageDigest(value.packageDigest().get());
-        if (value.publicationGeneration().isPresent()) result.setPublicationGeneration(value.publicationGeneration().get());
-        result.setRoutingWeight(value.routingWeight());
-        result.setExportCompatible(value.exportCompatible());
-        result.setHttpCompatible(value.httpCompatible());
-        result.setEligible(value.eligible());
-        for (var item : value.reasons()) result.addReasonsValue(item.value());
-        for (var item : value.dependencies()) result.addDependencies(toWire(item));
-        if (value.preparation().isPresent()) result.setPreparation(toWire(value.preparation().get()));
-        if (value.publicationKind().isPresent()) result.setPublicationKind(value.publicationKind().get());
-        for (var item : value.httpBindings()) result.addHttpBindings(toWire(item));
+        result.setDeploymentId(budget.text(value.deploymentId()));
+        result.setDeploymentGeneration(budget.scalar(value.deploymentGeneration()));
+        result.setRevisionId(budget.text(value.revisionId()));
+        result.setComponentDigest(budget.text(value.componentDigest()));
+        if (value.publication().isPresent()) result.setPublication(toWire(value.publication().get(), budget, depth + 1));
+        if (value.requestedPublication().isPresent()) result.setRequestedPublication(toWire(value.requestedPublication().get(), budget, depth + 1));
+        if (value.packageDigest().isPresent()) result.setPackageDigest(budget.text(value.packageDigest().get()));
+        if (value.publicationGeneration().isPresent()) result.setPublicationGeneration(budget.scalar(value.publicationGeneration().get()));
+        result.setRoutingWeight(budget.scalar(value.routingWeight()));
+        result.setExportCompatible(budget.scalar(value.exportCompatible()));
+        result.setHttpCompatible(budget.scalar(value.httpCompatible()));
+        result.setEligible(budget.scalar(value.eligible()));
+        for (var item : budget.list(value.reasons(), 128)) result.addReasonsValue(budget.scalar(item.value()));
+        for (var item : budget.list(value.dependencies(), 128)) result.addDependencies(toWire(item, budget, depth + 1));
+        if (value.preparation().isPresent()) result.setPreparation(toWire(value.preparation().get(), budget, depth + 1));
+        if (value.publicationKind().isPresent()) result.setPublicationKind(budget.text(value.publicationKind().get()));
+        for (var item : budget.list(value.httpBindings(), 128)) result.addHttpBindings(toWire(item, budget, depth + 1));
         return result.build();
     }
 
@@ -973,11 +1213,16 @@ public final class Wire {
     }
 
     public static latent.control.v1.Node.InspectedHttpBinding toWire(Management.InspectedHttpBinding value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Node.InspectedHttpBinding toWire(Management.InspectedHttpBinding value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Node.InspectedHttpBinding.newBuilder();
-        result.setId(value.id());
-        result.setGeneration(value.generation());
-        result.setSelectedDeploymentGeneration(value.selectedDeploymentGeneration());
-        result.setState(value.state());
+        result.setId(budget.text(value.id()));
+        result.setGeneration(budget.scalar(value.generation()));
+        result.setSelectedDeploymentGeneration(budget.scalar(value.selectedDeploymentGeneration()));
+        result.setState(budget.text(value.state()));
         return result.build();
     }
 
@@ -990,21 +1235,26 @@ public final class Wire {
     }
 
     public static latent.control.v1.Node.InspectHttpTargetResponse toWire(Management.InspectHttpTargetResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Node.InspectHttpTargetResponse toWire(Management.InspectHttpTargetResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Node.InspectHttpTargetResponse.newBuilder();
-        result.setSchemaVersion(value.schemaVersion());
-        result.setTenant(value.tenant());
-        result.setService(value.service());
-        result.setContract(value.contract());
-        result.setFunction(value.function());
-        result.setRoute(value.route());
-        result.setStateValue(value.state().value());
-        result.setCatalogTransaction(value.catalogTransaction());
-        result.setRouteGeneration(value.routeGeneration());
-        result.setBindingGeneration(value.bindingGeneration());
-        if (value.policyStoreGeneration().isPresent()) result.setPolicyStoreGeneration(value.policyStoreGeneration().get());
-        for (var item : value.candidates()) result.addCandidates(toWire(item));
-        if (value.selectedRevisionId().isPresent()) result.setSelectedRevisionId(value.selectedRevisionId().get());
-        result.setLiveGrantsChecked(value.liveGrantsChecked());
+        result.setSchemaVersion(budget.scalar(value.schemaVersion()));
+        result.setTenant(budget.text(value.tenant()));
+        result.setService(budget.text(value.service()));
+        result.setContract(budget.text(value.contract()));
+        result.setFunction(budget.text(value.function()));
+        result.setRoute(budget.text(value.route()));
+        result.setStateValue(budget.scalar(value.state().value()));
+        result.setCatalogTransaction(budget.scalar(value.catalogTransaction()));
+        result.setRouteGeneration(budget.scalar(value.routeGeneration()));
+        result.setBindingGeneration(budget.scalar(value.bindingGeneration()));
+        if (value.policyStoreGeneration().isPresent()) result.setPolicyStoreGeneration(budget.scalar(value.policyStoreGeneration().get()));
+        for (var item : budget.list(value.candidates(), 128)) result.addCandidates(toWire(item, budget, depth + 1));
+        if (value.selectedRevisionId().isPresent()) result.setSelectedRevisionId(budget.text(value.selectedRevisionId().get()));
+        result.setLiveGrantsChecked(budget.scalar(value.liveGrantsChecked()));
         return result.build();
     }
 
@@ -1027,18 +1277,23 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.ResourceBudget toInvocationResourceBudget(Management.ResourceBudget value) {
+        return toInvocationResourceBudget(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.ResourceBudget toInvocationResourceBudget(Management.ResourceBudget value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.ResourceBudget.newBuilder();
-        result.setCpuFuel(value.cpuFuel());
-        result.setMemoryBytes(value.memoryBytes());
-        result.setChildCalls(value.childCalls());
-        result.setOutboundRequests(value.outboundRequests());
-        result.setStateReadBytes(value.stateReadBytes());
-        result.setStateWriteBytes(value.stateWriteBytes());
-        result.setBlobReadBytes(value.blobReadBytes());
-        result.setBlobWriteBytes(value.blobWriteBytes());
-        result.setLogBytes(value.logBytes());
-        result.setEffectCount(value.effectCount());
-        if (value.wallTimeLimitMillis().isPresent()) result.setWallTimeLimitMillis(value.wallTimeLimitMillis().get());
+        result.setCpuFuel(budget.scalar(value.cpuFuel()));
+        result.setMemoryBytes(budget.scalar(value.memoryBytes()));
+        result.setChildCalls(budget.scalar(value.childCalls()));
+        result.setOutboundRequests(budget.scalar(value.outboundRequests()));
+        result.setStateReadBytes(budget.scalar(value.stateReadBytes()));
+        result.setStateWriteBytes(budget.scalar(value.stateWriteBytes()));
+        result.setBlobReadBytes(budget.scalar(value.blobReadBytes()));
+        result.setBlobWriteBytes(budget.scalar(value.blobWriteBytes()));
+        result.setLogBytes(budget.scalar(value.logBytes()));
+        result.setEffectCount(budget.scalar(value.effectCount()));
+        if (value.wallTimeLimitMillis().isPresent()) result.setWallTimeLimitMillis(budget.scalar(value.wallTimeLimitMillis().get()));
         return result.build();
     }
 
@@ -1058,9 +1313,14 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.ErrorDetail toInvocationErrorDetail(Management.ErrorDetail value) {
+        return toInvocationErrorDetail(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.ErrorDetail toInvocationErrorDetail(Management.ErrorDetail value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.ErrorDetail.newBuilder();
-        result.setKind(value.kind());
-        result.putAllFields(value.fields());
+        result.setKind(budget.text(value.kind()));
+        result.putAllFields(budget.map(value.fields()));
         return result.build();
     }
 
@@ -1071,11 +1331,16 @@ public final class Wire {
     }
 
     public static latent.invocation.v1.Invocation.PlatformError toInvocationPlatformError(Management.PlatformError value) {
+        return toInvocationPlatformError(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.invocation.v1.Invocation.PlatformError toInvocationPlatformError(Management.PlatformError value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.invocation.v1.Invocation.PlatformError.newBuilder();
-        result.setCode(value.code());
-        result.setMessage(value.message());
-        result.setRetryable(value.retryable());
-        for (var item : value.detailItems()) result.addDetailItems(toInvocationErrorDetail(item));
+        result.setCode(budget.text(value.code()));
+        result.setMessage(budget.text(value.message()));
+        result.setRetryable(budget.scalar(value.retryable()));
+        for (var item : budget.list(value.detailItems(), 128)) result.addDetailItems(toInvocationErrorDetail(item, budget, depth + 1));
         return result.build();
     }
 

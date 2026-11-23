@@ -78,7 +78,10 @@ separate current authority and physical ownership. Engine tests do not establish
 the complete native, application or packaged acceptance gates.
 
 - [State, transactions and durable effects](docs/architecture/state-and-effects.md)
-- [Verified local payload custody and its integration limits](crates/latent-local-blobs/README.md)
+- [Standalone payload verification and state replacement](docs/architecture/blob-model.md#ownership-and-retention)
+- [Entity queue admission and duplicate observers](docs/development/entity-lanes.md)
+- [Signed outbound JetStream effects](docs/development/deferred-jetstream.md) and [incoming inbox availability](docs/runtime/nats-triggers.md#transactional-inbox-status)
+- [Command recovery and effect inspection by CLI or browser](docs/operations/transaction-recovery.md#inspect-the-commit-and-effect-separately)
 - [Application schema and retained-format compatibility](docs/architecture/application-schema-compatibility.md)
 - [Namespace history, schema and recovery epochs](docs/architecture/namespace-history-epochs.md)
 - [Response retention and reserved recovery capacity](docs/architecture/transaction-retention.md)

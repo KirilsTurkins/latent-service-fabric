@@ -29,7 +29,7 @@ impl ExecutionIsolationProfile {
     pub(crate) fn validate_platform(self) -> Result<(), PlatformError> {
         if self == Self::ExternalCapsule
             && (!cfg!(all(target_os = "linux", target_arch = "x86_64"))
-                || super::WASMTIME_VERSION != "48.0.8")
+                || super::WASMTIME_VERSION != "48.0.9")
         {
             return Err(failure("external-capsule-runtime-profile-unavailable"));
         }

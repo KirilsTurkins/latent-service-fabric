@@ -126,6 +126,7 @@ on:
       - 'tools/tests/test_typescript_fetch_component.py'
       - 'tools/qualify_typescript_fetch_runtime.py'
       - 'tools/tests/test_typescript_fetch_runtime.py'
+      - 'tools/check_typescript_abort_event_types.py'
       - 'tools/tests/test_typescript_application_dependencies.py'
       - 'tools/*rust_capsule*.py'
       - 'crates/latent-wasmtime/tests/**'
@@ -266,6 +267,7 @@ on:
       - 'tools/tests/test_typescript_fetch_component.py'
       - 'tools/qualify_typescript_fetch_runtime.py'
       - 'tools/tests/test_typescript_fetch_runtime.py'
+      - 'tools/check_typescript_abort_event_types.py'
       - 'tools/tests/test_typescript_application_dependencies.py'
       - 'tools/*rust_capsule*.py'
       - 'crates/latent-wasmtime/tests/**'
@@ -1027,6 +1029,8 @@ jobs:
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Install the original locked compiler namespace
         run: python3 tools/typescript_capsule.py install-tools "$RUNNER_TEMP/typescript-signed-fetch-tools"
+      - name: Check strict AbortSignal event types and unchanged signed Fetch source
+        run: python3 tools/check_typescript_abort_event_types.py --tools "$RUNNER_TEMP/typescript-signed-fetch-tools"
       - name: Check actual generated task entry and original waiter invariants
         run: python3 -m unittest tools.tests.test_typescript_idle_tasks tools.tests.test_typescript_async_waiters -v
       - name: Check actual native import carrier and typed await retirement

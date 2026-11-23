@@ -924,6 +924,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
                 fixture / 'ScheduledFactoryConcurrencyActivationControl.java',
                 fixture / 'ManagedFirstAdmissionActivationControl.java',
                 fixture / 'ManagedCachedFactoryActivationControl.java',
+                fixture / 'ManagedCachedHandoffActivationControl.java',
                 fixture / 'CompletableMinimalStageActivationControl.java',
                 fixture / 'FutureTaskInterruptMonitorActivationControl.java']
     sources += sorted((sdk / 'fibers/dev/latent/guest/runtime/concurrent').glob('*.java'))
@@ -990,6 +991,13 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
             str(output) + os.pathsep + classpath, 'ManagedCachedFactoryActivationControl', mode).strip()
         if actual != 'MANAGED_CACHED_FACTORY_ACTIVATION PASS ' + mode:
             raise ValueError('Java cached factory activation control did not complete: ' + mode)
+    cached_handoff_activation_modes = ('graceful', 'immediate', 'cancel', 'queue-denied', 'queue-lost',
+        'idle-registry-lost', 'two')
+    for mode in cached_handoff_activation_modes:
+        actual = compiler.run('managed-cached-handoff-activation-' + mode, 'java', '-Xmx256m', '-cp',
+            str(output) + os.pathsep + classpath, 'ManagedCachedHandoffActivationControl', mode).strip()
+        if actual != 'MANAGED_CACHED_HANDOFF_ACTIVATION PASS ' + mode:
+            raise ValueError('Java cached handoff activation control did not complete: ' + mode)
     actual = compiler.run('completable-minimal-activation-source', 'java', '-Xmx256m', '-cp',
         str(output) + os.pathsep + classpath, 'CompletableMinimalStageActivationControl').strip()
     if actual != 'COMPLETABLE_MINIMAL_STAGE_ACTIVATION PASS copy-cancel;running;root-fenced;retired':
@@ -1025,6 +1033,7 @@ def timer_sleep_admission_source_control(compiler: Compiler, output: Path) -> di
         'scheduledFactoryConcurrencyActivation': list(factory_activation_modes),
         'managedFirstAdmissionActivation': list(managed_first_activation_modes),
         'managedCachedFactoryActivation': list(cached_factory_activation_modes),
+        'managedCachedHandoffActivation': list(cached_handoff_activation_modes),
         'completableMinimalActivation': 'private-host-running-root-fence-passed',
         'futureTaskInterruptMonitorActivation': 'private-host-running-root-fence-passed',
         'ownerAdmissionCases': list(owner_cases), 'ownerSettlementCases': list(OWNER_SETTLEMENT_CASES),
@@ -1240,6 +1249,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ScheduledFutureResultSettlementControl.java', 'CompletableFutureResultSettlementControl.java',
         'ManagedReentrantFactoryOwnerControl.java', 'ManagedNullFactoryOwnerControl.java',
         'ManagedFirstAdmissionOwnerControl.java', 'ManagedCachedFactoryOwnerControl.java',
+        'ManagedCachedHandoffOwnerControl.java',
         'ManagedExecutorStatusOwnerControl.java',
         'ScheduledExecutorStatusOwnerControl.java', 'ScheduledFactoryConcurrencyOwnerControl.java',
         'CompletableObtrudeOwnerControl.java',
@@ -1330,7 +1340,7 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'ManagedFirstAdmissionReferenceControl').strip()
     if result != expected_managed_first: raise ValueError('Java managed first admission reference did not complete')
     expected_managed_cached = ('MANAGED_CACHED_FACTORY PASS nested;shutdown-thread-null-throw;refusal;committed;'
-        'idle-reuse;growth;concurrent-reservations;idle-shutdown-difference;live-thread')
+        'idle-reuse;growth;concurrent-reservations;idle-shutdown-handoff;two-handoffs;live-thread')
     result = compiler.run('managed-cached-factory-reference-jdk', 'java', '-Xmx256m', '-cp', jdk_output,
         'ManagedCachedFactoryReferenceControl', 'jdk').strip()
     if result != expected_managed_cached: raise ValueError('Java managed cached factory reference did not complete')
@@ -1644,6 +1654,13 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
             'ManagedCachedFactoryOwnerControl', mode).strip()
         if result != 'MANAGED_CACHED_FACTORY_OWNER PASS ' + mode:
             raise ValueError('Java managed cached factory owner control did not complete: ' + mode)
+    cached_handoff_modes = ('graceful', 'immediate', 'cancel', 'queue-denied', 'queue-lost',
+                            'interrupt-throws', 'idle-registry-lost', 'two', 'not-idle', 'default-async')
+    for mode in cached_handoff_modes:
+        result = compiler.run('managed-cached-handoff-owner-' + mode, 'java', '-Xmx256m', '-cp', output,
+            'ManagedCachedHandoffOwnerControl', mode).strip()
+        if result != 'MANAGED_CACHED_HANDOFF_OWNER PASS ' + mode:
+            raise ValueError('Java managed cached handoff owner control did not complete: ' + mode)
     managed_null_result = compiler.run('managed-null-factory-source', 'java', '-Xmx256m', '-cp', output,
         'ManagedNullFactoryReferenceControl', 'source').strip()
     if managed_null_result != expected_managed_null: raise ValueError('Java managed null factory source differs from reference')
@@ -1809,7 +1826,8 @@ def scheduled_source_control(compiler: Compiler, output: Path) -> dict:
         'managedReentrantFactory': list(managed_factory_modes),
         'managedFirstAdmission': {'cases': list(managed_first_modes), 'status': 'JDK-and-SDK-source-controls-passed'},
         'managedCachedFactory': {'cases': list(cached_factory_modes), 'status': 'JDK-and-SDK-source-controls-passed',
-                                 'idleShutdownDifference': 'documented-sdk-queue-versus-jdk-handoff'},
+                                 'idleShutdownHandoff': 'JDK-and-SDK-source-controls-passed'},
+        'managedCachedHandoff': {'cases': list(cached_handoff_modes), 'status': 'SDK-source-controls-passed'},
         'completableObtrude': {'cases': list(obtrude_modes), 'status': 'JDK-and-SDK-source-controls-passed'},
         'completableDefaultAsync': {'cases': list(default_async_modes), 'status': 'JDK-and-SDK-source-controls-passed'},
         'completableMinimalStage': {'cases': list(minimal_modes), 'status': 'JDK-and-SDK-source-controls-passed'},

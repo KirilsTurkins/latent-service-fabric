@@ -768,7 +768,23 @@ async fn connect_registration_interrupted(interruption: ConnectAuditInterruption
             .unwrap(),
         0
     );
-    assert_eq!(fixture.pools.snapshot().unwrap().connections, 0);
+    // Maintenance can hold the snapshot lock after the socket is already
+    // closed. Retry only that observation error, never a nonzero snapshot.
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let snapshot = loop {
+        match fixture.pools.snapshot() {
+            Ok(snapshot) => break snapshot,
+            Err(error)
+                if error.code == latent_core::PlatformErrorCode::ResourceExhausted
+                    && error.message == "capability-busy"
+                    && Instant::now() < deadline =>
+            {
+                tokio::task::yield_now().await;
+            }
+            Err(error) => panic!("pool snapshot failed after connect refusal: {error:?}"),
+        }
+    };
+    assert_eq!(snapshot.connections, 0);
     drop((peer, session));
     fixture.clean().await;
     drop(fixture);

@@ -10,11 +10,16 @@ final class TransactionWire {
     private TransactionWire() { }
 
     static latent.transaction.v1.Transaction.AbortFence toWire(Transactions.AbortFence value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.AbortFence toWire(Transactions.AbortFence value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.AbortFence.newBuilder();
-        result.setCommandId(value.commandId());
-        result.setAttemptId(value.attemptId());
-        result.setTransactionId(value.transactionId());
-        result.setOwnerFence(ByteString.copyFrom(value.ownerFence().asReadOnlyBuffer()));
+        result.setCommandId(budget.text(value.commandId()));
+        result.setAttemptId(budget.text(value.attemptId()));
+        result.setTransactionId(budget.text(value.transactionId()));
+        result.setOwnerFence(budget.bytes(value.ownerFence()));
         return result.build();
     }
 
@@ -27,10 +32,15 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.TransactionProfile toWire(Transactions.TransactionProfile value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.TransactionProfile toWire(Transactions.TransactionProfile value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.TransactionProfile.newBuilder();
-        result.setProfile(value.profile());
-        result.setHostAbiDigest(value.hostAbiDigest());
-        result.setPreparationProfileDigest(value.preparationProfileDigest());
+        result.setProfile(budget.text(value.profile()));
+        result.setHostAbiDigest(budget.text(value.hostAbiDigest()));
+        result.setPreparationProfileDigest(budget.text(value.preparationProfileDigest()));
         return result.build();
     }
 
@@ -42,10 +52,15 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.NamespaceSelector toWire(Transactions.NamespaceSelector value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.NamespaceSelector toWire(Transactions.NamespaceSelector value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.NamespaceSelector.newBuilder();
-        result.setTenant(value.tenant());
-        result.setNamespace(value.namespace());
-        result.setIncarnation(value.incarnation());
+        result.setTenant(budget.text(value.tenant()));
+        result.setNamespace(budget.text(value.namespace()));
+        result.setIncarnation(budget.text(value.incarnation()));
         return result.build();
     }
 
@@ -57,12 +72,17 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.CommandSelector toWire(Transactions.CommandSelector value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.CommandSelector toWire(Transactions.CommandSelector value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.CommandSelector.newBuilder();
-        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
-        result.setOperation(value.operation());
-        if (value.entity().isPresent()) result.setEntity(value.entity().get());
-        result.setClientKey(value.clientKey());
-        if (value.sharedRecoveryScope().isPresent()) result.setSharedRecoveryScope(value.sharedRecoveryScope().get());
+        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get(), budget, depth + 1));
+        result.setOperation(budget.text(value.operation()));
+        if (value.entity().isPresent()) result.setEntity(budget.text(value.entity().get()));
+        result.setClientKey(budget.text(value.clientKey()));
+        if (value.sharedRecoveryScope().isPresent()) result.setSharedRecoveryScope(budget.text(value.sharedRecoveryScope().get()));
         return result.build();
     }
 
@@ -76,11 +96,16 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.LookupCommandRequest toWire(Transactions.LookupCommandRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.LookupCommandRequest toWire(Transactions.LookupCommandRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.LookupCommandRequest.newBuilder();
-        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get()));
-        if (value.command().isPresent()) result.setCommand(toWire(value.command().get()));
-        if (value.attemptId().isPresent()) result.setAttemptId(value.attemptId().get());
-        if (value.authorizationPublication().isPresent()) result.setAuthorizationPublication(Wire.toWire(value.authorizationPublication().get()));
+        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get(), budget, depth + 1));
+        if (value.command().isPresent()) result.setCommand(toWire(value.command().get(), budget, depth + 1));
+        if (value.attemptId().isPresent()) result.setAttemptId(budget.text(value.attemptId().get()));
+        if (value.authorizationPublication().isPresent()) result.setAuthorizationPublication(Wire.toWire(value.authorizationPublication().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -93,9 +118,14 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.CancelCommandRequest toWire(Transactions.CancelCommandRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.CancelCommandRequest toWire(Transactions.CancelCommandRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.CancelCommandRequest.newBuilder();
-        if (value.command().isPresent()) result.setCommand(toWire(value.command().get()));
-        result.setReason(value.reason());
+        if (value.command().isPresent()) result.setCommand(toWire(value.command().get(), budget, depth + 1));
+        result.setReason(budget.text(value.reason()));
         return result.build();
     }
 
@@ -106,12 +136,17 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.CommandKey toWire(Transactions.CommandKey value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.CommandKey toWire(Transactions.CommandKey value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.CommandKey.newBuilder();
-        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
-        result.setRecoveryScope(value.recoveryScope());
-        result.setOperation(value.operation());
-        if (value.entity().isPresent()) result.setEntity(value.entity().get());
-        result.setClientKey(value.clientKey());
+        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get(), budget, depth + 1));
+        result.setRecoveryScope(budget.text(value.recoveryScope()));
+        result.setOperation(budget.text(value.operation()));
+        if (value.entity().isPresent()) result.setEntity(budget.text(value.entity().get()));
+        result.setClientKey(budget.text(value.clientKey()));
         return result.build();
     }
 
@@ -125,16 +160,21 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.SourceIdentity toWire(Transactions.SourceIdentity value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.SourceIdentity toWire(Transactions.SourceIdentity value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.SourceIdentity.newBuilder();
-        result.setPublicationId(value.publicationId());
-        result.setRevisionId(value.revisionId());
-        result.setReleaseDigest(value.releaseDigest());
-        result.setRouteGeneration(value.routeGeneration());
-        result.setContractDigest(value.contractDigest());
-        result.setStateSchema(value.stateSchema());
-        result.setInputFormat(value.inputFormat());
-        result.setResultFormat(value.resultFormat());
-        result.setComponentDigest(value.componentDigest());
+        result.setPublicationId(budget.text(value.publicationId()));
+        result.setRevisionId(budget.text(value.revisionId()));
+        result.setReleaseDigest(budget.text(value.releaseDigest()));
+        result.setRouteGeneration(budget.scalar(value.routeGeneration()));
+        result.setContractDigest(budget.text(value.contractDigest()));
+        result.setStateSchema(budget.text(value.stateSchema()));
+        result.setInputFormat(budget.text(value.inputFormat()));
+        result.setResultFormat(budget.text(value.resultFormat()));
+        result.setComponentDigest(budget.text(value.componentDigest()));
         return result.build();
     }
 
@@ -152,15 +192,20 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.CommitReceipt toWire(Transactions.CommitReceipt value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.CommitReceipt toWire(Transactions.CommitReceipt value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.CommitReceipt.newBuilder();
-        result.setCommandId(value.commandId());
-        result.setAttemptId(value.attemptId());
-        result.setTransactionId(value.transactionId());
-        result.setCommittedVersion(ByteString.copyFrom(value.committedVersion().asReadOnlyBuffer()));
-        result.setCommittedAtUnixMillis(value.committedAtUnixMillis());
-        for (var item : value.effectIds()) result.addEffectIds(item);
-        result.setReceiptId(value.receiptId());
-        if (value.source().isPresent()) result.setSource(toWire(value.source().get()));
+        result.setCommandId(budget.text(value.commandId()));
+        result.setAttemptId(budget.text(value.attemptId()));
+        result.setTransactionId(budget.text(value.transactionId()));
+        result.setCommittedVersion(budget.bytes(value.committedVersion()));
+        result.setCommittedAtUnixMillis(budget.scalar(value.committedAtUnixMillis()));
+        for (var item : budget.list(value.effectIds(), 128)) result.addEffectIds(budget.text(item));
+        result.setReceiptId(budget.text(value.receiptId()));
+        if (value.source().isPresent()) result.setSource(toWire(value.source().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -177,14 +222,19 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.LinkedRetention toWire(Transactions.LinkedRetention value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.LinkedRetention toWire(Transactions.LinkedRetention value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.LinkedRetention.newBuilder();
-        result.setRecordFormat(value.recordFormat());
-        result.setRecordVersion(value.recordVersion());
-        if (value.payloadExpiresAtUnixMillis().isPresent()) result.setPayloadExpiresAtUnixMillis(value.payloadExpiresAtUnixMillis().get());
-        if (value.identityExpiresAtUnixMillis().isPresent()) result.setIdentityExpiresAtUnixMillis(value.identityExpiresAtUnixMillis().get());
-        if (value.remainingRecoveryMillis().isPresent()) result.setRemainingRecoveryMillis(value.remainingRecoveryMillis().get());
-        for (var item : value.requiredRecordIds()) result.addRequiredRecordIds(item);
-        result.setPayloadAvailable(value.payloadAvailable());
+        result.setRecordFormat(budget.text(value.recordFormat()));
+        result.setRecordVersion(budget.scalar(value.recordVersion()));
+        if (value.payloadExpiresAtUnixMillis().isPresent()) result.setPayloadExpiresAtUnixMillis(budget.scalar(value.payloadExpiresAtUnixMillis().get()));
+        if (value.identityExpiresAtUnixMillis().isPresent()) result.setIdentityExpiresAtUnixMillis(budget.scalar(value.identityExpiresAtUnixMillis().get()));
+        if (value.remainingRecoveryMillis().isPresent()) result.setRemainingRecoveryMillis(budget.scalar(value.remainingRecoveryMillis().get()));
+        for (var item : budget.list(value.requiredRecordIds(), 256)) result.addRequiredRecordIds(budget.text(item));
+        result.setPayloadAvailable(budget.scalar(value.payloadAvailable()));
         return result.build();
     }
 
@@ -200,23 +250,28 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.CommandInspection toWire(Transactions.CommandInspection value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.CommandInspection toWire(Transactions.CommandInspection value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.CommandInspection.newBuilder();
         if ((value.success().isPresent() ? 1 : 0) + (value.businessRejection().isPresent() ? 1 : 0) + (value.technicalFailure().isPresent() ? 1 : 0) > 1) throw new IllegalArgumentException("contradictory oneof");
-        if (value.key().isPresent()) result.setKey(toWire(value.key().get()));
-        result.setCommandId(value.commandId());
-        result.setAttemptId(value.attemptId());
-        result.setFingerprintSha256(ByteString.copyFrom(value.fingerprintSha256().asReadOnlyBuffer()));
-        result.setOutcomeValue(value.outcome().value());
-        result.setMetadataDurable(value.metadataDurable());
-        result.setApplicationStateCommitted(value.applicationStateCommitted());
-        if (value.source().isPresent()) result.setSource(toWire(value.source().get()));
-        if (value.success().isPresent()) result.setSuccess(Wire.toWire(value.success().get()));
-        if (value.businessRejection().isPresent()) result.setBusinessRejection(Wire.toWire(value.businessRejection().get()));
-        if (value.technicalFailure().isPresent()) result.setTechnicalFailure(Wire.toInvocationPlatformError(value.technicalFailure().get()));
-        if (value.commit().isPresent()) result.setCommit(toWire(value.commit().get()));
-        if (value.provenAbort().isPresent()) result.setProvenAbort(toWire(value.provenAbort().get()));
-        if (value.retention().isPresent()) result.setRetention(toWire(value.retention().get()));
-        if (value.cleanupFailure().isPresent()) result.setCleanupFailure(Wire.toInvocationPlatformError(value.cleanupFailure().get()));
+        if (value.key().isPresent()) result.setKey(toWire(value.key().get(), budget, depth + 1));
+        result.setCommandId(budget.text(value.commandId()));
+        result.setAttemptId(budget.text(value.attemptId()));
+        result.setFingerprintSha256(budget.bytes(value.fingerprintSha256()));
+        result.setOutcomeValue(budget.scalar(value.outcome().value()));
+        result.setMetadataDurable(budget.scalar(value.metadataDurable()));
+        result.setApplicationStateCommitted(budget.scalar(value.applicationStateCommitted()));
+        if (value.source().isPresent()) result.setSource(toWire(value.source().get(), budget, depth + 1));
+        if (value.success().isPresent()) result.setSuccess(Wire.toWire(value.success().get(), budget, depth + 1));
+        if (value.businessRejection().isPresent()) result.setBusinessRejection(Wire.toWire(value.businessRejection().get(), budget, depth + 1));
+        if (value.technicalFailure().isPresent()) result.setTechnicalFailure(Wire.toInvocationPlatformError(value.technicalFailure().get(), budget, depth + 1));
+        if (value.commit().isPresent()) result.setCommit(toWire(value.commit().get(), budget, depth + 1));
+        if (value.provenAbort().isPresent()) result.setProvenAbort(toWire(value.provenAbort().get(), budget, depth + 1));
+        if (value.retention().isPresent()) result.setRetention(toWire(value.retention().get(), budget, depth + 1));
+        if (value.cleanupFailure().isPresent()) result.setCleanupFailure(Wire.toInvocationPlatformError(value.cleanupFailure().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -240,9 +295,14 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.CancelCommandResponse toWire(Transactions.CancelCommandResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.CancelCommandResponse toWire(Transactions.CancelCommandResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.CancelCommandResponse.newBuilder();
-        result.setDispositionValue(value.disposition().value());
-        if (value.command().isPresent()) result.setCommand(toWire(value.command().get()));
+        result.setDispositionValue(budget.scalar(value.disposition().value()));
+        if (value.command().isPresent()) result.setCommand(toWire(value.command().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -253,9 +313,14 @@ final class TransactionWire {
     }
 
     static latent.control.v1.Dispatcher.DispatcherGeneration toWire(Transactions.DispatcherGeneration value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Dispatcher.DispatcherGeneration toWire(Transactions.DispatcherGeneration value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Dispatcher.DispatcherGeneration.newBuilder();
-        result.setOwnerEpoch(value.ownerEpoch());
-        result.setRevision(value.revision());
+        result.setOwnerEpoch(budget.scalar(value.ownerEpoch()));
+        result.setRevision(budget.scalar(value.revision()));
         return result.build();
     }
 
@@ -266,12 +331,17 @@ final class TransactionWire {
     }
 
     static latent.control.v1.Dispatcher.ControlDispatcherRequest toWire(Transactions.ControlDispatcherRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Dispatcher.ControlDispatcherRequest toWire(Transactions.ControlDispatcherRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Dispatcher.ControlDispatcherRequest.newBuilder();
-        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get()));
-        result.setScopeValue(value.scope().value());
-        result.setOperationId(value.operationId());
-        result.setActionValue(value.action().value());
-        if (value.expectedGeneration().isPresent()) result.setExpectedGeneration(toWire(value.expectedGeneration().get()));
+        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get(), budget, depth + 1));
+        result.setScopeValue(budget.scalar(value.scope().value()));
+        result.setOperationId(budget.text(value.operationId()));
+        result.setActionValue(budget.scalar(value.action().value()));
+        if (value.expectedGeneration().isPresent()) result.setExpectedGeneration(toWire(value.expectedGeneration().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -285,18 +355,23 @@ final class TransactionWire {
     }
 
     static latent.control.v1.Dispatcher.DispatcherOperationReceipt toWire(Transactions.DispatcherOperationReceipt value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Dispatcher.DispatcherOperationReceipt toWire(Transactions.DispatcherOperationReceipt value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Dispatcher.DispatcherOperationReceipt.newBuilder();
-        result.setOperationId(value.operationId());
-        result.setReceiptId(value.receiptId());
-        result.setActionValue(value.action().value());
-        result.setAuthenticatedOperator(value.authenticatedOperator());
-        result.setActorTenant(value.actorTenant());
-        if (value.beforeGeneration().isPresent()) result.setBeforeGeneration(toWire(value.beforeGeneration().get()));
-        if (value.afterGeneration().isPresent()) result.setAfterGeneration(toWire(value.afterGeneration().get()));
-        result.setObservedAtUnixMillis(value.observedAtUnixMillis());
-        result.setClockContinuityProven(value.clockContinuityProven());
-        result.setRestoreReviewRequired(value.restoreReviewRequired());
-        result.setDispositionValue(value.disposition().value());
+        result.setOperationId(budget.text(value.operationId()));
+        result.setReceiptId(budget.text(value.receiptId()));
+        result.setActionValue(budget.scalar(value.action().value()));
+        result.setAuthenticatedOperator(budget.text(value.authenticatedOperator()));
+        result.setActorTenant(budget.text(value.actorTenant()));
+        if (value.beforeGeneration().isPresent()) result.setBeforeGeneration(toWire(value.beforeGeneration().get(), budget, depth + 1));
+        if (value.afterGeneration().isPresent()) result.setAfterGeneration(toWire(value.afterGeneration().get(), budget, depth + 1));
+        result.setObservedAtUnixMillis(budget.scalar(value.observedAtUnixMillis()));
+        result.setClockContinuityProven(budget.scalar(value.clockContinuityProven()));
+        result.setRestoreReviewRequired(budget.scalar(value.restoreReviewRequired()));
+        result.setDispositionValue(budget.scalar(value.disposition().value()));
         return result.build();
     }
 
@@ -316,12 +391,17 @@ final class TransactionWire {
     }
 
     static latent.control.v1.Dispatcher.ControlDispatcherResponse toWire(Transactions.ControlDispatcherResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Dispatcher.ControlDispatcherResponse toWire(Transactions.ControlDispatcherResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Dispatcher.ControlDispatcherResponse.newBuilder();
-        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get()));
-        result.setReplayed(value.replayed());
-        result.setPublished(value.published());
-        result.setPaused(value.paused());
-        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get()));
+        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get(), budget, depth + 1));
+        result.setReplayed(budget.scalar(value.replayed()));
+        result.setPublished(budget.scalar(value.published()));
+        result.setPaused(budget.scalar(value.paused()));
+        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -335,29 +415,34 @@ final class TransactionWire {
     }
 
     static latent.control.v1.Dispatcher.DispatcherSnapshot toWire(Transactions.DispatcherSnapshot value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Dispatcher.DispatcherSnapshot toWire(Transactions.DispatcherSnapshot value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Dispatcher.DispatcherSnapshot.newBuilder();
-        if (value.generation().isPresent()) result.setGeneration(toWire(value.generation().get()));
-        result.setPaused(value.paused());
-        result.setPendingControl(value.pendingControl());
-        result.setRestoreReviewRequired(value.restoreReviewRequired());
-        result.setAdmissionClosed(value.admissionClosed());
-        result.setQuarantined(value.quarantined());
-        result.setFailureValue(value.failure().value());
-        result.setQueued(value.queued());
-        result.setActiveJobs(value.activeJobs());
-        result.setRetainedAttemptBytes(value.retainedAttemptBytes());
-        result.setLiveWorkers(value.liveWorkers());
-        result.setAcceptedEffects(value.acceptedEffects());
-        result.setPhysicalOwners(value.physicalOwners());
-        result.setQuarantinedPhysicalOwners(value.quarantinedPhysicalOwners());
-        result.setCommandOwners(value.commandOwners());
-        result.setClaims(value.claims());
-        result.setPendingEffects(value.pendingEffects());
-        result.setUncertainEffects(value.uncertainEffects());
-        result.setBlockedEffects(value.blockedEffects());
-        result.setDeadLetterEffects(value.deadLetterEffects());
-        result.setCountsObservedAtUnixMillis(value.countsObservedAtUnixMillis());
-        result.setClockContinuityProven(value.clockContinuityProven());
+        if (value.generation().isPresent()) result.setGeneration(toWire(value.generation().get(), budget, depth + 1));
+        result.setPaused(budget.scalar(value.paused()));
+        result.setPendingControl(budget.scalar(value.pendingControl()));
+        result.setRestoreReviewRequired(budget.scalar(value.restoreReviewRequired()));
+        result.setAdmissionClosed(budget.scalar(value.admissionClosed()));
+        result.setQuarantined(budget.scalar(value.quarantined()));
+        result.setFailureValue(budget.scalar(value.failure().value()));
+        result.setQueued(budget.scalar(value.queued()));
+        result.setActiveJobs(budget.scalar(value.activeJobs()));
+        result.setRetainedAttemptBytes(budget.scalar(value.retainedAttemptBytes()));
+        result.setLiveWorkers(budget.scalar(value.liveWorkers()));
+        result.setAcceptedEffects(budget.scalar(value.acceptedEffects()));
+        result.setPhysicalOwners(budget.scalar(value.physicalOwners()));
+        result.setQuarantinedPhysicalOwners(budget.scalar(value.quarantinedPhysicalOwners()));
+        result.setCommandOwners(budget.scalar(value.commandOwners()));
+        result.setClaims(budget.scalar(value.claims()));
+        result.setPendingEffects(budget.scalar(value.pendingEffects()));
+        result.setUncertainEffects(budget.scalar(value.uncertainEffects()));
+        result.setBlockedEffects(budget.scalar(value.blockedEffects()));
+        result.setDeadLetterEffects(budget.scalar(value.deadLetterEffects()));
+        result.setCountsObservedAtUnixMillis(budget.scalar(value.countsObservedAtUnixMillis()));
+        result.setClockContinuityProven(budget.scalar(value.clockContinuityProven()));
         return result.build();
     }
 
@@ -388,11 +473,16 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.GetEffectRequest toWire(Transactions.GetEffectRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.GetEffectRequest toWire(Transactions.GetEffectRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.GetEffectRequest.newBuilder();
-        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get()));
-        if (value.command().isPresent()) result.setCommand(toWire(value.command().get()));
-        result.setEffectId(value.effectId());
-        if (value.authorizationPublication().isPresent()) result.setAuthorizationPublication(Wire.toWire(value.authorizationPublication().get()));
+        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get(), budget, depth + 1));
+        if (value.command().isPresent()) result.setCommand(toWire(value.command().get(), budget, depth + 1));
+        result.setEffectId(budget.text(value.effectId()));
+        if (value.authorizationPublication().isPresent()) result.setAuthorizationPublication(Wire.toWire(value.authorizationPublication().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -405,14 +495,19 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.PlanEffectMutationRequest toWire(Transactions.PlanEffectMutationRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.PlanEffectMutationRequest toWire(Transactions.PlanEffectMutationRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.PlanEffectMutationRequest.newBuilder();
-        if (value.effect().isPresent()) result.setEffect(toWire(value.effect().get()));
-        result.setOperationId(value.operationId());
-        result.setMutationValue(value.mutation().value());
-        result.setExpectedVersion(ByteString.copyFrom(value.expectedVersion().asReadOnlyBuffer()));
-        result.setExpectedPolicyDigest(value.expectedPolicyDigest());
-        result.setReason(value.reason());
-        result.setRetryDelayMillis(value.retryDelayMillis());
+        if (value.effect().isPresent()) result.setEffect(toWire(value.effect().get(), budget, depth + 1));
+        result.setOperationId(budget.text(value.operationId()));
+        result.setMutationValue(budget.scalar(value.mutation().value()));
+        result.setExpectedVersion(budget.bytes(value.expectedVersion()));
+        result.setExpectedPolicyDigest(budget.text(value.expectedPolicyDigest()));
+        result.setReason(budget.text(value.reason()));
+        result.setRetryDelayMillis(budget.scalar(value.retryDelayMillis()));
         return result.build();
     }
 
@@ -428,18 +523,23 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.EffectManagementPlan toWire(Transactions.EffectManagementPlan value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.EffectManagementPlan toWire(Transactions.EffectManagementPlan value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.EffectManagementPlan.newBuilder();
-        if (value.original().isPresent()) result.setOriginal(toWire(value.original().get()));
-        result.setPlanDigest(ByteString.copyFrom(value.planDigest().asReadOnlyBuffer()));
-        result.setManagementSequence(value.managementSequence());
-        result.setOwnerEpoch(value.ownerEpoch());
-        result.setClaimGeneration(value.claimGeneration());
-        result.setDispatchAttempt(value.dispatchAttempt());
-        result.setExpiresAtUnixMillis(value.expiresAtUnixMillis());
-        result.setPreparedAtUnixMillis(value.preparedAtUnixMillis());
-        result.setBeforeValue(value.before().value());
-        result.setSafetyValue(value.safety().value());
-        if (value.dedupValidUntilUnixMillis().isPresent()) result.setDedupValidUntilUnixMillis(value.dedupValidUntilUnixMillis().get());
+        if (value.original().isPresent()) result.setOriginal(toWire(value.original().get(), budget, depth + 1));
+        result.setPlanDigest(budget.bytes(value.planDigest()));
+        result.setManagementSequence(budget.scalar(value.managementSequence()));
+        result.setOwnerEpoch(budget.scalar(value.ownerEpoch()));
+        result.setClaimGeneration(budget.scalar(value.claimGeneration()));
+        result.setDispatchAttempt(budget.scalar(value.dispatchAttempt()));
+        result.setExpiresAtUnixMillis(budget.scalar(value.expiresAtUnixMillis()));
+        result.setPreparedAtUnixMillis(budget.scalar(value.preparedAtUnixMillis()));
+        result.setBeforeValue(budget.scalar(value.before().value()));
+        result.setSafetyValue(budget.scalar(value.safety().value()));
+        if (value.dedupValidUntilUnixMillis().isPresent()) result.setDedupValidUntilUnixMillis(budget.scalar(value.dedupValidUntilUnixMillis().get()));
         return result.build();
     }
 
@@ -459,13 +559,18 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.EffectManagementReceiptDetails toWire(Transactions.EffectManagementReceiptDetails value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.EffectManagementReceiptDetails toWire(Transactions.EffectManagementReceiptDetails value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.EffectManagementReceiptDetails.newBuilder();
-        if (value.originalPlan().isPresent()) result.setOriginalPlan(toWire(value.originalPlan().get()));
-        result.setBeforeValue(value.before().value());
-        result.setAfterValue(value.after().value());
-        result.setFactValue(value.fact().value());
-        if (value.providerReceipt().isPresent()) result.setProviderReceipt(value.providerReceipt().get());
-        if (value.providerObservedAtUnixMillis().isPresent()) result.setProviderObservedAtUnixMillis(value.providerObservedAtUnixMillis().get());
+        if (value.originalPlan().isPresent()) result.setOriginalPlan(toWire(value.originalPlan().get(), budget, depth + 1));
+        result.setBeforeValue(budget.scalar(value.before().value()));
+        result.setAfterValue(budget.scalar(value.after().value()));
+        result.setFactValue(budget.scalar(value.fact().value()));
+        if (value.providerReceipt().isPresent()) result.setProviderReceipt(budget.text(value.providerReceipt().get()));
+        if (value.providerObservedAtUnixMillis().isPresent()) result.setProviderObservedAtUnixMillis(budget.scalar(value.providerObservedAtUnixMillis().get()));
         return result.build();
     }
 
@@ -480,21 +585,26 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.EffectReceipt toWire(Transactions.EffectReceipt value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.EffectReceipt toWire(Transactions.EffectReceipt value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.EffectReceipt.newBuilder();
-        result.setEffectId(value.effectId());
-        result.setCommandId(value.commandId());
-        result.setCommandAttemptId(value.commandAttemptId());
-        result.setDispatchAttempt(value.dispatchAttempt());
-        result.setDispositionValue(value.disposition().value());
-        if (value.providerReceipt().isPresent()) result.setProviderReceipt(value.providerReceipt().get());
-        if (value.failureCode().isPresent()) result.setFailureCode(value.failureCode().get());
-        result.setOccurredAtUnixMillis(value.occurredAtUnixMillis());
-        if (value.retention().isPresent()) result.setRetention(toWire(value.retention().get()));
-        if (value.managementOperationReceiptId().isPresent()) result.setManagementOperationReceiptId(value.managementOperationReceiptId().get());
-        result.setProviderProfile(value.providerProfile());
-        result.setRecordVersion(ByteString.copyFrom(value.recordVersion().asReadOnlyBuffer()));
-        if (value.ownerEpoch().isPresent()) result.setOwnerEpoch(value.ownerEpoch().get());
-        if (value.claimGeneration().isPresent()) result.setClaimGeneration(value.claimGeneration().get());
+        result.setEffectId(budget.text(value.effectId()));
+        result.setCommandId(budget.text(value.commandId()));
+        result.setCommandAttemptId(budget.text(value.commandAttemptId()));
+        result.setDispatchAttempt(budget.scalar(value.dispatchAttempt()));
+        result.setDispositionValue(budget.scalar(value.disposition().value()));
+        if (value.providerReceipt().isPresent()) result.setProviderReceipt(budget.text(value.providerReceipt().get()));
+        if (value.failureCode().isPresent()) result.setFailureCode(budget.text(value.failureCode().get()));
+        result.setOccurredAtUnixMillis(budget.scalar(value.occurredAtUnixMillis()));
+        if (value.retention().isPresent()) result.setRetention(toWire(value.retention().get(), budget, depth + 1));
+        if (value.managementOperationReceiptId().isPresent()) result.setManagementOperationReceiptId(budget.text(value.managementOperationReceiptId().get()));
+        result.setProviderProfile(budget.text(value.providerProfile()));
+        result.setRecordVersion(budget.bytes(value.recordVersion()));
+        if (value.ownerEpoch().isPresent()) result.setOwnerEpoch(budget.scalar(value.ownerEpoch().get()));
+        if (value.claimGeneration().isPresent()) result.setClaimGeneration(budget.scalar(value.claimGeneration().get()));
         return result.build();
     }
 
@@ -517,9 +627,14 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.EntityInspection toWire(Transactions.EntityInspection value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.EntityInspection toWire(Transactions.EntityInspection value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.EntityInspection.newBuilder();
-        result.setEntity(value.entity());
-        result.setVersion(ByteString.copyFrom(value.version().asReadOnlyBuffer()));
+        result.setEntity(budget.text(value.entity()));
+        result.setVersion(budget.bytes(value.version()));
         return result.build();
     }
 
@@ -530,11 +645,16 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.ExpectedVersion toWire(Transactions.ExpectedVersion value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.ExpectedVersion toWire(Transactions.ExpectedVersion value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.ExpectedVersion.newBuilder();
         if ((value.absent().isPresent() ? 1 : 0) + (value.version().isPresent() ? 1 : 0) > 1) throw new IllegalArgumentException("contradictory oneof");
-        result.setKey(ByteString.copyFrom(value.key().asReadOnlyBuffer()));
-        if (value.absent().isPresent()) result.setAbsent(value.absent().get());
-        if (value.version().isPresent()) result.setVersion(ByteString.copyFrom(value.version().get().asReadOnlyBuffer()));
+        result.setKey(budget.bytes(value.key()));
+        if (value.absent().isPresent()) result.setAbsent(budget.scalar(value.absent().get()));
+        if (value.version().isPresent()) result.setVersion(budget.bytes(value.version().get()));
         return result.build();
     }
 
@@ -546,8 +666,13 @@ final class TransactionWire {
     }
 
     static latent.control.v1.Dispatcher.GetDispatcherOperationRequest toWire(Transactions.GetDispatcherOperationRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Dispatcher.GetDispatcherOperationRequest toWire(Transactions.GetDispatcherOperationRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Dispatcher.GetDispatcherOperationRequest.newBuilder();
-        if (value.original().isPresent()) result.setOriginal(toWire(value.original().get()));
+        if (value.original().isPresent()) result.setOriginal(toWire(value.original().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -557,9 +682,14 @@ final class TransactionWire {
     }
 
     static latent.control.v1.Dispatcher.GetDispatcherOperationResponse toWire(Transactions.GetDispatcherOperationResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Dispatcher.GetDispatcherOperationResponse toWire(Transactions.GetDispatcherOperationResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Dispatcher.GetDispatcherOperationResponse.newBuilder();
-        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get()));
-        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get()));
+        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get(), budget, depth + 1));
+        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -570,8 +700,13 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.GetEffectResponse toWire(Transactions.GetEffectResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.GetEffectResponse toWire(Transactions.GetEffectResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.GetEffectResponse.newBuilder();
-        if (value.effect().isPresent()) result.setEffect(toWire(value.effect().get()));
+        if (value.effect().isPresent()) result.setEffect(toWire(value.effect().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -581,10 +716,15 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.InspectNamespaceRequest toWire(Transactions.InspectNamespaceRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.InspectNamespaceRequest toWire(Transactions.InspectNamespaceRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.InspectNamespaceRequest.newBuilder();
-        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get()));
-        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
-        if (value.authorizationPublication().isPresent()) result.setAuthorizationPublication(Wire.toWire(value.authorizationPublication().get()));
+        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get(), budget, depth + 1));
+        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get(), budget, depth + 1));
+        if (value.authorizationPublication().isPresent()) result.setAuthorizationPublication(Wire.toWire(value.authorizationPublication().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -596,10 +736,15 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.GetStateOperationReceiptRequest toWire(Transactions.GetStateOperationReceiptRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.GetStateOperationReceiptRequest toWire(Transactions.GetStateOperationReceiptRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.GetStateOperationReceiptRequest.newBuilder();
-        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
-        result.setOperationId(value.operationId());
-        if (value.originalEffectPlan().isPresent()) result.setOriginalEffectPlan(toWire(value.originalEffectPlan().get()));
+        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get(), budget, depth + 1));
+        result.setOperationId(budget.text(value.operationId()));
+        if (value.originalEffectPlan().isPresent()) result.setOriginalEffectPlan(toWire(value.originalEffectPlan().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -611,19 +756,24 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.StateOperationReceipt toWire(Transactions.StateOperationReceipt value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.StateOperationReceipt toWire(Transactions.StateOperationReceipt value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.StateOperationReceipt.newBuilder();
-        result.setOperationId(value.operationId());
-        result.setReceiptId(value.receiptId());
-        result.setMutationValue(value.mutation().value());
-        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
-        result.setAuthenticatedOperator(value.authenticatedOperator());
-        result.setBeforeVersion(ByteString.copyFrom(value.beforeVersion().asReadOnlyBuffer()));
-        result.setAfterVersion(ByteString.copyFrom(value.afterVersion().asReadOnlyBuffer()));
-        result.setCompletedAtUnixMillis(value.completedAtUnixMillis());
-        if (value.recordId().isPresent()) result.setRecordId(value.recordId().get());
-        result.setPolicyDigest(value.policyDigest());
-        result.setDispositionValue(value.disposition().value());
-        if (value.effect().isPresent()) result.setEffect(toWire(value.effect().get()));
+        result.setOperationId(budget.text(value.operationId()));
+        result.setReceiptId(budget.text(value.receiptId()));
+        result.setMutationValue(budget.scalar(value.mutation().value()));
+        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get(), budget, depth + 1));
+        result.setAuthenticatedOperator(budget.text(value.authenticatedOperator()));
+        result.setBeforeVersion(budget.bytes(value.beforeVersion()));
+        result.setAfterVersion(budget.bytes(value.afterVersion()));
+        result.setCompletedAtUnixMillis(budget.scalar(value.completedAtUnixMillis()));
+        if (value.recordId().isPresent()) result.setRecordId(budget.text(value.recordId().get()));
+        result.setPolicyDigest(budget.text(value.policyDigest()));
+        result.setDispositionValue(budget.scalar(value.disposition().value()));
+        if (value.effect().isPresent()) result.setEffect(toWire(value.effect().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -644,17 +794,22 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.NamespaceOperationReceipt toWire(Transactions.NamespaceOperationReceipt value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.NamespaceOperationReceipt toWire(Transactions.NamespaceOperationReceipt value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.NamespaceOperationReceipt.newBuilder();
-        result.setOperationId(value.operationId());
-        result.setReceiptId(value.receiptId());
-        result.setMutationValue(value.mutation().value());
-        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
-        result.setAuthenticatedOperator(value.authenticatedOperator());
-        if (value.beforeGeneration().isPresent()) result.setBeforeGeneration(value.beforeGeneration().get());
-        result.setAfterGeneration(value.afterGeneration());
-        result.setStatusValue(value.status().value());
-        result.setStateSchema(value.stateSchema());
-        result.setDispositionValue(value.disposition().value());
+        result.setOperationId(budget.text(value.operationId()));
+        result.setReceiptId(budget.text(value.receiptId()));
+        result.setMutationValue(budget.scalar(value.mutation().value()));
+        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get(), budget, depth + 1));
+        result.setAuthenticatedOperator(budget.text(value.authenticatedOperator()));
+        if (value.beforeGeneration().isPresent()) result.setBeforeGeneration(budget.scalar(value.beforeGeneration().get()));
+        result.setAfterGeneration(budget.scalar(value.afterGeneration()));
+        result.setStatusValue(budget.scalar(value.status().value()));
+        result.setStateSchema(budget.text(value.stateSchema()));
+        result.setDispositionValue(budget.scalar(value.disposition().value()));
         return result.build();
     }
 
@@ -673,10 +828,15 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.GetStateOperationReceiptResponse toWire(Transactions.GetStateOperationReceiptResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.GetStateOperationReceiptResponse toWire(Transactions.GetStateOperationReceiptResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.GetStateOperationReceiptResponse.newBuilder();
-        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get()));
-        if (value.namespaceReceipt().isPresent()) result.setNamespaceReceipt(toWire(value.namespaceReceipt().get()));
-        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get()));
+        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get(), budget, depth + 1));
+        if (value.namespaceReceipt().isPresent()) result.setNamespaceReceipt(toWire(value.namespaceReceipt().get(), budget, depth + 1));
+        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -688,9 +848,14 @@ final class TransactionWire {
     }
 
     static latent.control.v1.Dispatcher.InspectDispatcherRequest toWire(Transactions.InspectDispatcherRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Dispatcher.InspectDispatcherRequest toWire(Transactions.InspectDispatcherRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Dispatcher.InspectDispatcherRequest.newBuilder();
-        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get()));
-        result.setScopeValue(value.scope().value());
+        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get(), budget, depth + 1));
+        result.setScopeValue(budget.scalar(value.scope().value()));
         return result.build();
     }
 
@@ -701,9 +866,14 @@ final class TransactionWire {
     }
 
     static latent.control.v1.Dispatcher.InspectDispatcherResponse toWire(Transactions.InspectDispatcherResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.Dispatcher.InspectDispatcherResponse toWire(Transactions.InspectDispatcherResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.Dispatcher.InspectDispatcherResponse.newBuilder();
-        if (value.dispatcher().isPresent()) result.setDispatcher(toWire(value.dispatcher().get()));
-        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get()));
+        if (value.dispatcher().isPresent()) result.setDispatcher(toWire(value.dispatcher().get(), budget, depth + 1));
+        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -714,10 +884,15 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.ViewIdentity toWire(Transactions.ViewIdentity value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.ViewIdentity toWire(Transactions.ViewIdentity value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.ViewIdentity.newBuilder();
-        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
-        result.setVersion(ByteString.copyFrom(value.version().asReadOnlyBuffer()));
-        result.setStateSchema(value.stateSchema());
+        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get(), budget, depth + 1));
+        result.setVersion(budget.bytes(value.version()));
+        result.setStateSchema(budget.text(value.stateSchema()));
         return result.build();
     }
 
@@ -729,15 +904,20 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.NamespaceQuota toWire(Transactions.NamespaceQuota value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.NamespaceQuota toWire(Transactions.NamespaceQuota value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.NamespaceQuota.newBuilder();
-        result.setStateKeys(value.stateKeys());
-        result.setStateBytes(value.stateBytes());
-        result.setResultRows(value.resultRows());
-        result.setResultBytes(value.resultBytes());
-        result.setEffectRows(value.effectRows());
-        result.setEffectBytes(value.effectBytes());
-        result.setPayloadBytes(value.payloadBytes());
-        result.setRecoveryBytes(value.recoveryBytes());
+        result.setStateKeys(budget.scalar(value.stateKeys()));
+        result.setStateBytes(budget.scalar(value.stateBytes()));
+        result.setResultRows(budget.scalar(value.resultRows()));
+        result.setResultBytes(budget.scalar(value.resultBytes()));
+        result.setEffectRows(budget.scalar(value.effectRows()));
+        result.setEffectBytes(budget.scalar(value.effectBytes()));
+        result.setPayloadBytes(budget.scalar(value.payloadBytes()));
+        result.setRecoveryBytes(budget.scalar(value.recoveryBytes()));
         return result.build();
     }
 
@@ -754,19 +934,24 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.NamespaceInspection toWire(Transactions.NamespaceInspection value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.NamespaceInspection toWire(Transactions.NamespaceInspection value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.NamespaceInspection.newBuilder();
-        if (value.view().isPresent()) result.setView(toWire(value.view().get()));
-        result.setEncodedStateBytes(value.encodedStateBytes());
-        result.setCommandCount(value.commandCount());
-        result.setPendingEffectCount(value.pendingEffectCount());
-        for (var item : value.retainedFormats()) result.addRetainedFormats(toWire(item));
-        result.setEngineProfile(value.engineProfile());
-        result.setEngineProfileDigest(value.engineProfileDigest());
-        result.setStatusValue(value.status().value());
-        if (value.quota().isPresent()) result.setQuota(toWire(value.quota().get()));
-        result.setGeneration(value.generation());
-        result.setNamespacePolicyDigest(value.namespacePolicyDigest());
-        if (value.policyDigest().isPresent()) result.setPolicyDigest(value.policyDigest().get());
+        if (value.view().isPresent()) result.setView(toWire(value.view().get(), budget, depth + 1));
+        result.setEncodedStateBytes(budget.scalar(value.encodedStateBytes()));
+        result.setCommandCount(budget.scalar(value.commandCount()));
+        result.setPendingEffectCount(budget.scalar(value.pendingEffectCount()));
+        for (var item : budget.list(value.retainedFormats(), 128)) result.addRetainedFormats(toWire(item, budget, depth + 1));
+        result.setEngineProfile(budget.text(value.engineProfile()));
+        result.setEngineProfileDigest(budget.text(value.engineProfileDigest()));
+        result.setStatusValue(budget.scalar(value.status().value()));
+        if (value.quota().isPresent()) result.setQuota(toWire(value.quota().get(), budget, depth + 1));
+        result.setGeneration(budget.scalar(value.generation()));
+        result.setNamespacePolicyDigest(budget.text(value.namespacePolicyDigest()));
+        if (value.policyDigest().isPresent()) result.setPolicyDigest(budget.text(value.policyDigest().get()));
         return result.build();
     }
 
@@ -787,8 +972,13 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.InspectNamespaceResponse toWire(Transactions.InspectNamespaceResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.InspectNamespaceResponse toWire(Transactions.InspectNamespaceResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.InspectNamespaceResponse.newBuilder();
-        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
+        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -798,9 +988,14 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.RetryAttempt toWire(Transactions.RetryAttempt value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.RetryAttempt toWire(Transactions.RetryAttempt value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.RetryAttempt.newBuilder();
-        result.setRequestId(value.requestId());
-        if (value.expectedAbort().isPresent()) result.setExpectedAbort(toWire(value.expectedAbort().get()));
+        result.setRequestId(budget.text(value.requestId()));
+        if (value.expectedAbort().isPresent()) result.setExpectedAbort(toWire(value.expectedAbort().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -811,13 +1006,18 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.InvokeCommandRequest toWire(Transactions.InvokeCommandRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.InvokeCommandRequest toWire(Transactions.InvokeCommandRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.InvokeCommandRequest.newBuilder();
-        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get()));
-        if (value.invocation().isPresent()) result.setInvocation(Wire.toWire(value.invocation().get()));
-        if (value.command().isPresent()) result.setCommand(toWire(value.command().get()));
-        result.setInputFormat(value.inputFormat());
-        for (var item : value.expectedVersions()) result.addExpectedVersions(toWire(item));
-        if (value.retryAttempt().isPresent()) result.setRetryAttempt(toWire(value.retryAttempt().get()));
+        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get(), budget, depth + 1));
+        if (value.invocation().isPresent()) result.setInvocation(Wire.toWire(value.invocation().get(), budget, depth + 1));
+        if (value.command().isPresent()) result.setCommand(toWire(value.command().get(), budget, depth + 1));
+        result.setInputFormat(budget.text(value.inputFormat()));
+        for (var item : budget.list(value.expectedVersions(), 128)) result.addExpectedVersions(toWire(item, budget, depth + 1));
+        if (value.retryAttempt().isPresent()) result.setRetryAttempt(toWire(value.retryAttempt().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -832,10 +1032,15 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.InvokeCommandResponse toWire(Transactions.InvokeCommandResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.InvokeCommandResponse toWire(Transactions.InvokeCommandResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.InvokeCommandResponse.newBuilder();
-        if (value.invocation().isPresent()) result.setInvocation(Wire.toWire(value.invocation().get()));
-        if (value.command().isPresent()) result.setCommand(toWire(value.command().get()));
-        result.setReplayed(value.replayed());
+        if (value.invocation().isPresent()) result.setInvocation(Wire.toWire(value.invocation().get(), budget, depth + 1));
+        if (value.command().isPresent()) result.setCommand(toWire(value.command().get(), budget, depth + 1));
+        result.setReplayed(budget.scalar(value.replayed()));
         return result.build();
     }
 
@@ -847,9 +1052,14 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.PageRequest toWire(Transactions.PageRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.PageRequest toWire(Transactions.PageRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.PageRequest.newBuilder();
-        result.setLimit(value.limit());
-        if (value.cursor().isPresent()) result.setCursor(ByteString.copyFrom(value.cursor().get().asReadOnlyBuffer()));
+        result.setLimit(budget.scalar(value.limit()));
+        if (value.cursor().isPresent()) result.setCursor(budget.bytes(value.cursor().get()));
         return result.build();
     }
 
@@ -860,9 +1070,14 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.ListEffectHistoryRequest toWire(Transactions.ListEffectHistoryRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.ListEffectHistoryRequest toWire(Transactions.ListEffectHistoryRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.ListEffectHistoryRequest.newBuilder();
-        if (value.effect().isPresent()) result.setEffect(toWire(value.effect().get()));
-        if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
+        if (value.effect().isPresent()) result.setEffect(toWire(value.effect().get(), budget, depth + 1));
+        if (value.page().isPresent()) result.setPage(toWire(value.page().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -873,10 +1088,15 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.PageResponse toWire(Transactions.PageResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.PageResponse toWire(Transactions.PageResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.PageResponse.newBuilder();
-        if (value.nextCursor().isPresent()) result.setNextCursor(ByteString.copyFrom(value.nextCursor().get().asReadOnlyBuffer()));
-        result.setReturnedCount(value.returnedCount());
-        result.setEncodedBytes(value.encodedBytes());
+        if (value.nextCursor().isPresent()) result.setNextCursor(budget.bytes(value.nextCursor().get()));
+        result.setReturnedCount(budget.scalar(value.returnedCount()));
+        result.setEncodedBytes(budget.scalar(value.encodedBytes()));
         return result.build();
     }
 
@@ -888,9 +1108,14 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.ListEffectHistoryResponse toWire(Transactions.ListEffectHistoryResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.ListEffectHistoryResponse toWire(Transactions.ListEffectHistoryResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.ListEffectHistoryResponse.newBuilder();
-        for (var item : value.receipts()) result.addReceipts(toWire(item));
-        if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
+        for (var item : budget.list(value.receipts(), 128)) result.addReceipts(toWire(item, budget, depth + 1));
+        if (value.page().isPresent()) result.setPage(toWire(value.page().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -901,8 +1126,13 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.LookupCommandResponse toWire(Transactions.LookupCommandResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.LookupCommandResponse toWire(Transactions.LookupCommandResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.LookupCommandResponse.newBuilder();
-        if (value.command().isPresent()) result.setCommand(toWire(value.command().get()));
+        if (value.command().isPresent()) result.setCommand(toWire(value.command().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -912,11 +1142,16 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.LookupCommitRequest toWire(Transactions.LookupCommitRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.LookupCommitRequest toWire(Transactions.LookupCommitRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.LookupCommitRequest.newBuilder();
-        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get()));
-        if (value.command().isPresent()) result.setCommand(toWire(value.command().get()));
-        result.setReceiptId(value.receiptId());
-        if (value.authorizationPublication().isPresent()) result.setAuthorizationPublication(Wire.toWire(value.authorizationPublication().get()));
+        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get(), budget, depth + 1));
+        if (value.command().isPresent()) result.setCommand(toWire(value.command().get(), budget, depth + 1));
+        result.setReceiptId(budget.text(value.receiptId()));
+        if (value.authorizationPublication().isPresent()) result.setAuthorizationPublication(Wire.toWire(value.authorizationPublication().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -929,8 +1164,13 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.LookupCommitResponse toWire(Transactions.LookupCommitResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.LookupCommitResponse toWire(Transactions.LookupCommitResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.LookupCommitResponse.newBuilder();
-        if (value.command().isPresent()) result.setCommand(toWire(value.command().get()));
+        if (value.command().isPresent()) result.setCommand(toWire(value.command().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -940,9 +1180,14 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.NamespaceConfiguration toWire(Transactions.NamespaceConfiguration value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.NamespaceConfiguration toWire(Transactions.NamespaceConfiguration value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.NamespaceConfiguration.newBuilder();
-        result.setStateSchema(value.stateSchema());
-        if (value.quota().isPresent()) result.setQuota(toWire(value.quota().get()));
+        result.setStateSchema(budget.text(value.stateSchema()));
+        if (value.quota().isPresent()) result.setQuota(toWire(value.quota().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -953,12 +1198,17 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.MutateNamespaceRequest toWire(Transactions.MutateNamespaceRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.MutateNamespaceRequest toWire(Transactions.MutateNamespaceRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.MutateNamespaceRequest.newBuilder();
-        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
-        result.setOperationId(value.operationId());
-        result.setMutationValue(value.mutation().value());
-        if (value.expectedGeneration().isPresent()) result.setExpectedGeneration(value.expectedGeneration().get());
-        if (value.configuration().isPresent()) result.setConfiguration(toWire(value.configuration().get()));
+        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get(), budget, depth + 1));
+        result.setOperationId(budget.text(value.operationId()));
+        result.setMutationValue(budget.scalar(value.mutation().value()));
+        if (value.expectedGeneration().isPresent()) result.setExpectedGeneration(budget.scalar(value.expectedGeneration().get()));
+        if (value.configuration().isPresent()) result.setConfiguration(toWire(value.configuration().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -972,10 +1222,15 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.MutateNamespaceResponse toWire(Transactions.MutateNamespaceResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.MutateNamespaceResponse toWire(Transactions.MutateNamespaceResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.MutateNamespaceResponse.newBuilder();
-        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get()));
-        result.setReplayed(value.replayed());
-        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get()));
+        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get(), budget, depth + 1));
+        result.setReplayed(budget.scalar(value.replayed()));
+        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -987,15 +1242,20 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.MutateStateRequest toWire(Transactions.MutateStateRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.MutateStateRequest toWire(Transactions.MutateStateRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.MutateStateRequest.newBuilder();
-        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
-        result.setOperationId(value.operationId());
-        result.setMutationValue(value.mutation().value());
-        if (value.recordId().isPresent()) result.setRecordId(value.recordId().get());
-        result.setExpectedVersion(ByteString.copyFrom(value.expectedVersion().asReadOnlyBuffer()));
-        result.setExpectedPolicyDigest(value.expectedPolicyDigest());
-        result.setReason(value.reason());
-        if (value.effectPlan().isPresent()) result.setEffectPlan(toWire(value.effectPlan().get()));
+        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get(), budget, depth + 1));
+        result.setOperationId(budget.text(value.operationId()));
+        result.setMutationValue(budget.scalar(value.mutation().value()));
+        if (value.recordId().isPresent()) result.setRecordId(budget.text(value.recordId().get()));
+        result.setExpectedVersion(budget.bytes(value.expectedVersion()));
+        result.setExpectedPolicyDigest(budget.text(value.expectedPolicyDigest()));
+        result.setReason(budget.text(value.reason()));
+        if (value.effectPlan().isPresent()) result.setEffectPlan(toWire(value.effectPlan().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -1012,10 +1272,15 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.MutateStateResponse toWire(Transactions.MutateStateResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.MutateStateResponse toWire(Transactions.MutateStateResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.MutateStateResponse.newBuilder();
-        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get()));
-        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get()));
-        result.setReplayed(value.replayed());
+        if (value.receipt().isPresent()) result.setReceipt(toWire(value.receipt().get(), budget, depth + 1));
+        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get(), budget, depth + 1));
+        result.setReplayed(budget.scalar(value.replayed()));
         return result.build();
     }
 
@@ -1027,10 +1292,15 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.PlanEffectMutationResponse toWire(Transactions.PlanEffectMutationResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.PlanEffectMutationResponse toWire(Transactions.PlanEffectMutationResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.PlanEffectMutationResponse.newBuilder();
-        if (value.plan().isPresent()) result.setPlan(toWire(value.plan().get()));
-        result.setReplayed(value.replayed());
-        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get()));
+        if (value.plan().isPresent()) result.setPlan(toWire(value.plan().get(), budget, depth + 1));
+        result.setReplayed(budget.scalar(value.replayed()));
+        if (value.auditAck().isPresent()) result.setAuditAck(Wire.toWire(value.auditAck().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -1042,12 +1312,17 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.QueryRequest toWire(Transactions.QueryRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.QueryRequest toWire(Transactions.QueryRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.QueryRequest.newBuilder();
-        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get()));
-        if (value.invocation().isPresent()) result.setInvocation(Wire.toWire(value.invocation().get()));
-        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
-        if (value.entity().isPresent()) result.setEntity(value.entity().get());
-        if (value.minimumViewVersion().isPresent()) result.setMinimumViewVersion(ByteString.copyFrom(value.minimumViewVersion().get().asReadOnlyBuffer()));
+        if (value.profile().isPresent()) result.setProfile(toWire(value.profile().get(), budget, depth + 1));
+        if (value.invocation().isPresent()) result.setInvocation(Wire.toWire(value.invocation().get(), budget, depth + 1));
+        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get(), budget, depth + 1));
+        if (value.entity().isPresent()) result.setEntity(budget.text(value.entity().get()));
+        if (value.minimumViewVersion().isPresent()) result.setMinimumViewVersion(budget.bytes(value.minimumViewVersion().get()));
         return result.build();
     }
 
@@ -1061,11 +1336,16 @@ final class TransactionWire {
     }
 
     static latent.transaction.v1.Transaction.QueryResponse toWire(Transactions.QueryResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.transaction.v1.Transaction.QueryResponse toWire(Transactions.QueryResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.transaction.v1.Transaction.QueryResponse.newBuilder();
-        if (value.invocation().isPresent()) result.setInvocation(Wire.toWire(value.invocation().get()));
-        if (value.view().isPresent()) result.setView(toWire(value.view().get()));
-        if (value.source().isPresent()) result.setSource(toWire(value.source().get()));
-        result.setObservedAtUnixMillis(value.observedAtUnixMillis());
+        if (value.invocation().isPresent()) result.setInvocation(Wire.toWire(value.invocation().get(), budget, depth + 1));
+        if (value.view().isPresent()) result.setView(toWire(value.view().get(), budget, depth + 1));
+        if (value.source().isPresent()) result.setSource(toWire(value.source().get(), budget, depth + 1));
+        result.setObservedAtUnixMillis(budget.scalar(value.observedAtUnixMillis()));
         return result.build();
     }
 
@@ -1078,10 +1358,15 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.SelectEntityRequest toWire(Transactions.SelectEntityRequest value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.SelectEntityRequest toWire(Transactions.SelectEntityRequest value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.SelectEntityRequest.newBuilder();
-        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get()));
-        if (value.prefix().isPresent()) result.setPrefix(ByteString.copyFrom(value.prefix().get().asReadOnlyBuffer()));
-        if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
+        if (value.namespace().isPresent()) result.setNamespace(toWire(value.namespace().get(), budget, depth + 1));
+        if (value.prefix().isPresent()) result.setPrefix(budget.bytes(value.prefix().get()));
+        if (value.page().isPresent()) result.setPage(toWire(value.page().get(), budget, depth + 1));
         return result.build();
     }
 
@@ -1093,9 +1378,14 @@ final class TransactionWire {
     }
 
     static latent.control.v1.State.SelectEntityResponse toWire(Transactions.SelectEntityResponse value) {
+        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);
+    }
+
+    static latent.control.v1.State.SelectEntityResponse toWire(Transactions.SelectEntityResponse value, TransactionProtocol.EncodeBudget budget, int depth) {
+        budget.enter(depth);
         var result = latent.control.v1.State.SelectEntityResponse.newBuilder();
-        for (var item : value.entities()) result.addEntities(toWire(item));
-        if (value.page().isPresent()) result.setPage(toWire(value.page().get()));
+        for (var item : budget.list(value.entities(), 128)) result.addEntities(toWire(item, budget, depth + 1));
+        if (value.page().isPresent()) result.setPage(toWire(value.page().get(), budget, depth + 1));
         return result.build();
     }
 
