@@ -161,6 +161,7 @@ impl CheckpointFile {
         view: &ReadView,
         protected_clock_epoch: u64,
         dispatch: (u64, u64),
+        inbox_custody: Option<crate::store_identity::InboxCustodyWatermark>,
         mut current: impl FnMut() -> Result<(), StoreError>,
         accept: impl FnOnce() -> Result<(), StoreError>,
     ) -> Result<ExternalCheckpoint, StoreError> {
@@ -176,11 +177,12 @@ impl CheckpointFile {
             }
             self.exact_current(recorded.as_ref())?;
         }
-        let next = ExternalCheckpoint::initial(
+        let next = ExternalCheckpoint::initial_with_inbox_custody(
             self.identity.clone(),
             protected_clock_epoch,
             dispatch.0,
             dispatch.1,
+            inbox_custody,
         )?;
         let encoded = next.encode();
         self.root
@@ -223,6 +225,7 @@ impl CheckpointFile {
         _: &ReadView,
         _: u64,
         _: (u64, u64),
+        _: Option<crate::store_identity::InboxCustodyWatermark>,
         _: impl FnMut() -> Result<(), StoreError>,
         _: impl FnOnce() -> Result<(), StoreError>,
     ) -> Result<ExternalCheckpoint, StoreError> {

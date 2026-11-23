@@ -39,8 +39,9 @@ pub use restore_adoption::{
     RESTORE_ADOPTION_RESPONSE_BYTES,
 };
 pub use restore_input::{
-    ProtectedRestoreInput, ProtectedRestoreInputJob, ProtectedRestoreWindowFrame,
-    RestoreInputOwners, RestoreInputPrecondition, RestoreReadFence, RESTORE_INPUT_RESPONSE_BYTES,
+    InboxHistoryComparison, ProtectedRestoreInput, ProtectedRestoreInputJob,
+    ProtectedRestoreWindowFrame, RestoreInputOwners, RestoreInputPrecondition, RestoreReadFence,
+    RESTORE_INPUT_RESPONSE_BYTES,
 };
 pub use restore_stage::{
     ProtectedRestoreDestinationConfig, ProtectedRestoreStageJob, RestoreRowDisposition,

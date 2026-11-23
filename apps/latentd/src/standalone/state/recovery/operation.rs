@@ -141,8 +141,18 @@ async fn prepare(
         return Err(super::denied());
     }
     let (checkpoint, floor) = inspect_checkpoint(store, state, original).await?;
-    if floor.inbox_custody().is_some() && !matches!(&request.request, Action::InspectNamespace {}) {
-        // Export and recovery writes need an inbox-aware restore contract.
+    if floor.inbox_custody().is_some()
+        && !matches!(
+            &request.request,
+            Action::InspectNamespace {}
+                | Action::Snapshot { .. }
+                | Action::InspectRestore { .. }
+                | Action::Restore { .. }
+                | Action::InspectCloseEffects { .. }
+                | Action::CloseEffects { .. }
+        )
+    {
+        // Recovery and resume require explicit inbox reconciliation.
         return Err(super::denied());
     }
     let clock = ProtectedEffectClock::admit(

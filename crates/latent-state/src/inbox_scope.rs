@@ -122,6 +122,11 @@ impl InboxScope {
 }
 
 pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+    retained_scope(key, bytes).map(|_| ())
+}
+
+/// Decode a custody row and validate its canonical physical key.
+pub fn retained_scope(key: &RowKey, bytes: &[u8]) -> Result<InboxScope, StoreError> {
     if key.family != Family::Maintenance || !key.key.starts_with(PREFIX) {
         return Err(StoreError::UnsupportedFormat);
     }
@@ -129,7 +134,38 @@ pub fn validate_row(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     if record.key().map_err(|_| StoreError::Corrupt)? != *key {
         return Err(StoreError::Corrupt);
     }
-    Ok(())
+    Ok(record)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn retained_scope_refuses_valid_bytes_under_a_different_processing_key() {
+        let source = InboxScope {
+            tenant: "tenant".into(),
+            namespace: "orders".into(),
+            incarnation: 1,
+            processing_scope: "incoming".into(),
+            provider: "jetstream".into(),
+            stream: "orders".into(),
+            stream_created: "2026-11-23T00:00:00Z".into(),
+        };
+        let bytes = source.encode().unwrap();
+        assert_eq!(
+            retained_scope(&source.key().unwrap(), &bytes),
+            Ok(source.clone())
+        );
+        let other = InboxScope {
+            processing_scope: "fork".into(),
+            ..source
+        };
+        assert_eq!(
+            retained_scope(&other.key().unwrap(), &bytes),
+            Err(StoreError::Corrupt)
+        );
+    }
 }
 
 /// Incremental description of immutable source rows in the existing ordered
@@ -157,6 +193,32 @@ impl Default for InboxScopeInventory {
 }
 
 impl InboxScopeInventory {
+    pub(crate) fn read(
+        view: &ReadView,
+        mut live: impl FnMut() -> Result<(), StoreError>,
+    ) -> Result<Option<crate::store_identity::InboxCustodyWatermark>, StoreError> {
+        let mut inventory = Self::default();
+        let mut after = None;
+        loop {
+            live()?;
+            let page = view.scan_after(
+                Family::Maintenance,
+                PREFIX,
+                after.as_deref(),
+                64,
+                128 * 1024,
+            )?;
+            for (key, bytes) in page.rows {
+                inventory.observe(&key, &bytes)?;
+            }
+            let Some(cursor) = page.resume else {
+                live()?;
+                return inventory.finish();
+            };
+            after = Some(cursor);
+        }
+    }
+
     pub fn observe(&mut self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
         if self.failed {
             return Err(StoreError::Corrupt);

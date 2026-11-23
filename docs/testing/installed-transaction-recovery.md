@@ -57,6 +57,17 @@ Generic resume refuses a retained current migration and cannot replace its
 protected checkpoint and activation owner. Old v1 recipes and bytes retain
 their own approval boundary.
 
+When the archive contains anchored inbox sources, restore inspection and
+staging report `inboxReplay` with the exact source inventory generation and
+digest and status `reconciliation-required`. It reports the number of terminal
+inbox records in the archive and current store, and whether the exact records
+match. A mismatch calls for review even when the counts coincide. The reviewed
+window covers the original database history, including newer records absent
+from the archive.
+Keep the consumer paused while reviewing broker delivery and acknowledgement
+positions against the retained history. The source inventory proves binding
+custody only. It supplies no broker replay position or permission to resume.
+
 For protected staging, use the same explicit `destinationStoreIdentity` in both
 inspection and restore. The identity accepts one through 128 ASCII letters,
 digits, dots, underscores or hyphens. Source validation remains bound to the
@@ -95,6 +106,18 @@ configuration/authentication/admission failure may refuse the process before a
 store report exists. The collector must retain that failed attempt.
 
 ## Finite current ownership
+
+An offline snapshot of anchored inbox history includes the complete retained
+source rows for the selected namespace and its current incarnation. Save the
+snapshot receipt alongside the original external checkpoint. The receipt's
+`inboxCustody` records the checkpoint generation, source count and inventory
+digest observed during export. Restore inspection compares the archived
+inventory with the retained sources before offering a loss window. Staging
+preserves an exact match in the new protected checkpoint and keeps delivery
+paused for reconciliation. An archive with different source history is refused.
+Operators can inspect and close deferred effects using the existing recovery
+plans; the clock checkpoint advances with the same verified inbox inventory.
+The inbox requires its own reconciliation before delivery resumes.
 
 The existing Java declaration remains 96 MiB native recovery capacity with a
 32 MiB maximum reservation, 16 MiB retained store recovery capacity, an
