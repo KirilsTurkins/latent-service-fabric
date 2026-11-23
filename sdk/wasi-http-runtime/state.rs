@@ -191,7 +191,7 @@ impl Exchange {
 
     pub fn step(&self) {
         if self.admitted.get() {
-            pump::Pump::current().step();
+            pump::Pump::signal_driver();
         }
     }
 

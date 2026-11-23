@@ -47,7 +47,7 @@ threads, Tokio, Rayon, raw sockets or arbitrary runtime implementations.
 | --- | --- |
 | 1: useful ordinary/default profile below captured crates | Maintained whole WASI0.2.12 backend, normal independent Waki/Golem constructors and compiler-owned root; signed64 plus installed6 |
 | 2: original public HTTP/body/error/pending semantics | Signed64 parsed domains/statuses, streamed bodies, pending completion and explicit supported/Unsupported semantics; sync-looking Rust bodies retain the explicitly declared async component effect |
-| 3: budgets and selected runtime lifecycle/queues/drop/panic | Signed64 entered pending I/O, cancellation, trap and accepted-work root drain; new Task1/Timer1/memory differential9 under original owner limits, with positive entry and fresh gates. Independent guest executor queues and eligible guest-sibling progress have no signed witness; pre-entry activation-queue cancellation does not prove those clauses |
+| 3: budgets and selected runtime lifecycle/queues/drop/panic | Signed64 entered pending I/O, cancellation, trap and accepted-work root drain; new Task1/Timer1/memory differential9 under original owner limits, with positive entry and fresh gates. The ordinary builder still lacks a signed independent-queue witness. A [separate signed fixed image](rust-combined-http-diagnostic.md#observed-signed-result) ran the sibling while the original response was held |
 | 4: bounded bodies/backpressure/Drop/close/drain | Signed64 partial body, early Drop, root Drop/trap, cancellation/deadline and drain; physical/provider retirement, not Drop alone, is the completion proof |
 | 5: typed grants and currentness | Signed64 missing provider/grant, denied target zero contact, reserved credentials/framing, redirects, malformed/oversized data, timeout/abort and distinct tenant/publication currentness |
 | 6: explicit retry/auth/redirect/pool/options differences | Signed64 controlled mutation peer proves no uncertain-POST replay; exact published library error distinctions, stopped redirects, credential isolation and explicit timeout-option Unsupported |
@@ -59,9 +59,10 @@ The HTTP, ownership and individual-limit matrix is the union of the [signed64](e
 [installed6](evidence/rust-wasi-http-installed-2026-10-21.json) and individual-limit9
 observations. The selected profile exposes no guest executor/thread API. Its
 Pump polls every retained readiness owner before blocking, but source alone is
-not a signed sibling-progress witness. The literal independent-queue/fairness
-clause of AC3 is therefore still unproven; this limits slice does not close the
-whole ticket or make a blanket ecosystem/native ABI promise.
+not a signed sibling-progress witness. The separate fixed image used eight Tasks
+and ten Native owners. Its sibling completed its first JSON response and issued
+a second request before the original headers were released. The normal builder
+still needs its own signed independent-queue and sibling-progress result.
 
 ## Historical and composed source
 
