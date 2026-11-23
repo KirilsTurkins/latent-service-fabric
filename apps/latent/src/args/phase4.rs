@@ -174,8 +174,61 @@ pub struct CancelArgs {
     #[arg(long)]
     pub reason: String,
 }
+#[derive(Args)]
+pub struct TransactionCallArgs {
+    #[arg(long)]
+    pub namespace: String,
+    #[arg(long)]
+    pub incarnation: String,
+    #[arg(long)]
+    pub service: String,
+    #[arg(long)]
+    pub contract: String,
+    #[arg(long)]
+    pub function: String,
+    #[arg(long)]
+    pub route: Option<String>,
+    #[arg(long)]
+    pub entity: Option<String>,
+    /// Canonical WIT values file, or '-' for one standard input.
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
+    pub input: PathBuf,
+    /// Bounded Phase 4 resource budget file.
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
+    pub budget: PathBuf,
+}
+
+#[derive(Args)]
+pub struct TransactionInvokeArgs {
+    #[command(flatten)]
+    pub call: TransactionCallArgs,
+    #[arg(long)]
+    pub client_key: String,
+    #[arg(long)]
+    pub shared_recovery_scope: Option<String>,
+    /// Original state-key expectations as a closed JSON array.
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
+    pub expected_versions: Option<PathBuf>,
+    /// Exact host-issued durable abort proof and explicit new attempt request.
+    #[arg(long, value_hint = clap::ValueHint::FilePath)]
+    pub retry_attempt: Option<PathBuf>,
+}
+
+#[derive(Args)]
+pub struct TransactionQueryArgs {
+    #[command(flatten)]
+    pub call: TransactionCallArgs,
+    /// Exact opaque padded base64 view token from an earlier observation.
+    #[arg(long)]
+    pub minimum_view_version: Option<String>,
+}
+
 #[derive(Subcommand)]
 pub enum TransactionCommand {
+    /// Submit one command under its original identity.
+    Invoke(TransactionInvokeArgs),
+    /// Execute one bounded fresh read.
+    Query(TransactionQueryArgs),
     Lookup(LookupArgs),
     Commit(CommitArgs),
     Effect(EffectArgs),
@@ -197,13 +250,18 @@ fn id(value: &str) -> Result<(), Failure> {
         Ok(())
     }
 }
+fn validate_namespace(namespace: &str, incarnation: &str) -> Result<(), Failure> {
+    id(namespace)?;
+    let parsed = incarnation.parse::<u64>().map_err(|_| invalid())?;
+    if parsed == 0 || parsed.to_string() != incarnation {
+        return Err(invalid());
+    }
+    Ok(())
+}
+
 impl NamespaceArgs {
     pub fn validate(&self) -> Result<(), Failure> {
-        id(&self.namespace)?;
-        let incarnation = self.incarnation.parse::<u64>().map_err(|_| invalid())?;
-        if incarnation == 0 || incarnation.to_string() != self.incarnation {
-            return Err(invalid());
-        }
+        validate_namespace(&self.namespace, &self.incarnation)?;
         self.authorization_publication
             .parse::<latent_core::PublicationId>()
             .map_err(|_| invalid())?;
@@ -324,9 +382,25 @@ impl CommandArgs {
         Ok(())
     }
 }
+impl TransactionCallArgs {
+    fn validate(&self) -> Result<(), Failure> {
+        validate_namespace(&self.namespace, &self.incarnation)?;
+        for value in [&self.service, &self.contract, &self.function]
+            .into_iter()
+            .chain(self.route.iter())
+            .chain(self.entity.iter())
+        {
+            id(value)?;
+        }
+        Ok(())
+    }
+}
+
 impl TransactionCommand {
     pub const fn name(&self) -> &'static str {
         match self {
+            Self::Invoke(_) => "transaction invoke",
+            Self::Query(_) => "transaction query",
             Self::Lookup(_) => "transaction lookup",
             Self::Commit(_) => "transaction commit",
             Self::Effect(_) => "transaction effect",
@@ -336,6 +410,12 @@ impl TransactionCommand {
     }
     pub fn validate(&self) -> Result<(), Failure> {
         match self {
+            Self::Invoke(v) => {
+                v.call.validate()?;
+                id(&v.client_key)?;
+                v.shared_recovery_scope.as_deref().map_or(Ok(()), id)
+            }
+            Self::Query(v) => v.call.validate(),
             Self::Lookup(v) => {
                 v.command.validate()?;
                 v.attempt_id.as_ref().map_or(Ok(()), |v| id(v))
