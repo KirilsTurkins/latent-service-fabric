@@ -221,7 +221,7 @@ pub(super) async fn execute(
                     return Err(error);
                 }
             };
-            let inbox_custody = input.inbox_custody();
+            let inbox_replay = input.inbox_custody().zip(input.inbox_history());
             if let Action::Restore {
                 window_acknowledgement,
                 ..
@@ -259,11 +259,11 @@ pub(super) async fn execute(
                         "destinationIdentity":receipt.checkpoint().identity().as_str(),
                         "checkpoint":receipt.checkpoint().encode(), "importedRows":receipt.imported_rows().to_string(),
                         "resourcePhysicallyRetired":retired, "pausedForReconciliation":true});
-                report_inbox_custody(&mut value, inbox_custody);
+                report_inbox_replay(&mut value, inbox_replay);
                 Ok(value)
             } else {
                 let mut value = serde_json::json!({"action":"inspect-restore", "snapshot":snapshot_value(input.snapshot()), "windowDigest":digest(input.window().digest().map_err(storage)?), "window":input.window()});
-                report_inbox_custody(&mut value, inbox_custody);
+                report_inbox_replay(&mut value, inbox_replay);
                 drop(input);
                 let retired = retire(snapshot, &codecs).await;
                 Ok(with_retirement(value, retired))
@@ -799,15 +799,21 @@ fn file_config(file: &File) -> ProtectedSnapshotConfig {
 fn snapshot_value(receipt: &SnapshotReceipt) -> serde_json::Value {
     serde_json::json!({"action":"snapshot", "snapshotDigest":digest(receipt.snapshot_digest), "manifestDigest":digest(receipt.manifest_digest), "fileBytes":receipt.file_bytes.to_string(), "manifest":receipt.manifest})
 }
-fn report_inbox_custody(
+fn report_inbox_replay(
     report: &mut serde_json::Value,
-    custody: Option<latent_state::store_identity::InboxCustodyWatermark>,
+    inbox: Option<(
+        latent_state::store_identity::InboxCustodyWatermark,
+        latent_state::protected_store::InboxHistoryComparison,
+    )>,
 ) {
-    if let Some(custody) = custody {
+    if let Some((custody, history)) = inbox {
         report["inboxReplay"] = serde_json::json!({
             "status": "reconciliation-required",
             "sourceInventoryGeneration": custody.generation.to_string(),
             "sourceInventoryDigest": digest(custody.digest),
+            "archivedTerminalRows": history.archived_rows.to_string(),
+            "currentTerminalRows": history.current_rows.to_string(),
+            "terminalHistoryIdentical": history.identical,
         });
     }
 }

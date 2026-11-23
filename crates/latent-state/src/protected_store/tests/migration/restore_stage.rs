@@ -187,6 +187,9 @@ fn staged_restore_seals_the_complete_inbox_inventory_and_keeps_delivery_paused()
     let (snapshot, input, owners, request) = prepare(&setup, config);
     let custody = input.inbox_custody().unwrap();
     assert_eq!(custody.generation, 2);
+    let history = input.inbox_history().unwrap();
+    assert_eq!((history.archived_rows, history.current_rows), (0, 0));
+    assert!(history.identical);
     let (snapshot, restored) = wait(job(&setup, snapshot, input, &owners, request)).unwrap();
     let restored = restored.unwrap().unwrap();
     assert_eq!(restored.checkpoint().inbox_custody(), Some(custody));

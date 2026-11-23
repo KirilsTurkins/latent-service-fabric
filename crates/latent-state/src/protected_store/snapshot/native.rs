@@ -170,6 +170,7 @@ impl SnapshotFile {
     pub(in crate::protected_store) fn inspect_inbox_custody(
         &self,
         row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+        mut observe: impl FnMut(&RowKey, &[u8]),
     ) -> Result<
         (
             SnapshotReceipt,
@@ -184,7 +185,11 @@ impl SnapshotFile {
             row,
             self.profile.row_bytes(),
             self.profile.namespaces(),
-            |key, bytes| inventory.observe(&key, &bytes),
+            |key, bytes| {
+                inventory.observe(&key, &bytes)?;
+                observe(&key, &bytes);
+                Ok(())
+            },
         )?;
         Ok((receipt, inventory.finish()?))
     }

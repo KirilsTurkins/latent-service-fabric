@@ -6,7 +6,7 @@ use super::{
     ProtectedStoreOwner,
 };
 use crate::{
-    embedded::{ReadView, RowKey, StoreError},
+    embedded::{Family, ReadView, RowKey, StoreError},
     inbox_scope::InboxScopeInventory,
     recovery::{
         restore::RestoreWindow,
@@ -18,6 +18,7 @@ use crate::{
 use latent_core::native_capacity::{
     NativeBufferClass, NativeBufferPermit, NativeCapacityError, NativeReservation,
 };
+use sha2::{Digest, Sha256};
 use std::{
     cell::Cell,
     future::Future,
@@ -82,6 +83,7 @@ pub struct ProtectedRestoreInput {
     current: SnapshotClosure,
     window: RestoreWindow,
     inbox_custody: Option<InboxCustodyWatermark>,
+    inbox_history: Option<InboxHistoryComparison>,
     current_check: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
     owners: Arc<dyn RestoreInputOwners>,
     buffer: NativeBufferPermit,
@@ -111,6 +113,11 @@ impl ProtectedRestoreInput {
     #[must_use]
     pub const fn inbox_custody(&self) -> Option<InboxCustodyWatermark> {
         self.inbox_custody
+    }
+
+    #[must_use]
+    pub const fn inbox_history(&self) -> Option<InboxHistoryComparison> {
+        self.inbox_history
     }
 
     pub(super) fn verify_inbox_custody(&self, view: &ReadView) -> Result<(), StoreError> {
@@ -251,8 +258,12 @@ fn review(
     owners.current().map_err(SnapshotError::Review)?;
     file.check()
         .map_err(|_| SnapshotError::Review(StoreError::Unavailable))?;
+    let mut archived_inbox = InboxHistory::default();
     let (snapshot, inbox_custody) = file
-        .inspect_inbox_custody(|key, bytes| owners.archive_row(key, bytes))
+        .inspect_inbox_custody(
+            |key, bytes| owners.archive_row(key, bytes),
+            |key, bytes| archived_inbox.observe(key, bytes),
+        )
         .map_err(SnapshotError::Review)?;
     if snapshot.snapshot_digest != expected.snapshot_digest
         || snapshot.manifest_digest != expected.manifest_digest
@@ -270,9 +281,15 @@ fn review(
     let current = owners.current_closure(&view)?;
     require_finite_closure(&current)?;
     require_inbox_custody(&view, &original, inbox_custody).map_err(SnapshotError::Review)?;
-    let window = RestoreWindow::capture(&view, &snapshot, file.deadline(), || {
-        file.original().with_live(|| ()).map_err(native_error)
-    })?;
+    let mut current_inbox = InboxHistory::default();
+    let window = RestoreWindow::capture_observed(
+        &view,
+        &snapshot,
+        file.deadline(),
+        || file.original().with_live(|| ()).map_err(native_error),
+        |key, bytes| current_inbox.observe(key, bytes),
+    )?;
+    let inbox_history = inbox_custody.map(|_| archived_inbox.compare(current_inbox));
     owners
         .review_window(&view, &window)
         .map_err(SnapshotError::Review)?;
@@ -300,6 +317,7 @@ fn review(
         current,
         window,
         inbox_custody,
+        inbox_history,
         current_check: file.retain_current(),
         owners,
         buffer,
@@ -307,6 +325,68 @@ fn review(
     };
     input.check()?;
     Ok(input)
+}
+
+/// Compares the exact terminal inbox protections retained by each history.
+/// Pending attempts and broker acknowledgement positions are separate facts.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct InboxHistoryComparison {
+    pub archived_rows: u64,
+    pub current_rows: u64,
+    pub identical: bool,
+}
+
+#[derive(Default)]
+struct InboxHistory {
+    rows: u64,
+    hash: Sha256,
+}
+impl InboxHistory {
+    fn observe(&mut self, key: &RowKey, value: &[u8]) {
+        if key.family == Family::Inbox {
+            // The archive and original view walks already bound row counts,
+            // keys and values before invoking the observer.
+            self.rows += 1;
+            for bytes in [&key.key[..], value] {
+                self.hash.update((bytes.len() as u64).to_le_bytes());
+                self.hash.update(bytes);
+            }
+        }
+    }
+
+    fn compare(self, current: Self) -> InboxHistoryComparison {
+        InboxHistoryComparison {
+            archived_rows: self.rows,
+            current_rows: current.rows,
+            identical: self.rows == current.rows && self.hash.finalize() == current.hash.finalize(),
+        }
+    }
+}
+
+#[cfg(test)]
+mod inbox_history_tests {
+    use super::{Family, InboxHistory, RowKey};
+
+    #[test]
+    fn same_count_with_replaced_terminal_protection_is_detected() {
+        let inbox = RowKey {
+            family: Family::Inbox,
+            key: b"input:17".to_vec(),
+        };
+        let command = RowKey {
+            family: Family::Command,
+            key: b"pending:18".to_vec(),
+        };
+        let mut archived = InboxHistory::default();
+        archived.observe(&inbox, b"original protection");
+        let mut current = InboxHistory::default();
+        current.observe(&inbox, b"changed protection");
+        current.observe(&command, b"pending");
+
+        let comparison = archived.compare(current);
+        assert_eq!((comparison.archived_rows, comparison.current_rows), (1, 1));
+        assert!(!comparison.identical);
+    }
 }
 
 fn require_inbox_custody(

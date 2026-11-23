@@ -53,8 +53,11 @@ their own approval boundary.
 
 When the archive contains anchored inbox sources, restore inspection and
 staging report `inboxReplay` with the exact source inventory generation and
-digest and status `reconciliation-required`. The reviewed window covers the
-original database history, including newer records absent from the archive.
+digest and status `reconciliation-required`. It reports the number of terminal
+inbox records in the archive and current store, and whether the exact records
+match. A mismatch calls for review even when the counts coincide. The reviewed
+window covers the original database history, including newer records absent
+from the archive.
 Keep the consumer paused while reviewing broker delivery and acknowledgement
 positions against the retained history. The source inventory proves binding
 custody only. It supplies no broker replay position or permission to resume.
