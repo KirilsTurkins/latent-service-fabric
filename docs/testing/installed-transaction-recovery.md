@@ -129,7 +129,11 @@ sequence requires review of the recovery window. This inspection performs
 no pull or acknowledgement. At normal startup, the protected input owner also
 qualifies every configured stream and consumer before the node accepts traffic.
 Startup refuses unavailable or changed broker bindings within its existing
-deadline. Resume remains a separate authorized operation.
+deadline. Set `transactionalTriggers.startPaused` to true in the protected node configuration to keep the
+input owner paused after a planned restart. A qualified node can still
+serve ordinary application traffic. Resume on a later protected restart
+requires setting the flag to false and satisfying applicable recovery guards.
+The flag defaults to false for existing installations.
 
 To approve a new logical source, run `enroll-inbox-source` under the
 `namespace-enroll-inbox-source` policy. Supply the reported `inputBinding` as
