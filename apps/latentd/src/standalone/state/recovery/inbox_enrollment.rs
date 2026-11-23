@@ -91,7 +91,7 @@ pub(super) async fn run(
     let approved = Arc::new(approved);
     let scope_digest = approved.scope.input_binding().map_err(store_error)?;
     match &request.request {
-        Action::InspectInboxSource { .. } => {
+        Action::InspectInboxSource { .. } | Action::InspectInboxBroker { .. } => {
             let observed = Arc::clone(&approved);
             let keeper = Arc::clone(original);
             let job = store
@@ -108,14 +108,33 @@ pub(super) async fn run(
                 .map_err(protected_error)?;
             checkpoint.retire().await;
             approved.check().map_err(store_error)?;
-            Ok(serde_json::json!({
+            let mut report = serde_json::json!({
                 "action": "inspect-inbox-source",
                 "binding": binding,
                 "inputBinding": scope_digest,
                 "checkpointGeneration": floor.generation(),
                 "view": view,
                 "enrolled": existing,
-            }))
+            });
+            if matches!(request.request, Action::InspectInboxBroker { .. }) {
+                let provider = owners.providers.ok_or_else(super::denied)?;
+                let installation = settings
+                    .transactional_triggers
+                    .as_ref()
+                    .ok_or_else(super::denied)?;
+                let broker = Box::pin(provider.inspect_incoming(
+                    installation,
+                    &approved.scope.tenant,
+                    &binding,
+                    bootstrap.deadline,
+                ))
+                .await?;
+                approved.check().map_err(store_error)?;
+                report["action"] = "inspect-inbox-broker".into();
+                report["brokerProgress"] =
+                    serde_json::to_value(broker).map_err(|_| super::denied())?;
+            }
+            Ok(report)
         }
         Action::EnrollInboxSource {
             expected_scope,

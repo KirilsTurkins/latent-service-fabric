@@ -34,6 +34,7 @@ Current action fields are:
 | `snapshot` | `operationId`, `file: {root,name}` |
 | `inspect-namespace` | none |
 | `inspect-inbox-source` | `binding` |
+| `inspect-inbox-broker` | `binding` |
 | `enroll-inbox-source` | `binding`, `expectedScope`, `expectedView`, `expectedCheckpointGeneration` |
 | `inspect-restore` | `file`, `destinationRoot`, `destinationCheckpointRoot`, `operationId`, `snapshotDigest`, `manifestDigest`, optional `destinationStoreIdentity` |
 | `restore` | the inspect fields plus exact `windowAcknowledgement` |
@@ -116,6 +117,13 @@ publication. Use `inspect-inbox-source` under the `namespace-inspect` policy.
 It returns the configured source's `inputBinding` (64 lowercase hex digits),
 the exact namespace `view` byte array, the `checkpointGeneration`, and whether
 the source is already enrolled.
+
+Use `inspect-inbox-broker` with the same binding, publication and policy for
+live JetStream progress. The node verifies the configured stream and durable
+consumer over the protected input connection. The report includes their
+creation times and the exact delivery and acknowledgement positions as
+decimal strings. Use that observation during reconciliation. Resume remains
+a separate authorized operation.
 
 To approve a new logical source, run `enroll-inbox-source` under the
 `namespace-enroll-inbox-source` policy. Supply the reported `inputBinding` as

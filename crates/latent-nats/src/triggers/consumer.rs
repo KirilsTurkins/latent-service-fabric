@@ -109,6 +109,16 @@ pub(super) async fn check(
     config: &TriggerConfig,
     inbox: &str,
 ) -> Result<()> {
+    let response = read_info(connection, request, binding, inbox).await?;
+    validate(response.payload(), binding, config)
+}
+
+pub(super) async fn read_info(
+    connection: &mut Connection,
+    request: &IngressRequest,
+    binding: &TriggerBinding,
+    inbox: &str,
+) -> Result<wire::Frame> {
     request.begin_operation()?;
     let scope = Scope::from(request);
     protocol::subscribe(connection, scope, inbox).await?;
@@ -121,7 +131,7 @@ pub(super) async fn check(
     if response.reply.is_some() || response.headers != 0 {
         return Err(EventError::Unavailable);
     }
-    validate(response.payload(), binding, config)
+    Ok(response)
 }
 
 pub(super) async fn pull(

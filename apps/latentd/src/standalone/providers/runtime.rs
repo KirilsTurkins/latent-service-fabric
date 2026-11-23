@@ -85,6 +85,16 @@ pub(in crate::standalone) struct ProviderRuntime {
 }
 
 impl ProviderRuntime {
+    pub(in crate::standalone) async fn inspect_incoming(
+        &self,
+        settings: &crate::config::triggers::TriggerSettings,
+        tenant: &str,
+        binding: &str,
+        deadline: Instant,
+    ) -> Result<latent_nats::triggers::BrokerInputProgress, PlatformError> {
+        triggers::inspect(&self.pools, settings, tenant, binding, deadline).await
+    }
+
     #[cfg(test)]
     pub(in crate::standalone) async fn install_control_test_poller(
         &self,
