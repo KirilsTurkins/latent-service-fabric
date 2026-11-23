@@ -5,8 +5,8 @@ import platform
 import re
 import time
 
-from . import build, node_cancellation, node_deployment, node_fixtures, node_invocation, node_test_grants, node_test_profile, node_tests, paths, scenarios, service, state
-from .common import decode, digest, encode, integer, members, require
+from . import build, node_cancellation, node_deployment, node_fixtures, node_invocation, node_test_grants, node_test_profile, node_tests, node_transaction_query, paths, scenarios, service, state
+from .common import TRANSACTION_HOST_ABI, decode, digest, encode, integer, members, require
 
 
 # Only recognized unsigned numeric budget fields can cross the argument
@@ -71,16 +71,18 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
     saved = state.load(root, "project.json")
     source, build_receipt = build.accepted(root, saved)
     descriptor = saved["descriptor"]
+    phase4 = descriptor["hostAbi"] == TRANSACTION_HOST_ABI
     compatibility_outcomes = guest_compatibility_outcomes.from_build(source, descriptor, build_receipt)
     deadline = min(deadline if deadline is not None else float("inf"), time.monotonic() + 300)
     cli, journal = client(root, deadline=deadline)
-    # Verify the currently selected installed CLI before any test deployment,
-    # policy mutation or invocation can create a journaled operation.
-    cli.require_scenario_budget_support()
-    deployed, revision, current_grants = node_tests.target(root, descriptor, build_receipt, cli)
+    # The stateless runner can change test grants and journal mutations.
+    # Phase 4 queries use the preconfigured deployment and read authority.
+    if not phase4:
+        cli.require_scenario_budget_support()
+    deployed, revision, current_grants = node_tests.target(root, descriptor, build_receipt, cli, phase4=phase4)
     installed = None
     fixture_runtime = {}
-    if (root / "test-profile.json").exists():
+    if not phase4 and (root / "test-profile.json").exists():
         actual = service.request(root, "status")
         installed = node_test_profile.installed(root, descriptor, actual)
         fixture_runtime = actual.get("fixtures", {})
@@ -89,6 +91,8 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
         cases.extend(scenarios.validate(decode(paths.read(source, name)), "node")["scenarios"])
     require(all(case["service"] == descriptor["service"] for case in cases),
             "scenario-service-outside-test-project")
+    require(not phase4 or all("transactional-state" in case["requires"] for case in cases),
+            "phase4-scenario-requires-transactional-state")
     manifest = decode(paths.read(source, descriptor["artifacts"]["capsule"]))
     ceilings = manifest["execution"]["limits"]
     deployment_recoveries = []
@@ -100,6 +104,10 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
     def invoke(case, raw):
         nonlocal deployed, revision, current_grants
         require(case["service"] == descriptor["service"], "scenario-service-outside-test-project")
+        if phase4:
+            deployed, revision, current_grants = node_tests.target(root, descriptor, build_receipt, cli, phase4=True)
+            return node_transaction_query.execute(
+                root, cli, case, raw, _selected_budget(ceilings, case["timeoutMillis"], None))
         execution = case.get("execution", {"grants": []}) if installed is not None else None
         if execution is not None:
             selected = node_test_grants.selection(root, descriptor, deployed["publication"], execution, installed, cli, journal)
@@ -190,6 +198,11 @@ def run(root, arguments, *, deadline: float | None = None, diagnostic_observer=N
             from . import local_service_fixture
             fixture_runtime["localService"] = local_service_fixture.observe(root, cli)
             supported.add("local-service-fixture")
+    if phase4:
+        supported.clear()
+        state_configuration = node.get("state")
+        if isinstance(state_configuration, dict) and state_configuration.get("formatVersion") == 2:
+            supported.add("transactional-state")
     fixture_profile = state.load(root, "test-profile.json") if installed is not None else {}
     fixtures = fixture_profile.get("fixtures")
     initialized = node_fixtures.initialized(source, cases, fixtures, fixture_runtime, installed)

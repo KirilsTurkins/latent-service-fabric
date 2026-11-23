@@ -202,17 +202,17 @@ def templates(payload: Path, commit: str, language: str, *, host_abi: str = HOST
                 "expect": {"category": "success" if code == 0 else "declared-error", "payload": f"tests/{ordinal}-expected.json"},
                 "requires": [], "timeoutMillis": 5000, "required": True, "fixtures": []})
             if host_abi == TRANSACTION_HOST_ABI:
-                # This profile requires the real node's admitted namespace and
-                # query boundary. Portable/stateless adapters fail closed until
-                # that node fixture is explicitly initialized and supported.
+                binding = decode(paths.read(app, "transaction-binding.json"))
                 entries[-1]["requires"].append("transactional-state")
+                entries[-1]["transactionQuery"] = {"namespace": binding["namespace"], "incarnation": "1",
+                                                    "route": binding["deployment"]}
                 del entries[-1]["expect"]["payload"]
             if language in {"java", "dotnet", "go", "typescript"}:
                 # A cold node charges compilation to the accepted activation.
                 # Match the maintained language deployment's finite ceiling;
                 # portable preparation has its own separate allowance.
                 entries[-1]["nodeTimeoutMillis"] = 120000
-            if language in {"java", "dotnet", "go"}:
+            if host_abi != TRANSACTION_HOST_ABI and language in {"java", "dotnet", "go"}:
                 # These capabilities are declared by the maintained language
                 # runtime. A node still requires explicit operator policy.
                 clocks = ["latent:clock/monotonic@0.1.0"]
@@ -224,7 +224,7 @@ def templates(payload: Path, commit: str, language: str, *, host_abi: str = HOST
                 entries[-1]["execution"] = {"grants": clocks}
                 if language == "go":
                     entries[-1]["requires"].append("random")
-        if language in {"java", "dotnet", "go"}:
+        if host_abi != TRANSACTION_HOST_ABI and language in {"java", "dotnet", "go"}:
             grants = entries[0]["execution"]["grants"]
             # The maintained runtimes cannot initialize when their required
             # clock/entropy providers explicitly deny access. Their component
