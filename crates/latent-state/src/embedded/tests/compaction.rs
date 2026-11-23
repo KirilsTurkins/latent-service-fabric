@@ -28,6 +28,17 @@ fn bounded_compaction_preserves_business_rows_and_reports_actual_physical_bounds
     let directory = tempfile::tempdir().unwrap();
     let path = directory.path().join("bounded-compact.redb");
     let (mut store, status) = retained(&path);
+    let initial_capacity = store.file_capacity().unwrap();
+    assert_eq!(initial_capacity.limit_bytes, 16 * 1024 * 1024);
+    assert_eq!(
+        initial_capacity.observed_bytes,
+        std::fs::metadata(&path).unwrap().len()
+    );
+    assert_eq!(
+        initial_capacity.growth_headroom_bytes,
+        initial_capacity.limit_bytes - initial_capacity.observed_bytes,
+    );
+    assert!(!initial_capacity.compaction_active);
     assert_eq!(store.compact(), Err(StoreError::Invalid));
     let before = store
         .snapshot()
@@ -56,6 +67,9 @@ fn bounded_compaction_preserves_business_rows_and_reports_actual_physical_bounds
     assert!(report.scratch_requirement_bytes <= report.scratch_limit_bytes);
     assert!(report.elapsed_micros <= 5_000_000);
     assert_eq!(status.last_compaction().unwrap(), Some(report));
+    let final_capacity = store.file_capacity().unwrap();
+    assert_eq!(final_capacity.observed_bytes, report.observed_file_bytes);
+    assert!(!final_capacity.compaction_active);
     assert_eq!(
         store
             .snapshot()

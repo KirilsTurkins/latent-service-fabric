@@ -45,7 +45,11 @@ Current action fields are:
 Digests use `sha256:` and 64 lowercase hexadecimal digits. Restore inspection
 returns `windowDigest`; restore requires that exact acknowledgement. Namespace
 inspection returns encoded `namespace`, `history`, current `view`, optional
-`guard`, and `reviewDigest`. Migration resume returns action `resume-migration`,
+`guard`, and `reviewDigest`. Its `storeCapacity` reports the protected
+engine file's observed length, configured byte limit, remaining growth
+allowance and whether compaction is active. This reports storage pressure
+against the selected file limit independently from memory and queue admission.
+Migration resume returns action `resume-migration`,
 encoded current `receipt`, current `view`, and `resourcePhysicallyRetired`.
 Generic resume refuses a retained current migration and cannot replace its
 protected checkpoint and activation owner. Old v1 recipes and bytes retain
