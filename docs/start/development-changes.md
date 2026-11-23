@@ -30,6 +30,7 @@ automatically or upgrade an existing toolkit installation.
 | Use Fetch from a TypeScript dependency | [Choose the buffered or phase Fetch contract](../component-development/typescript-fetch-profiles.md) and [inspect same-run qualification inputs](../testing/typescript-fetch-buffered.md) |
 | Check an HTTP or typed-service composition before dispatch | [Inspect a composition](../how-to/inspect-a-composition.md), then inspect actual target preparation and authorized activation diagnostics |
 | Stage state changes and deferred work together | [Transactional aggregate guest](../component-development/transactional-authoring.md) and [state/effect architecture](../architecture/state-and-effects.md) |
+| Create a namespace and edit or recover the first browser command | [Run a stateful order draft](../operations/run-stateful-order-draft.md) |
 | Recover a command or inspect its deferred effect after response loss | [Transaction recovery](../operations/transaction-recovery.md) |
 | Serve a custom static 404 or inspect capture headroom | [Static sites](../component-development/static-sites.md) and [static publication](../operations/static-release-workflow.md) |
 | Share static assets with another browser origin | [Exact publication CORS grants](../operations/cross-origin-static-assets.md); separate from document navigation, end-user authentication and API access |

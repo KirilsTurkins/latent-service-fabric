@@ -7,6 +7,8 @@ result-read and effect permissions described in
 [installed transaction RPCs](../development/installed-transaction-rpc.md).
 The six [transaction clients](../development/transaction-clients.md) expose the
 same original-identity recovery boundary on their existing transports.
+To create a test namespace and submit its first browser command, see
+[Run a stateful order draft](run-stateful-order-draft.md).
 
 Current installed recovery remains a Development workflow with outstanding
 complete terminal/pending native and packaged qualification. The

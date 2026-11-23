@@ -68,7 +68,7 @@ export function buildSidebars(pages) {
     {label: 'Application development', ids: ['how-to/developer-commands', 'how-to/inspect-a-composition',
       'component-development/portable-tests', 'component-development/devcontainer']},
     {label: 'Libraries and generated source', ids: ['how-to/add-application-libraries', ...libraryGuides, ...generatorGuides]},
-    {label: 'Transactions and effects', ids: ['operations/transaction-recovery']},
+    {label: 'Transactions and effects', ids: ['operations/run-stateful-order-draft', 'operations/transaction-recovery']},
     {label: 'Web delivery', ids: ['how-to/deliver-a-website', 'how-to/serve-angular-and-docusaurus',
       'how-to/static-site-and-api', 'operations/static-release-workflow', 'operations/static-evidence-renewal',
       'operations/static-route-sets', 'operations/audit-journal-lifecycle',
