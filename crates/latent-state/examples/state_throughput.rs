@@ -40,6 +40,7 @@ struct Report {
     stale_conflict: Observation,
     fresh_point_read: Observation,
     bounded_prefix_scan: Observation,
+    reopen_and_verify: Observation,
 }
 
 fn main() -> io::Result<()> {
@@ -97,6 +98,22 @@ fn main() -> io::Result<()> {
         }
         Ok(())
     })?;
+    let file_bytes_after = std::fs::metadata(&path)?.len();
+    drop(store);
+    let reopen_and_verify = measure(|| {
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&path)
+            .map_err(|_| StoreError::Unavailable)?;
+        let (reopened, _) =
+            EmbeddedStore::open_bounded_file(file, StoreLimits::default(), FILE_LIMIT_BYTES)?;
+        let view = reopened.snapshot()?;
+        if view.get(&primary)?.as_deref() != Some(current.as_slice()) {
+            return Err(StoreError::Corrupt);
+        }
+        Ok(())
+    })?;
     let report = Report {
         profile: "latent.state-throughput.embedded-file.v1",
         os: std::env::consts::OS,
@@ -106,13 +123,14 @@ fn main() -> io::Result<()> {
         value_bytes: VALUE_BYTES,
         file_limit_bytes: FILE_LIMIT_BYTES,
         file_bytes_before,
-        file_bytes_after: std::fs::metadata(&path)?.len(),
-        logical_read_value_bytes: SAMPLES * (ROWS + 1) * VALUE_BYTES,
+        file_bytes_after,
+        logical_read_value_bytes: SAMPLES * (ROWS + 2) * VALUE_BYTES,
         logical_written_value_bytes: SAMPLES * VALUE_BYTES,
         commit,
         stale_conflict,
         fresh_point_read,
         bounded_prefix_scan,
+        reopen_and_verify,
     };
     println!("{}", serde_json::to_string(&report)?);
     Ok(())

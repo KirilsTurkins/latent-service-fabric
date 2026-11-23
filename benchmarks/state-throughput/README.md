@@ -18,7 +18,8 @@ cargo run --locked --release -p latent-state --example state_throughput
 The control creates a temporary redb file with a 32 MiB cap. It seeds 16 rows
 of 128 bytes and uses five warm-up operations followed by 30 measured
 operations per case. The cases cover durable commits, stale conflicts, fresh
-point reads and bounded prefix scans. The JSON reports p50, p95 and p99
+point reads, bounded prefix scans and clean reopen with verification of the
+last committed value. The JSON reports p50, p95 and p99
 latencies, completed operation rates, logical value bytes and the file size
 before and after the run. Record the source, redb build, operating system, filesystem and machine
 with any retained result. The full campaign adds signed guests, dispatcher
