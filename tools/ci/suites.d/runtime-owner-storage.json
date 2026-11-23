@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "latent.ci.suite-fragment.v1",
+  "suites": [
+    {
+      "boundary": "runtime",
+      "expectedIgnored": [],
+      "id": "latent-wasmtime.test.runtime-owner-storage-witness",
+      "ignoredLeaves": [],
+      "kind": "test",
+      "listContract": "unsupported",
+      "manifest": "crates/latent-wasmtime/Cargo.toml",
+      "mode": "custom",
+      "package": "latent-wasmtime",
+      "platforms": [
+        "linux-x86_64"
+      ],
+      "prerequisites": [
+        "pinned Rust toolchain",
+        "successful source-matched Cargo artifact inventory"
+      ],
+      "recipe": "workspace-all-features",
+      "resourceClass": "runtime-bounded",
+      "runArgs": [],
+      "source": "../../tools/runtime_owner_storage_witness.rs",
+      "sourceSha256": "accfc0b0f70e083a37577c5a3e7dc57b87c4bc93b776a24a0aeead12acf12d73",
+      "successMarker": "runtime owner backing: exact allocation, drop, and refusal passed",
+      "target": "runtime_owner_storage_witness",
+      "timeoutSeconds": 30
+    }
+  ]
+}
