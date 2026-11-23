@@ -33,9 +33,19 @@ workloads: Rust `TcpStream`/lettre, C POSIX sockets/libcurl SMTP, Go
 and .NET `NetworkStream`/MailKit. This owner adds no package allow-list and
 selects no substitute runtime or version.
 
-For this shared slice, all six ordinary-library qualification entries remain
-**pending**. A passing canonical guest or native Python SMTP test cannot fill
-one of those entries. Each language owner must supply its actual signed
+All six entries for the normal provider installation remain **pending**.
+The Go reference-provider run supplies one signed ordinary-library result.
+The unchanged `go-smtp` v0.25.0 client reported an unknown delivery outcome
+after the peer accepted one message and disconnected before acknowledging it.
+The peer observed no second attempt during the 250 ms observation window.
+A fresh activation made a separate connection and completed NOOP and QUIT.
+The two calls retired their user-space Store, instance, stream and I/O owners.
+The logged receipt records the component and dependency digests, compiler
+inputs, runtime limits and the outstanding kernel and TLS qualification.
+[Retained Go receipt](evidence/go-published-smtp-lost-reply-2026-11-10.json)
+and [original job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42785338745/job/129725019256).
+
+For the full matrix, each language owner must supply its actual signed
 component, exact library/transitive/compiler/port/patch/engine/ABI identities,
 standard-I/O smoke, default factory execution and outside-checkout
 catalogue-absent/renamed private dependency controls. Optional injected
