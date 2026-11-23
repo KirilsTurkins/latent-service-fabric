@@ -64,7 +64,7 @@ pub(super) async fn drive(
         }
         match store::counts(&services.store).await {
             Ok(counts) => {
-                let counts_time = services.time.observe().unix_millis;
+                let counts_time = services.time.observe();
                 let mut state = services
                     .shared
                     .state

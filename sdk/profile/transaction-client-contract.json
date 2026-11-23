@@ -146,7 +146,7 @@
       "service": "latent.control.v1.StateService"
     },
     "latent/control/v1/dispatcher.proto": {
-      "sha256": "sha256:ce665aedc04693b05562e716d73b3e5942367dbd13b218c78246198fdffbe4f6",
+      "sha256": "sha256:d370a4c868fb838ff98580964b4c514b59d4e8421525464e53f8679fca8925a5",
       "service": "latent.control.v1.DispatcherService"
     }
   },
@@ -1009,6 +1009,27 @@
         "number": 22,
         "jsonName": "clockContinuityProven",
         "type": "bool"
+      },
+      {
+        "name": "dispatching_effects",
+        "number": 23,
+        "jsonName": "dispatchingEffects",
+        "type": "uint64",
+        "optional": true
+      },
+      {
+        "name": "unresolved_payload_bytes",
+        "number": 24,
+        "jsonName": "unresolvedPayloadBytes",
+        "type": "uint64",
+        "optional": true
+      },
+      {
+        "name": "oldest_unresolved_age_millis",
+        "number": 25,
+        "jsonName": "oldestUnresolvedAgeMillis",
+        "type": "uint64",
+        "optional": true
       }
     ],
     "GetEffectRequest": [

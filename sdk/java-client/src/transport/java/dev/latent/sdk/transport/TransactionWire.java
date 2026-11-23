@@ -443,6 +443,9 @@ final class TransactionWire {
         result.setDeadLetterEffects(budget.scalar(value.deadLetterEffects()));
         result.setCountsObservedAtUnixMillis(budget.scalar(value.countsObservedAtUnixMillis()));
         result.setClockContinuityProven(budget.scalar(value.clockContinuityProven()));
+        if (value.dispatchingEffects().isPresent()) result.setDispatchingEffects(budget.scalar(value.dispatchingEffects().get()));
+        if (value.unresolvedPayloadBytes().isPresent()) result.setUnresolvedPayloadBytes(budget.scalar(value.unresolvedPayloadBytes().get()));
+        if (value.oldestUnresolvedAgeMillis().isPresent()) result.setOldestUnresolvedAgeMillis(budget.scalar(value.oldestUnresolvedAgeMillis().get()));
         return result.build();
     }
 
@@ -469,7 +472,10 @@ final class TransactionWire {
                 value.getBlockedEffects(),
                 value.getDeadLetterEffects(),
                 value.getCountsObservedAtUnixMillis(),
-                value.getClockContinuityProven());
+                value.getClockContinuityProven(),
+                value.hasDispatchingEffects() ? Optional.of(value.getDispatchingEffects()) : Optional.empty(),
+                value.hasUnresolvedPayloadBytes() ? Optional.of(value.getUnresolvedPayloadBytes()) : Optional.empty(),
+                value.hasOldestUnresolvedAgeMillis() ? Optional.of(value.getOldestUnresolvedAgeMillis()) : Optional.empty());
     }
 
     static latent.transaction.v1.Transaction.GetEffectRequest toWire(Transactions.GetEffectRequest value) {
