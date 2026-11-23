@@ -168,9 +168,10 @@ async fn prepare(
                 | Action::Restore { .. }
                 | Action::InspectCloseEffects { .. }
                 | Action::CloseEffects { .. }
+                | Action::Resume { .. }
         )
     {
-        // Recovery and resume require explicit inbox reconciliation.
+        // Restored inbox history requires explicit reconciliation.
         return Err(super::denied());
     }
     let clock = ProtectedEffectClock::admit(

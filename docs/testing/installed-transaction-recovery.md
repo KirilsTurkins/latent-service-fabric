@@ -133,7 +133,10 @@ deadline. Set `transactionalTriggers.startPaused` to true in the protected node 
 input owner paused after a planned restart. A qualified node can still
 serve ordinary application traffic. Resume on a later protected restart
 requires setting the flag to false and satisfying applicable recovery guards.
-The flag defaults to false for existing installations.
+The flag defaults to false for existing installations. An offline `resume`
+request can reactivate an ordinarily quiesced namespace with enrolled input
+when the original recovery epoch and external inbox custody still match.
+A restored epoch continues to require explicit inbox reconciliation.
 
 To approve a new logical source, run `enroll-inbox-source` under the
 `namespace-enroll-inbox-source` policy. Supply the reported `inputBinding` as
