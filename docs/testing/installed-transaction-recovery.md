@@ -122,8 +122,11 @@ Use `inspect-inbox-broker` with the same binding, publication and policy for
 live JetStream progress. The node verifies the configured stream and durable
 consumer over the protected input connection. The report includes their
 creation times and the exact delivery and acknowledgement positions as
-decimal strings. Use that observation during reconciliation. Resume remains
-a separate authorized operation.
+decimal strings. For an enrolled source, `latestDeliveryHistory` reports a
+retained commit or rejection for the last delivered stream sequence only
+when the inbox marker, attempt and original command agree. An unconfirmed
+sequence requires review of the recovery window. This inspection performs
+no pull or acknowledgement. Resume remains a separate authorized operation.
 
 To approve a new logical source, run `enroll-inbox-source` under the
 `namespace-enroll-inbox-source` policy. Supply the reported `inputBinding` as

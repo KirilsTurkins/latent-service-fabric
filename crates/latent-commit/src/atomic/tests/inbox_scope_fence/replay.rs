@@ -65,6 +65,15 @@ fn scoped_replay_preserves_success_and_rejection_after_reopen_and_body_expiry() 
                 inspect_inbox(&view, &input.key, inbox, &scope, time(now), permission).unwrap();
             assert_eq!(record.encode().unwrap(), original.encode().unwrap());
             assert_eq!(record.inbox_identity(), Some(inbox));
+            assert_eq!(
+                inspect_inbox_terminal(&view, &scope, &input.key.operation, 1),
+                Ok(Some(original.outcome()))
+            );
+            assert_eq!(
+                inspect_inbox_terminal(&view, &scope, &input.key.operation, 2),
+                Ok(None)
+            );
+            assert!(inspect_inbox_terminal(&view, &scope, "foreign-operation", 1).is_err());
             if now < original.result_expires() {
                 assert_eq!(result.unwrap().value().unwrap().bytes, b"original");
             } else {
@@ -120,6 +129,7 @@ fn scoped_replay_refuses_missing_damaged_and_recreated_source_without_changing_h
             })
             .unwrap();
         let view = store.snapshot().unwrap();
+        assert!(inspect_inbox_terminal(&view, &scope, &input.key.operation, 1).is_err());
         let failure = inspect_inbox(
             &view,
             &input.key,
