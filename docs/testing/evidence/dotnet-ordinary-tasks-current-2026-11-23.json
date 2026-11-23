@@ -1,0 +1,177 @@
+{
+  "schemaVersion": "latent.dotnet.current-ordinary-task-observation.v1",
+  "source": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+  "execution": "local Linux, signed standalone node",
+  "profile": "dotnet-stackful-task-wait-v1",
+  "qualificationReceipt": {
+    "sha256": "sha256:507e69b19f8456e9d115e13b86f510b86af3ea33aa11fa2c47f3aaa58890f15c",
+    "bytes": 39584
+  },
+  "publicWorkflow": {
+    "sha256": "sha256:b672685f8a383ae86c4c1245d3f260411bc873e75e41ee989d5f8bae117ba611",
+    "bytes": 1386890
+  },
+  "originalWorkflow": {
+    "sha256": "sha256:ad44354fcf4d833ce98fc8288e6db879e2a82d2a7b30b0f8677654cd21a7a487",
+    "bytes": 807947
+  },
+  "component": {
+    "sha256": "sha256:1d513726957d4a9be6414f90bdaf694231a486b4e10bf683f861bfb4b125c6d4",
+    "bytes": 2564837
+  },
+  "runtimeInputsDigest": "sha256:7b60353ff286fb3242484a30f90126d84d135528ebb5042c3f7429abac09fe11",
+  "libraryAssembly": "sha256:191a01b492c965279738b9570b56a3051ee0561a898b10bdbfe3129c2d737781",
+  "libraryPackage": "sha256:9c7b2bb1777dd81dd6f5713b0f25cd46d75b15407053e970a9d37f6f5d7bccb1",
+  "outsideLibraryAndFeedRemoved": true,
+  "managedWorkPatch": "latent.dotnet.managed-accepted-work.v15",
+  "aggregateWaitPatch": "latent.dotnet.wait-all.v7",
+  "generatedHelperCount": 113,
+  "invocations": 54,
+  "physicalSamples": 46,
+  "providerIdleObservations": 28,
+  "allOutcomesKnownAndReaped": true,
+  "zeroActiveQueuedQuarantinedCellsAndReservedQuotasAfterEachCase": true,
+  "cases": [
+    {
+      "mode": "run",
+      "decoded": "ordinary-tasks:run|fresh=1",
+      "cpuFuel": 51176929,
+      "peakMemoryBytes": 57528676
+    },
+    {
+      "mode": "when-all",
+      "decoded": "ordinary-tasks:when-all|fresh=1",
+      "cpuFuel": 51217727,
+      "peakMemoryBytes": 57108830
+    },
+    {
+      "mode": "thread-pool",
+      "decoded": "ordinary-tasks:thread-pool|fresh=1",
+      "cpuFuel": 51157644,
+      "peakMemoryBytes": 57528692
+    },
+    {
+      "mode": "scheduler",
+      "decoded": "ordinary-tasks:scheduler|fresh=1",
+      "cpuFuel": 51164236,
+      "peakMemoryBytes": 57528688
+    },
+    {
+      "mode": "error",
+      "decoded": "ordinary-tasks:error|fresh=1",
+      "cpuFuel": 51305121,
+      "peakMemoryBytes": 57528680
+    },
+    {
+      "mode": "cancel",
+      "decoded": "ordinary-tasks:cancel|fresh=1",
+      "cpuFuel": 51269529,
+      "peakMemoryBytes": 57528682
+    },
+    {
+      "mode": "context",
+      "decoded": "ordinary-tasks:context|fresh=1",
+      "cpuFuel": 51302943,
+      "peakMemoryBytes": 57528684
+    },
+    {
+      "mode": "suppressed-context",
+      "decoded": "ordinary-tasks:suppressed-context|fresh=1",
+      "cpuFuel": 51169407,
+      "peakMemoryBytes": 57528706
+    },
+    {
+      "mode": "delay",
+      "decoded": "ordinary-tasks:delay|fresh=1",
+      "cpuFuel": 51296177,
+      "peakMemoryBytes": 57528680
+    },
+    {
+      "mode": "cancel-after",
+      "decoded": "ordinary-tasks:cancel-after|fresh=1",
+      "cpuFuel": 51453304,
+      "peakMemoryBytes": 57528694
+    },
+    {
+      "mode": "nested",
+      "decoded": "ordinary-tasks:nested|fresh=1",
+      "cpuFuel": 51198793,
+      "peakMemoryBytes": 57108826
+    },
+    {
+      "mode": "monitor",
+      "decoded": "ordinary-tasks:monitor|fresh=1",
+      "cpuFuel": 51165114,
+      "peakMemoryBytes": 57528684
+    },
+    {
+      "mode": "timer-periodic-context",
+      "decoded": "ordinary-tasks:timer-periodic-context|fresh=1",
+      "cpuFuel": 51550362,
+      "peakMemoryBytes": 57528714
+    },
+    {
+      "mode": "timer-change",
+      "decoded": "ordinary-tasks:timer-change|fresh=1",
+      "cpuFuel": 51509789,
+      "peakMemoryBytes": 57528694
+    },
+    {
+      "mode": "timer-dispose",
+      "decoded": "ordinary-tasks:timer-dispose|fresh=1",
+      "cpuFuel": 51275193,
+      "peakMemoryBytes": 57528696
+    },
+    {
+      "mode": "timer-self-dispose-drain",
+      "decoded": "ordinary-tasks:timer-self-dispose-drain|fresh=1",
+      "cpuFuel": 51238853,
+      "peakMemoryBytes": 57108862
+    },
+    {
+      "mode": "cancel-pending",
+      "decoded": "ordinary-tasks:cancel-pending|fresh=1",
+      "cpuFuel": 51810441,
+      "peakMemoryBytes": 57108842
+    },
+    {
+      "mode": "manual-reset-sibling",
+      "decoded": "ordinary-tasks:manual-reset-sibling|pending=1|same-thread=1|setter=1|fresh=1",
+      "cpuFuel": 51203063,
+      "peakMemoryBytes": 57108920
+    },
+    {
+      "mode": "manual-reset-context",
+      "decoded": "ordinary-tasks:manual-reset-context|pending=1|same-thread=1|setter=1|notifications=none|worker=0|caller=7|flow-suppressed=0|fresh=1",
+      "cpuFuel": 51214045,
+      "peakMemoryBytes": 57528886
+    },
+    {
+      "mode": "manual-reset-suppressed-context",
+      "decoded": "ordinary-tasks:manual-reset-suppressed-context|pending=1|same-thread=1|setter=1|notifications=none|worker=0|caller=7|flow-suppressed=1|fresh=1",
+      "cpuFuel": 51215990,
+      "peakMemoryBytes": 57528908
+    },
+    {
+      "mode": "manual-reset-captured-context",
+      "decoded": "ordinary-tasks:manual-reset-captured-context|pending=1|same-thread=1|setter=1|notifications=0>13,14>0|worker=13|caller=7|flow-suppressed=0|fresh=1",
+      "cpuFuel": 51221625,
+      "peakMemoryBytes": 57109060
+    },
+    {
+      "mode": "reset-notification-refusal",
+      "decoded": "ordinary-tasks:reset-notification-refusal|fresh=1",
+      "cpuFuel": 51318413,
+      "peakMemoryBytes": 57108866
+    }
+  ],
+  "nodeCleanlyReaped": true,
+  "scope": {
+    "applicationSchedulerReplacement": false,
+    "httpAuthorityAdded": false,
+    "cpuPreemptionQualified": false,
+    "monitorWaitQualified": false,
+    "threadLocalLogicalIsolationQualified": false,
+    "fullRuntimeQualification": false
+  }
+}

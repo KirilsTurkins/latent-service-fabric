@@ -168,13 +168,8 @@ class RootReturnNormalControls(unittest.TestCase):
         from unittest.mock import patch
         from tools.dotnet_guest import managed_work, task_wait
         from tools.phase2_operator_process import WorkflowError
-        port = {'profile': task_wait.PROFILE,
-            'managedAcceptedWork': copy.deepcopy(managed_work.INLINE_PRIMARY_REWRITE_RECEIPT),
-            'generatedHelperCount': 109, 'completion': 'actual-task-only',
-            'finiteAndCancellableWaits': 'original-Task-WhenAny-Delay',
-            'finiteWaitObservation': task_wait.FINITE_OBSERVATION,
-            'completeOriginalWaitRemainderPreserved': True,
-            'nativeAotReferenceBinding': {'responseFiles': [{'controlled': 'parser-only'}]}}
+        from tools.tests.test_dotnet_task_binding import current_port
+        port = current_port()
         with tempfile.TemporaryDirectory() as temporary:
             artifact = Path(temporary)
             path = artifact / 'task-wait-port.json'
@@ -193,7 +188,7 @@ class RootReturnNormalControls(unittest.TestCase):
                 elif changed == 'previous-v14': bad['managedAcceptedWork'] = copy.deepcopy(managed_work.INLINE_POP_REWRITE_RECEIPT)
                 elif changed == 'readiness': bad['managedAcceptedWork']['readiness'] = 'unproved'
                 elif changed == 'task-identity': bad['managedAcceptedWork']['taskLookup'] = 'unproved'
-                elif changed == 'count': bad['generatedHelperCount'] = 95
+                elif changed == 'count': bad['generatedHelperCount'] = 109
                 elif changed == 'bool-count': bad['generatedHelperCount'] = True
                 elif changed == 'finite-observation': bad['finiteWaitObservation'] = 'after-context-restore'
                 elif changed == 'response': bad['nativeAotReferenceBinding']['responseFiles'] *= 2
@@ -209,6 +204,12 @@ class RootReturnNormalControls(unittest.TestCase):
                         self.assertRaisesRegex(WorkflowError, 'root-return-current-closed-push'):
                     selected.qualify_current_products(untouched, artifact / 'unexecuted-tools', '0' * 40)
                 self.assertFalse(untouched.exists())
+            with patch.object(selected.sys, 'platform', 'linux'), \
+                    patch.object(selected.sys, 'version_info', (3, 13, 5)), \
+                    self.assertRaisesRegex(WorkflowError, 'root-return-current-clean-source'):
+                selected.qualify_current_products(untouched, artifact / 'unexecuted-tools',
+                                                  'invalid', local=True)
+            self.assertFalse(untouched.exists())
 
 
     def test_retention_closes17_and_keeps_component_before_shape_refusal(self):
