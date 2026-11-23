@@ -203,8 +203,6 @@ def install(layout: Layout, release: VerifiedRelease, *, profile: str, policy: P
         permitted = {"releases/" + selected}
         if state:
             permitted.add("releases/" + state["currentVersion"])
-        if not state or state["status"] == "removed":
-            select_current(layout, selected, permitted)
         preflight = child_check(layout, identity, "preflight", candidate=selected)
         if layout.system and state and state["status"] == "installed" and state["currentVersion"] != selected:
             status, _output = systemctl("is-active", "--quiet", "lsf.service")

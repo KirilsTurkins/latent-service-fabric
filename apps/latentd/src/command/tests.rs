@@ -7,7 +7,11 @@ use super::{status, Command, CommandLine};
 fn check_config_requires_an_explicit_file_and_never_selects_serve() {
     let parsed =
         CommandLine::try_parse_from(["latentd", "check-config", "--config", "node.json"]).unwrap();
-    let Command::CheckConfig { config } = parsed.command else {
+    let Command::CheckConfig {
+        config,
+        check_state_roots: false,
+    } = parsed.command
+    else {
         panic!("check-config")
     };
     assert_eq!(config, std::path::PathBuf::from("node.json"));

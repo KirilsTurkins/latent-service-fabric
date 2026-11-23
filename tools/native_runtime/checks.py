@@ -42,11 +42,23 @@ def abi_profile(root: Path, node: dict, engine: dict) -> str:
     return profile["hostAbiProfile"]
 
 
+def require_original_storage_profile(layout: Layout, node: dict) -> None:
+    if node.get("state") is not None:
+        return
+    with files.directory(layout.data, {0, os.geteuid()}) as data:
+        try:
+            os.stat("state", dir_fd=data, follow_symlinks=False)
+        except FileNotFoundError:
+            return
+    require(False, "existing-transaction-storage-requires-state-configuration")
+
+
 def preflight(layout: Layout, candidate: str | None = None) -> dict:
     identity = service_identity(layout)
     observation = host.platform_check()
     node = load(layout, identity)
     validate_layout(layout, node, node.get("securityProfile"))
+    require_original_storage_profile(layout, node)
     for path in (layout.data, layout.cache):
         host.filesystem_probe(path)
     root = layout.prefix / "releases" / version(candidate) if candidate is not None else current(layout)
@@ -64,8 +76,10 @@ def preflight(layout: Layout, candidate: str | None = None) -> dict:
                                    "compilerDigest": "sha256:" + source["engine"]["compilerSha256"]}
             config = Path(temporary) / "node.json"
             files.create(config, encode(node))
-        status, output = execute([str(root / "bin" / "latentd"), "check-config", "--config", str(config)],
-                                 timeout=40, maximum=65536, cwd=str(layout.data))
+        command = [str(root / "bin" / "latentd"), "check-config", "--config", str(config)]
+        if node.get("state") is not None:
+            command.append("--check-state-roots")
+        status, output = execute(command, timeout=40, maximum=65536, cwd=str(layout.data))
     require(status == 0, "node-check-config-failed-no-profile-fallback")
     report = document(output, 65536)
     require(report.get("schemaVersion") == "latent.standalone.config-check.v1"

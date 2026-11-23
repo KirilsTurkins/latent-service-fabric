@@ -31,6 +31,9 @@ enum Command {
     CheckConfig {
         #[arg(long, value_name = "PATH")]
         config: PathBuf,
+        /// Check that the configured transaction roots are separate private ext4 directories.
+        #[arg(long)]
+        check_state_roots: bool,
     },
     /// Serve the standalone node using a versioned local configuration file.
     Serve {
@@ -76,7 +79,10 @@ pub fn main_entry() -> ExitCode {
         }
     };
     let result = match command {
-        Command::CheckConfig { config } => run_check_config(&config),
+        Command::CheckConfig {
+            config,
+            check_state_roots,
+        } => run_check_config(&config, check_state_roots),
         Command::Serve { config } => run_serve(&config),
         Command::InspectTransactionHosts { config } => run_inspection(&config),
         Command::InspectConfiguredHttpEffects { config } => run_http_effect_inspection(&config),
@@ -116,10 +122,15 @@ fn run_event_effect_inspection(_path: &std::path::Path) -> Result<(), Failure> {
 }
 
 #[cfg(target_os = "linux")]
-fn run_check_config(path: &std::path::Path) -> Result<(), Failure> {
+fn run_check_config(path: &std::path::Path, check_state_roots: bool) -> Result<(), Failure> {
     let settings = crate::config::NodeConfig::load(path)
         .and_then(|config| config.derive())
         .map_err(|error| Failure::new("configuration", error.code))?;
+    if check_state_roots {
+        settings
+            .check_state_roots()
+            .map_err(|error| Failure::new("transaction-storage-roots", error.code))?;
+    }
     let report = settings
         .check_config()
         .map_err(|error| Failure::new("execution-profile", error.code))?;
@@ -127,7 +138,7 @@ fn run_check_config(path: &std::path::Path) -> Result<(), Failure> {
 }
 
 #[cfg(not(target_os = "linux"))]
-fn run_check_config(_path: &std::path::Path) -> Result<(), Failure> {
+fn run_check_config(_path: &std::path::Path, _check_state_roots: bool) -> Result<(), Failure> {
     Err(Failure::new("platform", PlatformErrorCode::Unavailable))
 }
 

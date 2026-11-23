@@ -27,6 +27,16 @@ checks a state-enabled configuration against that authenticated ABI. Durability
 uses the protected local ext4 store and immediate commits. Enable state
 explicitly in the protected node configuration before starting the service.
 
+For a systemd installation, prepare separate mode-0700 ext4 directories
+`/var/lib/lsf/state` and `/var/lib/lsf/state-checkpoint` owned by `lsf:lsf`
+as part of state enablement. Set `state.checkpointRoot` to the second
+directory. Keep the two directories empty for first initialization and
+preserve both for reinstall or upgrade. Preflight checks the actual protected
+directories as the service account before selecting the release. A retained
+state root requires explicit state configuration. Preparing snapshot and
+restore destinations uses the separate authenticated transaction recovery
+workflow.
+
 Before executing **any downloaded installer or verifier code**, independently
 provision GitHub CLI **2.96.0 or newer**, Sigstore trusted roots, and the exact
 approved release version/commit through your OS/release-verification provisioning

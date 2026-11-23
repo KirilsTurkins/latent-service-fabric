@@ -129,6 +129,21 @@ class ManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(InstallError, "unsupported-transaction-store-profile"):
             verify.manifest(metadata, metadata["version"])
 
+    @unittest.skipUnless(LINUX, "installed storage inspection uses Linux protected descriptors")
+    def test_packaged_preflight_refuses_a_stateless_start_over_original_transaction_storage(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            layout = Layout.local(Path(temporary) / "evaluation")
+            layout.data.mkdir(parents=True, mode=0o700)
+            checks.require_original_storage_profile(layout, {})
+            state = layout.data / "state"
+            state.mkdir(mode=0o700)
+            original = state / "transaction-state.redb"
+            original.write_bytes(b"original-transaction-data")
+            with self.assertRaisesRegex(InstallError, "existing-transaction-storage-requires-state"):
+                checks.require_original_storage_profile(layout, {})
+            checks.require_original_storage_profile(layout, {"state": {}})
+            self.assertEqual(original.read_bytes(), b"original-transaction-data")
+
     def test_development_fixture_metadata_is_closed_and_never_release_authority(self):
         metadata, _payload = fixture()
         metadata["developmentTest"] = copy.deepcopy(verify.DEVELOPMENT_TEST)
@@ -679,6 +694,7 @@ class LifecycleTests(unittest.TestCase):
             node = self.layout.node.read_bytes()
             self.assertTrue(self.layout.transaction.exists())
             self.assertFalse(self.layout.state.exists())
+            self.assertFalse(os.path.lexists(self.layout.current))
             self.probe.side_effect = None
             with self.assertRaisesRegex(InstallError, "interrupted"):
                 self.install(release)
