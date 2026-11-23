@@ -8,13 +8,13 @@ const routes = {command: '/draft/edit', query: '/draft/query', result: '/draft/r
 const commandId = 'a'.repeat(64), attemptId = '1';
 const namespaceToken = [78,86,2,...new Array(64).fill(0)], keyToken = [83,86,2,...new Array(64).fill(0)];
 const view = Buffer.from(namespaceToken).toString('base64');
-function response(disposition, {error, revision = '1', units = 3} = {}) {
+function response(disposition, {error, revision = '1', units = 3, token = namespaceToken} = {}) {
   const draft = '{"draft-id":"demo","revision":' + revision + ',"units":' + units
-    + ',"namespace-view":' + JSON.stringify(namespaceToken) + ',"key-version":{"some":' + JSON.stringify(keyToken) + '}}';
+    + ',"namespace-view":' + JSON.stringify(token) + ',"key-version":{"some":' + JSON.stringify(keyToken) + '}}';
   const result = error ? '[{"err":' + JSON.stringify(error) + '}]' : '[{"ok":' + draft + '}]';
   const envelope = {profile: 'transaction-http-v1', disposition, representation: 'application-result',
     'command-id': disposition === 'query' ? null : commandId, 'attempt-id': disposition === 'query' ? null : attemptId,
-    'state-view': view, 'effect-ids': ['event-original', 'http-original'],
+    'state-view': Buffer.from(token).toString('base64'), 'effect-ids': ['event-original', 'http-original'],
     result: {'media-type': 'application/vnd.latent.wit-values.v1+json', 'body-base64': Buffer.from(result).toString('base64')}};
   if (disposition === 'aborted') {
     envelope.result = null;
@@ -218,6 +218,45 @@ test('fresh query after acknowledgement uses the committed view without replacin
   assert.equal(app.status, 'committed');
   app.finishOriginal();
   assert.equal(app.pending, undefined);
+});
+
+test('hydration and fresh queries keep their view across recovery of an older original result', async () => {
+  const newerToken = namespaceToken.slice();
+  newerToken[43] = 2;
+  const newerView = Buffer.from(newerToken).toString('base64');
+  const queryFloors = [];
+  const app = new DraftClient(routes, {
+    origin: 'https://node.example',
+    initialView: {draftId: 'demo', revision: '0', units: 3, namespaceView: view},
+    fetcher: async (url, options) => {
+      if (url.includes('/edit')) throw new Error('lost original result');
+      if (url.includes('/result')) return response('committed');
+      queryFloors.push(options.headers.get('if-state-view'));
+      return response('query', {token: newerToken, revision: '2', units: 7});
+    },
+  });
+  const key = app.prepare('demo', '0', 3);
+  await assert.rejects(app.submit(), /lost original result/);
+  await app.query('demo');
+  assert.equal((await app.recover()).value.revision, '1');
+  assert.equal(app.pending.key, key);
+  assert.equal(app.view.revision, '2');
+  await app.query('demo');
+  assert.deepEqual(queryFloors, [view, newerView]);
+});
+
+test('a delayed query cannot replace a later observed view', async () => {
+  let release, calls = 0;
+  const newerToken = namespaceToken.slice();
+  newerToken[43] = 2;
+  const app = client(async () => ++calls === 1
+    ? new Promise(resolve => { release = resolve; })
+    : response('query', {token: newerToken, revision: '2'}));
+  const delayed = app.query('demo');
+  await app.query('demo');
+  release(response('query'));
+  await assert.rejects(delayed, /stale-query-response/);
+  assert.equal(app.view.revision, '2');
 });
 
 test('business rejection recovery does not refresh expected revision or retry a changed business value', async () => {
