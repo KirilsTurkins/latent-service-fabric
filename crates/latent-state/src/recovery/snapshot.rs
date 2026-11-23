@@ -492,9 +492,27 @@ pub fn inspect_snapshot(
 pub(crate) fn inspect_snapshot_bounded(
     input: &mut (impl Read + Seek),
     deadline: Instant,
+    validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
+    row_bytes: usize,
+    namespace_count: usize,
+) -> Result<SnapshotReceipt, StoreError> {
+    inspect_snapshot_bounded_with_visit(
+        input,
+        deadline,
+        validate_row,
+        row_bytes,
+        namespace_count,
+        |_, _| Ok(()),
+    )
+}
+
+pub(crate) fn inspect_snapshot_bounded_with_visit(
+    input: &mut (impl Read + Seek),
+    deadline: Instant,
     mut validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
     row_bytes: usize,
     namespace_count: usize,
+    mut visit: impl FnMut(RowKey, Vec<u8>) -> Result<(), StoreError>,
 ) -> Result<SnapshotReceipt, StoreError> {
     if row_bytes == 0
         || row_bytes > 4 * 1024 * 1024
@@ -520,11 +538,12 @@ pub(crate) fn inspect_snapshot_bounded(
     input
         .seek(SeekFrom::Start(0))
         .map_err(|_| StoreError::Unavailable)?;
-    let second = inspect_stream(
+    let second = inspect_stream_with_visit(
         input,
         deadline,
         &mut validate_row,
         Some(&first.manifest),
+        &mut visit,
         row_bytes,
         namespace_count,
     )?;

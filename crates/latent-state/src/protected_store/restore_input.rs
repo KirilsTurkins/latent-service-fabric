@@ -7,10 +7,12 @@ use super::{
 };
 use crate::{
     embedded::{ReadView, RowKey, StoreError},
+    inbox_scope::InboxScopeInventory,
     recovery::{
         restore::RestoreWindow,
         snapshot::{RequiredArtifact, SnapshotClosure, SnapshotError, SnapshotReceipt},
     },
+    store_identity::InboxCustodyWatermark,
     store_io::{StoreIoError, StoreIoKind},
 };
 use latent_core::native_capacity::{
@@ -79,6 +81,7 @@ pub struct ProtectedRestoreInput {
     snapshot: SnapshotReceipt,
     current: SnapshotClosure,
     window: RestoreWindow,
+    inbox_custody: Option<InboxCustodyWatermark>,
     current_check: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
     owners: Arc<dyn RestoreInputOwners>,
     buffer: NativeBufferPermit,
@@ -103,6 +106,15 @@ impl ProtectedRestoreInput {
     #[must_use]
     pub const fn window(&self) -> &RestoreWindow {
         &self.window
+    }
+
+    #[must_use]
+    pub const fn inbox_custody(&self) -> Option<InboxCustodyWatermark> {
+        self.inbox_custody
+    }
+
+    pub(super) fn verify_inbox_custody(&self, view: &ReadView) -> Result<(), StoreError> {
+        require_inbox_custody(view, &self.original, self.inbox_custody)
     }
 
     #[must_use]
@@ -239,8 +251,8 @@ fn review(
     owners.current().map_err(SnapshotError::Review)?;
     file.check()
         .map_err(|_| SnapshotError::Review(StoreError::Unavailable))?;
-    let snapshot = file
-        .inspect(|key, bytes| owners.archive_row(key, bytes))
+    let (snapshot, inbox_custody) = file
+        .inspect_inbox_custody(|key, bytes| owners.archive_row(key, bytes))
         .map_err(SnapshotError::Review)?;
     if snapshot.snapshot_digest != expected.snapshot_digest
         || snapshot.manifest_digest != expected.manifest_digest
@@ -257,6 +269,7 @@ fn review(
     let view = store.snapshot().map_err(SnapshotError::source)?;
     let current = owners.current_closure(&view)?;
     require_finite_closure(&current)?;
+    require_inbox_custody(&view, &original, inbox_custody).map_err(SnapshotError::Review)?;
     let window = RestoreWindow::capture(&view, &snapshot, file.deadline(), || {
         file.original().with_live(|| ()).map_err(native_error)
     })?;
@@ -286,6 +299,7 @@ fn review(
         snapshot,
         current,
         window,
+        inbox_custody,
         current_check: file.retain_current(),
         owners,
         buffer,
@@ -293,6 +307,19 @@ fn review(
     };
     input.check()?;
     Ok(input)
+}
+
+fn require_inbox_custody(
+    view: &ReadView,
+    original: &NativeReservation,
+    expected: Option<InboxCustodyWatermark>,
+) -> Result<(), StoreError> {
+    let observed =
+        InboxScopeInventory::read(view, || original.with_live(|| ()).map_err(native_error))?;
+    if observed != expected {
+        return Err(StoreError::Conflict);
+    }
+    Ok(())
 }
 
 fn require_finite_closure(current: &SnapshotClosure) -> Result<(), SnapshotError> {

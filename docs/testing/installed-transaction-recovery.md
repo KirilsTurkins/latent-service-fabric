@@ -94,8 +94,10 @@ An offline snapshot of anchored inbox history includes the complete retained
 source rows for the selected namespace and its current incarnation. Save the
 snapshot receipt alongside the original external checkpoint. The receipt's
 `inboxCustody` records the checkpoint generation, source count and inventory
-digest observed during export. Restoration of this history requires an
-inbox-aware reconciliation workflow and remains held in the current profile.
+digest observed during export. Restore inspection compares the archived
+inventory with the retained sources before offering a loss window. Staging
+preserves an exact match in the new protected checkpoint and keeps delivery
+paused for reconciliation. An archive with different source history is refused.
 
 The existing Java declaration remains 96 MiB native recovery capacity with a
 32 MiB maximum reservation, 16 MiB retained store recovery capacity, an

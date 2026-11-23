@@ -4,7 +4,7 @@ use super::{
     PLAN_RESPONSE_BYTES,
 };
 use crate::protected_store::{
-    checkpoint::CheckpointFile,
+    checkpoint::{CheckpointFile, InventoryObservation},
     physical::{FailureLatch, PhysicalStore},
     startup::{start_initializer, StartupReservation},
     RESTORE_INPUT_RESPONSE_BYTES,
@@ -64,15 +64,21 @@ fn initialize(
             .dispatch_checkpoint(&view)
             .map_err(ProtectedStoreError::Store)?,
     );
+    plan.stage
+        .input
+        .verify_inbox_custody(&view)
+        .map_err(ProtectedStoreError::Store)?;
+    let observed = InventoryObservation::Observed(plan.stage.input.inbox_custody());
+    let original = plan.stage.input.original();
     let checkpoint = CheckpointFile::open(
         &store,
         plan.config.checkpoint.clone(),
         plan.config.identity.clone(),
         None,
         dispatch,
-        crate::protected_store::checkpoint::InventoryObservation::NotObserved,
+        observed,
         Arc::clone(&store.failure),
-        plan.stage.input.original(),
+        Arc::clone(&original),
     )
     .map_err(ProtectedStoreError::Store)?;
     if checkpoint
@@ -80,7 +86,7 @@ fn initialize(
         .map_err(ProtectedStoreError::Store)?
         != plan.checkpoint_fence
         || checkpoint
-            .inspect(&view, dispatch)
+            .inspect_with_inventory(&view, dispatch, observed, &original)
             .map_err(ProtectedStoreError::Store)?
             .checkpoint
             .as_ref()

@@ -193,6 +193,32 @@ impl Default for InboxScopeInventory {
 }
 
 impl InboxScopeInventory {
+    pub(crate) fn read(
+        view: &ReadView,
+        mut live: impl FnMut() -> Result<(), StoreError>,
+    ) -> Result<Option<crate::store_identity::InboxCustodyWatermark>, StoreError> {
+        let mut inventory = Self::default();
+        let mut after = None;
+        loop {
+            live()?;
+            let page = view.scan_after(
+                Family::Maintenance,
+                PREFIX,
+                after.as_deref(),
+                64,
+                128 * 1024,
+            )?;
+            for (key, bytes) in page.rows {
+                inventory.observe(&key, &bytes)?;
+            }
+            let Some(cursor) = page.resume else {
+                live()?;
+                return inventory.finish();
+            };
+            after = Some(cursor);
+        }
+    }
+
     pub fn observe(&mut self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
         if self.failed {
             return Err(StoreError::Corrupt);

@@ -266,6 +266,17 @@ impl Setup {
         )
     }
 
+    pub fn with_anchored_inbox() -> Self {
+        Self::with_recipe(
+            Arc::new(SystemActivationClock),
+            RESTORE_INPUT_RESPONSE_BYTES,
+            16 * 1024 * 1024,
+            false,
+            AggregateMigrationRecipe::Count,
+            true,
+        )
+    }
+
     /// This profile declares retained adoption metadata at ORIGINAL admission;
     /// the global 32 MiB partition and every other fixture limit stay intact.
     pub fn with_restore_adoption() -> Self {
@@ -305,6 +316,7 @@ impl Setup {
             work_bytes,
             finite,
             AggregateMigrationRecipe::Count,
+            false,
         )
     }
 
@@ -315,6 +327,7 @@ impl Setup {
             17 * 1024 * 1024 + 512 * 1024,
             true,
             AggregateMigrationRecipe::JavaAggregate,
+            false,
         )
     }
 
@@ -324,6 +337,7 @@ impl Setup {
         work_bytes: u64,
         finite: bool,
         recipe: AggregateMigrationRecipe,
+        anchored_inbox: bool,
     ) -> Self {
         let (root, mut config) = super::super::fixture();
         if finite {
@@ -346,7 +360,14 @@ impl Setup {
                     256 * 1024,
                     Arc::clone(&original) as Arc<dyn std::any::Any + Send + Sync>,
                     move |engine| {
-                        let inputs = logical::populate(engine, recipe, true, 32, None);
+                        let inputs = logical::populate_with_inbox(
+                            engine,
+                            recipe,
+                            true,
+                            32,
+                            None,
+                            anchored_inbox,
+                        );
                         let view = engine.snapshot()?;
                         let mut rows = Vec::new();
                         visit_view(&view, Instant::now() + WATCHDOG, |_, key, bytes| {

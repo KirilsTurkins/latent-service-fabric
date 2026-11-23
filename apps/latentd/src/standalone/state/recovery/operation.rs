@@ -144,10 +144,13 @@ async fn prepare(
     if floor.inbox_custody().is_some()
         && !matches!(
             &request.request,
-            Action::InspectNamespace {} | Action::Snapshot { .. }
+            Action::InspectNamespace {}
+                | Action::Snapshot { .. }
+                | Action::InspectRestore { .. }
+                | Action::Restore { .. }
         )
     {
-        // Restore and recovery writes need an inbox-aware reconciliation contract.
+        // Recovery and resume require explicit inbox reconciliation.
         return Err(super::denied());
     }
     let clock = ProtectedEffectClock::admit(
