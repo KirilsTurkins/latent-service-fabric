@@ -19,8 +19,9 @@ state-mode file; offline requests cannot create a missing source store.
 
 ## Closed native input and output
 
-Invoke `transaction_recovery --config CONFIG --credential-file FILE --tenant
-TENANT --request-file REQUEST`. The protected request is at most 16 KiB and has
+Invoke `latentd transaction-recovery --config CONFIG --credential-file FILE
+--tenant TENANT --request-file REQUEST` from the installed Development node
+binary on Linux x86-64. The protected request is at most 16 KiB and has
 `publication`, `request`, and optional `decoderSources`. Neither digests nor
 paths convey authority. Decoder selectors are closed objects containing only
 `componentDigest` and `publication`; at most three extra publications are
