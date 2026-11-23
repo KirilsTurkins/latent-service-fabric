@@ -7,6 +7,7 @@ fn incoming_configuration_requires_private_leaf_before_runtime_custody_check() {
     use std::os::unix::fs::PermissionsExt;
 
     let (directory, mut config) = configured();
+    write_test_admission_policy(&directory.path().join("policy.json"));
     let path = directory.path().join("incoming.json");
     let configuration = serde_json::json!({
         "formatVersion": 1,
@@ -43,7 +44,40 @@ fn incoming_configuration_requires_private_leaf_before_runtime_custody_check() {
     // Deriving settings does not open the store or admit the input owner.
     assert!(config.derive().unwrap().transactional_triggers.is_some());
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
-    assert!(super::super::triggers::derive(&config).is_err());
+    assert!(failure(config.derive())
+        .message
+        .contains("transactionalTriggers.configurationProtection"));
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn write_test_admission_policy(path: &std::path::Path) {
+    use std::os::unix::fs::PermissionsExt;
+
+    use latent_artifacts::package::artifact_blob_digest;
+    use serde_json::{json, Value};
+
+    // An empty trust set is enough to exercise config derivation without opening
+    // the store or authorizing a publisher.
+    let publisher = r#"{"formatVersion":1,"scope":"config","generation":1,"validFrom":1,"validUntil":10000,"maxSignatureLifetimeSeconds":2000,"maxProofAgeSeconds":60,"keys":[]}"#;
+    let builder = r#"{"formatVersion":1,"scope":"config","generation":1,"validFrom":1,"validUntil":10000,"maxSignatureLifetimeSeconds":2000,"maxProofAgeSeconds":60,"keys":[],"requirements":[]}"#;
+    let revocations = |policy: &str, field: &str| {
+        let mut snapshot = json!({
+            "formatVersion":1,"scope":"config","generation":1,"validFrom":1,"validUntil":10000,
+            "policyDigest":artifact_blob_digest(policy.as_bytes()).to_string(),"revokedKeys":[]
+        });
+        snapshot[field] = json!([]);
+        snapshot
+    };
+    let policy = json!({
+        "formatVersion":1,"scope":"config","generation":1,"validFrom":1,"validUntil":10000,
+        "tenants":[],"publisher":serde_json::from_str::<Value>(publisher).unwrap(),
+        "builder":serde_json::from_str::<Value>(builder).unwrap(),
+        "publisherRevocations":revocations(publisher,"revokedPublishers"),
+        "builderRevocations":revocations(builder,"revokedBuilders"),
+        "sbom":{"formatVersion":1,"embedded":"required","detached":"optional","requireSource":[],"requireLicense":[]}
+    });
+    fs::write(path, serde_json::to_vec(&policy).unwrap()).unwrap();
+    fs::set_permissions(path, fs::Permissions::from_mode(0o600)).unwrap();
 }
 
 fn configured() -> (TempDir, NodeConfig) {
