@@ -87,7 +87,7 @@ async fn scoped_entity_pending_duplicates_and_terminal_replay_keep_one_guest() {
 
 async fn commit_once(rejected: bool) {
     let fixture = Box::pin(Fixture::with_scoped_trigger()).await;
-    let (scope, identity) = source();
+    let (scope, identity) = source(Some("hot"));
     install_source(&fixture, &scope).await;
     let (first, envelope, budget) = invocation(&fixture, &scope, &identity, Some("hot"));
     let guest = first.admit(&envelope, &budget).await.unwrap();
@@ -191,7 +191,7 @@ async fn conflicting_input(fixture: &Fixture, scope: &InboxScope, identity: &Inb
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn missing_source_never_registers_an_entity_lane_or_command() {
     let fixture = Box::pin(Fixture::with_scoped_trigger()).await;
-    let (scope, identity) = source();
+    let (scope, identity) = source(Some("hot"));
     let (admission, envelope, budget) = invocation(&fixture, &scope, &identity, Some("hot"));
     assert_eq!(
         admission
@@ -263,7 +263,7 @@ async fn lost_or_corrupt_source_before_entity_replay_never_becomes_a_new_input()
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn queued_scoped_entity_rechecks_source_before_publishing_a_new_claim() {
     let fixture = Box::pin(Fixture::with_scoped_trigger()).await;
-    let (scope, identity) = source();
+    let (scope, identity) = source(Some("hot"));
     install_source(&fixture, &scope).await;
     let (blocker, mut input, allowance) = fixture.entity_invocation("blocker", "hot");
     input.principal.kind = latent_core::PrincipalKind::Trigger;
@@ -310,7 +310,7 @@ async fn queued_scoped_entity_rechecks_source_before_publishing_a_new_claim() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn scoped_preclaim_duplicates_share_one_queue_owner_without_takeover() {
     let fixture = Box::pin(Fixture::with_scoped_trigger()).await;
-    let (scope, identity) = source();
+    let (scope, identity) = source(Some("hot"));
     install_source(&fixture, &scope).await;
     let (blocker, mut input, allowance) = fixture.entity_invocation("blocker", "hot");
     input.principal.kind = latent_core::PrincipalKind::Trigger;

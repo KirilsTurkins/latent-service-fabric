@@ -222,6 +222,7 @@ async fn select(
                 && operation.function == binding.function
                 && operation.route == binding.route
                 && operation.incarnation == scope.incarnation
+                && operation.entity == scope.entity
         })
         .cloned()
         .ok_or_else(super::denied)?;

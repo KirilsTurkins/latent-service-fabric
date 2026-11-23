@@ -20,6 +20,8 @@ pub struct InboxScope {
     pub tenant: String,
     pub namespace: String,
     pub incarnation: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entity: Option<String>,
     pub processing_scope: String,
     pub provider: String,
     pub stream: String,
@@ -40,7 +42,11 @@ impl InboxScope {
                 return Err(StoreError::Invalid);
             }
         }
-        if self.incarnation == 0 {
+        if self.incarnation == 0
+            || self.entity.as_ref().is_some_and(|entity| {
+                entity.is_empty() || entity.len() > 128 || entity.chars().any(char::is_control)
+            })
+        {
             return Err(StoreError::Invalid);
         }
         Ok(())
@@ -86,6 +92,11 @@ impl InboxScope {
         ] {
             hash.update((part.len() as u64).to_le_bytes());
             hash.update(part);
+        }
+        if let Some(entity) = &self.entity {
+            hash.update(b"lsf-inbox-fixed-entity-v1\0");
+            hash.update((entity.len() as u64).to_le_bytes());
+            hash.update(entity.as_bytes());
         }
         Ok(format!(
             "{:x}",

@@ -48,7 +48,7 @@ impl InboxFactory {
                 let selection = TransactionSelection {
                     namespace: input.namespace.clone(),
                     incarnation: input.incarnation,
-                    entity: None,
+                    entity: input.entity.clone(),
                     operation: binding.function.clone(),
                     mode: TransactionOperationMode::StrictCommand,
                     client_key: Some("inbox-startup-probe".into()),
@@ -108,7 +108,7 @@ impl InboxAdmissionFactory for InboxFactory {
         let selection = TransactionSelection {
             namespace: delivery.namespace().into(),
             incarnation: delivery.incarnation(),
-            entity: None,
+            entity: delivery.scope().entity.clone(),
             operation: selected.target.function.0.clone(),
             mode: TransactionOperationMode::StrictCommand,
             client_key: Some(delivery.client_id().into()),
