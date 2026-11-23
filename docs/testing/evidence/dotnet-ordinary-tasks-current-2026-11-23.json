@@ -173,5 +173,228 @@
     "monitorWaitQualified": false,
     "threadLocalLogicalIsolationQualified": false,
     "fullRuntimeQualification": false
+  },
+  "rootReturnProgramme": {
+    "source": "dabc1b07103d87c4f513b01f55124504058915bb",
+    "executionOrigin": "local",
+    "receipt": {
+      "sha256": "sha256:cc7d9ab9699d88f7fe94e54812619f7a0cd4d24ba15a5c5276e194d34950dceb",
+      "bytes": 294351
+    },
+    "normalComponent": {
+      "sha256": "sha256:dd038d41bddac1f4f6ca40140b11be7b7a299ca5791e20335b3c3847a1cec859",
+      "bytes": 2507414
+    },
+    "normalComponentBuildCount": 1,
+    "nativeProducts": {
+      "latent": {
+        "sha256": "sha256:911ff83e1a51fd00d6de4f4cb5cade2c4c95fca15f2e47aef0f87d823e425607",
+        "bytes": 78851920
+      },
+      "latentd": {
+        "sha256": "sha256:e9823c33f104f5554adea31964f3eb53d4335536747f23ec34795a8e4af4e98b",
+        "bytes": 214257848
+      },
+      "examples/package": {
+        "sha256": "sha256:78ed627079f74622d6b07eb42f1e49ec264c6d2136d2bff56bb4a788cf36b695",
+        "bytes": 22183904
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:556f9b3e47eb8270683d942580dccfead4c717b39080b0f87c2ec9594f7913dc",
+        "bytes": 15217168
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:8d616dac1aee230330838bdb1048791c28ed8e08a9bfecb4698e9199ece88504",
+        "bytes": 28448736
+      }
+    },
+    "nativeTuple": {
+      "sha256": "sha256:607df6108c30d8c79774efba66ea660eb1732462e122947714ac93128284da8c",
+      "bytes": 1495
+    },
+    "generatedHelperCount": 113,
+    "ownerCaps": {
+      "tasks": 8,
+      "executors": 2,
+      "queuedWork": 8,
+      "waits": 16,
+      "timers": 8,
+      "results": 8,
+      "nativeOwners": 8
+    },
+    "invocations": 15,
+    "individualMissingGrants": [
+      "latent:clock/monotonic@0.1.0",
+      "latent:clock/wall@0.1.0",
+      "latent:random/random@0.1.0",
+      "latent:runtime/activation@0.1.0"
+    ],
+    "cases": [
+      {
+        "tenant": "examples",
+        "case": "node-stop-pending",
+        "mode": 1,
+        "category": "success",
+        "decoded": [
+          2893021185
+        ],
+        "publicError": null,
+        "originalCauseQualified": null
+      },
+      {
+        "tenant": "foreign",
+        "case": "node-stop-drain",
+        "mode": 2,
+        "category": "success",
+        "decoded": [
+          2893021186
+        ],
+        "publicError": null,
+        "originalCauseQualified": null
+      },
+      {
+        "tenant": "examples",
+        "case": "ac7-handled-fault",
+        "mode": 3,
+        "category": "success",
+        "decoded": [
+          2893021187
+        ],
+        "publicError": null,
+        "originalCauseQualified": null
+      },
+      {
+        "tenant": "foreign",
+        "case": "ac7-handled-cancel",
+        "mode": 4,
+        "category": "success",
+        "decoded": [
+          2893021188
+        ],
+        "publicError": null,
+        "originalCauseQualified": null
+      },
+      {
+        "tenant": "examples",
+        "case": "ac7-settled-idle",
+        "mode": 5,
+        "category": "success",
+        "decoded": [
+          2893021189
+        ],
+        "publicError": null,
+        "originalCauseQualified": null
+      },
+      {
+        "tenant": "foreign",
+        "case": "ac7-fresh-b-first",
+        "mode": 6,
+        "category": "success",
+        "decoded": [
+          2893021190
+        ],
+        "publicError": null,
+        "originalCauseQualified": null
+      },
+      {
+        "tenant": "examples",
+        "case": "ac7-opaque-unattributed",
+        "mode": 8,
+        "category": "platform-failure",
+        "decoded": null,
+        "publicError": "guest-trap",
+        "originalCauseQualified": false
+      },
+      {
+        "tenant": "foreign",
+        "case": "ac7-fresh-b-after-opaque",
+        "mode": 6,
+        "category": "success",
+        "decoded": [
+          2893021190
+        ],
+        "publicError": null,
+        "originalCauseQualified": null
+      },
+      {
+        "tenant": "examples",
+        "case": "ac7-fault-unattributed",
+        "mode": 9,
+        "category": "platform-failure",
+        "decoded": null,
+        "publicError": "guest-trap",
+        "originalCauseQualified": false
+      },
+      {
+        "tenant": "foreign",
+        "case": "ac7-fresh-b-after-fault",
+        "mode": 6,
+        "category": "success",
+        "decoded": [
+          2893021190
+        ],
+        "publicError": null,
+        "originalCauseQualified": null
+      },
+      {
+        "tenant": "examples",
+        "case": "ac7-fresh-a-final",
+        "mode": 6,
+        "category": "success",
+        "decoded": [
+          2893021190
+        ],
+        "publicError": null,
+        "originalCauseQualified": null
+      }
+    ],
+    "rootCloseAndWaitObservations": [
+      {
+        "mode": "pending",
+        "event": "root-close",
+        "sequence": 1,
+        "tasks": 2,
+        "waits": 0,
+        "timers": 0
+      },
+      {
+        "mode": "pending",
+        "event": "wait-pending",
+        "sequence": 2,
+        "tasks": 3,
+        "waits": 1,
+        "timers": 2
+      },
+      {
+        "mode": "drain",
+        "event": "root-close",
+        "sequence": 3,
+        "tasks": 2,
+        "waits": 1,
+        "timers": 1
+      },
+      {
+        "mode": "drain",
+        "event": "wait-pending",
+        "sequence": 4,
+        "tasks": 2,
+        "waits": 1,
+        "timers": 2
+      },
+      {
+        "mode": "drain",
+        "event": "wait-pending",
+        "sequence": 5,
+        "tasks": 2,
+        "waits": 2,
+        "timers": 3
+      }
+    ],
+    "postCallActiveQueuedQuarantinedAndReserved": 0,
+    "nodeShutdownCleanlyReaped": true,
+    "originalFaultCauseQualified": false,
+    "opaqueCauseQualified": false,
+    "lateGenerationQualified": false,
+    "fullAC7Qualified": false
   }
 }

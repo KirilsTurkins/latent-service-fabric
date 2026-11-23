@@ -8,6 +8,14 @@ Each case retired all active cells, queued work and reserved quota. The
 [case results and per-invocation costs](../testing/evidence/dotnet-ordinary-tasks-current-2026-11-23.json)
 identify the original dependency, compiler profile and component.
 
+The root-return programme passed all 15 signed outcomes across two tenants on
+`dabc1b07103d87c4f513b01f55124504058915bb`. The node observed root closure and
+pending waits while work remained. Handled errors and cancellation finished,
+opaque work and an unhandled fault produced the expected public failures, and
+fresh calls succeeded for each tenant. The original managed causes of those
+two failures remain unknown. The same receipt records all 11 application
+outcomes, four individually missing grants and the original owner ceilings.
+
 To run the separate root-return programme on Linux, use a clean checkout and
 the .NET tools installed from its runtime sources. The local runner builds
 five default native products and a fresh NativeAOT component under the same

@@ -166,7 +166,7 @@ class RootReturnNormalControls(unittest.TestCase):
         import copy
         import json
         from unittest.mock import patch
-        from tools.dotnet_guest import managed_work, task_wait
+        from tools.dotnet_guest import managed_work
         from tools.phase2_operator_process import WorkflowError
         from tools.tests.test_dotnet_task_binding import current_port
         port = current_port()
