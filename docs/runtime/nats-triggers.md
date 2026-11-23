@@ -7,6 +7,18 @@ controller, scheduler and fresh activation stores. It uses the same confined TLS
 transport and rotating opaque credentials as the [publisher](nats-events.md).
 It adds no guest import and no transactional outbox.
 
+## Transactional inbox status
+
+The ordinary pull profile starts a fresh activation on redelivery. On
+Development, configuring `transactionalTriggers` fails with
+`transactionalTriggers.scopeCustodyUnavailable`. The protected store can
+validate an existing processing scope against its checkpoint and inspect
+an earlier command using its authenticated input. Creating the first scope
+and recovering it safely across broker replacement or an older restore still
+need an operator-approved source. An outbound event staged by a signed
+command uses a separate, available installation.
+[Configuration gate](../../apps/latentd/src/config/derive.rs) · [Deferred publication](../development/deferred-jetstream.md)
+
 ## Authority and binding
 
 Each `TriggerBinding` fixes an ID, tenant, trusted principal subject, service,

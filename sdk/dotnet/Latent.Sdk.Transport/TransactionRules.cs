@@ -24,7 +24,7 @@ internal static partial class TransactionRules
     private static T Present<T>(T? value) where T : class => value ?? throw new FormatException("missing transaction value");
     private static void Text(string? value, int maximum = 256, bool required = true, bool controls = true)
     {
-        Require(value is not null && (!required || value.Length != 0) && GraphBudget.Utf8.GetByteCount(value) <= maximum &&
+        Require(value is not null && value.Length <= maximum && (!required || value.Length != 0) && GraphBudget.Utf8.GetByteCount(value) <= maximum &&
             (!controls || !value.Any(char.IsControl)));
     }
     private static void Identity(string value) { Text(value, controls: false); Require(!value.Contains('\0')); }
@@ -112,7 +112,7 @@ internal static partial class TransactionRules
         switch (value)
         {
             case null: return;
-            case string text: budget.Spend(4L * GraphBudget.Utf8.GetByteCount(text)); return;
+            case string text: budget.Text(text); return;
             case ReadOnlyMemory<byte> bytes: budget.Spend(3L * bytes.Length); return;
             case IReadOnlyDictionary<string, string> map:
                 if (map.Count > 32) throw new GraphLimitException();
@@ -135,9 +135,10 @@ internal static partial class TransactionRules
         {
             case Tx.InvokeCommandRequest value:
                 Selected(value.Profile); var selected = Selector(value.Command); Invocation(value.Invocation, selected.Namespace!.Tenant); Identity(value.InputFormat);
-                var keys = new HashSet<string>(StringComparer.Ordinal); Require(value.ExpectedVersions.Count <= 128);
+                var keys = new HashSet<string>(StringComparer.Ordinal); Require(value.ExpectedVersions.Count <= 128); var expectedCount = 0;
                 foreach (var entry in value.ExpectedVersions)
                 {
+                    Require(++expectedCount <= 128);
                     Bytes(entry.Key, 1024, false); Require(keys.Add(Convert.ToHexString(entry.Key.Span)) && (entry.Absent.HasValue != entry.Version.HasValue));
                     if (entry.Absent.HasValue) Require(entry.Absent == true);
                     if (entry.Version is { } version) Bytes(version);
@@ -454,13 +455,39 @@ internal static partial class TransactionRules
             var invoke = original as Tx.InvokeCommandRequest; var state = original as Tx.MutateStateRequest; var lifecycle = original as Tx.MutateNamespaceRequest;
             var effectMutation = original as Tx.PlanEffectMutationRequest;
             var effectPlan = state?.EffectPlan ?? (original as Tx.GetStateOperationReceiptRequest)?.OriginalEffectPlan;
+            // Check byte limits before allocating recovery copies. ReadOnlyMemory
+            // can still reference caller-owned mutable arrays after cancellation.
+            if (effectMutation is not null)
+            {
+                Bytes(effectMutation.ExpectedVersion);
+                effectMutation = effectMutation with { ExpectedVersion = effectMutation.ExpectedVersion.ToArray() };
+            }
+            if (effectPlan is not null)
+            {
+                Bytes(effectPlan.PlanDigest);
+                var originalEffect = effectPlan.Original;
+                if (originalEffect is not null)
+                {
+                    Bytes(originalEffect.ExpectedVersion);
+                    originalEffect = originalEffect with { ExpectedVersion = originalEffect.ExpectedVersion.ToArray() };
+                }
+                effectPlan = effectPlan with { Original = originalEffect, PlanDigest = effectPlan.PlanDigest.ToArray() };
+            }
             var dispatcher = original as Tx.ControlDispatcherRequest ?? (original as Tx.GetDispatcherOperationRequest)?.Original;
             if (dispatcher is not null) { Text(dispatcher.OperationId); Enum(dispatcher.Action.Value, 2); DispatcherGeneration(dispatcher.ExpectedGeneration); }
             if (state is not null) Bytes(state.ExpectedVersion);
+            List<Tx.ExpectedVersion>? expectedVersions = null;
             if (invoke is not null)
             {
                 Require(invoke.ExpectedVersions is not null && invoke.ExpectedVersions.Count <= 128);
-                foreach (var entry in invoke.ExpectedVersions!) { Bytes(entry.Key, 1024, false); if (entry.Version is { } originalVersion) Bytes(originalVersion); }
+                expectedVersions = new List<Tx.ExpectedVersion>();
+                foreach (var entry in invoke.ExpectedVersions!)
+                {
+                    Require(expectedVersions.Count < 128);
+                    Bytes(entry.Key, 1024, false);
+                    if (entry.Version is { } originalVersion) Bytes(originalVersion);
+                    expectedVersions.Add(entry with { Key = entry.Key.ToArray(), Version = entry.Version is { } copiedVersion ? new ReadOnlyMemory<byte>(copiedVersion.ToArray()) : null });
+                }
                 if (invoke.RetryAttempt is { } retry) Fence(retry.ExpectedAbort);
             }
             Profile.PublicationRef? publication = original switch
@@ -485,10 +512,7 @@ internal static partial class TransactionRules
                 EffectMutation = effectMutation ?? effectPlan?.Original, EffectPlan = effectPlan,
                 AuthorizationPublication = publication, RetryRequestId = invoke?.RetryAttempt?.RequestId,
                 ExpectedAbort = invoke?.RetryAttempt?.ExpectedAbort is { } abort ? abort with { OwnerFence = abort.OwnerFence.ToArray() } : null,
-                ExpectedVersions = invoke?.ExpectedVersions.Count <= 128 ? invoke.ExpectedVersions.Select(v => v with
-                {
-                    Key = v.Key.ToArray(), Version = v.Version is { } presentVersion ? new ReadOnlyMemory<byte>(presentVersion.ToArray()) : (ReadOnlyMemory<byte>?)null
-                }).ToArray() : null
+                ExpectedVersions = expectedVersions?.ToArray()
             };
             Collections(snapshot, new GraphBudget(384 * 1024, 4096, CancellationToken.None));
             foreach (var id in new[] { snapshot.ActivationId, snapshot.OperationId, snapshot.AttemptId, snapshot.ReceiptId, snapshot.EffectId, snapshot.RetryRequestId }) if (id is not null) Text(id);

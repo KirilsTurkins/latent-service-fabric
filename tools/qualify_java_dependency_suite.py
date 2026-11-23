@@ -17,7 +17,8 @@ if __package__ in {None, ''}:
 from tools.build_observation import build_environment
 from tools.build_snapshot import canonical, digest
 from tools.java_capsule_project import create
-from tools.java_guest.compiler import Compiler, read_only_dependency_cache, tool_inventory
+from tools.java_guest.compiler import read_only_dependency_cache, tool_inventory
+from tools.java_standard_http_library import AcquisitionCompiler as Compiler
 from tools.phase2_operator_process import read_json, require, write_json
 from tools.phase3_resource_identity import file_identity
 from tools.qualify_java_capsules import inputs
@@ -79,7 +80,7 @@ def main(argv=None):
         project = create(output / 'compiler-project', 'greeting')
         compiler = Compiler(output / 'compiler', args.wasi_sdk, gradle=args.gradle,
             sdk=project / 'vendor/lsf/sdk/java-guest', platform=project / 'vendor/lsf/wit/platform',
-            timeout=min(900, commands.deadline - time.monotonic()))
+            timeout=min(900, commands.deadline - time.monotonic()), _deadline=commands.deadline)
         component, _bindings = compiler.compile(project / 'src', project / 'wit',
             read_json(project / 'capsule-project.json')['world'], output / 'compiler-component')
         compiler.check_unchanged()

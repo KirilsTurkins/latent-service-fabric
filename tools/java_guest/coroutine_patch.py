@@ -8,6 +8,7 @@ from pathlib import Path
 import zipfile
 
 from tools.rust_capsule_project import read_file
+from tools.java_guest import field_read_patch
 
 UPSTREAM_SHA256 = '5fb6d1c6e33fb4418239ec4c3cb93435b194bf5b3d36e8350836e2830567ba8c'
 BEFORE = 'phi.getIncomings().removeIf(incoming -> !domainSet.contains(incoming.getSource().getIndex()));'
@@ -2520,7 +2521,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
     private boolean pinnedStringInfoArchive(java.nio.file.Path jar) throws Exception {
         // The currently executing finder is the trust anchor checked by the
         // owned compiler's pre-execution loaded-class receipt. Every other
-        // entry, including the other twelve replacements, is authenticated.
+        // entry, including every other replacement, is authenticated.
         String executingFinder = "org/teavm/model/util/AsyncMethodFinder.class";
         java.util.TreeMap<String, java.util.zip.ZipEntry> entries = new java.util.TreeMap<>();
         long total = 0;
@@ -2569,7 +2570,7 @@ CHECKPOINT_VALIDATION = '''    private void validateCheckpointCallers() {
         // an arbitrary mixture or any unknown helper/replacement is refused.
         return entries.size() == 1877 && skipped == 1
                 && (identity.equals("27dd98bd0940cc205d0546a00182fc5225dfbeec1ce8de843c63825600302df7")
-                    || identity.equals("210799a37dfb44936170e5977630dfa62f69e87f378f5c2936fedf8565f208c4"));
+                    || identity.equals("f4489efb9c1efeb88646972720ef12f2a642fa41ef499848fc6607191aca760d"));
     }
 
     // The platform emitter for this one method is an identity operation. This
@@ -3167,10 +3168,10 @@ VOLATILE_AFTER = '''                            mutatedVars.computeIfAbsent(tryC
                                         .add(definition.getVariableIndex());
                             }
                         } else {'''
-PATCH_CLASSES = COROUTINE_CLASSES | TYPE_CLASSES | ASYNC_CLASSES | VOLATILE_CLASSES
+PATCH_CLASSES = COROUTINE_CLASSES | TYPE_CLASSES | ASYNC_CLASSES | VOLATILE_CLASSES | field_read_patch.CLASSES
 CONTROL = CLASS_ROOT + 'Check.class'
 ARRAY_CONTROL = TYPE_ROOT + 'ArrayTypeCheck.class'
-CONTROLS = frozenset((CONTROL, ARRAY_CONTROL)) | MONITOR_CONTROLS
+CONTROLS = frozenset((CONTROL, ARRAY_CONTROL, field_read_patch.CONTROL)) | MONITOR_CONTROLS
 MAX_JAR_BYTES = 64 * 1024 * 1024
 RELOCATED_IMPORTS = ('IntHashSet', 'IntIntHashMap', 'IntSet')
 
@@ -3309,7 +3310,9 @@ def jar_entries(path: Path) -> dict[str, bytes]:
             or {name for name in result if name.startswith(TYPE_ROOT + 'AsyncMethodFinder')
                 and name.endswith('.class')} != ASYNC_CLASSES
             or {name for name in result if name.startswith(VOLATILE_ROOT + 'VolatileDefinitionFinder')
-                and name.endswith('.class')} != VOLATILE_CLASSES):
+                and name.endswith('.class')} != VOLATILE_CLASSES
+            or {name for name in result if name.startswith(field_read_patch.ROOT + 'RepeatedFieldReadElimination')
+                and name.endswith('.class')} != field_read_patch.CLASSES):
         raise ValueError('coroutine-patch-class-closure')
     return result
 
@@ -3444,12 +3447,13 @@ def stage(compiler, project: Path, destination: Path) -> dict:
     corrected_volatile = corrected_volatile_source(volatile_raw); volatile_source.write_bytes(corrected_volatile)
     monitor_control = folder / 'MonitorAsyncControl.java'
     monitor_control.write_bytes(read_file(sdk / 'MonitorAsyncControl.java'))
+    field_source, field_control = field_read_patch.prepare(sdk, folder)
     # Compiler.run provides the original process, output and remaining-time bounds.
     classes = folder / 'classes'
     read_file(sdk / 'Compile.java')
     compiler.run('java-coroutine-patch', 'java', sdk / 'Compile.java', source, control, classes,
                  os.pathsep.join(map(str, jars)), type_source, array_control, async_source, monitor_control,
-                 volatile_source)
+                 volatile_source, field_source, field_control)
     replacement = folder / 'teavm-core-patched.jar'
     receipt = replace_jar(original[0], classes, replacement)
     for mode, selected in (('original', original[0]), ('corrected', replacement)):
@@ -3472,6 +3476,7 @@ def stage(compiler, project: Path, destination: Path) -> dict:
     if json.loads(cost) != {'schemaVersion': 'latent.java.coroutine-copy-cost-control.v1',
             'cases': cost_controls, 'passed': True}:
         raise ValueError('coroutine-patch-real-copy-cost-control')
+    receipt.update(field_read_patch.check(compiler, original[0], replacement, classes, jars))
     if identities != jar_identities(compiler.dependency_cache, checked_jars(compiler, project)):
         raise ValueError('coroutine-patch-original-input-mutated')
     build = project / 'build.gradle'; script = read_file(build).decode('utf-8')

@@ -3,8 +3,11 @@
 The transaction host extends the existing activation manager and Wasmtime
 backend. A trusted state runtime supplies `TransactionActivationAdmission` to
 `start_transaction_with_deadline`. Ordinary starts retain their existing
-behavior. The manager resolves and admits the original principal and revision,
-then calls the transaction admission before preparing code or assigning a cell.
+behavior. The manager resolves the original principal and revision and obtains
+transaction admission before guest execution. For an HTTP command it prepares
+the component first, so the typed codec can canonicalize the input before the
+durable claim. Execution can reuse that preparation.
+[Admission interface](../../crates/latent-node/src/activation_manager/transaction.rs)
 Strict transactions require the explicitly configured Phase 4 budget profile,
 zero child calls and zero outbound requests. Queries additionally require zero
 state writes and zero intents. The supplied host must retain that exact
@@ -14,9 +17,13 @@ activation ID and `ActivationBudget` instance.
 when explicitly enabled. Components importing state or intents select its exact
 versioned interfaces, mixed synchronous/asynchronous signatures, and affine
 resource shapes. Staging borrows the original state's transaction resource.
-Immediate-effect imports are rejected on this surface. Stateless components
-continue to select the frozen Phase 3 ABI. Prepared and native cache identities
-include the explicitly installed transaction profile and its digest.
+The manifest also recognizes `latent:http/client@0.2.0`. The controlled
+`forbidden-http` fixture calls that import with zero outbound budget and
+requires the typed `permission-denied` result. Strict commands stage authorized
+effects for dispatch after commit. [Transactional authoring](../component-development/transactional-authoring.md)
+
+Stateless components continue to select the frozen Phase 3 ABI. Prepared and
+native cache identities include the installed transaction profile and its digest.
 
 Canonical lowering and native pages retain the host's real byte owner. A page
 has at most 128 entries and 1 MiB, and the host resource table limits live pages,

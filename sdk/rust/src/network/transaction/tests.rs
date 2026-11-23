@@ -320,6 +320,22 @@ fn client() -> RpcClient {
 }
 
 #[test]
+fn generated_client_profile_matches_native_admission() {
+    let native: t::TransactionProfile = model::current_profile().try_into().unwrap();
+    assert_eq!(native, phase4::current_profile());
+
+    let mut request = lookup();
+    request.profile = Some(native);
+    assert_eq!(phase4::Request::from(request.clone()).validate(), Ok(()));
+    let mismatched = request.profile.as_mut().unwrap();
+    mismatched.preparation_profile_digest = format!("sha256:{}", "0".repeat(64));
+    assert_eq!(
+        phase4::Request::from(request).validate(),
+        Err(phase4::ValidationError::UnsupportedProfile)
+    );
+}
+
+#[test]
 fn full_width_generation_presence_and_qualified_pages_roundtrip() {
     let value = model::MutateNamespaceRequest {
         namespace: Some(inspect().into()),
@@ -546,6 +562,8 @@ async fn actual_unary_keeps_durable_rejection_through_later_audit_failure_and_ne
                 .invoke_command(request, model::CallOptions::default())
                 .await
                 .unwrap_err();
+            assert!(error.transport.dispatched, "{error:?}");
+            assert_eq!(error.transport.grpc_status, Some(10), "{error:?}");
             assert_eq!(peer.calls.load(Ordering::Acquire), 2);
             assert!(error.observed.is_none());
             assert_eq!(

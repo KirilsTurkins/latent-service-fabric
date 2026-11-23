@@ -44,14 +44,16 @@ def generate() -> str:
 
     def convert(kind: str, value: str, outbound: bool, wire_type: str = "") -> str:
         if kind == "bytes":
-            return f"ByteString.copyFrom({value}.asReadOnlyBuffer())" if outbound else f"{value}.asReadOnlyByteBuffer()"
+            return f"budget.bytes({value})" if outbound else f"{value}.asReadOnlyByteBuffer()"
         if kind in enums:
-            return f"{value}.value()" if outbound else f"new Transactions.{kind}({value})"
+            return f"budget.scalar({value}.value())" if outbound else f"new Transactions.{kind}({value})"
         if kind in messages or kind in external:
             prefix = "Wire." if kind in external else ""
             if outbound and wire_type == ".latent.invocation.v1.PlatformError":
-                return f"Wire.toInvocationPlatformError({value})"
-            return f"{prefix}{'toWire' if outbound else 'fromWire'}({value})"
+                return f"Wire.toInvocationPlatformError({value}, budget, depth + 1)"
+            return f"{prefix}{'toWire' if outbound else 'fromWire'}({value}{', budget, depth + 1' if outbound else ''})"
+        if outbound:
+            return f"budget.text({value})" if kind == 'string' else f"budget.scalar({value})"
         return value
 
     lines = ["// Generated from the authoritative Phase 4 transaction descriptors.",
@@ -61,6 +63,9 @@ def generate() -> str:
     for name, fields in messages.items():
         native = wire[name]
         lines += [f"    static {native} toWire(Transactions.{name} value) {{",
+                  "        return toWire(value, new TransactionProtocol.EncodeBudget(), 0);", "    }", "",
+                  f"    static {native} toWire(Transactions.{name} value, TransactionProtocol.EncodeBudget budget, int depth) {{",
+                  "        budget.enter(depth);",
                   f"        var result = {native}.newBuilder();"]
         for group in sorted({field["oneof"] for field in fields if "oneof" in field}):
             count = " + ".join(f"(value.{lower(field['name'])}().isPresent() ? 1 : 0)"
@@ -70,9 +75,10 @@ def generate() -> str:
             kind, accessor, setter = field["type"], f"value.{lower(field['name'])}()", upper(field["name"])
             suffix = "Value" if kind in enums else ""
             if field.get("map"):
-                lines.append(f"        result.putAll{setter}({accessor});")
+                lines.append(f"        result.putAll{setter}(budget.map({accessor}));")
             elif field.get("repeated"):
-                lines.append(f"        for (var item : {accessor}) result.add{setter}{suffix}({convert(kind, 'item', True, field.get('wireType', ''))});")
+                limit = 256 if name == 'LinkedRetention' and field['name'] == 'required_record_ids' else 128
+                lines.append(f"        for (var item : budget.list({accessor}, {limit})) result.add{setter}{suffix}({convert(kind, 'item', True, field.get('wireType', ''))});")
             elif field.get("optional"):
                 lines.append(f"        if ({accessor}.isPresent()) result.set{setter}{suffix}({convert(kind, accessor + '.get()', True, field.get('wireType', ''))});")
             else:

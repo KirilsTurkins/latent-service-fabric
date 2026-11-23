@@ -11,7 +11,11 @@ renderer. It does not embed Node, a browser, or application-owned host threads.
 
 The explicit source-owned async-import runtime can automatically install the
 [buffered fetch candidate](../../docs/component-development/typescript-fetch-candidate.md)
-under ordinary dependency global lookups when streaming HTTP is declared.
+under ordinary dependency global lookups. Select `latent:http/streaming@0.3.0`
+for the buffered v1 port, or `latent:http/phase-timing@0.4.0` for the phase
+port with observed response status text. The latter imports the original
+upload/body/chunk types and uses its own provider and grant. Both resolve
+Fetch after bounded body buffering. [Phase project setup](../../docs/component-development/typescript-fetch-profiles.md#select-the-phase-contract-for-a-new-project)
 The [runtime capability matrix](../../docs/component-development/runtime-capabilities.md)
 links the finite signed Fetch-client and runtime programmes. Each retains its
 original source and provider identities; it does not qualify every dependency
@@ -123,6 +127,21 @@ dependent cleanup even when abort handling fails. These source paths share the
 original activation's limits; they are separate from a claim of complete browser
 or Node API compatibility. Follow the existing signed runtime controls and their
 actual source identities for execution evidence.
+
+AbortSignal and EventTarget graph construction checks native-owner pressure at
+its rooted entry, before obtaining native pointers or allocating graph storage.
+This lets synchronous construction collect unreachable graphs even without an
+intervening Promise allocation. Listener insertion uses the same checkpoint while
+its inputs are rooted, after discarding its lookup cursor and before staging any
+captures. Individual graph
+admissions remain non-collecting so staged callbacks and weak-set iterators cannot
+be invalidated. Empty AbortSignal algorithm-list storage is allocated only on first
+use, with independent container and algorithm ownership before publication.
+Collection does not release reachable owners or expand the original limits:
+physical destruction and collection completion still precede host acknowledgement,
+and failed acknowledgement retains the ownership debt. Finite collector controls
+exercise this ordering; successful signed execution still requires the actual
+source-matched runtime qualification.
 
 After the guide's prerequisites, run from the checkout:
 

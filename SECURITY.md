@@ -120,9 +120,13 @@ signed operation companion and current namespace/result/effect authority.
 Ordinary stateless deployment does not enable it. The host atomically commits
 state, intents, original outcomes and applicable inbox facts; guests cannot
 commit early, weaken atomicity or make unsupported irreversible calls inside
-strict commands. Result lookup and deferred dispatch have independent current
-permissions. Durable intent is not provider acknowledgement or universal
-exactly-once external execution.
+strict commands. Result lookup, effect inspection and dispatch each require
+current permission. On a browser result route, the host checks the original
+command’s association with the supplied `Effect-Id` and checks data permission
+through response delivery. The browser receives the effect ID, disposition and
+dispatch attempt. Provider receipt data requires a separately authorized
+management call.
+[Transaction HTTP](docs/development/transaction-http-v1.md#original-request-facts)
 
 Timeout, disconnect, cancellation and expired/unknown history are not abort
 proof. Recover by the original command/attempt/effect identity under current

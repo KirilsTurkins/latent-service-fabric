@@ -56,6 +56,12 @@ Representative source tests (not a complete coverage inventory):
 - [`provider_grant_retains_original_native_capacity_after_context_retirement_and_refuses_replacement`](src/authority/tests.rs)
 - [`namespace_close_invalidates_accepted_grants_without_refunding_physical_work`](src/authority/tests.rs)
 
+The [scheduler](src/runtime/driver.rs) can receive completed worker receipts
+directly from its bounded channel. If persisting a receipt hits backpressure,
+it retains that single pending receipt for the next scheduled retry. A
+backpressured candidate scan keeps its cursor. These retries record already
+observed work under the original attempt identity.
+
 ## Related documentation
 
 - [Durable effect authority implementation](../../docs/development/durable-effect-authority.md)

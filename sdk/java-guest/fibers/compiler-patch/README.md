@@ -253,7 +253,7 @@ larger heap or promise that every finite computation fits a caller's fuel grant.
 The pass retains the existing 65,536-method/block and 262,144-edge/variable/work
 bounds. Original proof classes have at most 128 KiB per entry in a regular JAR
 of at most 64 MiB. The unchanged archive writer still requires exactly the
-original three finder classes and thirteen replacement classes, each at most
+original three finder classes and eighteen replacement classes, each at most
 1 MiB, and preserves every nonreplacement entry. Digest streams and a strict
 public-context proxy lambda introduce no source companion class; the actual
 javac output must still pass that unchanged closure before acceptance.
@@ -331,3 +331,47 @@ qualify managed sibling fairness and GC roots at runtime. Fresh signed-component
 regressions remain separate work. Historical signed GC and checkpoint receipts
 keep their original source identities; this partial AC3 repair does not retag
 them or complete issue #741.
+
+
+## Exceptional field-cache entries
+
+`RepeatedFieldReadElimination.java` is the unmodified Apache-2.0 source from
+[TeaVM 0.15.0](https://github.com/konsoletyper/teavm/blob/0.15.0/core/src/main/java/org/teavm/model/optimization/RepeatedFieldReadElimination.java),
+SHA-256 `4c63bc1a7f22a7302cc2ae7fdf8f3b3cc7bd784ca5974613b7d43d21d77a780f`.
+Its copyright and license header remain intact. The private derivation authenticates
+that entire preimage, resets per-pass state, and invalidates the field cache at
+**each exception-handler entry**, not only at a handler's dominance frontier.
+The eight HPPC imports receive the published release's existing relocation.
+
+A block-level dominator can contain a field store after a throwing or suspending
+call. Its exception handler may run before that store and before the stored
+value is even defined. Forwarding the block's final cached value into the handler
+can silently change cleanup semantics or make coroutine PHI reconstruction fail
+with `Variable used before definition`. A value defined before the call does not
+make the forwarding correct: the field may still contain its original value on
+the exceptional path. This repair does not remove the handler, suppress the PHI
+check, change Java source, or disable ordinary field-read optimization.
+
+The existing private compiler stage compiles the five original optimizer class
+identities together with the previous thirteen replacements. It preserves every
+other JAR entry and refuses missing or additional companion classes. The whole
+archive fingerprint accepted by the finder is updated for exactly this derived
+production JAR; the separate minimal control overlay retains its original identity.
+The source cache, toolchain pins, compiler bounds and guest budgets are unchanged.
+`FieldReadCheck.class` is a control only and never enters the production JAR.
+
+Each compiler preparation requires separate original and corrected JVM runs of
+real TeaVM IR controls. They cover static/instance fields, used/ignored exception
+variables, both late-defined and already-defined store values, the exact original
+coroutine PHI failure, shared/nested handlers, retained normal-path forwarding,
+volatile reads, and a reused optimizer with freshly reset state. The original
+run must expose the defect; the corrected run must preserve handler reloads and
+complete coroutine transformation. Missing, malformed or failed observations
+refuse preparation rather than granting implicit credit from an older receipt.
+
+The initial local reproduction used JDK 21 with the actual locked TeaVM JARs.
+The repaired compiler generated C for the unchanged cached-handoff fixture that
+failed in hosted run `44526395518`. This is source/compiler evidence only: the
+repository-pinned JDK 25 build, Wasm linking, signed calls, and physical guest
+cleanup still need a source-matched hosted result. No earlier signed runtime trap
+is considered resolved merely because C generation succeeds.

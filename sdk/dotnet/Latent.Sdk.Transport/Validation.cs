@@ -4,7 +4,7 @@ namespace Latent.Sdk.Transport;
 
 public sealed partial class BoundedClient
 {
-    private static bool Text(string? value, int maximum, bool empty = false) => value is not null && (empty || value.Length != 0) && GraphBudget.Utf8.GetByteCount(value) <= maximum;
+    private static bool Text(string? value, int maximum, bool empty = false) => value is not null && value.Length <= maximum && (empty || value.Length != 0) && GraphBudget.Utf8.GetByteCount(value) <= maximum;
     private static bool OptionalText(string? value, int maximum) => value is null || Text(value, maximum, true);
     private static bool RecordKind(Profile.CapabilityPolicyRecordKind value) => value == Profile.CapabilityPolicyRecordKind.Policy || value == Profile.CapabilityPolicyRecordKind.ProviderBinding;
     private static void Require(bool valid) { if (!valid) throw new FormatException("invalid bounded profile value"); }

@@ -123,5 +123,5 @@ internal sealed class CallState
         ? new Tx.TransactionCancellationException(new(failure, TransactionIdentity, ObservedTransaction), token)
         : new Profile.ClientCancellationException(failure, token);
 
-    private static string? Known(string? value) => value is not null && Encoding.UTF8.GetByteCount(value) <= 256 ? value : null;
+    private static string? Known(string? value) => value is not null && value.Length <= 256 && Encoding.UTF8.GetByteCount(value) <= 256 ? value : null;
 }

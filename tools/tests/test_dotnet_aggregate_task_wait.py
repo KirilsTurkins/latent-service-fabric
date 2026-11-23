@@ -25,13 +25,16 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
         from tools.dotnet_guest.managed_work import INLINE_PRIMARY_REWRITE_RECEIPT
         current = {**self.receipt(), 'managedAcceptedWork': copy.deepcopy(INLINE_PRIMARY_REWRITE_RECEIPT),
                    'aggregateTaskWait': copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED),
-                   'generatedHelperCount': 109, 'finiteWaitObservation': task_wait.FINITE_OBSERVATION,
-                   'unchangedOriginalMethods': 44708}
+                   'generatedHelperCount': 113, 'finiteWaitObservation': task_wait.FINITE_OBSERVATION,
+                   'unchangedOriginalMethods': 44706}
         task_wait.validate_current_receipt(current, finite=True, managed=True, aggregate=True,
                                            require_finite_observation=True)
-        for receipt in (aggregate_task_wait.PREFETCH_POLL_V3_EXPECTED, aggregate_task_wait.FINITE_NESTING_EXPECTED):
+        for receipt in (aggregate_task_wait.PREFETCH_POLL_V3_EXPECTED, aggregate_task_wait.FINITE_NESTING_EXPECTED,
+                        aggregate_task_wait.COMPLETED_SINGLE_EXPECTED, aggregate_task_wait.EVENT_WAIT_EXPECTED):
             historical = copy.deepcopy(current)
             historical['aggregateTaskWait'] = copy.deepcopy(receipt)
+            historical['generatedHelperCount'] = 109
+            historical['unchangedOriginalMethods'] = 44706 if 'eventWait' in receipt else 44708
             task_wait.validate_receipt(historical, finite=True, managed=True, aggregate=True)
             with self.assertRaisesRegex(ValueError, 'current-prefetched-poll-required'):
                 task_wait.validate_current_receipt(historical, finite=True, managed=True, aggregate=True)
@@ -39,7 +42,8 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
                   '(System.Threading.Tasks.Task,System.Int32,System.Threading.CancellationToken)')
         single = ('System.Boolean System.Threading.WasiEventLoop::LsfWaitForActualTaskCompletion'
                   '(System.Threading.Tasks.Task)')
-        for change in ('missing-helper', 'changed-helper', 'old-single', 'old-nesting', 'missing-inverse', 'new-owner'):
+        for change in ('missing-helper', 'changed-helper', 'old-single', 'old-nesting', 'missing-inverse',
+                       'new-owner', 'missing-event', 'event-native-owner', 'event-finite-enabled'):
             wrong = copy.deepcopy(current)
             aggregate = wrong['aggregateTaskWait']
             if change == 'missing-helper': del aggregate['rewrittenBodies'][method]
@@ -47,9 +51,45 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
             elif change == 'old-single': aggregate['rewrittenBodies'][single] = aggregate_task_wait.FINITE_NESTING_EXPECTED['rewrittenBodies'][single]
             elif change == 'old-nesting': aggregate['nesting'] = aggregate_task_wait.PREFETCH_POLL_V3_EXPECTED['nesting']
             elif change == 'missing-inverse': aggregate['finiteMask']['inverseExact'] = False
-            else: aggregate['finiteMask']['nativeOwners'] = 1
+            elif change == 'new-owner': aggregate['finiteMask']['nativeOwners'] = 1
+            elif change == 'missing-event': del aggregate['eventWait']
+            elif change == 'event-native-owner': aggregate['eventWait']['nativeOwners'] = 1
+            else: aggregate['eventWait']['unsupported'] = 'finite-enabled'
             with self.subTest(change=change), self.assertRaises(ValueError):
                 task_wait.validate_current_receipt(wrong, finite=True, managed=True, aggregate=True)
+
+        # All four context helpers and the redirected Wait body are closed
+        # identities, not optional metadata or an unchecked helper allowance.
+        event_methods = [name for name in current['aggregateTaskWait']['rewrittenBodies']
+                         if 'LsfAggregateEvent' in name]
+        self.assertEqual(len(event_methods), 4)
+        event_methods.append('System.Boolean System.Threading.ManualResetEventSlim::Wait'
+                             '(System.Int32,System.Threading.CancellationToken)')
+        for name in event_methods:
+            for mutation in ('missing', 'changed'):
+                wrong = copy.deepcopy(current)
+                bodies = wrong['aggregateTaskWait']['rewrittenBodies']
+                if mutation == 'missing': del bodies[name]
+                else: bodies[name] = '0' * 64
+                with self.subTest(method=name, mutation=mutation), self.assertRaises(ValueError):
+                    task_wait.validate_current_receipt(wrong, finite=True, managed=True, aggregate=True)
+        for key, replacement in (('callerContext', 'default-context'),
+                                 ('capturedSiblingContext', 'notifications-suppressed'),
+                                 ('flowSuppression', 'Capture-only'), ('contextHelpers', True),
+                                 ('contextHelpers', 3), ('newPersistentFields', False),
+                                 ('newPersistentFields', 1)):
+            wrong = copy.deepcopy(current)
+            wrong['aggregateTaskWait']['eventWait'][key] = replacement
+            with self.subTest(field=key, replacement=replacement), self.assertRaises(ValueError):
+                task_wait.validate_current_receipt(wrong, finite=True, managed=True, aggregate=True)
+        for count in (109, 112, 114, True):
+            with self.subTest(count=count), self.assertRaises(ValueError):
+                task_wait.validate_current_receipt({**current, 'generatedHelperCount': count},
+                    finite=True, managed=True, aggregate=True)
+        wrong = copy.deepcopy(current)
+        wrong['aggregateTaskWait']['rewrittenBodies']['foreign-context-helper'] = '0' * 64
+        with self.assertRaises(ValueError):
+            task_wait.validate_current_receipt(wrong, finite=True, managed=True, aggregate=True)
 
     def test_authenticated_receipt_refuses_every_missing_or_cross_typed_aggregate_identity(self):
         original = self.receipt()
@@ -111,13 +151,13 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
             from tools.dotnet_guest.managed_work import INLINE_PRIMARY_REWRITE_RECEIPT
             current = {**self.receipt(), 'managedAcceptedWork': copy.deepcopy(INLINE_PRIMARY_REWRITE_RECEIPT),
                        'aggregateTaskWait': copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED),
-                       'generatedHelperCount': 109, 'finiteWaitObservation': task_wait.FINITE_OBSERVATION,
-                       'unchangedOriginalMethods': 44708,
+                       'generatedHelperCount': 113, 'finiteWaitObservation': task_wait.FINITE_OBSERVATION,
+                       'unchangedOriginalMethods': 44706,
                        'outputDigest': digest(b'aggregate-control')}
             write_json(arguments[-1], current)
         control.run_tool = rewrite
         intermediate = control.prepare(managed=True)
-        self.assertEqual(intermediate.validated_helper_count(), 109)
+        self.assertEqual(intermediate.validated_helper_count(), 113)
         def filesystem(stage, *arguments):
             self.assertEqual(stage, 'closed-filesystem-rewrite')
             original, base, assembly, receipt = arguments[-4:]
@@ -126,7 +166,7 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
             assembly.write_bytes(b'final-filesystem-control')
             value = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/closed-filesystem-rewrite.json').read_bytes())
             value.update(baseDigest=intermediate.identity['digest'], outputDigest=digest(assembly.read_bytes()),
-                         unchangedBaseMethods=44853)
+                         unchangedBaseMethods=44857)
             write_json(receipt, value)
         final = closed_filesystem.prepare(control.sdk, control.tools, control.packages, control.root/'dotnet',
             control.project, control.output, control.evidence, filesystem, task_wait_port=intermediate)
@@ -168,16 +208,16 @@ class AggregateTaskWaitPortTests(unittest.TestCase):
             extra = {'profile', 'frameworkInput', 'tool', 'derived', 'sourceCaptureDigest', 'targetsDigest',
                 'nativeAotReferenceBinding', 'selection'}
             from tools.dotnet_guest.managed_work import INLINE_PRIMARY_REWRITE_RECEIPT
-            current = {**self.receipt(), 'generatedHelperCount': 109, 'unchangedOriginalMethods': 44708,
+            current = {**self.receipt(), 'generatedHelperCount': 113, 'unchangedOriginalMethods': 44706,
                 'finiteWaitObservation': task_wait.FINITE_OBSERVATION,
                 'managedAcceptedWork': copy.deepcopy(INLINE_PRIMARY_REWRITE_RECEIPT),
                 'aggregateTaskWait': copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED)}
             docs['task-wait-port.json'] = {**current, **{key: before[key] for key in extra},
                 'outputDigest': before['outputDigest']}
-            docs['closed-filesystem-port.json']['unchangedBaseMethods'] = 44853
+            docs['closed-filesystem-port.json']['unchangedBaseMethods'] = 44857
             docs['runtime-profile.json']['profile'] = 'runtime-managed'
             selection = docs['compiler-patches.json']['patches'][0]['selection']
-            selection.update(generatedHelperCount=109, finiteWaitObservation=task_wait.FINITE_OBSERVATION,
+            selection.update(generatedHelperCount=113, finiteWaitObservation=task_wait.FINITE_OBSERVATION,
                              aggregateTaskWait=current['aggregateTaskWait'])
             def publish(selected):
                 for name, value in selected.items():

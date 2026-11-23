@@ -29,6 +29,11 @@ and existing-engine optimizations do not automatically introduce a guest backend
 The [website review guide](../docs/runtime/research-proposals.md) maps these drafts
 to their evidence and remaining decisions.
 
+The [nonblocking outbound-stream companion](../research/standard-outbound/nonblocking-v2-decision.md)
+is a separate research proposal awaiting an owner decision. Its draft WIT
+depends on the existing v1 resource types. [ADR-0061](../adr/0061-bound-standard-outbound-streams.md)
+covers the bounded v1 design.
+
 ## Accepted proposals
 
 - [RFC-0001: Minimum execution isolation profiles](0001-minimum-execution-isolation-profiles.md), accepted by ADR-0026; enforcement follows its explicitly assigned implementation tickets.

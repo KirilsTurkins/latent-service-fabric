@@ -51,9 +51,10 @@ The trusted payload API binds an admitted attempt to its original capability
 session once, then `attach_verified_payloads` checks captured local pins against
 that session and the actual engine view. Result/effect attachments must match the
 existing inline bytes and media type; their rows, accounting and reciprocal
-links join the same envelope. Pins survive the actual write. This library path
-does not install standalone physical startup inventory, S3 reference dispatch
-or complete state/snapshot retention qualification.
+links join the same envelope. Pins survive the actual write. On restart the
+standalone store verifies required local files before readiness. S3 reference
+dispatch and complete snapshot retention still require qualification.
+[Standalone store startup](../../apps/latentd/src/standalone/state/store.rs)
 
 ## Integration boundaries
 
@@ -63,7 +64,7 @@ The host commits after validated guest completion; guests cannot call a durable 
 
 Direct workspace dependencies: [latent-core](../latent-core/README.md), [latent-state](../latent-state/README.md), [latent-effects](../latent-effects/README.md). Linux selects [latent-capabilities](../latent-capabilities/README.md) and [latent-local-blobs](../latent-local-blobs/README.md), the latter under the `latent-blobs` dependency alias.
 
-Consumers with normal workspace dependency edges include [latentd](../../apps/latentd/README.md), [latent-wire](../latent-wire/README.md), [latent-node](../latent-node/README.md). Optional features still gate the selected graph; target-specific and test edges are also declared in the manifests.
+Consumers with normal workspace dependency edges include [latentd](../../apps/latentd/README.md), [latent-wire](../latent-wire/README.md), [latent-node](../latent-node/README.md), [latent-nats](../latent-nats/README.md). Optional features still gate the selected graph; target-specific and test edges are also declared in the manifests.
 
 Use [Cargo.toml](Cargo.toml) for external dependencies, target gates and test/build edges; [the workspace manifest](../../Cargo.toml) and [the toolchain guide](../../docs/development/toolchain.md) own current pins. Dependency presence does not install a runtime service.
 
