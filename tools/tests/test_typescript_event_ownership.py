@@ -30,12 +30,45 @@ def emitted_listener_body(source):
 
 
 class TypeScriptEventOwnershipTests(unittest.TestCase):
+    def test_graph_pressure_controls_fail_instead_of_skipping_without_a_compiler(self):
+        from unittest.mock import patch
+        with patch.dict(os.environ, {}, clear=True), patch.object(shutil, 'which', return_value=None):
+            with self.assertRaisesRegex(RuntimeError, r'C\+\+ compiler is required'):
+                NativeGraphPressureControls.setUpClass()
+
     def test_original_declaration_or_native_source_drift_is_rejected(self):
         value = originals()
         for name in value:
             changed = dict(value, **{name: value[name]+b'changed'})
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'unreviewed-original-Event-source'):
                 events.derive_event_ownership(changed, b'not-used')
+
+    def test_graph_pressure_collection_precedes_objects_but_not_staged_native_admission(self):
+        derived, receipt = derive()
+        for path, signature, allocation in (
+                (abort_engine.PATH, b'JSObject *AbortSignal::create(', b'JS_NewObjectWithGivenProto'),
+                ('StarlingMonkey/builtins/web/event/event-target.cpp',
+                 b'JSObject *EventTarget::create(', b'JS_NewObjectWithGivenProto'),
+                ('StarlingMonkey/builtins/web/event/event-target.cpp',
+                 b'bool EventTarget::constructor(', b'JS_NewObjectForConstructor')):
+            source = derived[path]
+            start = source.index(signature)
+            body = source[start:source.index(b'\n}', start)]
+            self.assertLess(body.index(b'prepare_native_object_allocation(cx)'), body.index(allocation))
+        source = derived['StarlingMonkey/builtins/web/event/event-target.cpp']
+        for signature in (b'bool EventTarget::init(', b'bool EventTarget::invoke_listeners('):
+            start = source.index(signature)
+            body = source[start:source.index(b'\n}', start)]
+            self.assertNotIn(b'prepare_native_object_allocation', body)
+        root = Path(__file__).resolve().parents[2]
+        native = (root/'sdk/typescript-guest/activation/native_engine.cpp').read_bytes()
+        start = native.index(b'bool admit_native_object(')
+        body = native[start:native.index(b'\n}', start)]
+        self.assertIn(b'acknowledge_promise_retirement(cx)', body)
+        self.assertNotIn(b'collect_before_native_allocation', body)
+        self.assertFalse(receipt['nativeGraphAdmissionCollects'])
+        self.assertEqual(receipt['nativeGraphPressureCollection'],
+                         'rooted-construction-and-listener-boundaries-before-staging')
 
     def test_abort_weak_containers_are_admitted_before_publication_and_algorithms_stay_absent(self):
         derived, _ = derive()
@@ -875,6 +908,86 @@ class AbortWeakCollectionControls(unittest.TestCase):
         self.assertLess(source.index(b'dependents->value.init(cx);'), source.index(b'dependents.release()'))
         self.assertEqual(receipt['abortWeakEdges'], 'runtime-WeakCache-sweep-not-object-marking-hook')
         self.assertFalse(receipt['signedLSFComponentQualified'])
+
+
+class NativeGraphPressureControls(unittest.TestCase):
+    """Emitted construction and production leases with a finite collector double."""
+    @classmethod
+    def setUpClass(cls):
+        compiler = os.environ.get('LSF_TYPESCRIPT_RECORD_CXX') or shutil.which('c++') or shutil.which('cl')
+        if not compiler:
+            raise RuntimeError('C++ compiler is required for graph pressure controls')
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.addClassCleanup(cls.temporary.cleanup)
+        output = Path(cls.temporary.name)
+        root = Path(__file__).resolve().parents[2]
+        native = (root/'sdk/typescript-guest/activation/native_engine.cpp').read_bytes()
+        records = (root/'sdk/typescript-guest/activation/promise_records.h').read_bytes()
+        containers = (root/'sdk/typescript-guest/activation/native_objects.h').read_bytes()
+        selected, _ = derive()
+        abort = selected[abort_engine.PATH]
+        event = selected['StarlingMonkey/builtins/web/event/event-target.cpp']
+
+        def function(source, signature):
+            start = source.index(signature)
+            return source[start:source.index(b'\n}', start) + 2]
+
+        constructors = b'\n'.join((function(event, b'JSObject *EventTarget::create('),
+            function(event, b'bool EventTarget::init('), function(abort, b'JSObject *AbortSignal::create(')))
+        finalizers = b'\n'.join((function(event, b'void EventTarget::finalize('),
+                               function(abort, b'void AbortSignal::finalize(')))
+        template = (root/'tools/tests/fixtures/typescript_graph_pressure.cpp').read_bytes()
+        replacements = {
+            b'// INSERT_PRESSURE_HELPER': function(records, b'template<class Checkpoint>'),
+            b'// INSERT_COLLECTION_BOUNDARY': function(native, b'bool collect_before_native_allocation('),
+            b'// INSERT_PREPARE_BOUNDARY': function(native, b'bool prepare_native_object_allocation('),
+            b'// INSERT_ADMISSION': function(native, b'bool admit_native_object('),
+            b'// INSERT_CONTAINER_FACTORY': function(containers, b'template<class T> using NativeContainer'),
+            b'// INSERT_FINALIZERS': finalizers,
+        }
+        for marker, body in replacements.items():
+            if template.count(marker) != 1:
+                raise AssertionError('unique native pressure insertion point required')
+            template = template.replace(marker, body, 1)
+        call = b'  if (!lsf::typescript::activation::prepare_native_object_allocation(cx)) return nullptr;\n'
+        if constructors.count(call) != 2:
+            raise AssertionError('two rooted constructor boundaries required')
+        for label, bodies in (('selected', constructors), ('previous', constructors.replace(call, b''))):
+            source_file = output/(label+'.cpp')
+            source_file.write_bytes(template.replace(b'// INSERT_CONSTRUCTORS', bodies, 1))
+            binary = output/(label+'.exe' if os.name == 'nt' else label)
+            include = str(root/'sdk/typescript-guest/activation')
+            if Path(compiler).stem.lower() == 'cl':
+                args = [compiler, '/nologo', '/std:c++17', '/EHsc', '/W4', '/WX', '/wd4100', '/I'+include,
+                        str(source_file), '/Fe:'+str(binary), '/Fo:'+str(output/(label+'.obj'))]
+            else:
+                args = [compiler, '-std=c++17', '-Wall', '-Wextra', '-Werror', '-Wno-unused-parameter', '-I'+include,
+                        str(source_file), '-o', str(binary)]
+            result = subprocess.run(args, capture_output=True, timeout=60)
+            if result.returncode or len(result.stdout) + len(result.stderr) > 65536:
+                raise AssertionError((result.stdout + result.stderr)[:65536].decode(errors='replace'))
+            setattr(cls, label+'_binary', binary)
+
+    def check_case(self, binary, case, passed=True):
+        result = subprocess.run([str(binary), case], capture_output=True, timeout=10)
+        self.assertEqual(result.returncode, 0 if passed else 1, (result.stdout + result.stderr)[:65536])
+        self.assertEqual(json.loads(result.stdout),
+                         {'case': case, 'passed': passed, 'engineQualified': False})
+
+    def test_emitted_constructors_collect_dead_graphs_without_releasing_live_owners(self):
+        for case in ('synchronous-turnover', 'fanout-after-dead-graphs', 'event-construction-collects',
+                     'all-reachable-remains-exhausted', 'admission-does-not-collect', 'entry-pending',
+                     'snapshot', 'acknowledgement-failure', 'no-release-before-collection-end'):
+            with self.subTest(case=case):
+                self.check_case(self.selected_binary, case)
+
+    def test_previous_constructors_cannot_reclaim_dead_graph_capacity(self):
+        for case in ('synchronous-turnover', 'fanout-after-dead-graphs', 'event-construction-collects'):
+            with self.subTest(case=case):
+                self.check_case(self.previous_binary, case, False)
+        for case in ('all-reachable-remains-exhausted', 'admission-does-not-collect'):
+            with self.subTest(case=case):
+                self.check_case(self.previous_binary, case)
 
 
 if __name__ == "__main__":

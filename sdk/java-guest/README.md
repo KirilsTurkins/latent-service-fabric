@@ -42,6 +42,20 @@ cleanup. This ownership repair does not qualify custom `Thread.start` overrides;
 the [runtime profile](../../docs/runtime/java-activation-fibers.md) records that
 remaining reference-runtime difference.
 
+Managed activation builds retain the **64 KiB C stack at the start of linear
+memory**, including the guarded Date link path. Before preprocessing and sealing,
+the compiler authenticates TeaVM's exception header and reuses automatic exception
+descriptors only across disjoint handler lifetimes. Nested and recursive handlers
+keep independent storage; setjmp, catch, restore and rethrow semantics are unchanged.
+This replaces the earlier 128 KiB backing workaround without a larger caller grant.
+Placing the downward-growing stack below static data prevents its underflow from
+silently overwriting activation-owner registries; an out-of-bounds access traps the
+activation instead. The 64 MiB linker maximum, Java heap limits and host ownership
+budgets are unchanged, as is the non-fiber compiler command. See the
+[exception-slot lifetime controls](../../docs/testing/java-exception-slot-lifetimes.md).
+Finite regression controls do not promise arbitrary recursion or every library fits;
+signed execution and physical cleanup still require source-matched qualification.
+
 Edit `src/dev/latent/app/Capsule.java` and `wit/world.wit` in the created project.
 The entry class implements generated `dev.latent.generated.Bindings.Exports`.
 Additional Java source files beneath `src` are captured. Declare developer-selected
@@ -228,10 +242,11 @@ toward their worker limit. They release their own pool monitor before calling
 the factory or starting its returned thread, so another thread can submit or
 shut down while the factory runs. A caller that already holds that monitor can
 still block progress. An in-progress factory or managed-worker registration
-fences root retirement. Cached pools reuse idle workers, create workers for
-additional accepted work, and retain their single-attempt null-factory
-rejection. A cached factory returning an already-live thread fails with
-`IllegalThreadStateException` without adopting or interrupting that thread.
+fences root retirement. Cached pools, including the default async facility,
+reuse idle workers, create workers for additional accepted work, and retain
+their single-attempt null-factory rejection. A cached factory returning an
+already-live thread fails with `IllegalThreadStateException` without adopting
+or interrupting that thread.
 This growth remains bounded by the original host owner limits and Java heap;
 it adds no host grant.
 
@@ -253,10 +268,31 @@ worker, root drain remains pending until the accepted work runs or is
 withdrawn. A fallback factory error preserves the queued entries and original
 error. Cached pools reject a first task when their factory returns null.
 
-Cached pools retain their SDK queue for idle-worker handoff. If a caller holds
-the public pool monitor while submitting to an idle worker and immediately
-calls `shutdownNow()`, the SDK can return that queued task without running it;
-the tested JDK synchronous handoff instead runs the task and returns no entry.
+Cached pools hand work to a worker only after it enters its idle wait. The
+original Queue and Result owners stay charged until that worker physically
+claims the task; `shutdownNow()` does not return the committed handoff. A
+caller holding the public pool monitor can still delay the worker's execution.
+Idle-worker links use the existing bounded Java heap and no additional host
+owner; scanning the list and waking waiters scales with the existing worker
+count.
+
+A committed callback observes the stop interruption even when its factory or
+idle-wait/host-settlement path consumed the original wakeup. The worker checks
+for a concurrent `shutdownNow()` again after clearing an earlier interrupt. If
+an application `Thread` hook throws while preparing that status, the callback
+is not run: its original Item and remaining Result/action ownership are retained,
+completion is fenced, and the acknowledged Queue settlement is not retried.
+
+The ordinary `shutdown-now` signed fixture now also selects cached-worker
+handoffs before its existing four scenarios: immediate stop, graceful stop,
+callback failure, and a committed first task whose startup wrapper consumes the
+stop interruption. A factory that refuses all additional workers makes a
+successful later submission the idle-handoff witness; sleeps, thread-state
+inspection, and a fixed number of yields are not used as evidence. The same
+application bytes go to the reference JDK and guest compiler. The fixed
+cached-handoff branch selects this existing signed qualification independently
+of the scheduled-library programme, with unchanged budgets and physical-idle
+checks. Selection and JVM source results are not signed execution evidence.
 
 The first-task reservation is an intrusive link on the already charged entry;
 its worker retains only the original Queue lease identity, not the command or

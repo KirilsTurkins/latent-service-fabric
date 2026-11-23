@@ -79,6 +79,14 @@ bool admit_native_object(JSContext* cx, NativeObjectLease& lease) {
   if (!records.track(owner, record)) { JS_ReportOutOfMemory(cx); return false; }
   return lease.bind(record);
 }
+// Construction preflight is a finite, non-collecting double here; the exact
+// production collector and constructor combination runs in NativeGraphPressureControls.
+// This fixture isolates lazy storage and never refunds an owner's capacity.
+bool prepare_native_object_allocation(JSContext* cx) {
+  if (JS_IsExceptionPending(cx)) return false;
+  if (records.stopped()) { cx->error = "retirement-denied"; return false; }
+  return true;
+}
 // INSERT_NATIVE_CONTAINER_FACTORY
 }
 namespace native = lsf::typescript::activation;

@@ -191,6 +191,7 @@ class ExceptionSlotsLinkTests(unittest.TestCase):
                         patch.object(enum_guard.c_failure_context, 'run', return_value='') as link, \
                         patch.object(date_link_guard, 'run', return_value={'test': 'date'}) as date_link:
                     result = enum_guard.run(compiler, generated, (), output, output / 'core.wasm')
+                self.assertEqual(result['cStack'], {'bytes': 65536, 'layout': 'stack-first'})
                 self.assertEqual(result['exceptionSlots']['slots'], 1)
                 self.assertEqual(result['exceptionSlots']['regions'], 2)
                 seal.assert_called_once()

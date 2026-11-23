@@ -221,8 +221,118 @@ public final class Capsule {
         }
     }
 
+    /** Ordinary APIs shared unchanged by the reference JDK and signed guest. */
+    static final class CachedHandoffProbe {
+        final Object startup = new Object();
+        final Thread[] worker = new Thread[1];
+        final boolean holdStartup;
+        final ExecutorService pool;
+        final IllegalArgumentException callbackFailure = new IllegalArgumentException("cached-handoff-callback");
+        boolean entered, released;
+        int callbacks;
+
+        CachedHandoffProbe(boolean holdStartup) {
+            this.holdStartup = holdStartup;
+            pool = Executors.newCachedThreadPool(command -> {
+                // Refuse growth rather than pretending that a yield/sleep proves
+                // an idle worker. Successful later admission must reuse this one.
+                if (worker[0] != null) return null;
+                worker[0] = new Thread(() -> {
+                    if (this.holdStartup) {
+                        synchronized (startup) {
+                            entered = true; startup.notifyAll();
+                            while (!released) {
+                                try { startup.wait(); }
+                                catch (InterruptedException consumed) { }
+                            }
+                        }
+                        // Deliberately consume the startup stop wakeup. The pool
+                        // must restore it before the already committed callback.
+                        Thread.interrupted();
+                    }
+                    command.run();
+                });
+                return worker[0];
+            });
+        }
+        int callback(int mode) {
+            // This monitor also holds back the JDK callback, whose internal
+            // pool lock is not the public executor monitor used by the SDK.
+            synchronized (pool) {
+                require(Thread.currentThread() == worker[0]);
+                require(Thread.currentThread().isInterrupted() == (mode != 1));
+                callbacks++;
+                if (mode == 2) throw callbackFailure;
+                return 42;
+            }
+        }
+        void releaseStartup() {
+            synchronized (startup) { released = true; startup.notifyAll(); }
+        }
+        void run(int mode) throws InterruptedException, ExecutionException {
+            try {
+                Future<Integer> accepted;
+                if (holdStartup) {
+                    accepted = pool.submit(() -> callback(mode));
+                    long end = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+                    synchronized (startup) {
+                        while (!entered) {
+                            long left = end - System.nanoTime();
+                            require(left > 0);
+                            startup.wait(left / 1_000_000, (int)(left % 1_000_000));
+                        }
+                    }
+                    require(pool.shutdownNow().isEmpty() && !accepted.isDone());
+                    releaseStartup();
+                } else {
+                    require(pool.submit(() -> 42).get(5, TimeUnit.SECONDS) == 42);
+                    accepted = null;
+                    long end = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+                    while (accepted == null) {
+                        synchronized (pool) {
+                            try { accepted = pool.submit(() -> callback(mode)); }
+                            catch (RejectedExecutionException notIdle) {
+                                require(!pool.isShutdown());
+                            }
+                            if (accepted != null) {
+                                require(!accepted.isDone() && callbacks == 0);
+                                if (mode == 1) pool.shutdown();
+                                else require(pool.shutdownNow().isEmpty());
+                            }
+                        }
+                        if (accepted == null) {
+                            require(System.nanoTime() - end < 0);
+                            Thread.yield(); // Scheduling only, never the handoff witness.
+                        }
+                    }
+                }
+                try {
+                    require(accepted.get(5, TimeUnit.SECONDS) == 42 && mode != 2);
+                } catch (ExecutionException error) {
+                    if (mode != 2) throw error;
+                    require(error.getCause() == callbackFailure);
+                }
+                require(pool.awaitTermination(5, TimeUnit.SECONDS) && pool.isTerminated());
+                worker[0].join(5000);
+                require(!worker[0].isAlive() && callbacks == 1);
+                require(pool.shutdownNow().isEmpty());
+            } catch (java.util.concurrent.TimeoutException error) {
+                throw new IllegalStateException("cached-handoff-deadline", error);
+            } finally {
+                releaseStartup();
+                pool.shutdownNow();
+                require(pool.awaitTermination(5, TimeUnit.SECONDS));
+                if (worker[0] != null) {
+                    worker[0].join(5000);
+                    require(!worker[0].isAlive());
+                }
+            }
+        }
+    }
+
     public Long run(Long mode) {
         try {
+            new CachedHandoffProbe(mode == 3).run(mode.intValue());
             if (mode == 3) {
                 try (RunningScenario selected = new RunningScenario()) {
                     selected.retireRunning();

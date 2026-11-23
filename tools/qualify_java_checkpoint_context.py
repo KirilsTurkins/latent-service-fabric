@@ -137,6 +137,7 @@ def qualify(output):
     sources = sorted((SDK/'fibers/compiler/dev/latent/guest/runtime/compiler').glob('*.java'))
     raw_finder = SDK/'fibers/compiler-patch/AsyncMethodFinder.java'
     observed = [*sources, CONTROL, COMPILER_CONTROL, MONITOR_CONTROL, CLASSLOADER_CONTROL, raw_finder, ROOT/'tools/java_guest/coroutine_patch.py',
+        ROOT/'tools/java_guest/field_read_patch.py',
         Path(__file__).resolve(), ROOT/'tools/tests/test_java_checkpoint_context.py',
         ROOT/'tools/tests/test_java_checkpoint_compiler.py', SDK/'feasibility/dependencies.lock.json',
         SDK/'feasibility/gradle/verification-metadata.xml']

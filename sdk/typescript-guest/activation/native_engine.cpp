@@ -172,8 +172,11 @@ bool prepare_native_object_allocation(JSContext* cx) {
     JS_ReportErrorASCII(cx, "activation-runtime-native-object-phase-or-admission-denied");
     return false;
   }
-  // Use the same original-owner pressure checkpoint as Promise allocation.
-  // This is a GC-safe preflight, not admission or a refund for reachable work.
+  // Synchronous Abort/Event construction need not allocate another Promise.
+  // Observe dead native graphs and intrinsic records before admitting the next
+  // graph, using the same pressure threshold and original broker accounting.
+  // Callers enter here before obtaining native pointers/iterators: a collection
+  // may relocate JS objects and sweep registered weak sets.
   return collect_before_native_allocation(cx);
 }
 

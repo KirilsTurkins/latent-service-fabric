@@ -16,6 +16,11 @@ MAX_CLASSES = 256
 MAX_SLOTS_PER_CLASS = 256
 MAX_SLOTS = 4096
 MAX_GUARD = 1024 * 1024
+# Reuse disjoint TeaVM exception descriptors before sealing generated input.
+# Retain the original 64 KiB stack, below static data so downward overflow
+# cannot overwrite activation-owner registries.
+ACTIVATION_C_STACK_BYTES = 64 * 1024
+ACTIVATION_C_STACK_FLAGS = ('-Wl,--stack-first', f'-Wl,-z,stack-size={ACTIVATION_C_STACK_BYTES}')
 _SPACE = frozenset(b'\t\n\r\f ')
 _FIRST = frozenset(b'ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz')
 _IDENT = _FIRST | frozenset(b'0123456789')
@@ -450,7 +455,7 @@ def run(compiler, generated: Path, selected: tuple[str, ...], destination: Path,
         c_failure_context.run(compiler, generated, selected, '-target', 'wasm32-wasip1', '-std=c11', '-O2',
             '-DLSF_JAVA_ACTIVATION_PROFILE=1', '-DLSF_TEAVM_WASM=1', '-DTEAVM_CUSTOM_LOG=1',
             '-mllvm', '-wasm-enable-sjlj', '-lsetjmp', '-mllvm', '-wasm-use-legacy-eh=false',
-            '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory', '-Wl,--stack-first', '-Wl,-z,stack-size=65536',
+            '-mexec-model=reactor', '-Wl,--no-entry', '-Wl,--export-memory', *ACTIVATION_C_STACK_FLAGS,
             '-Wl,--max-memory=67108864', '-include', sdk / 'runtime/native.h',
             '-I', bindings, '-I', sdk / 'runtime', '-iquote', generated,
             '-x', 'cpp-output', '-', '-x', 'none', bindings / 'bridge.c', sdk / 'feasibility/platform.c',
@@ -458,6 +463,7 @@ def run(compiler, generated: Path, selected: tuple[str, ...], destination: Path,
     need(original == _bindings_identity(bindings), 'bindings-drift')
     need(index == read_file(index_path, MAX_INDEX), 'index-drift')
     need(date_index == read_file(date_index_path, 32), 'date-index-drift')
+    receipt['cStack'] = {'bytes': ACTIVATION_C_STACK_BYTES, 'layout': 'stack-first'}
     receipt['exceptionSlots'] = exception_slots
     receipt['dateGraph'] = graph_receipt
     receipt['bindings'] = original

@@ -24,7 +24,10 @@ class CheckpointContext(unittest.TestCase):
         self.assertLess(fixed.index('validateCheckpointCallers();'), fixed.index('hasAsyncMethods = findAsyncMethods();'))
         self.assertLess(fixed.index('validateCheckpointCallers();'), fixed.index('validateNonsuspendableProgress();'))
         self.assertLess(fixed.index('validateNonsuspendableProgress();'), fixed.index('hasAsyncMethods = findAsyncMethods();'))
-        self.assertEqual(len(coroutine_patch.PATCH_CLASSES), 13)
+        self.assertEqual(coroutine_patch.PATCH_CLASSES - coroutine_patch.field_read_patch.CLASSES,
+            coroutine_patch.COROUTINE_CLASSES | coroutine_patch.TYPE_CLASSES |
+            coroutine_patch.ASYNC_CLASSES | coroutine_patch.VOLATILE_CLASSES)
+        self.assertEqual(len(coroutine_patch.PATCH_CLASSES), 18)
         self.assertEqual(len(coroutine_patch.ASYNC_CLASSES), 3)
         self.assertNotIn('asyncMethods', coroutine_patch.CHECKPOINT_VALIDATION.split('MethodReference checkpoint', 1)[1])
         self.assertIn('pending.size() == 65536', fixed)
