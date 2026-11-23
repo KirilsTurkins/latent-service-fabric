@@ -76,7 +76,15 @@ static void queried(const latent_transaction_query_result *r, const latent_trans
     const char *expected=getenv("LSF_401_QUERY_EXPECTED_HEX"); if (!expected || !*expected) expected=required("LSF_401_QUERY_MINIMUM_HEX");
     assert(equal_hex(v->view.version.data,v->view.version.length,expected));
     assert(!v->invocation.success.has_committed_state_version && v->invocation.success.effect_ids_count==0);
-    assert(contains_bytes(v->invocation.success.payload,"\"count\":\"2\""));
+    const char *count=getenv("LSF_401_QUERY_EXPECTED_COUNT");
+    if (!count) count="2";
+    const size_t length=strlen(count);
+    assert(length>0 && length<=20 && strspn(count,"0123456789")==length
+        && (length==1 || count[0]!='0') && (length<20 || strcmp(count,"18446744073709551615")<=0));
+    char expected_count[32];
+    const int written=snprintf(expected_count,sizeof(expected_count),"\"count\":\"%s\"",count);
+    assert(written>0 && (size_t)written<sizeof(expected_count));
+    assert(contains_bytes(v->invocation.success.payload,expected_count));
     assert(payload_view_matches(v->invocation.success.payload,expected));
 }
 static void wait(latent_transport *owner, observed *o) { for(unsigned i=0; o->calls==0 && i<1000; ++i) assert(latent_transport_poll(owner,10)); assert(o->calls==1); }

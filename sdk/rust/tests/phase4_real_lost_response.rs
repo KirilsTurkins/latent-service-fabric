@@ -169,6 +169,14 @@ async fn recover_original_commit_after_lost_response() {
 async fn fresh_query_after_commit() {
     let namespace = selector().namespace.expect("namespace");
     let minimum = unhex(&required("LSF_401_QUERY_MINIMUM_HEX"));
+    let count = env::var("LSF_401_QUERY_EXPECTED_COUNT").unwrap_or_else(|_| "2".into());
+    assert_eq!(
+        count
+            .parse::<u64>()
+            .expect("expected query count")
+            .to_string(),
+        count
+    );
     let expected = env::var("LSF_401_QUERY_EXPECTED_HEX")
         .ok()
         .filter(|value| !value.is_empty())
@@ -216,7 +224,7 @@ async fn fresh_query_after_commit() {
         let array = frame.as_array().expect("result frame");
         assert_eq!(array.len(), 1);
         let aggregate = &array[0]["ok"];
-        assert_eq!(aggregate["count"], "2");
+        assert_eq!(aggregate["count"].as_str(), Some(count.as_str()));
         let view_bytes: Vec<u8> =
             serde_json::from_value(aggregate["view-version"].clone()).expect("view bytes");
         assert_eq!(view_bytes, expected);

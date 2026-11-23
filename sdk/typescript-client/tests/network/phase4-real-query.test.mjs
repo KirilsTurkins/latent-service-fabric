@@ -9,6 +9,8 @@ test("fresh query observes the committed view without a command receipt", { skip
   const tenant = required("LSF_401_TENANT"), minimum = Buffer.from(required("LSF_401_QUERY_MINIMUM_HEX"), "hex");
   const expected = Buffer.from(process.env.LSF_401_QUERY_EXPECTED_HEX || required("LSF_401_QUERY_MINIMUM_HEX"), "hex");
   assert.ok(minimum.length && expected.length);
+  const count = process.env.LSF_401_QUERY_EXPECTED_COUNT ?? "2";
+  assert.ok(/^(0|[1-9][0-9]{0,19})$/.test(count) && BigInt(count) <= (1n << 64n) - 1n, "expected query count");
   const namespace = { tenant, namespace: required("LSF_401_NAMESPACE"), incarnation: required("LSF_401_INCARNATION") };
   const client = new RpcClient({ endpoint: `http://${required("LSF_401_ENDPOINT")}`, tenant, credential: Buffer.from(required("LSF_401_TOKEN")) });
   try {
@@ -22,7 +24,7 @@ test("fresh query observes the committed view without a command receipt", { skip
       assert.deepEqual(value.view.namespace, namespace); assert.deepEqual(Buffer.from(value.view.version), expected);
       assert.equal(value.invocation.success.committedStateVersion, undefined); assert.equal(value.invocation.success.effectIds.length, 0);
       const frame = JSON.parse(Buffer.from(value.invocation.success.payload).toString("utf8"));
-      assert.equal(frame.length, 1); assert.equal(frame[0].ok.count, "2"); assert.deepEqual(Buffer.from(frame[0].ok["view-version"]), expected);
+      assert.equal(frame.length, 1); assert.equal(frame[0].ok.count, count); assert.deepEqual(Buffer.from(frame[0].ok["view-version"]), expected);
     }
     console.log("FRESH_QUERY_AFTER_COMMIT");
   } finally {

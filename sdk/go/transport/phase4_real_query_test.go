@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"testing"
 	"time"
 
@@ -35,6 +36,14 @@ func TestPhase4FreshQueryAfterCommitAgainstRealNode(t *testing.T) {
 	minimum, err := hex.DecodeString(rejectionField(t, "LSF_401_QUERY_MINIMUM_HEX"))
 	if err != nil || len(minimum) == 0 {
 		t.Fatal("invalid minimum view")
+	}
+	count, selected := os.LookupEnv("LSF_401_QUERY_EXPECTED_COUNT")
+	if !selected {
+		count = "2"
+	}
+	parsed, err := strconv.ParseUint(count, 10, 64)
+	if err != nil || strconv.FormatUint(parsed, 10) != count {
+		t.Fatal("invalid expected query count")
 	}
 	expected := minimum
 	if raw := os.Getenv("LSF_401_QUERY_EXPECTED_HEX"); raw != "" {
@@ -73,7 +82,7 @@ func TestPhase4FreshQueryAfterCommitAgainstRealNode(t *testing.T) {
 				ViewVersion []int  `json:"view-version"`
 			} `json:"ok"`
 		}
-		if json.Unmarshal(value.Invocation.Success.Payload, &payload) != nil || len(payload) != 1 || payload[0].OK.Count != "2" || len(payload[0].OK.ViewVersion) != len(value.View.Version) {
+		if json.Unmarshal(value.Invocation.Success.Payload, &payload) != nil || len(payload) != 1 || payload[0].OK.Count != count || len(payload[0].OK.ViewVersion) != len(value.View.Version) {
 			t.Fatal("unexpected query value")
 		}
 		for j, octet := range payload[0].OK.ViewVersion {

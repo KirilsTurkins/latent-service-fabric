@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Latent.Sdk.Transport;
@@ -27,6 +28,9 @@ try
         string? expectedHex = Environment.GetEnvironmentVariable("LSF_401_QUERY_EXPECTED_HEX");
         byte[] expectedView = string.IsNullOrEmpty(expectedHex) ? minimum : Convert.FromHexString(expectedHex);
         Check(minimum.Length > 0 && expectedView.Length > 0, "minimum and expected views");
+        var count = Environment.GetEnvironmentVariable("LSF_401_QUERY_EXPECTED_COUNT") ?? "2";
+        Check(ulong.TryParse(count, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed)
+              && parsed.ToString(CultureInfo.InvariantCulture) == count, "expected query count");
         for (int i = 0; i < 3; ++i)
         {
             var target = new Profile.InvocationTarget(tenant, service, "examples:transactional-aggregate/api@1.0.0", "query", queryRoute);
@@ -39,7 +43,7 @@ try
             Check(success.CommittedStateVersion is null && success.EffectIds.Count == 0, "query-only outcome");
             using var frame = JsonDocument.Parse(success.Payload);
             var aggregate = frame.RootElement[0].GetProperty("ok");
-            Check(frame.RootElement.GetArrayLength() == 1 && aggregate.GetProperty("count").GetString() == "2", "committed value");
+            Check(frame.RootElement.GetArrayLength() == 1 && aggregate.GetProperty("count").GetString() == count, "committed value");
             var token = aggregate.GetProperty("view-version"); Check(token.GetArrayLength() == expectedView.Length, "result view size");
             for (int j = 0; j < expectedView.Length; ++j) Check(token[j].GetByte() == expectedView[j], "result view identity");
         }

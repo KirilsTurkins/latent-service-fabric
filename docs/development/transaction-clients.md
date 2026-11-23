@@ -141,5 +141,11 @@ matching namespace, incarnation, publication and original command or view
 values for each scenario. Omitting all three variables selects the original
 Java fixture. Each client uses a distinct command key.
 
+For the fresh-query probes, set `LSF_401_QUERY_EXPECTED_COUNT` to the
+fixture's expected committed count as a canonical unsigned decimal string.
+The existing two-update fixture defaults to `2`. Keep the original minimum
+view token and independently supplied expected view when selecting a different
+signed aggregate.
+
 The full client matrix, backup/migration and packaged qualification remain
 separate acceptance work.

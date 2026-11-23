@@ -28,6 +28,8 @@ public final class Phase4RealQuery {
         String expectedHex = System.getenv("LSF_401_QUERY_EXPECTED_HEX");
         byte[] expected = expectedHex == null || expectedHex.isEmpty() ? minimum : HexFormat.of().parseHex(expectedHex);
         check(minimum.length > 0 && expected.length > 0, "minimum and expected views");
+        String count = System.getenv().getOrDefault("LSF_401_QUERY_EXPECTED_COUNT", "2");
+        check(Long.toUnsignedString(Long.parseUnsignedLong(count)).equals(count), "expected query count");
         var namespace = new Transactions.NamespaceSelector(tenant, required("LSF_401_NAMESPACE"), required("LSF_401_INCARNATION"));
         var options = new Management.CallOptions(Optional.of(15000L));
         var client = new RpcClient(ClientConfig.loopback("http://" + required("LSF_401_ENDPOINT"), tenant, required("LSF_401_TOKEN")));
@@ -43,7 +45,7 @@ public final class Phase4RealQuery {
                 check(value.source().isPresent() && success.committedStateVersion().isEmpty() && success.effectIds().isEmpty(), "query-only outcome");
                 var frame = JsonParser.parseString(new String(bytes(success.payload()), StandardCharsets.UTF_8)).getAsJsonArray();
                 check(frame.size() == 1, "result frame"); var result = frame.get(0).getAsJsonObject().getAsJsonObject("ok");
-                check(result.get("count").getAsString().equals("2"), "committed value"); var token = result.getAsJsonArray("view-version");
+                check(result.getAsJsonPrimitive("count").isString() && result.get("count").getAsString().equals(count), "committed value"); var token = result.getAsJsonArray("view-version");
                 check(token.size() == expected.length, "result view size");
                 for (int j = 0; j < expected.length; ++j) check(token.get(j).getAsInt() == Byte.toUnsignedInt(expected[j]), "result view identity");
             }
