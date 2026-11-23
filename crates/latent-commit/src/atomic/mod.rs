@@ -29,7 +29,7 @@ pub use retention::{
     RetentionRequest, RetiredCommand,
 };
 pub use validation::{
-    durable_row_format, inspect_inbox_terminal, validate_linked_row, validate_row, validate_view,
+    durable_row_format, inspect_inbox_delivery, validate_linked_row, validate_row, validate_view,
     validate_view_observed, validate_view_observed_with_checkpoint,
 };
 pub use writer::{

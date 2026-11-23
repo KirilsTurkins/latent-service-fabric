@@ -108,6 +108,22 @@ fn scoped_equal_retries_share_one_attempt_and_keep_original_source_and_expiry() 
     let scope = scope();
     install(&store, &scope);
     let original = aborted(&store, &effects, &scope);
+    let view = store.snapshot().unwrap();
+    assert_eq!(
+        inspect_inbox_delivery(
+            &view,
+            &scope,
+            &original.key().operation,
+            &original.key().recovery_scope,
+            1
+        ),
+        Ok(Some(Outcome::Aborted))
+    );
+    assert_eq!(
+        inspect_inbox_delivery(&view, &scope, &original.key().operation, "other-trigger", 1),
+        Ok(None)
+    );
+    drop(view);
     let retry = retry_request(&original, "same-retry");
     let view = store.snapshot().unwrap();
     let first = prepare(&view, &scope, &retry, 102);
@@ -134,6 +150,16 @@ fn scoped_equal_retries_share_one_attempt_and_keep_original_source_and_expiry() 
     assert_eq!(winner.identity_expires(), original.identity_expires());
     assert_eq!(winner.inbox_identity(), original.inbox_identity());
     let view = store.snapshot().unwrap();
+    assert_eq!(
+        inspect_inbox_delivery(
+            &view,
+            &scope,
+            &original.key().operation,
+            &original.key().recovery_scope,
+            1
+        ),
+        Ok(Some(Outcome::Pending))
+    );
     assert!(matches!(
         PreparedAdmission::retry(
             &view,

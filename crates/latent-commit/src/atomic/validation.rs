@@ -3,10 +3,11 @@
 
 use super::{
     codec::{Decoder, METADATA_BYTES},
-    record::{attempt_row_key, command_row_key, inbox_row_key, result_row_key},
+    record::{attempt_row_key, command_row_key, inbox_command_key, inbox_row_key, result_row_key},
     retention::{ExpiredResult, MaintenanceProgress, PROGRESS_KEY},
     AtomicError, CommandRecord, DurableResult, Identity, Outcome, ReplayPolicy,
 };
+use latent_core::transaction_contract::CommandKey;
 use latent_state::{
     embedded::{Family, ReadView, RowKey, StoreError},
     inbox_scope::{require_existing, InboxScope},
@@ -200,13 +201,15 @@ fn validate_linked(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), At
     Ok(())
 }
 
-/// Descriptive terminal metadata for one authenticated stream sequence. The
-/// caller supplies current operator authority and owns the original read view.
-/// A missing marker establishes no outcome or replay permission.
-pub fn inspect_inbox_terminal(
+/// Descriptive metadata for one authenticated stream sequence. The caller
+/// supplies current operator authority, the configured trigger's recovery scope
+/// and the original read view. Only committed and rejected deliveries have an
+/// inbox marker. A missing outcome never grants retry or replay permission.
+pub fn inspect_inbox_delivery(
     view: &ReadView,
     source: &InboxScope,
     operation: &str,
+    recovery_scope: &str,
     stream_sequence: u64,
 ) -> Result<Option<Outcome>, StoreError> {
     require_existing(view, source)?;
@@ -223,7 +226,15 @@ pub fn inspect_inbox_terminal(
         &stream_sequence.to_string(),
     );
     let Some(bytes) = view.get_bounded(&key, 86)? else {
-        return Ok(None);
+        let result = inspect_inbox_attempt(
+            view,
+            source,
+            operation,
+            recovery_scope,
+            &binding,
+            stream_sequence,
+        );
+        return result.map_err(storage_error);
     };
     let result = (|| {
         let record = linked_inbox_attempt(view, &key, &bytes)?;
@@ -237,6 +248,48 @@ pub fn inspect_inbox_terminal(
         Ok(Some(record.outcome))
     })();
     result.map_err(storage_error)
+}
+
+fn inspect_inbox_attempt(
+    view: &ReadView,
+    source: &InboxScope,
+    operation: &str,
+    recovery_scope: &str,
+    binding: &str,
+    sequence: u64,
+) -> Result<Option<Outcome>, AtomicError> {
+    let message = sequence.to_string();
+    let key = CommandKey {
+        tenant: source.tenant.clone(),
+        namespace: source.namespace.clone(),
+        incarnation: source.incarnation.to_string(),
+        recovery_scope: recovery_scope.into(),
+        operation: operation.into(),
+        entity: source.entity.clone(),
+        client_key: inbox_command_key(&source.provider, binding, &message)?,
+    };
+    let id = super::command_identity(&key)?;
+    let Some(bytes) = command_metadata_bytes(view, &command_row_key(id))? else {
+        return Ok(None);
+    };
+    if super::RetiredCommand::is_present(&bytes) {
+        super::RetiredCommand::decode(&bytes)?.verify_key(&key)?;
+        return Ok(None);
+    }
+    let record = CommandRecord::decode(&bytes)?;
+    if record.key() != &key
+        || record.id() != id
+        || !record.inbox_identity().is_some_and(|inbox| {
+            inbox.provider == source.provider
+                && inbox.binding == binding
+                && inbox.message == message
+        })
+        || !matches!(record.outcome(), Outcome::Pending | Outcome::Aborted)
+        || read_command_metadata(view, &attempt_row_key(id, record.attempt()))? != record
+    {
+        return Err(AtomicError::Corrupt);
+    }
+    Ok(Some(record.outcome()))
 }
 
 fn linked_inbox_attempt(
@@ -259,12 +312,16 @@ fn linked_inbox_attempt(
     Ok(record)
 }
 
-fn read_command_metadata(view: &ReadView, key: &RowKey) -> Result<CommandRecord, AtomicError> {
-    let bytes = match view.get_bounded(key, METADATA_BYTES) {
+fn command_metadata_bytes(view: &ReadView, key: &RowKey) -> Result<Option<Vec<u8>>, StoreError> {
+    match view.get_bounded(key, METADATA_BYTES) {
+        // The engine may enforce an even smaller value bound.
         Err(StoreError::Invalid) => view.get(key),
         result => result,
-    }?
-    .ok_or(AtomicError::Corrupt)?;
+    }
+}
+
+fn read_command_metadata(view: &ReadView, key: &RowKey) -> Result<CommandRecord, AtomicError> {
+    let bytes = command_metadata_bytes(view, key)?.ok_or(AtomicError::Corrupt)?;
     CommandRecord::decode(&bytes)
 }
 

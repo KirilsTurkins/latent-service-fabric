@@ -123,10 +123,13 @@ live JetStream progress. The node verifies the configured stream and durable
 consumer over the protected input connection. The report includes their
 creation times and the exact delivery and acknowledgement positions as
 decimal strings. For an enrolled source, `latestDeliveryHistory` reports a
-retained commit or rejection for the last delivered stream sequence only
-when the inbox marker, attempt and original command agree. An unconfirmed
-sequence requires review of the recovery window. This inspection performs
-no pull or acknowledgement. At normal startup, the protected input owner also
+retained commit or rejection for the last delivered stream sequence when the
+inbox marker, attempt and original command agree. It reports retained pending
+or technical abort when the configured trigger's recovery scope, original
+command and current attempt agree. An unconfirmed sequence requires review of
+the recovery window. Pending, abort and unconfirmed observations give no
+permission to acknowledge or retry. This inspection performs no pull or
+acknowledgement. At normal startup, the protected input owner also
 qualifies every configured stream and consumer before the node accepts traffic.
 Startup refuses unavailable or changed broker bindings within its existing
 deadline. Set `transactionalTriggers.startPaused` to true in the protected node configuration to keep the

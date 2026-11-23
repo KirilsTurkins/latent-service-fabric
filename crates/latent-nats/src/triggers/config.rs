@@ -54,6 +54,18 @@ pub struct TriggerBinding {
     pub transaction: Option<super::inbox::TransactionalBinding>,
 }
 impl TriggerBinding {
+    /// Use the same node-selected identity for broker admission and inspection.
+    #[must_use]
+    pub fn invocation_principal(&self) -> latent_core::InvocationPrincipal {
+        latent_core::InvocationPrincipal {
+            subject: self.principal_subject.clone(),
+            kind: latent_core::PrincipalKind::Trigger,
+            tenant: Some(latent_core::TenantId(self.tenant.clone())),
+            service: None,
+            claims: latent_core::Metadata::new(),
+        }
+    }
+
     #[must_use]
     pub fn activation_budget(&self) -> ResourceBudget {
         let mut budget = self.budget.budget();

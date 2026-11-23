@@ -112,16 +112,7 @@ impl InboxIdentity {
     /// digest is deliberately excluded: changed bytes must conflict with the
     /// original command rather than select a second execution owner.
     pub fn command_key(&self) -> Result<String, AtomicError> {
-        self.validate()?;
-        let identity = Identity::derive(
-            b"lsf-inbox-command-key-v1\0",
-            &[
-                self.provider.as_bytes(),
-                self.binding.as_bytes(),
-                self.message.as_bytes(),
-            ],
-        );
-        Ok(format!("inbox-{}", identity.hex()))
+        inbox_command_key(&self.provider, &self.binding, &self.message)
     }
     fn encode(&self, out: &mut Encoder) -> Result<(), AtomicError> {
         for text in [&self.provider, &self.binding, &self.message] {
@@ -140,6 +131,21 @@ impl InboxIdentity {
         inbox.validate().map_err(|_| AtomicError::Corrupt)?;
         Ok(inbox)
     }
+}
+
+pub(super) fn inbox_command_key(
+    provider: &str,
+    binding: &str,
+    message: &str,
+) -> Result<String, AtomicError> {
+    for part in [provider, binding, message] {
+        id(part)?;
+    }
+    let identity = Identity::derive(
+        b"lsf-inbox-command-key-v1\0",
+        &[provider.as_bytes(), binding.as_bytes(), message.as_bytes()],
+    );
+    Ok(format!("inbox-{}", identity.hex()))
 }
 
 pub(super) fn inbox_row_key(

@@ -4,8 +4,8 @@ use latent_activation::{ActivationOutcome, ActivationRequest, TraceContext};
 use latent_commit::atomic::Outcome;
 use latent_core::ClockSample;
 use latent_core::{
-    ActivationId, ContractId, FunctionId, IncomingDeadline, InvocationPrincipal, Metadata,
-    PlatformErrorCode, PrincipalKind, ServiceId, SpanId, TenantId, TraceId,
+    ActivationId, ContractId, FunctionId, IncomingDeadline, Metadata, PlatformErrorCode, ServiceId,
+    SpanId, TenantId, TraceId,
 };
 use latent_node::transaction_runtime::{NativeTransactionAdmission, OwnedTransactionCompletion};
 use latent_node::{
@@ -71,13 +71,7 @@ pub(super) fn root_request(
         activation_id: Some(id.clone()),
         parent_activation_id: None,
         root_activation_id: None,
-        principal: InvocationPrincipal {
-            subject: binding.principal_subject.clone(),
-            kind: PrincipalKind::Trigger,
-            tenant: Some(TenantId(binding.tenant.clone())),
-            service: None,
-            claims: Metadata::new(),
-        },
+        principal: binding.invocation_principal(),
         target: InvocationTarget {
             tenant: TenantId(binding.tenant.clone()),
             service: ServiceId(binding.service.clone()),
