@@ -6,6 +6,15 @@ the explicit TypeScript import-runtime candidate, the exact maintained stream
 interface and an independently granted TCP endpoint. Importing this module
 grants no authority and enables no production provider.
 
+The signed Linux rerun at `704231a7db2007daab2228219d140aee5be91fbe`
+compiled unmodified `is-port-reachable@4.0.0` with the inlined export frame
+and the 16,384-byte paused read window. Under the existing budget, the
+published client sent FIN and one original read stayed pending until peer EOF.
+The denied endpoint received zero connections. All eight cases released the
+observed stream, broker, pool, Store and activation owners after root exit.
+The test used the development provider on loopback. The case results, costs
+and compiler identities are in the [signed socket receipt](../testing/evidence/typescript-socket-paused-end-2026-11-23.json).
+
 The source implementation supports `Socket`, `connect`/`createConnection`,
 connection and data events, copied Buffer chunks, pause/resume, serialized
 writes, backpressure, writable readiness after zero progress, timeout events,
