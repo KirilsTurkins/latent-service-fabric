@@ -1068,7 +1068,19 @@ await done.promise;assert.deepEqual(sequence,['write','ready','write']);assert.d
 
     def test_actual_captured_initializer_and_export_guard_fail_closed(self):
         self.javascript(f"""
+import {{inlineExportTaskMeta,lazyTaskCompletion}} from {json.dumps((ROOT/'tools/typescript_guest/source_splicer.mjs').as_uri())};
 const {{proof,original,changed}}=await capturedInitializer();
+const inlined=lazyTaskCompletion(inlineExportTaskMeta(original,parse),parse);
+const integrated=nodeNetBindings(inlined,parse,NET_PROFILE,proof.exports);
+const inlinedExport=parse(integrated,{{ecmaVersion:'latest',sourceType:'module'}}).body.find(node=>node.id?.name===proof.exports[0][0]);
+const rootGuard=inlinedExport.body.body.find(node=>node.type==='TryStatement').block.body;
+assert.equal(rootGuard[0].type,'BlockStatement');
+assert.equal(rootGuard[1].expression.right.callee.property.name,'beginAcceptedClose');
+assert.equal(rootGuard[2].consequent.expression.type,'AwaitExpression');
+assert.equal(rootGuard[3].expression.callee.name,'__lsfNodeNetRootCheck');
+const changedReturn=inlined.replace('ret = await fn();','ret = 0;');
+assert.notEqual(changedReturn,inlined);
+assert.throws(()=>nodeNetBindings(changedReturn,parse,NET_PROFILE,proof.exports),/shape/);
 assert.equal(nodeNetBindings(original,()=>{{throw Error('must not parse')}},undefined),original);
 const tree=parse(changed,{{ecmaVersion:'latest',sourceType:'module'}});
 const run=tree.body.find(node=>node.id?.name===proof.exports[0][0]);
