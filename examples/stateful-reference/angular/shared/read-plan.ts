@@ -1,4 +1,4 @@
-import {projection, type DraftView, type Routes} from './transaction-client.js';
+import {projection, requireQueryView, type DraftView, type Routes} from './transaction-client.js';
 
 export interface Request {method: string; path: string; query?: string | null}
 export interface Context {principal: {subject: string; kind: string; tenant?: string | null}}
@@ -33,10 +33,12 @@ export function currentRead(scope: ReadScope, backend: Backend): DraftView {
     throw new Error('current-read-unavailable');
   const value: unknown = JSON.parse(backend.body);
   if (typeof value !== 'object' || value === null || !('profile' in value) || !('disposition' in value) ||
-      !('result' in value) || value.profile !== 'transaction-http-v1' || value.disposition !== 'query')
+      !('result' in value) || !('state-view' in value) ||
+      value.profile !== 'transaction-http-v1' || value.disposition !== 'query')
     throw new Error('current-read-contract');
   const draft = projection(value.result);
   if ('error' in draft || draft.draftId !== scope.draftId) throw new Error('current-read-scope');
+  requireQueryView(draft, value['state-view']);
   return draft;
 }
 // lsf-example-end: authorized-ssr-read

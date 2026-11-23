@@ -158,6 +158,11 @@ async function responseLoss(page, expectedDisposition) {
 async function recover(page, observed, expectedDisposition) {
   const url = config.origin + '/drafts/alice/result';
   const arrived = page.waitForResponse(url, {timeout: 15000});
+  const refreshed = expectedDisposition === 'committed' ? page.waitForResponse(response => {
+    const target = new URL(response.url());
+    return target.origin === config.origin && target.pathname === '/drafts/alice/query' &&
+      response.request().method() === 'GET';
+  }, {timeout: 15000}) : undefined;
   await page.locator('#recover-draft').click();
   const response = await arrived;
   assert.equal(response.request().method(), 'GET');
@@ -168,6 +173,12 @@ async function recover(page, observed, expectedDisposition) {
   assert.equal(value['command-id'], observed.commandId);
   assert.deepEqual(value['effect-ids'], observed.effectIds);
   assert.deepEqual(value.result, observed.result);
+  if (refreshed) {
+    const query = await refreshed;
+    assert.equal(query.status(), 200);
+    assert.match(query.request().headers()['if-state-view'], /^[A-Za-z0-9+/]{90}==$/);
+    assert.equal((await query.json()).disposition, 'query');
+  }
   await status(page, expectedDisposition);
   return value;
 }
