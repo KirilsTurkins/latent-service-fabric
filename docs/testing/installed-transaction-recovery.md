@@ -82,16 +82,20 @@ does not approve restoration or replace the reviewed window acknowledgement.
 
 The requested publication must match a configured current operation and its
 actual current deployment. Each extra source independently captures eligible
-signed package bytes and the reviewed component, companion, contract, schema,
-Java source and current HTTP marker. It must match the current tenant, capsule,
-logical deployment, binding, namespace and incarnation. These sources install
+signed package bytes and the reviewed component, companion, contract and schema.
+The installed Java migration profiles also check their captured source and
+effect marker. Each source must match the current tenant, capsule, logical
+deployment, binding, namespace and incarnation. These sources install
 no operation, grant or dispatch rule. Only the requested current source supplies
 purpose-specific policy decisions. Every selected publication remains subject
 to the final currentness fences; unknown or incomplete retained sources refuse.
 The review digest includes all selected signed source identities and proofs.
-Retained command source schemas must equal their exact signed companion schema;
-a compatible reader cannot relabel its original execution source, and the
-distinct generic aggregate schema remains unsupported by this reviewed closure.
+Retained command records keep the exact schema of their original signed
+companion. The shared transactional aggregate supports same-schema backup and
+restore when its admitted package contains the exact maintained
+`state-schema.json`. The recovery decoder checks the original key, media,
+eight-byte unsigned value, metadata and linked retained records. Use the
+separate reviewed Java recipe for an application schema transformation.
 
 Ordinary runtime configuration selects one publication's three operations.
 Historical decoder sources cannot bypass the runtime's current deployment and

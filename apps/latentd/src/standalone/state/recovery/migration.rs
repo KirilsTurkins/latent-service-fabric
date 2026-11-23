@@ -19,6 +19,10 @@ impl Codecs {
         checkpoint_digest: &str,
         checkpoint_manifest_digest: &str,
     ) -> Result<AggregateMigrationRequest, StoreError> {
+        super::profile::Profile::installed(
+            &self.catalog.primary().operation.publication().release().0,
+        )
+        .map_err(|_| StoreError::UnsupportedFormat)?;
         let mut scope = self.selected_view(view)?.scope();
         scope.state_schema =
             latent_state::namespace::compatibility::SchemaId::from_definition(super::profile::V1)

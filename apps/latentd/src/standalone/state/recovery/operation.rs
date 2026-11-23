@@ -190,7 +190,6 @@ async fn prepare(
         })
         .cloned()
         .ok_or_else(super::denied)?;
-    super::profile::Profile::installed(&input.component.0)?;
     let deployment = tokio::time::timeout_at(
         bootstrap.deadline.into(),
         owners.deployments.get_versioned(

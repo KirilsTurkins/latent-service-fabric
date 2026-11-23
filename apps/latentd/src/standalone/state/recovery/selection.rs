@@ -104,7 +104,6 @@ pub(super) fn capture_decoder(
     if !current.supplies_current_authority() {
         return Err(super::denied());
     }
-    super::profile::Profile::installed(&selector.component_digest)?;
     let mut input = current.input.clone();
     input.component = latent_core::ReleaseDigest(selector.component_digest.clone());
     input.publication = selector.publication.parse().map_err(|_| super::denied())?;
