@@ -677,7 +677,7 @@ async fn metadata_action(
                 Action::Resume { operation_id, expected_view } => {
                     let request = NamespaceResumeRequest { scope: observed.scope(), operation_id: operation_id.clone(), operator_id: worker.authority.actor.clone(), expected_view: expected_view.clone(), review_digest: worker.review };
                     let closure = worker.closure(&view)?;
-                    let plan = super::original_resume::prepare(&view, &request, &closure.inventory, worker.authority.deadline, || worker.check())?;
+                    let plan = super::original_resume::prepare(&view, &request, &closure.inventory, worker.checkpoint.inbox_custody().is_some(), worker.authority.deadline, || worker.check())?;
                     let result = serde_json::json!({"action":"resume", "receipt":plan.receipt().encode()?, "view":plan.receipt().view_token()?, "replay":plan.replayed()});
                     batch = plan.into_batch();
                     result

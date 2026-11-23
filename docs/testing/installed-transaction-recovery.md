@@ -135,9 +135,11 @@ sequence requires review of the recovery window. This inspection performs
 no pull or acknowledgement. Resume remains a separate authorized operation.
 Set `transactionalTriggers.startPaused` to true in the protected node
 configuration to keep the input owner paused after a planned restart. The
-node can still serve ordinary application traffic. Resume on a later
-protected restart requires setting the flag to false and satisfying the
-applicable recovery guards. The flag defaults to false.
+node can still serve ordinary application traffic. The flag defaults to false.
+An offline `resume` can reactivate an ordinarily quiesced namespace with
+enrolled input when the original recovery epoch and external inbox custody
+still match. Clear the pause flag on the next protected restart to accept
+deliveries. A restored epoch requires explicit inbox reconciliation.
 
 To approve a new logical source, run `enroll-inbox-source` under the
 `namespace-enroll-inbox-source` policy. Supply the reported `inputBinding` as

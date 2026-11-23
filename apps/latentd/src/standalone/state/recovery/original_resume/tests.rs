@@ -30,7 +30,9 @@ async fn original_pending_effect_resumes_without_changing_original_retained_work
     assert_eq!(record.attempts(), 0);
     assert_eq!(record.durable_format(), ("latent.effect-record.v1", 1));
     assert!(record.management().is_none());
-    let first = fixture.resume(fixture.request.clone()).await;
+    let first = fixture
+        .resume_with_inbox(fixture.request.clone(), true)
+        .await;
     let accepted = first.as_ref().is_ok_and(|(replay, _)| !replay);
     assert_eq!(fixture.effect_payload_digest().await, before);
     if accepted {
@@ -96,7 +98,7 @@ async fn maximum_original_payload_stays_unchanged_through_bounded_native_resume(
 
 #[tokio::test]
 async fn restored_guard_or_history_pending_effect_requires_original_reconciliation() {
-    for condition in 0..4 {
+    for condition in 0..5 {
         let fixture = Fixture::new(27).await;
         fixture
             .store
@@ -108,9 +110,11 @@ async fn restored_guard_or_history_pending_effect_requires_original_reconciliati
                     &latent_core::StateNamespaceId("business".into()),
                 )?;
                 let mut batch = AtomicBatch::default();
-                if condition == 0 {
+                if condition == 0 || condition == 4 {
                     let mut restored = actual.history.restored_after(&actual.history).unwrap();
-                    restored.status = HistoryStatus::ReconciliationRequired;
+                    if condition == 4 {
+                        restored.status = HistoryStatus::Ready;
+                    }
                     batch.mutations.push(RowMutation {
                         key: history_key(
                             &restored.tenant,
@@ -126,7 +130,7 @@ async fn restored_guard_or_history_pending_effect_requires_original_reconciliati
                 }
                 drop(view);
                 fixture::apply_accounted(engine, batch)?;
-                if condition >= 2 {
+                if (2..4).contains(&condition) {
                     let view = engine.snapshot()?;
                     let guard = RecoveryGuard::capture(&view)?.unwrap();
                     let completed = guard.prepare_completed()?;
@@ -163,7 +167,7 @@ async fn restored_guard_or_history_pending_effect_requires_original_reconciliati
             .await
             .unwrap()
             .unwrap();
-        assert!(fixture.resume(request).await.is_err());
+        assert!(fixture.resume_with_inbox(request, true).await.is_err());
         assert_eq!(fixture.rows_digest().await, before);
         fixture.finish().await;
     }
@@ -267,10 +271,15 @@ async fn unsupported_effect_bytes_or_expired_original_cutoff_never_change_pendin
             .with_store(StoreIoKind::RecoveryRead, 8 * 1024 * 1024, move |engine| {
                 let view = engine.snapshot()?;
                 if let Ok(census) = fixture::census(&view) {
-                    assert!(
-                        super::prepare(&view, &request, &census, Instant::now(), || Ok(()))
-                            .is_err()
-                    );
+                    assert!(super::prepare(
+                        &view,
+                        &request,
+                        &census,
+                        false,
+                        Instant::now(),
+                        || Ok(())
+                    )
+                    .is_err());
                 } else {
                     assert!(!expired);
                 }
@@ -334,7 +343,9 @@ async fn mismatched_or_other_unresolved_census_never_authorizes_original_pending
                         },
                     )
                     .unwrap();
-                assert!(super::prepare(&view, &request, &census, deadline(), || Ok(())).is_err());
+                assert!(
+                    super::prepare(&view, &request, &census, false, deadline(), || Ok(())).is_err()
+                );
                 Ok(())
             })
             .unwrap()

@@ -202,6 +202,14 @@ impl Fixture {
         &self,
         request: NamespaceResumeRequest,
     ) -> Result<(bool, Vec<u8>), StoreError> {
+        self.resume_with_inbox(request, false).await
+    }
+
+    pub async fn resume_with_inbox(
+        &self,
+        request: NamespaceResumeRequest,
+        protected_inbox: bool,
+    ) -> Result<(bool, Vec<u8>), StoreError> {
         let original = self.original.clone();
         let gate = self.gate.clone();
         self.store
@@ -215,13 +223,19 @@ impl Fixture {
                     let outcome = (|| {
                         let view = engine.snapshot()?;
                         let inventory = census(&view)?;
-                        let plan =
-                            super::super::prepare(&view, &request, &inventory, deadline(), || {
+                        let plan = super::super::prepare(
+                            &view,
+                            &request,
+                            &inventory,
+                            protected_inbox,
+                            deadline(),
+                            || {
                                 gate.check()?;
                                 original
                                     .with_live(|| ())
                                     .map_err(|_| StoreError::Unavailable)
-                            })?;
+                            },
+                        )?;
                         let result = (plan.replayed(), plan.receipt().encode()?);
                         drop(view);
                         engine

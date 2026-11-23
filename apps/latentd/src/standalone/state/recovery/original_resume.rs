@@ -4,7 +4,7 @@ use latent_state::{
     embedded::{Family, ReadView, StoreError},
     namespace::{
         compatibility::{RetainedFormat, RetainedInventory, RetainedKind},
-        history::HistoryStatus,
+        history::{HistoryEpochs, HistoryStatus},
         NamespaceStatus,
     },
     recovery::namespace_resume::{
@@ -17,10 +17,18 @@ pub(super) fn prepare(
     view: &ReadView,
     request: &NamespaceResumeRequest,
     inventory: &RetainedInventory,
+    protected_inbox: bool,
     deadline: Instant,
     current: impl FnOnce() -> Result<(), StoreError>,
 ) -> Result<NamespaceResumePlan, StoreError> {
     NamespaceResumePlan::prepare(view, request, |view, request, observed| {
+        if protected_inbox
+            && (observed.guard.is_some()
+                || observed.history.status != HistoryStatus::Ready
+                || observed.history.epochs.recovery != HistoryEpochs::default().recovery)
+        {
+            return Err(StoreError::Unavailable);
+        }
         if inventory.total().unresolved != 0 {
             require_original_pending(view, request, &observed, inventory, deadline)?;
         } else {
