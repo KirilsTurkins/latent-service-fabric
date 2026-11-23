@@ -406,11 +406,11 @@ async fn checkpoint_with_matching_source_inventory_survives_restart() {
         stream_created: "2026-01-01T00:00:00Z".into(),
     };
     let view = engine.snapshot().unwrap();
-    let source = PreparedInboxScope::prepare(&view, &source)
+    let plan = PreparedInboxScope::prepare(&view, &source)
         .unwrap()
         .into_batch();
     drop(view);
-    engine.apply(source).unwrap();
+    engine.apply(plan).unwrap();
     let view = engine.snapshot().unwrap();
     let custody = super::super::validation::validate_inventory(
         &view,
@@ -464,6 +464,39 @@ async fn checkpoint_with_matching_source_inventory_survives_restart() {
         ExternalCheckpoint::decode(&std::fs::read(fixture.checkpoint()).unwrap()).unwrap();
     assert_eq!(advanced.inbox_custody(), Some(custody));
     assert!(advanced.dispatch_owner_epoch() > checkpoint.dispatch_owner_epoch());
+    let binding: latent_nats::triggers::TriggerBinding =
+        serde_json::from_value(serde_json::json!({
+            "id": "input", "tenant": source.tenant, "principalSubject": "input",
+            "service": "a/service", "contract": "a:service/api@1.0.0", "function": "update",
+            "route": null, "stream": source.stream, "consumer": "PROCESS", "filterSubject": "orders.new",
+            "budget": {"cpuFuel": 1000, "memoryBytes": 65536, "wallTimeMillis": 1000,
+                "childCalls": 0, "outboundRequests": 0, "blobReadBytes": 0, "blobWriteBytes": 0, "logBytes": 0},
+            "transaction": {"processingScope": source.processing_scope, "namespace": source.namespace,
+                "incarnation": source.incarnation, "qualification": {"formatVersion": 1,
+                    "serverVersion": "2.14.6", "streamCreated": source.stream_created,
+                    "maximumMessages": 10000, "maximumBytes": 67_108_864, "maximumAgeMillis": 0,
+                    "maximumMessageBytes": 16384}, "duplicateWindowMillis": 30000,
+                "stateReadBytes": 4096, "stateWriteBytes": 2048, "effectCount": 2}
+        }))
+        .unwrap();
+    let matching = std::slice::from_ref(&binding);
+    kernel
+        .require_inbox_sources(matching, &source.provider)
+        .await
+        .unwrap();
+    assert!(kernel
+        .require_inbox_sources(matching, "replacement-provider")
+        .await
+        .is_err());
+    let mut unprovisioned = binding;
+    unprovisioned.transaction.as_mut().unwrap().processing_scope = "unprovisioned".into();
+    assert!(kernel
+        .require_inbox_sources(&[unprovisioned], &source.provider)
+        .await
+        .is_err());
+    let after_checks =
+        ExternalCheckpoint::decode(&std::fs::read(fixture.checkpoint()).unwrap()).unwrap();
+    assert_eq!(after_checks.inbox_custody(), advanced.inbox_custody());
     assert!(effects.shutdown(deadline).await.unwrap().clean);
     drop(effects);
     assert!(kernel.shutdown(deadline).await.unwrap().clean);
