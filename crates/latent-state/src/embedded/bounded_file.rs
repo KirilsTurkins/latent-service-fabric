@@ -9,6 +9,14 @@ use super::StoreError;
 mod compaction;
 use compaction::{IoKind, IoState};
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct StoreFileCapacity {
+    pub observed_bytes: u64,
+    pub limit_bytes: u64,
+    pub growth_headroom_bytes: u64,
+    pub compaction_active: bool,
+}
+
 /// Engine close observation only; worker retirement proves actual destruction.
 #[derive(Clone, Debug)]
 pub struct StoreFileStatus {
@@ -21,6 +29,22 @@ pub struct StoreFileStatus {
 }
 
 impl StoreFileStatus {
+    pub(super) fn capacity(&self) -> Result<StoreFileCapacity, StoreError> {
+        let state = self.io.lock().map_err(|_| StoreError::Unavailable)?;
+        if self.close_observed() {
+            return Err(StoreError::Unavailable);
+        }
+        Ok(StoreFileCapacity {
+            observed_bytes: state.file_bytes,
+            limit_bytes: state.maximum_file_bytes,
+            growth_headroom_bytes: state
+                .maximum_file_bytes
+                .checked_sub(state.file_bytes)
+                .ok_or(StoreError::Capacity)?,
+            compaction_active: state.active.is_some(),
+        })
+    }
+
     #[must_use]
     pub fn close_failed(&self) -> bool {
         self.close.load(Ordering::Acquire) == 2

@@ -54,6 +54,11 @@ These counts describe the authorized namespace view and leave retained work
 available for drain or explicit reconciliation. Run the check while the
 publication still has inspection authority.
 
+The `storeCapacity` field reports the protected
+engine file's observed length, configured byte limit, remaining growth
+allowance and whether compaction is active. This reports storage pressure
+against the selected file limit independently from memory and queue admission.
+
 Migration resume returns action `resume-migration`,
 encoded current `receipt`, current `view`, and `resourcePhysicallyRetired`.
 Generic resume refuses a retained current migration and cannot replace its

@@ -627,7 +627,7 @@ async fn metadata_action(
     settings: &crate::config::state::StateSettings,
 ) -> Result<serde_json::Value, PlatformError> {
     let worker = Arc::clone(&codecs);
-    let kind = if matches!(&codecs.action, Action::InspectNamespace {}) {
+    let io = if matches!(&codecs.action, Action::InspectNamespace {}) {
         StoreIoKind::RecoveryRead
     } else {
         StoreIoKind::RecoveryWrite
@@ -639,7 +639,7 @@ async fn metadata_action(
             8 * 1024 * 1024,
         )
         .map_err(|_| super::capacity())?;
-    let job = store.with_store_retaining(kind, 8 * 1024 * 1024, Arc::clone(&codecs) as Arc<dyn std::any::Any + Send + Sync>, move |engine| {
+    let job = store.with_store_retaining(io, 8 * 1024 * 1024, Arc::clone(&codecs) as Arc<dyn std::any::Any + Send + Sync>, move |engine| {
         let _memory = memory;
         let outcome = (|| {
             let view = engine.snapshot()?;
@@ -648,15 +648,24 @@ async fn metadata_action(
             let mut batch = AtomicBatch::default();
             let mut time_changed = false;
             let result = match &worker.action {
-                Action::InspectNamespace {} => serde_json::json!({
-                    "action":"inspect-namespace",
-                    "namespace":observed.namespace.encode().map_err(|_| StoreError::Corrupt)?,
-                    "history":observed.history.encode().map_err(|_| StoreError::Corrupt)?,
-                    "view":observed.view_token()?,
-                    "guard":observed.guard.as_ref().map(RecoveryGuard::encode).transpose()?,
-                    "reviewDigest":digest(worker.review),
-                    "publicationEffects":publication_effects(&worker, &view)?
-                }),
+                Action::InspectNamespace {} => {
+                    let capacity = engine.file_capacity()?;
+                    serde_json::json!({
+                        "action": "inspect-namespace",
+                        "namespace": observed.namespace.encode().map_err(|_| StoreError::Corrupt)?,
+                        "history": observed.history.encode().map_err(|_| StoreError::Corrupt)?,
+                        "view": observed.view_token()?,
+                        "guard": observed.guard.as_ref().map(RecoveryGuard::encode).transpose()?,
+                        "reviewDigest": digest(worker.review),
+                        "publicationEffects": publication_effects(&worker, &view)?,
+                        "storeCapacity": {
+                            "observedFileBytes": capacity.observed_bytes,
+                            "fileLimitBytes": capacity.limit_bytes,
+                            "growthHeadroomBytes": capacity.growth_headroom_bytes,
+                            "compactionActive": capacity.compaction_active,
+                        },
+                    })
+                },
                 Action::InspectCloseEffects { operation_id, effect_ids, reason } => {
                     let plan = inspect(&view, close_scope(&worker), worker.authority.actor.clone(), operation_id.clone(), effect_ids.clone(), reason.clone())?;
                     serde_json::json!({"action":"inspect-close-effects", "acknowledgement":digest(plan.digest()?), "plan":plan})

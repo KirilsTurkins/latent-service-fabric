@@ -30,7 +30,7 @@ fn next_view_identity() -> Result<usize, StoreError> {
 }
 
 mod bounded_file;
-pub use bounded_file::StoreFileStatus;
+pub use bounded_file::{StoreFileCapacity, StoreFileStatus};
 mod compaction;
 mod format;
 pub use compaction::{CompactionLimits, CompactionReport, CompactionStop};
@@ -173,6 +173,15 @@ pub struct EmbeddedStore {
 pub struct StoreBinding(Arc<AtomicUsize>);
 
 impl EmbeddedStore {
+    /// Observe the protected backing file's growth allowance on its existing
+    /// I/O owner without opening another descriptor or reserving another view.
+    pub fn file_capacity(&self) -> Result<StoreFileCapacity, StoreError> {
+        self.file_status
+            .as_ref()
+            .ok_or(StoreError::UnsupportedFormat)?
+            .capacity()
+    }
+
     #[must_use]
     pub fn binding(&self) -> StoreBinding {
         StoreBinding(Arc::clone(&self.views))
