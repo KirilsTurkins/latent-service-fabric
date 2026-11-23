@@ -527,6 +527,88 @@ async fn signed_effect_documents_keep_original_native_owner_and_refuse_oversize(
 }
 
 #[tokio::test]
+async fn signed_apply_rejects_a_different_durable_namespace_schema_before_route_publication() {
+    use latent_state::namespace::{
+        catalog::{NamespaceMutation, NamespaceOperationContext},
+        NamespaceQuota,
+    };
+
+    let setup = Setup::new().await;
+    let deployments = &setup.services.deployments;
+    deployments
+        .bind_transaction_schema_owner(
+            &setup.kernel.store,
+            &setup.kernel.namespaces,
+            &setup.kernel.native,
+        )
+        .unwrap();
+    let id = DeploymentId("deployment".into());
+    let tenant = TenantId("tests".into());
+    let first = deployments
+        .get_versioned(&tenant, &id)
+        .await
+        .unwrap()
+        .unwrap();
+    let accepted = deployments
+        .apply_versioned(&tenant, first.manifest.clone(), Some(first.generation))
+        .await
+        .unwrap();
+    let generation = accepted.deployment.generation;
+
+    // Place an existing namespace with a different application schema in the
+    // real engine, as it would appear after an offline migration.
+    let namespaces = Arc::clone(&setup.kernel.namespaces);
+    setup
+        .kernel
+        .store
+        .with_store(StoreIoKind::Write, 32 * 1024, move |engine| {
+            let prepared = namespaces
+                .prepare(
+                    engine,
+                    NamespaceOperationContext {
+                        tenant: TenantId("tests".into()),
+                        actor: "fixture".into(),
+                        operation_id: "prior-schema".into(),
+                    },
+                    &NamespaceMutation::Create {
+                        id: StateNamespaceId("orders".into()),
+                        state_schema: format!("sha256:{}", "2".repeat(64)),
+                        quota: NamespaceQuota::default(),
+                    },
+                    0,
+                )
+                .unwrap();
+            engine.apply(prepared.batch)
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+
+    let failure = deployments
+        .apply_versioned(&tenant, first.manifest.clone(), Some(generation))
+        .await
+        .err()
+        .unwrap();
+    assert_eq!(
+        failure.code,
+        latent_core::PlatformErrorCode::IncompatibleContract
+    );
+    assert_eq!(failure.message, "deployment-state-schema-incompatible");
+    assert!(deployments.apply_many(vec![first.manifest]).await.is_err());
+    assert_eq!(
+        deployments
+            .get_versioned(&tenant, &id)
+            .await
+            .unwrap()
+            .unwrap()
+            .generation,
+        generation
+    );
+    setup.finish().await;
+}
+
+#[tokio::test]
 async fn signed_installed_targets_require_actual_namespace_and_keep_resident_source_charges() {
     let setup = Setup::new().await;
     let loaded = load(

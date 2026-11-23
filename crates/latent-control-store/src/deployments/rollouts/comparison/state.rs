@@ -30,7 +30,7 @@ pub(super) fn require_compatible(
     }
 }
 
-fn binding(
+pub(in crate::deployments) fn binding(
     package: &PackageBundle,
     deployment: &DeploymentId,
 ) -> Result<Option<TransactionBinding>> {
@@ -72,7 +72,7 @@ fn binding(
     Ok(Some(declaration))
 }
 
-pub(super) fn transaction_import(name: &str) -> bool {
+pub(in crate::deployments) fn transaction_import(name: &str) -> bool {
     matches!(
         name,
         "latent:state/key-value@0.2.0" | "latent:intents/staging@0.1.0"

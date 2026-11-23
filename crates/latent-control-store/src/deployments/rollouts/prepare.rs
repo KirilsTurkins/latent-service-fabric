@@ -74,6 +74,7 @@ impl DirectoryDeploymentRepository {
             return Ok(PreparedRolloutMutation {
                 owner: Arc::clone(&self.rollout_work),
                 next_routes: Arc::clone(&previous.routes),
+                schemas: None,
                 next_table: Arc::clone(&previous.rollouts),
                 receipt: found.clone(),
                 previous,
@@ -183,6 +184,7 @@ impl DirectoryDeploymentRepository {
                         publication: candidate_publication.clone(),
                         package: None,
                     },
+                    self.config.manifest_profile,
                 )
                 .await?;
                 let base_manifest = table::manifest(base)?;
@@ -330,6 +332,7 @@ impl DirectoryDeploymentRepository {
                     &row.status.tenant,
                     &row.status.base,
                     &row.status.candidate,
+                    self.config.manifest_profile,
                 )
                 .await?;
                 if packages
@@ -381,6 +384,17 @@ impl DirectoryDeploymentRepository {
             )
             .await?;
             Arc::new(catalog)
+        };
+        let schemas = if state_only {
+            None
+        } else {
+            let selected = if request.action() == RolloutAction::Rollback {
+                &row.status.base
+            } else {
+                &row.status.candidate
+            };
+            self.prepare_apply_schemas(&next_routes, &[&selected.deployment_id])
+                .await?
         };
         row.status.previous_route_generation = previous.routes.generation;
         row.status.route_generation = next_routes.generation;
@@ -457,6 +471,7 @@ impl DirectoryDeploymentRepository {
             owner: Arc::clone(&self.rollout_work),
             previous,
             next_routes,
+            schemas,
             next_table,
             bytes,
             receipt,

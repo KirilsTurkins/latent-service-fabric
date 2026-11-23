@@ -4,7 +4,8 @@ use crate::{
         conflict, error, DeploymentOperationCommit, DeploymentOperationRead, Result,
     },
     deployments::{
-        observation::Work, persistence, DirectoryDeploymentRepository, PublishedCatalog,
+        observation::Work, persistence, DirectoryDeploymentRepository, PreparedSchemas,
+        PublishedCatalog,
     },
 };
 use latent_artifacts::ReleaseUseRecheck;
@@ -121,7 +122,9 @@ impl DirectoryDeploymentRepository {
         if let Some(checker) = checker {
             checker.check()?;
         }
-        persistence::replace(&self.root)?;
+        PreparedSchemas::replace(prepared.schemas.as_ref(), || {
+            persistence::replace(&self.root)
+        })?;
         let durable = self.sync_parent();
         let currentness = checker.map_or(Ok(()), ReleaseUseRecheck::check);
         let next = PublishedCatalog {
