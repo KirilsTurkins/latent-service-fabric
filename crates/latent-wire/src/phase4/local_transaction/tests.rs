@@ -6,6 +6,7 @@ mod cancellation;
 mod entity_lanes;
 mod fixture;
 mod large_results;
+mod mixed_queries;
 mod namespace;
 mod policy;
 mod process_loss;
