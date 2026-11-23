@@ -91,10 +91,6 @@ impl ResultMaintenanceOwner {
         )
     }
 
-    #[expect(
-        clippy::too_many_lines,
-        reason = "The bounded page, linked result ownership, accounting and retained cursor share the original write fence"
-    )]
     fn step_inner(
         &self,
         store: &EmbeddedStore,
