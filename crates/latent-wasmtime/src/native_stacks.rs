@@ -27,7 +27,42 @@ mod workers;
 thread_local! {
     // Only an internal Future poll installs this allocation context. It carries
     // the original ledger, not a process-global quota or an application grant.
-    static CURRENT: RefCell<Option<Arc<StackContext>>> = const { RefCell::new(None) };
+    static CURRENT: RefCell<Option<StackContextHandle>> = const { RefCell::new(None) };
+}
+
+/// Strong-only custody keeps the original metadata reservation in the value
+/// until its private Arc backing has been physically freed. No Weak or raw Arc
+/// escapes, so one final concurrent drop receives the value after deallocation.
+pub(crate) struct StackContextHandle(Option<Arc<StackContext>>);
+
+impl StackContextHandle {
+    fn new(context: StackContext) -> Self {
+        Self(Some(Arc::new(context)))
+    }
+}
+
+impl Clone for StackContextHandle {
+    fn clone(&self) -> Self {
+        Self(Some(Arc::clone(
+            self.0.as_ref().expect("live stack context"),
+        )))
+    }
+}
+
+impl std::ops::Deref for StackContextHandle {
+    type Target = StackContext;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.as_deref().expect("live stack context")
+    }
+}
+
+impl Drop for StackContextHandle {
+    fn drop(&mut self) {
+        if let Some(context) = self.0.take() {
+            drop(Arc::into_inner(context));
+        }
+    }
 }
 
 struct Permit {
@@ -63,7 +98,7 @@ impl StackContext {
         budget: ActivationBudget,
         runtime: ActivationRuntime,
         size: usize,
-    ) -> Result<Arc<Self>, PlatformError> {
+    ) -> Result<StackContextHandle, PlatformError> {
         Self::with_children(budget, runtime, size, 0)
     }
 
@@ -72,7 +107,7 @@ impl StackContext {
         runtime: ActivationRuntime,
         size: usize,
         maximum_children: usize,
-    ) -> Result<Arc<Self>, PlatformError> {
+    ) -> Result<StackContextHandle, PlatformError> {
         Self::create(budget, runtime, size, maximum_children, None)
     }
 
@@ -81,7 +116,7 @@ impl StackContext {
         runtime: ActivationRuntime,
         size: usize,
         maximum_native: usize,
-    ) -> Result<Arc<Self>, PlatformError> {
+    ) -> Result<StackContextHandle, PlatformError> {
         Self::create(budget, runtime, size, 0, Some(maximum_native))
     }
 
@@ -91,7 +126,7 @@ impl StackContext {
         size: usize,
         maximum_children: usize,
         maximum_workers: Option<usize>,
-    ) -> Result<Arc<Self>, PlatformError> {
+    ) -> Result<StackContextHandle, PlatformError> {
         if maximum_children > 8191 {
             return Err(failure("native-child-table-bound"));
         }
@@ -122,7 +157,7 @@ impl StackContext {
             .map(|maximum| workers::Workers::new(maximum, owner.token()).map(Mutex::new))
             .transpose()?;
         metadata.confirm();
-        Ok(Arc::new(Self {
+        Ok(StackContextHandle::new(Self {
             budget,
             runtime,
             root: Mutex::new(Some(Permit {
@@ -269,7 +304,7 @@ unsafe impl wasmtime::StackCreator for Creator {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
             let token = permit._owner.token();
-            match Mapping::new(Arc::clone(&context), permit) {
+            match Mapping::new(context.clone(), permit) {
                 Ok(mapping) => Ok(Box::new(mapping)),
                 Err(error) => {
                     if !context.retirement_failed.load(Ordering::Acquire) {
@@ -290,13 +325,13 @@ unsafe impl wasmtime::StackCreator for Creator {
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 struct Mapping {
     base: usize,
-    context: Arc<StackContext>,
+    context: StackContextHandle,
     permit: Option<Permit>,
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 impl Mapping {
-    fn new(context: Arc<StackContext>, mut permit: Permit) -> wasmtime::Result<Self> {
+    fn new(context: StackContextHandle, mut permit: Permit) -> wasmtime::Result<Self> {
         use rustix::mm::{MapFlags, MprotectFlags, ProtFlags};
         let page = rustix::param::page_size();
         // SAFETY: nonzero bounded length, anonymous private mapping, no requested
@@ -381,10 +416,10 @@ impl Drop for Mapping {
     }
 }
 
-struct PollGuard(Option<Arc<StackContext>>);
+struct PollGuard(Option<StackContextHandle>);
 impl PollGuard {
-    fn enter(context: &Arc<StackContext>) -> Self {
-        Self(CURRENT.with(|slot| slot.replace(Some(Arc::clone(context)))))
+    fn enter(context: &StackContextHandle) -> Self {
+        Self(CURRENT.with(|slot| slot.replace(Some(context.clone()))))
     }
 }
 impl Drop for PollGuard {
@@ -395,11 +430,11 @@ impl Drop for PollGuard {
 
 pub(crate) struct Scoped<F> {
     future: Pin<Box<F>>,
-    context: Arc<StackContext>,
+    context: StackContextHandle,
     _allocation: HostMemoryReservation,
 }
 pub(crate) fn scoped<F: Future>(
-    context: Arc<StackContext>,
+    context: StackContextHandle,
     future: F,
 ) -> Result<Scoped<F>, PlatformError> {
     let mut allocation = context

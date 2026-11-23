@@ -107,6 +107,8 @@ def run(compiler, generated: Path, selected: tuple[str, ...], destination: Path,
             need(read_file(owned / name, MAX_INPUT) == data, 'owned-drift')
 
     recheck()
+    # Keep the fixed downward-growing C stack below static data. An overflow
+    # must trap at the memory boundary, not overwrite allocator/bridge state.
     c_failure_context.run(compiler, generated, selected, '-target', 'wasm32-wasip1', '-nostdlib',
         '-mexec-model=reactor', owned / 'crt1-reactor.o', '-Wl,--entry=_initialize', owned / 'libsetjmp.a',
         '-Wl,--no-entry', '-Wl,--export-memory', *ACTIVATION_C_STACK_FLAGS,

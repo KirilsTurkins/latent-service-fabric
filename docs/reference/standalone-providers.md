@@ -307,6 +307,16 @@ after a possible publish is `uncertain` and is never automatically replayed.
 The existing shared provider pool owns connections and work; shutdown closes
 the credential generation and checks that live resource counters are zero.
 
+For an outbound transaction event, configure the topic in
+`providers.events.deferred` and install the signed operation's matching event
+requirements. Staging needs its own `stage` binding. The dispatcher needs
+current `publish` permission for the exact destination. It checks the actual
+stream configuration before publication and reuses the original effect ID
+within the qualified duplicate window. Broker acknowledgement records acceptance
+by that stream. For inbound events, the ordinary pull trigger has different
+authority and acknowledgement rules.
+[Deferred event installation](../development/deferred-jetstream.md) · [Trigger profiles](../runtime/nats-triggers.md)
+
 The node's bounded `ready` record includes actual installed descriptors:
 `id`, `tenant`, `service`, `capability`, `profile`, `configurationDigest`, and
 decimal-string `configurationEpoch`. Use those exact descriptors when applying

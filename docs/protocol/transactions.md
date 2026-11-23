@@ -34,9 +34,11 @@ for isolation and settlement ownership.
 The namespace OCC generation covers the read snapshot including missing reads
 and prefix predicates. A changed snapshot at commit is `conflict`; a failed
 application-selected expected-version precondition at admission is `stale-input`.
-Opaque versions include namespace incarnation and must not be parsed, narrowed,
-incremented or compared lexically by clients. Restoring older history changes
-incarnation; the old version is rejected explicitly.
+Clients retain opaque version tokens in full. In the installed format, an
+older-history restore preserves the business incarnation and advances the
+recovery epoch. A pre-restore token fails even when its record bytes and
+generation match. Ordinary reopen preserves both identifiers.
+[Namespace history and version fences](../architecture/namespace-history-epochs.md)
 
 ## Bounds, presence and encoding
 
@@ -55,7 +57,11 @@ incarnation; the old version is rejected explicitly.
 
 Admission/policy may reduce these limits. Each operation and accumulated work
 also consumes its host budget before allocation. Page `limit` is 1–128; zero is
-invalid. Pages own their bounded selected data and charge the original view.
+invalid. Page accounting measures the encoded key, value and metadata, including
+version and framing, before returning the selected entries. The host measures
+borrowed fields directly. A native query fault precludes a successful response.
+The original view and its memory and operation reservations survive cancellation
+until the native read transaction is destroyed. [State session](../../crates/latent-state/src/session/mod.rs)
 `page-next` pulls one entry, and exhaustion returns absence. Its returned cursor
 is bound to activation/view, prefix, access mode and incarnation. Historical or
 cross-request query cursors explicitly fail. Management history cursors instead

@@ -157,15 +157,18 @@ int main(int argc, char** argv) {
   } else if (!std::strcmp(mode, "fanout-after-dead-graphs")) {
     std::vector<std::unique_ptr<native::NativeContainer<Body>>> retained;
     for (unsigned i = 0; i < 4; ++i) retained.push_back(native::make_native_container<Body>(&cx));
-    passed = make_graphs(&cx, 5, false) && make_graphs(&cx, 10, true);
+    passed = make_graphs(&cx, 9, false) && make_graphs(&cx, 10, true);
     for (unsigned i = 0; i < 11 && passed; ++i) {
       auto owner = native::make_native_container<Body>(&cx);
       passed = owner != nullptr;
       retained.push_back(std::move(owner));
     }
-    passed = passed && native::promise_accounting.live == 55 && collections > 0;
+    passed = passed && native::promise_accounting.live == 45 && collections > 0;
   } else if (!std::strcmp(mode, "all-reachable-remains-exhausted")) {
-    passed = make_graphs(&cx, 16, true) && !AbortSignal::create(&cx) &&
+    // Three physical containers per empty signal plus this independent
+    // retained owner reach the unchanged 64-owner ceiling exactly.
+    auto filler = native::make_native_container<Body>(&cx);
+    passed = filler && make_graphs(&cx, 21, true) && !AbortSignal::create(&cx) &&
       native::promise_accounting.live == 64 && native::promise_accounting.acknowledged == 0;
   } else if (!std::strcmp(mode, "event-construction-collects")) {
     for (unsigned i = 0; i < 100; ++i) {
@@ -175,13 +178,16 @@ int main(int argc, char** argv) {
       passed = i == 99 && collections > 0;
     }
   } else if (!std::strcmp(mode, "admission-does-not-collect")) {
-    passed = make_graphs(&cx, 16, true);
+    // Three physical containers per empty signal plus this independent
+    // retained owner reach the unchanged 64-owner ceiling exactly.
+    auto filler = native::make_native_container<Body>(&cx);
+    passed = filler && make_graphs(&cx, 21, true);
     for (auto& object : objects) if (object) object->reachable = false;
     const unsigned before = collections;
     auto refused = native::make_native_container<Body>(&cx);
     passed = passed && !refused && collections == before && native::promise_accounting.live == 64;
   } else if (!std::strcmp(mode, "entry-pending") || !std::strcmp(mode, "snapshot")) {
-    passed = make_graphs(&cx, 8, true);
+    passed = make_graphs(&cx, 11, true);
     const unsigned before = allocations, gc = collections, live = native::promise_accounting.live;
     const bool pending = !std::strcmp(mode, "entry-pending");
     if (pending) cx.error = "original-error"; else initialized = false;
@@ -189,21 +195,24 @@ int main(int argc, char** argv) {
       collections == gc && native::promise_accounting.live == live &&
       (!pending || !std::strcmp(cx.error, "original-error"));
   } else if (!std::strcmp(mode, "acknowledgement-failure")) {
-    passed = make_graphs(&cx, 8, true);
+    passed = make_graphs(&cx, 11, true);
     for (auto& object : objects) if (object) object->reachable = false;
     refuse_ack = true;
     const unsigned before = allocations;
     passed = passed && !AbortSignal::create(&cx) && allocations == before &&
-      native::promise_accounting.live == 32 && native::native_objects.stopped();
+      native::promise_accounting.live == 33 && native::native_objects.stopped();
     const unsigned gc = collections;
     cx.error = nullptr;
     passed = passed && !EventTarget::create(&cx) && collections == gc && allocations == before;
   } else if (!std::strcmp(mode, "no-release-before-collection-end")) {
-    passed = make_graphs(&cx, 16, true);
+    // Three physical containers per empty signal plus this independent
+    // retained owner reach the unchanged 64-owner ceiling exactly.
+    auto filler = native::make_native_container<Body>(&cx);
+    passed = filler && make_graphs(&cx, 21, true);
     for (auto& object : objects) if (object) object->reachable = false;
     finish_collection = false;
     passed = passed && !AbortSignal::create(&cx) && native::promise_accounting.live == 64 &&
-      native::promise_accounting.acknowledged == 0 && bodies == 0;
+      native::promise_accounting.acknowledged == 0 && bodies == 1;
   } else return 2;
   initialized = true; refuse_ack = false; finish_collection = true; cx.error = nullptr;
   for (auto& object : objects) if (object) object->reachable = false;

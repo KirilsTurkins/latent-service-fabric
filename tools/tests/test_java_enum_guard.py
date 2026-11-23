@@ -8,6 +8,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from tools.java_guest import enum_guard
+from tools.tests.test_java_exception_slots import HEADER, function
 from tools.java_guest.compiler import Compiler
 from tools.java_guest.llvm_private_store_consumer import PrivateScalarPublicCompiler
 from tools.java_guest.llvm_ssa_consumer import DerivedPublicCompiler
@@ -85,8 +86,11 @@ alignas(8) E_VT E_Cls = {
     def test_managed_link_reserves_stack_below_data_with_original_memory_ceiling(self):
         generated = self.root / 'project/build/teavm-c'
         generated.mkdir(parents=True)
-        (generated / 'all.c').write_bytes((self.root / 'all.c').read_bytes())
+        (generated / 'all.c').write_bytes((self.root / 'all.c').read_bytes()
+                                          + b'#include "lifetime.c"\n')
         (generated / 'enum.c').write_bytes(self.enum.read_bytes())
+        (generated / 'exceptions.h').write_bytes(HEADER.read_bytes())
+        (generated / 'lifetime.c').write_bytes(function())
         indices = self.root / 'compiler-patch'
         indices.mkdir()
         (indices / 'enum-index-v1.tsv').write_bytes(self.index)
@@ -103,15 +107,22 @@ alignas(8) E_VT E_Cls = {
         self.assertEqual(args[:2], ('c-to-wasm', 'clang'))
         self.assertIn('-Wl,--stack-first', args)
         self.assertEqual([arg for arg in args if str(arg).startswith('-Wl,-z,stack-size=')],
-                         ['-Wl,-z,stack-size=131072'])
+                         ['-Wl,-z,stack-size=65536'])
         self.assertEqual([arg for arg in args if str(arg).startswith('-Wl,--max-memory=')],
                          ['-Wl,--max-memory=67108864'])
-        self.assertEqual(receipt['cStack'], {'bytes': 131072, 'layout': 'stack-first'})
+        self.assertEqual(receipt['cStack'], {'bytes': 65536, 'layout': 'stack-first'})
+        self.assertEqual(receipt['exceptionSlots']['schemaVersion'], 'latent.java.exception-slots.v1')
+        self.assertEqual(receipt['exceptionSlots']['regions'], 2)
+        self.assertEqual(receipt['exceptionSlots']['slots'], 1)
+        self.assertIn(b'LSF_TEAVM_TRY_SLOT', (generated / 'lifetime.c').read_bytes())
         self.assertEqual(kwargs['input_bytes'], enum_guard.seal(
             self.preprocessed, generated, self.index, date_required=False)[0])
         # A link failure must still abort; a planned reservation is no execution receipt.
         failure = RuntimeError('bounded-link-failed')
         compiler.run.side_effect = failure
+        # A new link attempt starts with freshly generated compiler inputs.
+        (generated / 'exceptions.h').write_bytes(HEADER.read_bytes())
+        (generated / 'lifetime.c').write_bytes(function())
         with self.assertRaises(RuntimeError) as caught:
             enum_guard.run(compiler, generated, (), destination, destination / 'core.wasm')
         self.assertIs(caught.exception, failure)

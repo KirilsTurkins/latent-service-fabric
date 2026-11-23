@@ -40,6 +40,8 @@ fn url_and_header_grammar_rejects_smuggling_and_ambient_credentials() {
     for url in [
         "file:///etc/passwd",
         "ftp://localhost:12345/allowed",
+        "blob:https://localhost:12345/allowed",
+        "data:text/plain,hello",
         "http://u:p@localhost:12345/allowed",
         "http://localhost:12345/allowed#fragment",
         "http://localhost:12345/allowed%2fsecret",
@@ -84,4 +86,31 @@ fn url_and_header_grammar_rejects_smuggling_and_ambient_credentials() {
         },
     ];
     assert!(crate::headers::validate(&input, &cfg.destinations[0], cfg.limits).is_err());
+}
+
+#[test]
+fn url_normalization_preserves_configured_origin_and_query() {
+    let cfg = config(12345);
+    let destination = crate::destination::parse(
+        "HTTP://LOCALHOST:12345/allowed?name=a+b&escaped=%2F&empty=",
+        &cfg,
+    )
+    .unwrap();
+    assert_eq!(destination.origin, cfg.destinations[0].origin);
+    assert_eq!(destination.index, 0);
+    assert_eq!(destination.url.path(), "/allowed");
+    assert_eq!(destination.url.query(), Some("name=a+b&escaped=%2F&empty="));
+    let pairs: Vec<_> = destination.url.query_pairs().into_owned().collect();
+    assert_eq!(
+        pairs,
+        vec![
+            ("name".to_owned(), "a b".to_owned()),
+            ("escaped".to_owned(), "/".to_owned()),
+            ("empty".to_owned(), String::new()),
+        ]
+    );
+    assert!(matches!(
+        crate::destination::parse("http://localhost:12346/allowed", &cfg),
+        Err(HttpError::PermissionDenied)
+    ));
 }

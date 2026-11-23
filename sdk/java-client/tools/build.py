@@ -69,7 +69,13 @@ def prepare():
         filename = Path(artifact["path"]).name
         destination = dependencies / filename
         if not destination.exists():
-            destination.write_bytes(download_locked(lock["maven"] + artifact["path"], artifact))
+            try:
+                content = download_locked(lock["maven"] + artifact["path"], artifact)
+            except urllib.error.HTTPError as error:
+                # Preserve the exact lock coordinate when the CLI shortens the
+                # exception. A missing artifact is not an integrity waiver.
+                raise ValueError(f"locked dependency download failed: {artifact['path']} (HTTP {error.code})") from error
+            destination.write_bytes(content)
         if destination.stat().st_size != artifact["size"] or hashlib.sha256(destination.read_bytes()).hexdigest() != artifact["sha256"]:
             raise ValueError("locked dependency cache mismatch")
         if artifact["platform"] != "any":
