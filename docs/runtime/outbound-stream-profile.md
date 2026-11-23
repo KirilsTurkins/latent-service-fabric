@@ -12,6 +12,11 @@ is recognized by host ABI V5; actual installation is restricted to the explicit
 Ordinary builds accept no stream installation. See the measured
 [implementation status](outbound-stream-qualification.md) before selecting a profile.
 
+For libraries that require a nonblocking connect or finer-grained poll events,
+the [proposed v2 companion](../../research/standard-outbound/nonblocking-v2-decision.md)
+describes a separate interface. V1 exposes bounded readable/writable readiness.
+The v2 WIT is research material and has no installed host binding.
+
 ## ABI, operations and states
 
 Identity: `latent:network/streams@0.1.0`; feature/profile:

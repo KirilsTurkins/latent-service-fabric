@@ -5,6 +5,7 @@ import shutil
 import zipfile
 
 from tools import dotnet_dependency_authoring as authoring
+from tools import dotnet_task_runtime_context as event_context
 from tools.application_dependencies import LOCK
 from tools.build_observation import build_environment
 from tools.build_snapshot import digest
@@ -23,7 +24,8 @@ BASELINE_CASES = ('run', 'when-all', 'thread-pool', 'scheduler', 'error', 'cance
          'timer-periodic-context', 'timer-change', 'timer-dispose', 'timer-self-dispose-drain')
 CASES = BASELINE_CASES + ('cancel-pending',)
 RESET_NOTIFICATION_MODE = 'reset-notification-refusal'
-QUALIFICATION_CASES = CASES + (RESET_NOTIFICATION_MODE,)
+EVENT_WAIT_MODE = 'manual-reset-sibling'
+QUALIFICATION_CASES = CASES + (EVENT_WAIT_MODE,) + event_context.CASES + (RESET_NOTIFICATION_MODE,)
 CANCEL_CASE = '        case "cancel-pending": {\n            using var cancellation = new CancellationTokenSource();\n            var token = cancellation.Token;\n            var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);\n            var running = Task.Run(async () => {\n                Stage = "cancel-pending-delay";\n                var delay = Task.Delay(10000, token);\n                Incomplete(delay);\n                entered.SetResult(true);\n                await delay.ConfigureAwait(false);\n                throw new Exception("pending cancellation ignored");\n            }, token);\n            Stage = "cancel-pending-enter";\n            entered.Task.GetAwaiter().GetResult();\n            Incomplete(running);\n            Stage = "cancel-pending-cancel";\n            cancellation.Cancel();\n            try { running.GetAwaiter().GetResult(); throw new Exception("running task did not cancel"); }\n            catch (OperationCanceledException error) {\n                if (error.CancellationToken != token || !running.IsCanceled)\n                    throw new Exception("pending cancellation identity or state changed");\n            }\n            break;\n        }\n'
 RESET_NOTIFICATION_CASE = r'''        case "reset-notification-refusal": {
             Stage = "reset-notification-setup";
@@ -56,6 +58,44 @@ RESET_NOTIFICATION_CASE = r'''        case "reset-notification-refusal": {
             if (observed != 1 || notifications != 1)
                 throw new Exception("reset notification was not refused exactly once");
             break;
+        }
+'''
+EVENT_WAIT_CASE = r'''        case "manual-reset-sibling": {
+            Stage = "event-waiter-submit";
+            var waiter = Task.Run(() => {
+                Stage = "event-create";
+                using var signal = new ManualResetEventSlim(false);
+                int callbacks = 0, phase = 0, pendingSetter = 0;
+                int waiterThread = Environment.CurrentManagedThreadId;
+                if (signal.Wait(0)) throw new Exception("new event already signalled");
+                // Submit from a live work item, not the application root: an
+                // eager root dispatch must not satisfy this pending-wait case.
+                if (!ThreadPool.QueueUserWorkItem(_ => {
+                    bool duringWait = phase == 1 && !signal.IsSet
+                        && Environment.CurrentManagedThreadId == waiterThread;
+                    callbacks++;
+                    pendingSetter = duringWait ? 1 : -1;
+                    phase = 2;
+                    signal.Set();
+                })) throw new Exception("event setter rejected");
+                if (phase != 0 || callbacks != 0 || signal.IsSet)
+                    throw new Exception("event setter ran before wait entry");
+                Stage = "event-wait";
+                // No dispatching call is permitted between arming this witness
+                // and Wait. A setter on this same physical managed thread can
+                // therefore run only through the pending Wait's nested pump.
+                phase = 1;
+                signal.Wait();
+                if (phase != 2 || pendingSetter != 1 || !signal.IsSet || callbacks != 1)
+                    throw new Exception("pending event wait or same-thread setter lost");
+                phase = 3;
+                signal.Reset();
+                if (signal.Wait(0)) throw new Exception("event reset lost");
+            });
+            Stage = "event-waiter-join";
+            waiter.GetAwaiter().GetResult();
+            if (SynchronizationContext.Current != null) throw new Exception("custom context escaped");
+            return "ordinary-tasks:manual-reset-sibling|pending=1|same-thread=1|setter=1|fresh=1";
         }
 '''
 LIBRARY_SOURCE = r'''using System;
@@ -270,15 +310,19 @@ def selected_fixture(monitor_cancel: bool = False, *, reset_notification: bool =
     source = with_pending_cancel(LIBRARY_SOURCE)
     if reset_notification:
         marker = '        case "context":\n'
-        require(source.count(marker) == 1 and 'case "reset-notification-refusal"' not in source,
+        require(source.count(marker) == 1 and 'case "reset-notification-refusal"' not in source
+                and 'case "manual-reset-sibling"' not in source,
                 'dotnet-task-reset-notification-source')
-        return source.replace(marker, RESET_NOTIFICATION_CASE + marker), QUALIFICATION_CASES
+        return source.replace(marker, EVENT_WAIT_CASE + event_context.SOURCE + RESET_NOTIFICATION_CASE + marker), QUALIFICATION_CASES
     return source, CASES
 
 
 def expected(mode):
     require(mode in QUALIFICATION_CASES, 'dotnet-task-unknown-case')
-    return 'ordinary-tasks:' + mode + '|fresh=1'
+    if mode in event_context.CASES:
+        return event_context.expected(mode)
+    witness = '|pending=1|same-thread=1|setter=1' if mode == EVENT_WAIT_MODE else ''
+    return 'ordinary-tasks:' + mode + witness + '|fresh=1'
 
 
 def declare(project: Path):

@@ -37,6 +37,8 @@ struct State {
   bool fail_reserve = false, refuse_ack = false;
   bool premature_release = false, unowned = false, early_publication = false;
   int pending_entries = 0, active_roots = 0;
+  unsigned preparations = 0;
+  bool refuse_prepare = false;
   bool invalid_root_order = false;
   size_t limit = 64, admitted = 0, live = 0, peak = 0, acknowledged = 0;
   size_t reserve_attempts = 0, live_backings = 0;
@@ -67,6 +69,13 @@ static bool checkpoint(JSContext* cx) {
   });
 }
 namespace lsf::typescript::activation {
+// Finite preflight double; real collection/acknowledgement bodies are exercised
+// separately in typescript_native_object_pressure.cpp. No GC is invented here.
+bool prepare_native_object_allocation(JSContext* cx) {
+  ++state.preparations;
+  if (state.refuse_prepare || records.stopped()) { error(cx, 808, 8080); return false; }
+  return checkpoint(cx);
+}
 bool admit_native_object(JSContext* cx, NativeObjectLease& lease) {
   if (records.stopped()) { error(cx, 505, 5050); return false; }
   if (!checkpoint(cx)) return false;
@@ -106,7 +115,7 @@ struct AlgorithmList : std::vector<std::unique_ptr<Algorithm>> {
 };
 struct Signal {
   int id = 0, reason = 0;
-  bool aborted = false;
+  bool aborted = false, algorithm_storage_absent = false;
   WeakIndexSet dependents;
   AlgorithmList algorithms;
 };
@@ -285,7 +294,9 @@ struct AbortSignal {
   }
   static int reason(Signal* signal) { return signal->reason; }
   static WeakIndexSet* dependent_signals(Signal* signal) { return &signal->dependents; }
-  static AlgorithmList* algorithms(Signal* signal) { return &signal->algorithms; }
+  static AlgorithmList* algorithms(Signal* signal) {
+    return signal->algorithm_storage_absent ? nullptr : &signal->algorithms;
+  }
   static bool abort(JSContext*, HandleObject, HandleValue);
   static bool run_abort_steps(JSContext*, HandleObject);
 };
@@ -328,6 +339,12 @@ static bool fanout_case(const char* name) {
   JSContext cx;
   Graph graph(is("fanout-inline") || is("fanout-default-reentry") ? 3 : 12);
   state.before_growth = &graph.root;
+  if (is("fanout-empty-algorithms") || is("fanout-empty-algorithms-pressure-refusal")) {
+    graph.root.algorithms.clear(); graph.root.algorithm_storage_absent = true;
+    for (auto& signal : graph.dependents) {
+      signal.algorithms.clear(); signal.algorithm_storage_absent = true;
+    }
+  }
   bool callback_checked = false, all_ready = true;
   state.on_dispatch = [&](JSContext* context, Signal*) {
     callback_checked = true;
@@ -336,6 +353,42 @@ static bool fanout_case(const char* name) {
     if (!checkpoint(context)) return false;
     return true;
   };
+  if (is("fanout-empty-algorithms-pressure-refusal")) {
+    const int destroyed_before = state.destroyed;
+    state.refuse_prepare = true;
+    const bool ok = AbortSignal::abort(&cx, &graph.root, 0);
+    auto untouched = [](const Signal& signal) {
+      return !signal.aborted && !signal.reason && signal.algorithm_storage_absent &&
+          signal.algorithms.empty();
+    };
+    bool unchanged = untouched(graph.root) && graph.root.dependents.values.size() == graph.count;
+    for (size_t i = 0; i < graph.count; ++i)
+      unchanged &= untouched(graph.dependents[i]) && graph.root.dependents.values[i] == &graph.dependents[i];
+    return !ok && cx.pending == 808 && cx.stack == 8080 && unchanged &&
+        state.preparations == 1 && !state.default_reasons && !state.reserve_attempts &&
+        !state.admitted && !state.dispatches && state.destroyed == destroyed_before;
+  }
+  if (is("fanout-pressure-refusal")) {
+    state.refuse_prepare = true;
+    const bool ok = AbortSignal::abort(&cx, &graph.root, 0);
+    return !ok && cx.pending == 808 && cx.stack == 8080 && graph.unchanged() &&
+        state.preparations == 1 && !state.default_reasons && !state.reserve_attempts &&
+        !state.admitted && !state.dispatches && !state.destroyed;
+  }
+  if (is("fanout-entry-exception")) {
+    error(&cx, 909, 9090);
+    const bool ok = AbortSignal::abort(&cx, &graph.root, 0);
+    return !ok && cx.pending == 909 && cx.stack == 9090 && graph.unchanged() &&
+        !state.preparations && !state.default_reasons && !state.admitted && !state.dispatches;
+  }
+  if (is("fanout-aborted-no-preflight")) {
+    graph.root.aborted = true;
+    graph.root.reason = 93;
+    state.refuse_prepare = true;
+    return AbortSignal::abort(&cx, &graph.root, 0) && !cx.pending &&
+        graph.root.reason == 93 && !state.preparations && !state.default_reasons &&
+        !state.reserve_attempts && !state.admitted && !state.dispatches;
+  }
   if (is("fanout-refusal")) state.limit = 0;
   if (is("fanout-reserve-failure") || is("fanout-recovery")) state.fail_reserve = true;
   if (is("fanout-all-aborted")) {
@@ -422,7 +475,7 @@ static bool fanout_case(const char* name) {
   } else if (is("fanout-trap") || is("fanout-error-then-trap")) {
     verified = !ok && cx.trapped && !cx.pending && !cx.stack && !cx.status &&
                state.dispatches == (is("fanout-trap") ? 1 : 2) && graph.reasons(7) && !state.pending_entries;
-  } else if (is("fanout-inline") || is("fanout-heap") || is("fanout-ack-refusal")) {
+  } else if (is("fanout-inline") || is("fanout-heap") || is("fanout-ack-refusal") || is("fanout-empty-algorithms")) {
     verified = ok && !cx.pending && callback_checked && all_ready && graph.reasons(7) &&
                state.dispatches == static_cast<int>(graph.count + 1) &&
                state.admitted == (is("fanout-inline") ? 0U : 1U);

@@ -8,6 +8,7 @@ on:
       - 'tools/typescript_application_dependencies.py'
       - 'tools/tests/test_typescript_network_boundary.py'
       - 'tools/tests/test_typescript_node_net.py'
+      - 'tools/tests/test_typescript_abort_declarations.py'
       - 'tools/tests/fixtures/typescript_node_net_generated.json'
       - 'sdk/typescript-guest/**'
       - 'wit/platform/network/**'
@@ -21,6 +22,7 @@ on:
       - 'tools/typescript_application_dependencies.py'
       - 'tools/tests/test_typescript_network_boundary.py'
       - 'tools/tests/test_typescript_node_net.py'
+      - 'tools/tests/test_typescript_abort_declarations.py'
       - 'tools/tests/fixtures/typescript_node_net_generated.json'
       - 'sdk/typescript-guest/**'
       - 'wit/platform/network/**'
@@ -69,6 +71,14 @@ jobs:
             --frontend "$RUNNER_TEMP/typescript-guest-tools" \
             > "$RUNNER_TEMP/typescript-network-boundary/result.json" \
             2> "$RUNNER_TEMP/typescript-network-boundary/controls.log"
+      - name: Require AbortSignal declaration controls without skips
+        timeout-minutes: 2
+        shell: bash
+        run: |
+          set -euo pipefail
+          LSF_TYPESCRIPT_FRONTEND="$RUNNER_TEMP/typescript-guest-tools" \
+            python3 -B -m tools.tests.test_typescript_abort_declarations \
+            > "$RUNNER_TEMP/typescript-network-boundary/abort-declarations.log" 2>&1
       - name: Retain compiler-only observations
         if: always()
         uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc # v7.0.2 + upstream changes + LSF security fixes
@@ -77,5 +87,6 @@ jobs:
           path: |
             ${{ runner.temp }}/typescript-network-boundary/result.json
             ${{ runner.temp }}/typescript-network-boundary/controls.log
+            ${{ runner.temp }}/typescript-network-boundary/abort-declarations.log
           if-no-files-found: warn
           retention-days: 7

@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import unittest
 
-from tools.transaction_client_models import derive, qualify_external, render
+from tools.transaction_client_models import OUTPUTS, REQUIREMENTS, derive, qualify_external, render
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -54,6 +54,29 @@ class TransactionClientModelTests(unittest.TestCase):
         self.assertIn("\tAuditAck *profile.AuditAck", go)
         dotnet = qualify_external("public sealed record Outcome(Success? Success, AuditAck? AuditAck);", contract, "dotnet")
         self.assertEqual(dotnet, "public sealed record Outcome(global::Latent.Sdk.Profile.Success? Success, global::Latent.Sdk.Profile.AuditAck? AuditAck);")
+
+    def test_checked_in_index_matches_authoritative_preparation_profile(self):
+        preparation = json.loads((ROOT / "sdk/profile/transaction-preparation-v1.json").read_bytes())
+        requirements = json.loads((ROOT / REQUIREMENTS).read_bytes())
+        contract = json.loads((ROOT / OUTPUTS["index"]).read_bytes())
+        self.assertEqual(requirements["preparationProfileDigest"], preparation["digest"])
+        self.assertEqual(requirements["hostAbiDigest"], preparation["hostAbiDigest"])
+        self.assertEqual(contract["preparationProfileDigest"], preparation["digest"])
+        self.assertEqual(contract["hostAbiDigest"], preparation["hostAbiDigest"])
+        self.assertEqual(contract["wireProfile"], requirements["wireProfile"])
+        self.assertEqual(contract["profile"], requirements["externalClient"]["profile"])
+
+    def test_checked_in_helpers_use_the_authoritative_profile_not_a_stale_index(self):
+        preparation = json.loads((ROOT / "sdk/profile/transaction-preparation-v1.json").read_bytes())
+        requirements = json.loads((ROOT / REQUIREMENTS).read_bytes())
+        # Rendering the checked-in index alone is self-consistent even when the
+        # index and all six helpers predate a security-related preparation change.
+        expected = (requirements["wireProfile"], preparation["hostAbiDigest"], preparation["digest"])
+        for language in requirements["languages"]:
+            with self.subTest(language=language):
+                source = (ROOT / OUTPUTS[language]).read_text(encoding="utf-8")
+                for value in expected:
+                    self.assertIn(json.dumps(value), source)
 
     def test_all_six_models_preserve_optional_full_width_preconditions_and_protocol_data(self):
         contract = json.loads((ROOT / "sdk/profile/transaction-client-contract.json").read_bytes())

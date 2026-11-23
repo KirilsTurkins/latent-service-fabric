@@ -280,6 +280,7 @@ def qualify(output, revision):
 
 
 SHUTDOWN_BRANCH = 'feat/java-cf-shutdown-now-20261028'
+CACHED_HANDOFF_BRANCH = 'fix/sdk-java-cached-idle-handoff-20261117'
 SHUTDOWN_CASE = 'runtime::signed_java_shutdown_now_withdraws_only_unstarted_callbacks'
 FUTURE_BRANCH = 'feat/java-future-queue-20261028'
 FUTURE_CASE = 'runtime::signed_java_future_tasks_retain_result_ownership_across_queue_copies'
@@ -363,12 +364,13 @@ def future_observations(raw, filtered):
 
 def qualify_shutdown(output, revision, *, future_queue=False):
     need(type(future_queue) is bool, 'closed-future-queue-selection')
-    branch = FUTURE_BRANCH if future_queue else SHUTDOWN_BRANCH
+    branch = os.environ.get('GITHUB_REF_NAME')
+    allowed_branches = {FUTURE_BRANCH} if future_queue else {SHUTDOWN_BRANCH, CACHED_HANDOFF_BRANCH}
     case = FUTURE_CASE if future_queue else SHUTDOWN_CASE
     fixture = 'future-queue' if future_queue else 'shutdown-now'
     need(sys.platform == 'linux' and os.environ.get('GITHUB_ACTIONS') == 'true'
         and os.environ.get('GITHUB_REPOSITORY') == identities.REPOSITORY
-        and os.environ.get('GITHUB_REF_NAME') == branch
+        and branch in allowed_branches
         and os.environ.get('GITHUB_EVENT_NAME') == 'push'
         and os.environ.get('GITHUB_SHA') == revision and os.environ.get('GITHUB_WORKFLOW_SHA') == revision
         and os.environ.get('GITHUB_WORKSPACE') == str(ROOT)

@@ -384,7 +384,7 @@
       "isolated": true,
       "kind": "cargo",
       "lock": "crates/vendor/wasmtime-cache/Cargo.lock",
-      "manifest_sha256": "82b9e78e38d5d139859507eca18f4697f777ed7bfa3993a02e216099d06abc27",
+      "manifest_sha256": "7282c4bfbdbffc21aab34910c3cd4bd20ed1fa505a792fc4797f61f666ffb06c",
       "path": "crates/vendor/wasmtime-cache/Cargo.toml"
     },
     {

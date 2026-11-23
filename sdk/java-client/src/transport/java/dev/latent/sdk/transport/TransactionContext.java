@@ -25,7 +25,13 @@ final class TransactionContext {
                 case Transactions.InvokeCommandRequest value -> {
                     command = value.command().orElse(null);
                     result.activation = value.invocation().flatMap(Management.InvokeRequest::activationId);
-                    result.versions = value.expectedVersions().stream().map(TransactionContext::version).toList();
+                    Protocol.require(value.expectedVersions().size() <= 128);
+                    var versions = new java.util.ArrayList<Transactions.ExpectedVersion>();
+                    for (var entry : value.expectedVersions()) {
+                        Protocol.require(versions.size() < 128);
+                        versions.add(version(entry));
+                    }
+                    result.versions = List.copyOf(versions);
                     if (value.retryAttempt().isPresent()) {
                         var retry = value.retryAttempt().get();
                         result.retry = Optional.of(TransactionProtocol.id(retry.requestId()));
@@ -61,14 +67,14 @@ final class TransactionContext {
                 case Transactions.MutateStateRequest value -> {
                     inspected = value.namespace().orElse(null); result.operation = Optional.of(value.operationId());
                     result.version = Optional.of(copy(value.expectedVersion(), 256)); result.policy = Optional.of(value.expectedPolicyDigest());
-                    result.effectPlan = value.effectPlan();
+                    result.effectPlan = value.effectPlan().map(TransactionContext::effectPlan);
                 }
                 case Transactions.GetStateOperationReceiptRequest value -> {
                     inspected = value.namespace().orElse(null); result.operation = Optional.of(value.operationId());
-                    result.effectPlan = value.originalEffectPlan();
+                    result.effectPlan = value.originalEffectPlan().map(TransactionContext::effectPlan);
                 }
                 case Transactions.PlanEffectMutationRequest value -> {
-                    result.effectMutation = Optional.of(value); var target = value.effect().orElseThrow();
+                    result.effectMutation = Optional.of(effectMutation(value)); var target = value.effect().orElseThrow();
                     command = target.command().orElse(null); result.publication = target.authorizationPublication();
                     result.operation = Optional.of(value.operationId()); result.effect = Optional.of(target.effectId());
                     result.version = Optional.of(copy(value.expectedVersion(), 32)); result.policy = Optional.of(value.expectedPolicyDigest());
@@ -112,6 +118,16 @@ final class TransactionContext {
         Protocol.require(value.remaining() <= maximum);
         byte[] bytes = new byte[value.remaining()]; value.asReadOnlyBuffer().get(bytes);
         return ByteBuffer.wrap(bytes).asReadOnlyBuffer();
+    }
+    private static Transactions.PlanEffectMutationRequest effectMutation(Transactions.PlanEffectMutationRequest value) {
+        return new Transactions.PlanEffectMutationRequest(value.effect(), value.operationId(), value.mutation(),
+                copy(value.expectedVersion(), 32), value.expectedPolicyDigest(), value.reason(), value.retryDelayMillis());
+    }
+    private static Transactions.EffectManagementPlan effectPlan(Transactions.EffectManagementPlan value) {
+        return new Transactions.EffectManagementPlan(value.original().map(TransactionContext::effectMutation),
+                copy(value.planDigest(), 32), value.managementSequence(), value.ownerEpoch(), value.claimGeneration(),
+                value.dispatchAttempt(), value.expiresAtUnixMillis(), value.preparedAtUnixMillis(), value.before(),
+                value.safety(), value.dedupValidUntilUnixMillis());
     }
     private static Transactions.ExpectedVersion version(Transactions.ExpectedVersion value) {
         return new Transactions.ExpectedVersion(copy(value.key(), 1024), value.absent(), value.version().map(bytes -> copy(bytes, 256)));

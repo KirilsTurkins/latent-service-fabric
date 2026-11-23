@@ -86,6 +86,29 @@ Command commitment and provider delivery are separate facts. A retained Pending
 or uncertain effect does not become acknowledged because its delivery horizon
 or the command's response body expired.
 
+To see how an effect reached its current disposition, request one history page
+with the same command and effect selectors:
+
+```bash
+latent --phase4 transaction effect-history \
+  --namespace "$Namespace" --incarnation "$Incarnation" \
+  --authorization-publication "$Publication" \
+  --operation "$Operation" --client-key "$ClientKey" --effect-id "$EffectId" \
+  --limit 16
+```
+
+For another page, supply the returned `nextCursor` as `--cursor` with the same
+selectors. Only an absent cursor means the scan is complete. Each request checks
+current authority, including when history contains an earlier uncertain attempt
+followed by a broker acknowledgement. [Management paging](../protocol/state-management.md#command-commit-and-effect-inspection)
+
+A browser uses the application's configured result route. Send a GET with the
+original `Idempotency-Key` to recover the command. To check one of its effects,
+send the same GET with the returned `Effect-Id` as well. The response exposes
+the effect ID, disposition and dispatch attempt under current `inspect-effect`
+permission. An unavailable result or a query that failed to return a view is
+insufficient grounds for another edit. [Transaction HTTP](../development/transaction-http-v1.md#original-request-facts)
+
 ## Choose operator actions deliberately
 
 `state plan-effect` prepares a checked redrive, reconcile or terminate plan with
@@ -100,7 +123,9 @@ management RPC or operator permissions.
 
 For restore or retirement, preserve the coupled catalog/store/receipt history
 and physically drain current owners before transferring custody. Older-history
-restore changes incarnation and keeps dispatch paused for explicit review.
+restore preserves the business incarnation, advances the recovery epoch and
+keeps dispatch paused for explicit review. Acquire a fresh authorized view
+before choosing a new edit. The original command key stays with its history.
 Readiness does not override an operator's durable pause. Follow the
 [protected checkpoint](../development/transaction-checkpoint.md),
 [snapshot custody](../development/protected-snapshots.md) and

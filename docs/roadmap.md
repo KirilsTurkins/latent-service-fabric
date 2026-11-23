@@ -72,19 +72,20 @@ state/outbox/result/inbox persistence and independent fresh queries.
 | Guest templates, six external transaction facades and reference application | [Transactional guest](component-development/transactional-authoring.md), [transaction clients](development/transaction-clients.md), [order drafts](../examples/stateful-reference/README.md) |
 | Linked retention, command-floor retirement, checkpoint/restore and format custody | [Linked retention](architecture/state-and-effects.md#incoming-identity-formats-and-linked-retention), [retirement reconciliation](https://github.com/KirilsTurkins/latent-service-fabric/blob/200c17c26b24d6bf06d8d28102362ea714c1f4eb/docs/development/phase4-handoffs/2026-10-12/pr974-reconciliation.md), [checkpoints](development/transaction-checkpoint.md) |
 
-The pending [PR #970](https://github.com/KirilsTurkins/latent-service-fabric/pull/970)
-is this documentation branch's source base for current installed recovery.
-Complete terminal/pending native qualification remains required; historical Java
-compiler captures are bound to their original sources. Ticket and packaged
-acceptance must not be inferred from this branch or prior fixture receipts.
+The [installed recovery guide](testing/installed-transaction-recovery.md)
+tracks the remaining terminal and pending scenarios. The [six-guest evidence](testing/phase4-guest-progress-2026-11-09.md)
+covers specific signed components and brokers. Operators can configure outbound
+JetStream effects today. [Transactional incoming triggers](runtime/nats-triggers.md#transactional-inbox-status)
+still require protected source custody before standalone installation can open.
 
 Strict commands stage business state and intents; the host decides commitment
 only after accepted work retires and staging seals. Immediate irreversible calls
 are denied. Result lookup needs current read authority and preserves the original
 identity; local timeout or cancellation supplies no abort proof. Compatible
 upgrades preserve pending formats and linked protection. Older-history restore
-changes incarnation and starts dispatch paused. Code rollback cannot rewind
-state or external actions.
+preserves the business incarnation, advances the recovery epoch and starts
+dispatch paused. Code rollback cannot rewind state or external actions.
+[Restore identity and the remaining decision](architecture/namespace-history-epochs.md)
 
 Phase 4 does not add a production Windows node, Mac/ARM64 support, general SQL,
 external database, cluster routing or durable workflows. Its remaining platform,

@@ -65,7 +65,7 @@ def qualify(output: Path) -> dict:
     # source_module executes these two SDK helpers outside sys.modules. The
     # process platform helpers may also be imported only when a command starts.
     helper_paths = ('tools/qualify_java_fibers.py', 'tools/qualify_java_checkpoint_context.py',
-        'tools/java_guest/compiler.py', 'tools/java_guest/coroutine_patch.py',
+        'tools/java_guest/compiler.py', 'tools/java_guest/coroutine_patch.py', 'tools/java_guest/field_read_patch.py',
         'tools/phase2_operator_process.py', 'tools/phase3_resource_identity.py',
         'tools/phase3_resource_profile.py', 'tools/rust_capsule_build.py',
         'tools/rust_capsule_project.py', 'tools/build_observation.py', 'tools/build_process.py',

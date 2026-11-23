@@ -159,12 +159,12 @@ func executeTransaction[Response any](client *Client, parent context.Context, re
 	if deadline.Err() != nil {
 		return result, callContextFailure(deadline, state)
 	}
-	if failure = transactionCollections(reflect.ValueOf(request), 0, ""); failure != nil {
-		return result, state.fail(profile.FailureCategoryLimit, "transaction collections exceed their bounded shape")
-	}
 	budget := graphBudget{bytes: min(client.config.MaxGraphBytes, 8*1024*1024), nodes: min(client.config.MaxGraphNodes, 4096)}
 	if budget.scan(reflect.ValueOf(request), 0) != nil {
 		return result, state.fail(profile.FailureCategoryLimit, "transaction request graph exceeds client limit")
+	}
+	if failure = transactionCollections(reflect.ValueOf(request), 0, ""); failure != nil {
+		return result, state.fail(profile.FailureCategoryLimit, "transaction collections exceed their bounded shape")
 	}
 	if failure = validateTransactionRequest(request); failure != nil {
 		return result, transactionInvalid(state, failure, false)

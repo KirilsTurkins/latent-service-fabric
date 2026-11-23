@@ -7,6 +7,11 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+from tools import dotnet_task_runtime_context as event_context
+from tools import dotnet_task_runtime_fixture as task_fixture
+from tools import dotnet_task_runtime_probe as task_probe
+from tools.phase2_operator_process import WorkflowError
+from tools.qualify_dotnet_task_runtime import HELPERS, require_reset_notification_receipt
 from tools.dotnet_guest import async_exports, http_errors, runtime, task_wait
 from tools.rust_capsule_project import ROOT, digest, write_json
 
@@ -211,22 +216,26 @@ class TaskWaitPortTests(unittest.TestCase):
             port.recheck()
 
 class TaskRuntimeResetWitnessTests(unittest.TestCase):
-    def test_reset_witness_extends_only_the_selected_ordinary_fixture(self):
+    def test_runtime_witnesses_extend_only_the_selected_ordinary_fixture(self):
         from tools import dotnet_task_runtime_fixture as fixture
         from tools.phase2_operator_process import WorkflowError
         legacy, legacy_cases = fixture.selected_fixture()
         source, cases = fixture.selected_fixture(reset_notification=True)
         self.assertEqual(legacy_cases, fixture.CASES)
-        self.assertEqual(cases, legacy_cases + (fixture.RESET_NOTIFICATION_MODE,))
+        self.assertEqual(cases, legacy_cases + (fixture.EVENT_WAIT_MODE,)
+                         + fixture.event_context.CASES + (fixture.RESET_NOTIFICATION_MODE,))
         self.assertEqual(source.count(fixture.RESET_NOTIFICATION_CASE), 1)
-        self.assertEqual(source.replace(fixture.RESET_NOTIFICATION_CASE, ''), legacy)
+        self.assertEqual(source.count(fixture.EVENT_WAIT_CASE), 1)
+        self.assertEqual(source.replace(fixture.RESET_NOTIFICATION_CASE, '').replace(fixture.EVENT_WAIT_CASE, '')
+                         .replace(fixture.event_context.SOURCE, ''), legacy)
         self.assertNotIn('case "reset-notification-refusal"', legacy)
+        self.assertNotIn('case "manual-reset-sibling"', legacy)
         with self.assertRaises(WorkflowError):
             fixture.selected_fixture(reset_notification=1)
         with self.assertRaises(WorkflowError):
             fixture.selected_fixture(True, reset_notification=True)
 
-    def test_reset_selector_adds_only_one_bounded_probe(self):
+    def test_runtime_selector_adds_the_selected_bounded_probes(self):
         from tools import dotnet_task_runtime_fixture as fixture, dotnet_task_runtime_probe as probe
         from tools.phase2_operator_process import WorkflowError
         from tools.run_rust_capsule_workflow import run
@@ -248,11 +257,13 @@ class TaskRuntimeResetWitnessTests(unittest.TestCase):
                 probe.probe(None, target, None, result, 0, reset_notification=1)
             calls.assert_not_called()
             probe.probe(None, target, None, result, 0, reset_notification=True)
-        self.assertEqual(calls.call_count, len(fixture.CASES) + 1)
+        self.assertEqual(calls.call_count, len(fixture.QUALIFICATION_CASES))
         self.assertEqual([row['mode'] for row in result['dotnetTaskRuntime']['cases']],
                          list(fixture.QUALIFICATION_CASES))
         self.assertEqual(values.call_args_list[-1].args[2],
                          [{'ok': fixture.expected(fixture.RESET_NOTIFICATION_MODE)}])
+        self.assertEqual(values.call_args_list[fixture.QUALIFICATION_CASES.index(fixture.EVENT_WAIT_MODE)].args[2],
+                         [{'ok': fixture.expected(fixture.EVENT_WAIT_MODE)}])
         self.assertEqual(result['samples'][-1]['phase'],
                          'dotnet-ordinary-tasks-reset-notification-refusal-retired')
 
@@ -262,14 +273,15 @@ class TaskRuntimeResetWitnessTests(unittest.TestCase):
         from tools.qualify_dotnet_task_runtime import require_reset_notification_receipt
         library, _ = fixture.selected_fixture(reset_notification=True)
         captured = {'cases': list(fixture.QUALIFICATION_CASES), 'originalFiles': {'Library.cs': digest(library.encode('utf-8'))}}
-        invocation = {'processReaped': True, 'exitCode': 0,
-                      'decoded': [{'ok': fixture.expected(fixture.RESET_NOTIFICATION_MODE)}],
-                      'response': {'outcomeKnown': True}}
+        invocation = {'processReaped': True, 'exitCode': 0, 'response': {'outcomeKnown': True}}
         observed = {'dotnetTaskRuntime': {'cases': [
-            {'mode': mode, 'invocation': copy.deepcopy(invocation),
+            {'mode': mode, 'invocation': {**copy.deepcopy(invocation), 'decoded': [{'ok': fixture.expected(mode)}]},
              'retirement': {'phase': 'dotnet-ordinary-tasks-' + mode + '-retired'}}
             for mode in fixture.QUALIFICATION_CASES]}}
         require_reset_notification_receipt(captured, observed)
+        wrong_event = copy.deepcopy(observed)
+        wrong_event['dotnetTaskRuntime']['cases'][fixture.QUALIFICATION_CASES.index(fixture.EVENT_WAIT_MODE)]['invocation']['decoded'] = [{'ok': 'wrong'}]
+        with self.assertRaises(WorkflowError): require_reset_notification_receipt(captured, wrong_event)
         for mutation in ('captured', 'source', 'missing', 'duplicate', 'result', 'exit', 'unknown', 'unreaped', 'retirement'):
             inputs, receipt = copy.deepcopy(captured), copy.deepcopy(observed)
             rows = receipt['dotnetTaskRuntime']['cases']
@@ -284,6 +296,129 @@ class TaskRuntimeResetWitnessTests(unittest.TestCase):
             else: rows[-1].pop('retirement')
             with self.subTest(mutation=mutation), self.assertRaises(WorkflowError):
                 require_reset_notification_receipt(inputs, receipt)
+
+
+EVENT_CONTEXT_EXPECTED = {
+    'manual-reset-context': 'ordinary-tasks:manual-reset-context|pending=1|same-thread=1|setter=1'
+        '|notifications=none|worker=0|caller=7|flow-suppressed=0|fresh=1',
+    'manual-reset-suppressed-context': 'ordinary-tasks:manual-reset-suppressed-context|pending=1|same-thread=1|setter=1'
+        '|notifications=none|worker=0|caller=7|flow-suppressed=1|fresh=1',
+    'manual-reset-captured-context': 'ordinary-tasks:manual-reset-captured-context|pending=1|same-thread=1|setter=1'
+        '|notifications=0>13,14>0|worker=13|caller=7|flow-suppressed=0|fresh=1',
+}
+
+
+def _context_invocation(mode):
+    return {'processReaped': True, 'exitCode': 0,
+        'decoded': [{'ok': EVENT_CONTEXT_EXPECTED[mode] if mode in EVENT_CONTEXT_EXPECTED else task_fixture.expected(mode)}],
+        'response': {'outcomeKnown': True, 'data': {'consumption': {
+            'cpuFuel': '17', 'peakMemoryBytes': '100', 'outboundRequests': '0',
+            'logBytes': '0', 'effectCount': '0'}}}}
+
+
+class EventContextWitnessTests(unittest.TestCase):
+    def evidence(self):
+        source, cases = task_fixture.selected_fixture(reset_notification=True)
+        captured = {'cases': list(cases), 'originalFiles': {'Library.cs': digest(source.encode('utf-8'))}}
+        observed = {'dotnetTaskRuntime': {'cases': [
+            {'mode': mode, 'invocation': _context_invocation(mode),
+             'retirement': {'phase': 'dotnet-ordinary-tasks-' + mode + '-retired'}}
+            for mode in cases]}}
+        return source, captured, observed
+
+    def test_context_witnesses_are_selected_and_source_bound_without_changing_the_baseline(self):
+        source, captured, observed = self.evidence()
+        legacy, legacy_cases = task_fixture.selected_fixture()
+        self.assertEqual(legacy_cases, task_fixture.CASES)
+        self.assertEqual(source.count(event_context.SOURCE), 1)
+        self.assertNotIn(event_context.SOURCE, legacy)
+        self.assertIn('tools/dotnet_task_runtime_context.py', HELPERS)
+        for mode, expected in EVENT_CONTEXT_EXPECTED.items():
+            with self.subTest(mode=mode):
+                self.assertIn(mode, captured['cases'])
+                self.assertNotIn(mode, legacy_cases)
+                self.assertEqual(event_context.expected(mode), expected)
+                self.assertEqual(task_fixture.expected(mode), expected)
+        require_reset_notification_receipt(captured, observed)
+        # A new claimed result may not qualify a source with the observer removed.
+        changed = source.replace('notifications++;', '/* observer removed */')
+        self.assertNotEqual(changed, source)
+        captured['originalFiles']['Library.cs'] = digest(changed.encode('utf-8'))
+        with self.assertRaisesRegex(WorkflowError, 'exact-case-inventory'):
+            require_reset_notification_receipt(captured, observed)
+        with self.assertRaises(WorkflowError):
+            event_context.expected('unknown')
+
+    def test_every_context_receipt_requires_its_exact_trace_and_retirement(self):
+        _, captured, observed = self.evidence()
+        for mode, expected in EVENT_CONTEXT_EXPECTED.items():
+            for mutation in ('missing', 'duplicate', 'legacy', 'notification', 'worker', 'caller',
+                             'flow', 'eager', 'thread', 'exception', 'unreaped', 'unknown', 'exit', 'retirement'):
+                wrong = copy.deepcopy(observed)
+                rows = wrong['dotnetTaskRuntime']['cases']
+                index = task_fixture.QUALIFICATION_CASES.index(mode)
+                row = rows[index]
+                value = row['invocation']
+                if mutation == 'missing': rows.pop(index)
+                elif mutation == 'duplicate': rows.insert(index, copy.deepcopy(row))
+                elif mutation == 'legacy': value['decoded'] = [{'ok': 'ordinary-tasks:' + mode + '|fresh=1'}]
+                elif mutation in ('notification', 'worker', 'caller', 'flow', 'eager', 'thread'):
+                    key = {'notification': 'notifications', 'worker': 'worker', 'caller': 'caller',
+                           'flow': 'flow-suppressed', 'eager': 'pending', 'thread': 'same-thread'}[mutation]
+                    pieces = expected.split('|')
+                    # Nonempty but wrong evidence must not be accepted as presence.
+                    pieces = [key + '=wrong' if part.startswith(key + '=') else part for part in pieces]
+                    value['decoded'] = [{'ok': '|'.join(pieces)}]
+                elif mutation == 'exception': value['decoded'] = [{'err': 'ordinary-task-failure:event-context-notifications:invalid-operation'}]
+                elif mutation == 'unreaped': value['processReaped'] = False
+                elif mutation == 'unknown': value['response']['outcomeKnown'] = False
+                elif mutation == 'exit': value['exitCode'] = 4
+                else: row['retirement']['phase'] += '-wrong'
+                with self.subTest(mode=mode, mutation=mutation), self.assertRaises(WorkflowError):
+                    require_reset_notification_receipt(captured, wrong)
+
+    def run_probe(self, wrong_mode=None):
+        result = {'invocations': [], 'providerIdle': [], 'samples': []}
+        called = []
+        def call(client, target, template, function, arguments, label):
+            mode = arguments[0].removeprefix('task:')
+            called.append(mode)
+            value = _context_invocation(mode)
+            if mode == wrong_mode:
+                # This is the old defect: a waiter transition appears in the trace.
+                value['decoded'][0]['ok'] = value['decoded'][0]['ok'].replace(
+                    '|notifications=', '|notifications=7>0,0>7,')
+            return value
+        with patch('tools.rust_capsule_node.call', side_effect=call), \
+                patch('tools.rust_capsule_node.provider_idle', return_value={}), \
+                patch('tools.rust_capsule_node.sample', side_effect=lambda *args: {'phase': args[2]}), \
+                patch('tools.capsule_invocation_diagnostics.capture'):
+            # Keep the actual assert_value and probe consumption/retirement gates.
+            try:
+                task_probe.probe(None, {'budget': {'cpuFuel': 1000, 'memoryBytes': 10000}},
+                            None, result, 0, reset_notification=True)
+            except WorkflowError:
+                if wrong_mode is None:
+                    raise
+                self.assertNotIn('dotnetTaskRuntime', result)
+                self.assertEqual(called[-1], wrong_mode)
+                self.assertEqual(len(result['samples']), len(called) - 1)
+                return result, called
+        self.assertIsNone(wrong_mode, 'wrong context result unexpectedly qualified')
+        return result, called
+
+    def test_node_probe_requires_the_context_cases_and_keeps_full_qualification_false(self):
+        result, called = self.run_probe()
+        self.assertEqual(called, list(task_fixture.QUALIFICATION_CASES))
+        self.assertFalse(result['dotnetTaskRuntime']['fullRuntimeQualification'])
+        self.assertFalse(result['dotnetTaskRuntime']['applicationSchedulerReplacement'])
+        _, captured, _ = self.evidence()
+        require_reset_notification_receipt(captured, result)
+
+    def test_real_result_gate_stops_each_bad_context_case_before_retirement_or_success(self):
+        for mode in EVENT_CONTEXT_EXPECTED:
+            with self.subTest(mode=mode):
+                self.run_probe(mode)
 
 
 if __name__ == '__main__':

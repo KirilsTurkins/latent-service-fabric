@@ -162,6 +162,89 @@ internal static class AggregateTaskWait
         Need(TaskWait.BodyIdentity(pump) == selected);
     }
 
+    // A synchronous event wait suspends its caller; it is not an application
+    // ExecutionContext transition. Keep the caller's immutable values and flow
+    // flag while exposing only the compiler-owned owner key to the existing
+    // default-context dispatcher. RunInternal still performs both transitions
+    // and restores the caller before exception filters run. Captured sibling
+    // contexts keep their complete original notification lists.
+    private static MethodDefinition[] InstallEventContext(ModuleDefinition module, MethodDefinition aggregate)
+    {
+        TypeDefinition Type(string name) => module.GetTypes().Single(type => type.FullName == name);
+        var context = Type("System.Threading.ExecutionContext");
+        var local = Type("System.Threading.IAsyncLocal");
+        var runtime = Type("Lsf.CompilerOwned.ManagedWorkRuntime");
+        var mres = Type("System.Threading.ManualResetEventSlim");
+        var token = Type("System.Threading.CancellationToken");
+        var callback = Type("System.Threading.ContextCallback");
+        var values = context.Fields.Single(field => field.Name == "m_localValues");
+        var suppressed = context.Fields.Single(field => field.Name == "m_isFlowSuppressed");
+        var notifications = context.Fields.Single(field => field.Name == "m_localChangeNotifications");
+        var owner = runtime.Fields.Single(field => field.Name == "current");
+        var capture = context.Methods.Single(method => method.Name == "CaptureForRestore");
+        var run = context.Methods.Single(method => method.Name == "RunInternal");
+        var defaults = context.Fields.Single(field => field.Name == "Default");
+        var constructor = context.Methods.Single(method => method.IsConstructor && !method.IsStatic
+            && method.Parameters.Count == 3 && method.Parameters[0].ParameterType.FullName == values.FieldType.FullName
+            && method.Parameters[1].ParameterType.FullName == notifications.FieldType.FullName
+            && method.Parameters[2].ParameterType.MetadataType == MetadataType.Boolean);
+        Need(values.IsPrivate && values.IsInitOnly && !values.IsStatic
+            && suppressed.IsPrivate && suppressed.IsInitOnly && !suppressed.IsStatic
+            && suppressed.FieldType.MetadataType == MetadataType.Boolean
+            && notifications.IsPrivate && notifications.IsInitOnly && !notifications.IsStatic
+            && notifications.FieldType is ArrayType array && array.ElementType.FullName == local.FullName
+            && capture.IsStatic && capture.Parameters.Count == 0 && capture.ReturnType.FullName == context.FullName
+            && owner.IsStatic && owner.IsPrivate && owner.FieldType is GenericInstanceType ownerType
+            && ownerType.ElementType.FullName == "System.Threading.AsyncLocal`1"
+            && ownerType.GenericArguments.Count == 1
+            && ownerType.GenericArguments[0].FullName == runtime.FullName + "/Record");
+        var mask = New(context, Prefix + "EventContext", context,
+            MethodAttributes.Assembly | MethodAttributes.Static, context, local);
+        var il = mask.Body.GetILProcessor();
+        var haveOwner = Instruction.Create(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Ldarg_1); il.Emit(OpCodes.Brtrue, haveOwner);
+        il.Emit(OpCodes.Ldstr, "event-wait-owner-context-unavailable");
+        il.Emit(OpCodes.Newobj, Type("System.InvalidOperationException").Methods.Single(method => method.IsConstructor
+            && method.Parameters.Count == 1 && method.Parameters[0].ParameterType.MetadataType == MetadataType.String));
+        il.Emit(OpCodes.Throw);
+        var haveContext = Instruction.Create(OpCodes.Ldarg_0);
+        il.Append(haveOwner); il.Emit(OpCodes.Brtrue, haveContext);
+        il.Emit(OpCodes.Ldsfld, defaults); il.Emit(OpCodes.Ret);
+        il.Append(haveContext); il.Emit(OpCodes.Ldfld, values);
+        il.Emit(OpCodes.Ldc_I4_1); il.Emit(OpCodes.Newarr, local);
+        il.Emit(OpCodes.Dup); il.Emit(OpCodes.Ldc_I4_0); il.Emit(OpCodes.Ldarg_1); il.Emit(OpCodes.Stelem_Ref);
+        il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Ldfld, suppressed);
+        il.Emit(OpCodes.Newobj, constructor); il.Emit(OpCodes.Ret);
+
+        var body = New(runtime, Prefix + "EventDispatch", module.TypeSystem.Void,
+            MethodAttributes.Private | MethodAttributes.Static, module.TypeSystem.Object);
+        var none = new VariableDefinition(token); body.Body.Variables.Add(none);
+        il = body.Body.GetILProcessor();
+        il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Castclass, mres); il.Emit(OpCodes.Ldc_I4_M1);
+        il.Emit(OpCodes.Ldloc, none); il.Emit(OpCodes.Call, aggregate); il.Emit(OpCodes.Pop); il.Emit(OpCodes.Ret);
+
+        var entry = New(runtime, Prefix + "EventWait", module.TypeSystem.Boolean,
+            MethodAttributes.Assembly | MethodAttributes.Static, mres, module.TypeSystem.Int32, token);
+        il = entry.Body.GetILProcessor();
+        var incomplete = Instruction.Create(OpCodes.Ldarg_1);
+        var pending = Instruction.Create(OpCodes.Ldarg_1);
+        var unsupported = Instruction.Create(OpCodes.Newobj, Type("System.PlatformNotSupportedException")
+            .Methods.Single(method => method.IsConstructor && method.Parameters.Count == 0));
+        var isolate = Instruction.Create(OpCodes.Call, capture);
+        il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Callvirt, mres.Methods.Single(method => method.Name == "get_IsSet"));
+        il.Emit(OpCodes.Brfalse, incomplete); il.Emit(OpCodes.Ldc_I4_1); il.Emit(OpCodes.Ret);
+        il.Append(incomplete); il.Emit(OpCodes.Brtrue, pending); il.Emit(OpCodes.Ldc_I4_0); il.Emit(OpCodes.Ret);
+        il.Append(pending); il.Emit(OpCodes.Ldc_I4_M1); il.Emit(OpCodes.Bne_Un, unsupported);
+        il.Emit(OpCodes.Ldarga, entry.Parameters[2]);
+        il.Emit(OpCodes.Call, token.Methods.Single(method => method.Name == "get_CanBeCanceled"));
+        il.Emit(OpCodes.Brfalse, isolate); il.Append(unsupported); il.Emit(OpCodes.Throw);
+        il.Append(isolate); il.Emit(OpCodes.Ldsfld, owner); il.Emit(OpCodes.Call, mask);
+        il.Emit(OpCodes.Ldnull); il.Emit(OpCodes.Ldftn, body);
+        il.Emit(OpCodes.Newobj, callback.Methods.Single(method => method.IsConstructor && method.Parameters.Count == 2));
+        il.Emit(OpCodes.Ldarg_0); il.Emit(OpCodes.Call, run); il.Emit(OpCodes.Ldc_I4_1); il.Emit(OpCodes.Ret);
+        return [mask, body, entry];
+    }
+
     internal static (MethodDefinition[] Changed, object Receipt, Dictionary<string, string> Remainders, string TimerPumpOriginal) Install(ModuleDefinition module, PEReader reader)
     {
         TypeDefinition Type(string name) => module.GetTypes().Single(type => type.FullName == name);
@@ -190,6 +273,10 @@ internal static class AggregateTaskWait
         var wait = mres.Methods.Single(method => method.Name == "Wait" && method.Parameters.Count == 2
             && method.Parameters[0].ParameterType.MetadataType == MetadataType.Int32);
         Raw(reader, wait, 363, "352b3e91a4ef4bbca4d85c64f0d534c3f2606f1ac63e6eb0c7a1af73cc6761fb");
+        var simpleWait = mres.Methods.Single(method => method.Name == "Wait" && method.Parameters.Count == 0);
+        Raw(reader, simpleWait, 27, "942d520cbb14e20fb5e41a4a04e60dff34f01bdabbfec41f67d986cd29332860");
+        var simpleRemainder = TaskWait.BodyIdentity(simpleWait, 4);
+        var waitOriginal = TaskWait.BodyIdentity(wait);
         var tick = Type("System.Environment").Methods.Single(method => method.Name == "get_TickCount64");
         var remaining = Type("System.Threading.TimeoutHelper").Methods.Single(method => method.Name == "UpdateTimeOut");
         Raw(reader, tick, 6, "1963fc8ceb84b61703ea6156ed3d91cbedb480b0c0348697243943e73896cadd");
@@ -450,6 +537,51 @@ internal static class AggregateTaskWait
             code.Append(copied);
         }
         code.Emit(OpCodes.Ldarg_0); code.Emit(OpCodes.Ldarg_1); code.Emit(OpCodes.Ldarg_2); code.Emit(OpCodes.Call, entry); code.Emit(OpCodes.Ret);
+
+        // Ordinary event waits have a distinct context entry. Keep WaitAll's
+        // existing shim and context behavior byte-for-byte unchanged.
+        var eventContext = InstallEventContext(module, entry);
+        var eventShim = New(mres, Prefix + "EventWait", module.TypeSystem.Boolean,
+            MethodAttributes.Assembly, module.TypeSystem.Int32, token);
+        Need(shim.Body.Variables.Count == 0 && shim.Body.ExceptionHandlers.Count == 0);
+        var copies = shim.Body.Instructions.ToDictionary(instruction => instruction, _ => Instruction.Create(OpCodes.Nop));
+        foreach (var instruction in shim.Body.Instructions)
+        {
+            var copy = copies[instruction]; copy.OpCode = instruction.OpCode;
+            copy.Operand = instruction.Operand switch {
+                Instruction branch => copies[branch],
+                ParameterDefinition parameter => eventShim.Parameters[parameter.Index],
+                MethodReference method when method.FullName == entry.FullName => eventContext[2],
+                _ => instruction.Operand,
+            };
+            eventShim.Body.Instructions.Add(copy);
+        }
+
+        // Ordinary event waits may reuse this same bounded frame only for a
+        // nonblocking query or a noncancellable infinite wait. The shim keeps
+        // the original disposal, cancellation and timeout checks. Other WASI
+        // calls retain the original refusal, and no new timer is admitted.
+        RemoveGuard(simpleWait);
+        Need(TaskWait.BodyIdentity(simpleWait) == simpleRemainder);
+        var originalWaitEntry = wait.Body.Instructions[0];
+        var eventSelected = Instruction.Create(OpCodes.Ldarg_0);
+        var eventPreamble = new[] {
+            Instruction.Create(OpCodes.Call, (MethodReference)originalGuard.Operand),
+            Instruction.Create(OpCodes.Brfalse, originalWaitEntry),
+            Instruction.Create(OpCodes.Ldarg_1), Instruction.Create(OpCodes.Brfalse, eventSelected),
+            Instruction.Create(OpCodes.Ldarg_1), Instruction.Create(OpCodes.Ldc_I4_M1),
+            Instruction.Create(OpCodes.Bne_Un, originalWaitEntry), Instruction.Create(OpCodes.Ldarga, wait.Parameters[1]),
+            Instruction.Create(OpCodes.Call, canCancel), Instruction.Create(OpCodes.Brtrue, originalWaitEntry),
+            eventSelected, Instruction.Create(OpCodes.Ldarg_1), Instruction.Create(OpCodes.Ldarg_2),
+            Instruction.Create(OpCodes.Call, eventShim), Instruction.Create(OpCodes.Ret),
+        };
+        var waitCode = wait.Body.GetILProcessor();
+        foreach (var instruction in eventPreamble) waitCode.InsertBefore(originalWaitEntry, instruction);
+        var selectedWait = TaskWait.BodyIdentity(wait);
+        foreach (var instruction in eventPreamble) waitCode.Remove(instruction);
+        try { Need(TaskWait.BodyIdentity(wait) == waitOriginal); }
+        finally { foreach (var instruction in eventPreamble) waitCode.InsertBefore(originalWaitEntry, instruction); }
+        Need(TaskWait.BodyIdentity(wait) == selectedWait && wait.Body.MaxStackSize >= 3);
         var blocking = members[^1];
         var oldCall = blocking.Body.Instructions.Single(instruction => instruction.OpCode == OpCodes.Callvirt
             && instruction.Operand is MethodReference method && method.Resolve() == wait);
@@ -461,13 +593,24 @@ internal static class AggregateTaskWait
         var timerPump = DetachTimerPumpBatch(module, reader);
 
         var receipt = new {
-            patch = "latent.dotnet.wait-all.v5", profile = "dotnet-aggregate-task-wait-candidate-v5",
+            patch = "latent.dotnet.wait-all.v7", profile = "dotnet-aggregate-task-wait-candidate-v7",
             prefetchedPollReadiness = "original-dispatch-slot-before-blocking-poll",
             originalMethods = Originals.Select((row, index) => new {
                 method = members[index].FullName, token = row.Token, ilBytes = row.Bytes, ilSha256 = "sha256:" + row.Sha256 }).ToArray(),
             originalRemainders = remainders,
-            rewrittenBodies = members.Append(check).Append(single).Append(finite).Append(ready).Append(body).Append(entry).Append(shim).Append(timerPump.Method)
+            rewrittenBodies = members.Append(check).Append(single).Append(finite).Append(ready).Append(body).Append(entry).Append(shim).Append(timerPump.Method).Append(simpleWait).Append(wait).Concat(eventContext).Append(eventShim)
                 .ToDictionary(method => method.FullName, method => TaskWait.BodyIdentity(method)),
+            eventWait = new {
+                selection = "zero-or-infinite-noncancellable", originalSimpleIlSha256 = "sha256:942d520cbb14e20fb5e41a4a04e60dff34f01bdabbfec41f67d986cd29332860",
+                originalSimpleRemainder = simpleRemainder, originalTimedIlSha256 = "sha256:352b3e91a4ef4bbca4d85c64f0d534c3f2606f1ac63e6eb0c7a1af73cc6761fb",
+                originalTimedBody = waitOriginal, timedInverseExact = true, nativeOwners = 0,
+                custody = "original-event-and-existing-bounded-wait-frame",
+                callerContext = "immutable-values-owner-only-notifications-original-RunInternal",
+                capturedSiblingContext = "original-notifications-preserved",
+                flowSuppression = "original-CaptureForRestore-and-finally-restore",
+                contextHelpers = 4, newPersistentFields = 0,
+                unsupported = "positive-timeout-or-infinite-cancellable-original-wasi-refusal",
+            },
             finiteMask = new {
                 originalBodyIdentity = "8606fa511dc66800891d7d1d6aa9a39e581e1de59a27e4524356ef292002dd1e",
                 rewrittenBodyIdentity = finiteIdentity, inverseExact = true, generatedFields = 0, nativeOwners = 0,
@@ -491,7 +634,7 @@ internal static class AggregateTaskWait
             nonWasi = "original-MRES-Wait-entry-without-duplicate-validation",
             productionSelected = false, qualificationComplete = false, limitsChanged = false,
         };
-        return (members.Append(check).Append(timerPump.Method).ToArray(), receipt, remainders, timerPump.Original);
+        return (members.Append(check).Append(timerPump.Method).Append(simpleWait).Append(wait).ToArray(), receipt, remainders, timerPump.Original);
     }
 
     internal static void VerifyRemainders(ModuleDefinition module, IReadOnlyDictionary<string, string> expected)
@@ -531,8 +674,12 @@ internal static class AggregateTaskWait
                     && (method.Name is "WaitAll" or "WaitAllCore" or "WaitAllBlockingCore")
                 || method.DeclaringType.FullName == "System.Threading.WasiEventLoop"
                     && (method.Name is "CheckPollables" or "LsfWaitForActualTaskCompletion" or "LsfWaitForActualTaskOrTimeout")
+                || method.DeclaringType.FullName == "System.Threading.ManualResetEventSlim" && method.Name == "Wait"
+                    && (method.Parameters.Count == 0 || method.Parameters.Count == 2
+                        && method.Parameters[0].ParameterType.MetadataType == MetadataType.Int32
+                        && method.Parameters[1].ParameterType.FullName == "System.Threading.CancellationToken")
                 || method.DeclaringType.FullName == "System.Threading.TimerQueue" && method.Name == "PumpTimerQueue").ToArray();
-        Need(selected.Length == 17);
+        Need(selected.Length == 23);
         foreach (var method in selected)
         {
             var instructions = method.Body.Instructions.ToArray();

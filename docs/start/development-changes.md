@@ -26,6 +26,8 @@ automatically or upgrade an existing toolkit installation.
 | Use the selected TypeScript Node-style modules | [Buffer](../component-development/typescript-buffer-profile.md), [net.Socket](../component-development/typescript-node-net.md) and [published delay](../component-development/typescript-published-delay.md); these are finite ports, not a Node server |
 | Generate source with an approved build tool | [Library workflow](../how-to/add-application-libraries.md#approve-executable-build-inputs), including Java annotation processors |
 | Compile ordinary Java HTTP registration | [Java HttpServer](../component-development/java-httpserver.md) and [captured server declarations](../component-development/server-source.md) |
+| Port code using stream sockets or SMTP | [C literal IPv4 and vector I/O](../../sdk/c-guest/README.md#selected-literal-ipv4-streams), [Go SMTP and STARTTLS](../development/go-smtp-starttls.md) and [the gated node provider](../reference/standalone-streams.md) |
+| Use Fetch from a TypeScript dependency | [Choose the buffered or phase Fetch contract](../component-development/typescript-fetch-profiles.md) and [inspect same-run qualification inputs](../testing/typescript-fetch-buffered.md) |
 | Check an HTTP or typed-service composition before dispatch | [Inspect a composition](../how-to/inspect-a-composition.md), then inspect actual target preparation and authorized activation diagnostics |
 | Stage state changes and deferred work together | [Transactional aggregate guest](../component-development/transactional-authoring.md) and [state/effect architecture](../architecture/state-and-effects.md) |
 | Recover a command or inspect its deferred effect after response loss | [Transaction recovery](../operations/transaction-recovery.md) |
@@ -35,7 +37,9 @@ automatically or upgrade an existing toolkit installation.
 | Select and reproduce a contributor check | [Local tests](../development/local-tests.md), [deterministic tests](../development/deterministic-tests.md) and [CI command ownership](../testing/ci-command-contracts.md) |
 | Investigate C/Rust cooperative component execution | [Selected Wasmtime profiles](../runtime/wasmtime.md#selected-continuation-and-memory-profiles), [C context](../development/c-runtime-context.md) and [component-threading source](../../crates/latent-component-threading/README.md) |
 | Check host allocations and physical cleanup | [Host codec memory](../testing/host-codec-original-memory.md), [capability buffers](../testing/capability-handle-buffer-memory.md), [Audit owners](../testing/audit-connected-memory.md) and [local-service registry retirement](../testing/local-service-registry-retirement.md) |
-| Attach verified local transaction payloads in a trusted embedding | [Local custody package](../../crates/latent-local-blobs/README.md) and [atomic envelope](../development/atomic-command-envelope.md); standalone physical inventory and broader retention acceptance remain separate |
+| Reopen protected state with retained local payloads | [Startup verification and state replacement](../architecture/blob-model.md#ownership-and-retention) and [local custody package](../../crates/latent-local-blobs/README.md) |
+| Publish a transaction event to JetStream | [Signed deferred publication](../development/deferred-jetstream.md) and [incoming trigger availability](../runtime/nats-triggers.md#transactional-inbox-status) |
+| Inspect a command's deferred effect from a browser or CLI | [Original key, effect selector and history pages](../operations/transaction-recovery.md#inspect-the-commit-and-effect-separately) |
 | Prepare a protected outbound-stream installation | [Operator workflow](../runtime/outbound-stream-operator.md), [accepted design](../reference/standalone-streams.md) and [kernel accounting](../runtime/outbound-stream-kernel-accounting.md); design acceptance does not enable a production provider |
 
 ## Runtime and state boundaries
@@ -80,8 +84,9 @@ and [protected checkpoint contract](../development/transaction-checkpoint.md).
 The container backup helper's fixed roots do not establish Phase 4 restore
 custody or include every possible external checkpoint location.
 Supported upgrades preserve pending commands and effects; code rollback does
-not roll back business state or external actions. Older-history restore has its
-own incarnation and paused reconciliation requirements.
+not roll back business state or external actions. Older-history restore preserves
+business incarnation, advances the [recovery epoch](../architecture/namespace-history-epochs.md)
+and keeps dispatch paused pending reconciliation.
 
 ## Development acceptance
 
@@ -91,11 +96,12 @@ remain open. Current installed recovery still needs complete terminal/pending
 native and packaged qualification. Neither historical compiler receipts nor
 alpha.5 qualify that work.
 
-This guide and its linked current summaries were reconciled against Development
-`275d9fb379a62622d2bdff51ca4d038580bb7368` on 8 November 2026: 318 merged
-changes after the SVG audit #1465. This is source/documentation review, not a new
-runtime, storage or six-SDK qualification campaign. Frozen releases, evidence
-receipts and the v1 runtime matrix keep their original identities.
+The 19 November 2026 source review covers the 365 commits between the
+[8 November documentation audit](https://github.com/KirilsTurkins/latent-service-fabric/pull/1802)
+and [the inspected Development revision](https://github.com/KirilsTurkins/latent-service-fabric/commit/57d4a349dbb70c2511be1cd15f41e5915d6ba5b9).
+For signed transaction results, the [six-guest evidence](../testing/phase4-guest-progress-2026-11-09.md)
+identifies the source and provider for each run. The external RPC clients and
+browser reference application have separate execution requirements.
 
 The [25 October documentation audit](../development/documentation-audit-2026-10-25.md)
 records the 455 merged changes since the previous audit and the inspected source

@@ -32,11 +32,14 @@ class PrivateEntryFrames(unittest.TestCase):
             engine = read_file(overlays[1][0]).decode()
             self.assertIn('WasmBacktraceDetails::Disable', engine)
             self.assertNotIn('WasmBacktraceDetails::Enable', engine)
-            self.assertEqual(engine.replace('wasm_backtrace_max_frames(std::num::NonZeroUsize::new(32))',
-                frames.host.backtrace_call(originals[frames.PATHS[1]].decode())).encode(), originals[frames.PATHS[1]])
-            for call in ('wasm_backtrace_max_frames(None)', 'wasm_backtrace_max_frames(backtrace_limit)'):
-                self.assertEqual(frames.host.private_backtrace_source(call),
-                    'wasm_backtrace_max_frames(std::num::NonZeroUsize::new(32))')
+            original_call = frames.host.backtrace_call(originals[frames.PATHS[1]].decode())
+            self.assertEqual(engine.replace(frames.host.private_backtrace_source(original_call),
+                original_call).encode(), originals[frames.PATHS[1]])
+            self.assertEqual(frames.host.private_backtrace_source('wasm_backtrace_max_frames(None)'),
+                'wasm_backtrace_max_frames(std::num::NonZeroUsize::new(32))')
+            self.assertEqual(frames.host.private_backtrace_source('wasm_backtrace_max_frames(backtrace_limit)'),
+                'wasm_backtrace_max_frames({ let _: Option<std::num::NonZeroUsize> = backtrace_limit; '
+                'std::num::NonZeroUsize::new(32) })')
             for changed in ('unknown', 'wasm_backtrace_max_frames(None)' * 2,
                     'wasm_backtrace_max_frames(None); wasm_backtrace_max_frames(backtrace_limit)'):
                 with self.assertRaisesRegex(ValueError, 'source-drift'):
@@ -49,6 +52,17 @@ class PrivateEntryFrames(unittest.TestCase):
             for name in frames.PATHS:
                 self.assertEqual(read_file(ROOT/name), originals[name])
                 self.assertEqual(identities[name]['original'], digest(originals[name]))
+
+    def test_private_limit_preserves_the_type_use_of_each_original_policy_binding(self):
+        for value in ('None', 'std::num::NonZeroUsize::new(16)'):
+            with self.subTest(binding=value):
+                source = ('let backtrace_limit = ' + value + ';\n'
+                          'engine_config.wasm_backtrace_max_frames(backtrace_limit);')
+                derived = frames.host.private_backtrace_source(source)
+                self.assertTrue(derived.startswith('let backtrace_limit = ' + value + ';\n'))
+                self.assertEqual(derived.count('Option<std::num::NonZeroUsize> = backtrace_limit;'), 1)
+                self.assertEqual(derived.count('std::num::NonZeroUsize::new(32)'), 1)
+                self.assertEqual(derived.count('wasm_backtrace_max_frames('), 1)
 
     def test_numeric_parser_drops_raw_stderr_and_refuses_names_unknown_fields_and_bad_numbers(self):
         expected = {'available': True, 'truncated': False,

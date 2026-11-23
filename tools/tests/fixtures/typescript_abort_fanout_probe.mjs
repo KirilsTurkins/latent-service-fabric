@@ -23,11 +23,13 @@ const success = 'abort-fanout:refusal:unchanged:recovered';
 let contacts = 0;
 globalThis.fetch = () => { ++contacts; throw new Error('unexpected-network'); };
 
-async function exercise(selected, fault) {
-  let held = 0, removed = 0, checkpoint = 0, callbacks = 0, root, reason;
+async function exercise(selected, fault, fillerLimit = 3) {
+  let held = 0, removed = 0, checkpoint = 0, callbacks = 0, root, reason, sourceSignal;
   EventTarget.prototype.addEventListener = function(type, callback, ...rest) {
+    if (type === 'abort' && callbacks === 0) sourceSignal = this;
     if (type === 'fanout-fill') {
-      if (held === 3 && fault !== 'no-refusal') {
+      assert.equal(this, sourceSignal, 'fill the original source with listener owners');
+      if (held === fillerLimit && fault !== 'no-refusal') {
         throw new Error(fault === 'wrong-diagnostic' ? 'private-unexpected-text' : exhausted);
       }
       ++held;
@@ -41,7 +43,7 @@ async function exercise(selected, fault) {
     return original.remove.call(this, type, callback, ...rest);
   };
   AbortController.prototype.abort = function(value) {
-    if (!this.signal.aborted && held === 3) {
+    if (!this.signal.aborted && held === fillerLimit) {
       root = this;
       reason = value;
       if (fault === 'non-atomic') original.abort.call(this, value);
@@ -61,7 +63,7 @@ async function exercise(selected, fault) {
   try {
     const result = await selected.run(32, '');
     assert.equal(held, 0, 'all admitted filler listeners must be removed on every exit');
-    assert.equal(removed, fault === 'no-refusal' ? 128 : 3);
+    assert.equal(removed, fault === 'no-refusal' ? 128 : fillerLimit);
     return {result, checkpoint};
   } finally {
     EventTarget.prototype.addEventListener = original.add;
@@ -113,6 +115,9 @@ try {
   assert.equal(await api.run(31, ''), 'abort-fanout:9:ordered');
   const normal = await exercise(api, 'none');
   assert.deepEqual(normal, {result: success, checkpoint: 1});
+  // The source-built replay leaves one slot after the full nine-way graph.
+  // Keep a positive held listener and both refusal checks even at that boundary.
+  assert.deepEqual(await exercise(api, 'none', 1), {result: success, checkpoint: 1});
   const diagnostics = [];
   for (const [fault, expected] of [
     ['no-refusal', 'diagnostic:abort-fanout:refusal:contract'],

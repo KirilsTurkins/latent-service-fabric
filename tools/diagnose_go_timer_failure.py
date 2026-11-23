@@ -167,8 +167,15 @@ def backtrace_call(text):
 
 
 def private_backtrace_source(text):
-    return once(text, backtrace_call(text),
-                'wasm_backtrace_max_frames(std::num::NonZeroUsize::new(32))')
+    original = backtrace_call(text)
+    value = 'std::num::NonZeroUsize::new(32)'
+    if original == 'wasm_backtrace_max_frames(backtrace_limit)':
+        # The original call supplies the type of a cfg-selected `None` binding.
+        # Preserve that type use in the private copy; replacing it outright
+        # leaves the ordinary no-trace branch uninferrable (Rust E0282).
+        value = ('{ let _: Option<std::num::NonZeroUsize> = backtrace_limit; '
+                 + value + ' }')
+    return once(text, original, 'wasm_backtrace_max_frames(' + value + ')')
 
 
 def overlay_sources(root: Path, output: Path) -> tuple[dict, list[tuple[Path, Path]]]:

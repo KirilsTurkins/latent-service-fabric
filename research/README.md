@@ -75,6 +75,13 @@ compatibility review, candidate contracts and
 [ADR-0059](../adr/0059-defer-general-outbound-streams.md). It proposes deferring
 production sockets; it is not a dependency of ordinary libraries or HTTP adapters.
 
+The later [standard outbound research](standard-outbound/README.md) follows
+the accepted [bounded v1 design](../adr/0061-bound-standard-outbound-streams.md).
+Its [nonblocking companion proposal](standard-outbound/nonblocking-v2-decision.md)
+records what a library needing nonblocking connect and poll would require.
+The proposed WIT has no installed host provider. V1 has a separate
+[development-only installation](../docs/reference/standalone-streams.md).
+
 ## Bounded invocation-scoped concurrency
 
 The [invocation concurrency investigation](invocation-concurrency/README.md)

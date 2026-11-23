@@ -42,6 +42,13 @@ workers and fences retirement. Its signed programmes retain their original
 runtime/native tuples; live-node-stop and the complete cost/fairness matrix
 remain separate requirements.
 
+For workloads using the standard library, see the [checkpoint coverage](../../docs/runtime/go-activation.md)
+for loop back edges, iterators, JSON scanning and Base64 processing. The
+[selected v7 SMTP/STARTTLS setup](../../docs/development/go-smtp-starttls.md)
+adds declared TCP streams and explicit trust roots to that runtime. Its
+standard-library and published-client programmes have independent source,
+limits and execution evidence. A lost final SMTP reply leaves delivery unknown.
+
 ## Typed contracts
 
 Edit `src/main.go`, `wit/world.wit` and `capsule-project.json` in the created

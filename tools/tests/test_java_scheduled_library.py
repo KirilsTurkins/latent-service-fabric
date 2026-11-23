@@ -212,7 +212,7 @@ class ScheduledLibraryOwnership(unittest.TestCase):
         self.assertEqual(caller['permissions'], {'contents': 'read', 'actions': 'read'})
         self.assertEqual(caller['jobs'], {'scheduled-library': {'uses': '$/' + owner.WORKFLOW}})
         self.assertIn('workflow_call', called['on'])
-        self.assertEqual(called['on']['push']['branches'], [owner.BRANCH, owner.SHUTDOWN_BRANCH, owner.FUTURE_BRANCH])
+        self.assertEqual(called['on']['push']['branches'], [owner.BRANCH, owner.SHUTDOWN_BRANCH, owner.FUTURE_BRANCH, owner.CACHED_HANDOFF_BRANCH])
         job = called['jobs']['scheduled-library']
         self.assertIn(owner.DEVELOPMENT_WORKFLOW + '@refs/heads/development', job['if'])
         self.assertEqual(job['timeout-minutes'],
@@ -302,6 +302,91 @@ class TaskShutdownNowOwnership(unittest.TestCase):
                 patch.object(owner, 'fresh', side_effect=AssertionError('output opened')):
             with self.assertRaisesRegex(ValueError, 'exclusive-fixture-selector'):
                 owner.qualify_shutdown(Path('absent'), revision)
+
+    def test_cached_handoff_push_keeps_exact_hosted_source_and_fixture_selection(self):
+        revision = 'a' * 40
+        branch = owner.CACHED_HANDOFF_BRANCH
+        environment = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': owner.identities.REPOSITORY,
+            'GITHUB_REF_NAME': branch, 'GITHUB_EVENT_NAME': 'push',
+            'GITHUB_SHA': revision, 'GITHUB_WORKFLOW_SHA': revision, 'GITHUB_WORKSPACE': str(owner.ROOT),
+            'GITHUB_WORKFLOW_REF': owner.identities.REPOSITORY + '/' + owner.WORKFLOW + '@refs/heads/' + branch}
+        with patch.dict(os.environ, environment, clear=True), patch.object(owner.sys, 'platform', 'linux'), \
+                patch.object(owner, 'fresh', side_effect=AssertionError('admitted-before-output')):
+            with self.assertRaisesRegex(AssertionError, 'admitted-before-output'):
+                owner.qualify_shutdown(Path('/tmp/not-created-cached-handoff'), revision)
+            with self.assertRaisesRegex(ValueError, 'shutdown-fixed-hosted-push'):
+                owner.qualify_shutdown(Path('/tmp/not-created-cached-handoff'), revision, future_queue=True)
+            for field, value in (('GITHUB_REF_NAME', 'unreviewed-branch'),
+                    ('GITHUB_EVENT_NAME', 'pull_request'), ('GITHUB_WORKFLOW_SHA', 'b' * 40),
+                    ('GITHUB_REPOSITORY', 'other/repository'),
+                    ('GITHUB_WORKFLOW_REF', environment['GITHUB_WORKFLOW_REF'].replace(branch, owner.SHUTDOWN_BRANCH))):
+                with self.subTest(field=field), patch.dict(os.environ, {field: value}), \
+                        self.assertRaisesRegex(ValueError, 'shutdown-fixed-hosted-push'):
+                    owner.qualify_shutdown(Path('/tmp/not-created-cached-handoff'), revision)
+            with patch.dict(os.environ, {'LSF_JAVA_SHUTDOWN_NOW_FIXTURE': 'old-source'}), \
+                    self.assertRaisesRegex(ValueError, 'shutdown-exclusive-fixture-selector'):
+                owner.qualify_shutdown(Path('/tmp/not-created-cached-handoff'), revision)
+
+    def test_cached_handoff_workflow_selects_existing_signed_owner_without_ignoring_failure(self):
+        from tools import ci_lane_inventory as lanes
+        workflow = lanes.workflow_model((owner.ROOT / owner.WORKFLOW).read_text())
+        from tools import ci_contracts
+        contract = owner.ROOT / 'tools/ci/contracts/workflows/java-scheduled-library.yml'
+        policy = json.loads((contract / 'workflow.json').read_text())
+        definition = json.loads((contract / 'jobs/scheduled-library.json').read_text())
+        self.assertEqual(lanes.structural_workflow(workflow),
+            {**policy['policy'], 'jobs': {'scheduled-library': definition['definition']}})
+        self.assertEqual(policy['requiredJobs'], ['scheduled-library'])
+        self.assertEqual(policy['schemaVersion'], ci_contracts.SCHEMA)
+        self.assertIn(owner.CACHED_HANDOFF_BRANCH, workflow['on']['push']['branches'])
+        self.assertEqual(workflow['permissions'], {'contents': 'read', 'actions': 'read'})
+        job = workflow['jobs']['scheduled-library']
+        self.assertIn("github.event_name == 'push'", job['if'])
+        self.assertIn("github.ref_name == '" + owner.CACHED_HANDOFF_BRANCH + "'", job['if'])
+        steps = [step for step in job['steps'] if '--shutdown-now' in step.get('run', '')]
+        self.assertEqual(len(steps), 1)
+        self.assertEqual(steps[0]['if'], "github.ref_name == '" + owner.SHUTDOWN_BRANCH
+            + "' || github.ref_name == '" + owner.CACHED_HANDOFF_BRANCH + "'")
+        self.assertIn('--source-commit "${{ github.sha }}"', steps[0]['run'])
+        self.assertNotIn('continue-on-error', job)
+        self.assertTrue(all('continue-on-error' not in step for step in job['steps']))
+        for step in job['steps']:
+            if '--future-queue' in step.get('run', '') or step.get('name', '').startswith('Capture and compile'):
+                self.assertNotIn(owner.CACHED_HANDOFF_BRANCH, step['if'])
+
+    def test_shutdown_source_owner_keeps_exact_fixture_and_rejects_incomplete_output(self):
+        from types import SimpleNamespace
+        sdk = owner.ROOT / 'sdk/java-guest'
+        capsule = sdk / 'fibers/conformance/shutdown-now/Capsule.java'
+        original = capsule.read_text()
+        for result in ('SHUTDOWN_NOW_SOURCE_OWNER PASS observables=53', '',
+                'SHUTDOWN_NOW_SOURCE_OWNER PASS observables=52', 'SKIPPED'):
+            calls = []
+            with self.subTest(result=result), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary) / 'source'
+                def run(stage, *argv):
+                    calls.append((stage, argv))
+                    if stage == 'shutdown-now-source-compile':
+                        self.assertEqual(argv[:4], ('javac', '-proc:none', '--release', '25'))
+                        expected = original
+                        for name in ('CompletableFuture', 'Executors'):
+                            expected = expected.replace('import java.util.concurrent.' + name + ';',
+                                'import dev.latent.guest.runtime.concurrent.' + name + ';')
+                        self.assertEqual((output / 'Capsule.java').read_text(), expected)
+                    return result
+                compiler = SimpleNamespace(sdk=sdk, run=run)
+                if result.endswith('=53'):
+                    receipt = preparation.shutdown_now_source_control(compiler, output)
+                    self.assertEqual(receipt['sourceInputs'][capsule.relative_to(sdk).as_posix()],
+                        preparation.digest(capsule.read_bytes()))
+                    self.assertFalse(receipt['componentExecutionPerformed'])
+                    self.assertFalse(receipt['actualGuestBindingsUsed'])
+                else:
+                    with self.assertRaisesRegex(ValueError, 'shutdownNow source ownership control did not complete'):
+                        preparation.shutdown_now_source_control(compiler, output)
+                self.assertEqual([stage for stage, _ in calls],
+                    ['shutdown-now-source-compile', 'shutdown-now-source-control'])
+
 
 
 class TaskShutdownNowSourceCapture(unittest.TestCase):

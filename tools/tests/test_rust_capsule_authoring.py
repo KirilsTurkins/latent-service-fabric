@@ -175,7 +175,7 @@ class RustProjectTests(unittest.TestCase):
             project.locked_dependencies("my-project")
 
         read_text = Path.read_text
-        checksum = "a2afcadb2e7d0417cb8f3f322c66eff49338b288f22290c0ca0bd3e9570732aa"
+        checksum = "71cab574d3d3805d7ee7a791d4172fabab13fdee199101d51abc9c1c0d634018"
         self.assertEqual(original.count(checksum), 1)
         changed = original.replace(checksum, "0" * 64)
         with patch.object(Path, "read_text", lambda selected, *args, **kwargs:
@@ -184,7 +184,7 @@ class RustProjectTests(unittest.TestCase):
             project.locked_dependencies("my-project")
         authoritative = project.ROOT / "Cargo.lock"
         raw = authoritative.read_text()
-        local = 'name = "wasmtime"\nversion = "48.0.8"\n'
+        local = 'name = "wasmtime"\nversion = "48.0.9"\n'
         self.assertEqual(raw.count(local), 1)
         replaced = raw.replace(local, 'name = "wasmtime"\nversion = "48.0.6"\n')
         with patch.object(Path, "read_text", lambda selected, *args, **kwargs:
