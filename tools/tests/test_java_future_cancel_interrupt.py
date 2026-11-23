@@ -160,7 +160,7 @@ class FutureCancellationControl(unittest.TestCase):
                 return 'MANAGED_FIRST_ADMISSION_OWNER PASS ' + argv[-1]
             if stage in ('managed-cached-factory-reference-jdk', 'managed-cached-factory-source'):
                 return ('MANAGED_CACHED_FACTORY PASS nested;shutdown-thread-null-throw;refusal;committed;'
-                        'idle-reuse;growth;concurrent-reservations;idle-shutdown-handoff;two-handoffs;live-thread')
+                        'idle-reuse;growth;concurrent-reservations;idle-shutdown-handoff;two-handoffs;live-thread;factory-names')
             if stage.startswith('managed-cached-factory-owner-'):
                 return 'MANAGED_CACHED_FACTORY_OWNER PASS ' + argv[-1]
             if stage.startswith('managed-cached-handoff-owner-'):
