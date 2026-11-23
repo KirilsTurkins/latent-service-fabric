@@ -6,6 +6,24 @@ paths; see the [current architecture](../../docs/architecture/state-and-effects.
 This directory's `benchmark.toml` still specifies a throughput campaign and does
 not establish completion of Phase 4 qualification.
 
+## Bounded backing-store control
+
+Run the embedded file control from the checkout on the intended measurement
+host.
+
+```bash
+cargo run --locked --release -p latent-state --example state_throughput
+```
+
+The control creates a temporary redb file with a 32 MiB cap. It seeds 16 rows
+of 128 bytes and uses five warm-up operations followed by 30 measured
+operations per case. The cases cover durable commits, stale conflicts, fresh
+point reads and bounded prefix scans. The JSON reports p50, p95 and p99
+latencies, completed operation rates, logical value bytes and the file size
+before and after the run. Record the source, redb build, operating system, filesystem and machine
+with any retained result. The full campaign adds signed guests, dispatcher
+faults, cache variants and execution-owner observations.
+
 [Userfault-pager research](../../research/userfault-pager/evaluation-plan.md)
 defines a separate comparison against these existing selective operations,
 explicit chunks and kernel-managed mappings. Page-fault/dirty counts cannot
