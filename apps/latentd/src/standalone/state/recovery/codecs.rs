@@ -114,8 +114,7 @@ impl Codecs {
         Ok(observed)
     }
     pub fn closure(&self, view: &ReadView) -> Result<SnapshotClosure, StoreError> {
-        self.check()?;
-        super::super::validation::validate(view, &self.identity, &self.quotas, &self.original)?;
+        self.inbox_custody(view)?;
         let owner = DispatchCatalog::checkpoint(view)?.ok_or(StoreError::Corrupt)?;
         if owner.0 < self.checkpoint.dispatch_owner_epoch()
             || owner.1 < self.checkpoint.clock_floor_millis()
@@ -124,6 +123,22 @@ impl Codecs {
             return Err(StoreError::Unavailable);
         }
         self.catalog.closure(view, self.authority.deadline)
+    }
+    pub(super) fn inbox_custody(
+        &self,
+        view: &ReadView,
+    ) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
+        self.check()?;
+        let observed = super::super::validation::validate_inventory(
+            view,
+            &self.identity,
+            &self.quotas,
+            &self.original,
+        )?;
+        if observed != self.checkpoint.inbox_custody() {
+            return Err(StoreError::Conflict);
+        }
+        Ok(observed)
     }
     pub(super) fn restored_closure(&self, view: &ReadView) -> Result<SnapshotClosure, StoreError> {
         self.check()?;
@@ -153,6 +168,20 @@ impl Codecs {
     }
     pub fn row(&self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
         self.check()?;
+        match latent_state::inbox_scope::retained_scope(key, bytes) {
+            Ok(scope) => {
+                return if scope.tenant == self.namespace.tenant.0
+                    && scope.namespace == self.namespace.id.0
+                    && scope.incarnation == self.namespace.version.incarnation
+                {
+                    Ok(())
+                } else {
+                    Err(StoreError::Conflict)
+                };
+            }
+            Err(StoreError::UnsupportedFormat) => {}
+            Err(error) => return Err(error),
+        }
         match latent_commit::atomic::validate_row(key, bytes) {
             Err(StoreError::UnsupportedFormat) => {}
             result => return result,

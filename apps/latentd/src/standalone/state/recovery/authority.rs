@@ -1,5 +1,5 @@
 //! Original authenticated administrator and current, purpose-specific seals.
-use super::{assets::SchemaEvidence, request::Action};
+use super::{assets::SchemaEvidence, request::Action, selection::RecoverySource};
 use crate::standalone::effects::ProtectedEffectClock;
 use latent_artifacts::ReleaseUseEligibility;
 use latent_capabilities::namespace::{CallerScope, RecoverySelection, STATE_CONTRACT};
@@ -41,7 +41,26 @@ impl Authority {
         original_deadline: Instant,
         host: &NativeProfile<'_>,
     ) -> Result<Self, PlatformError> {
-        let op = &evidence.operation;
+        Self::retain_source(
+            policy,
+            &evidence.operation,
+            principal,
+            action,
+            clock,
+            original_deadline,
+            host,
+        )
+    }
+
+    pub(super) fn retain_source(
+        policy: Arc<PolicyStore>,
+        op: &RecoverySource,
+        principal: &InvocationPrincipal,
+        action: &Action,
+        clock: Arc<ProtectedEffectClock>,
+        original_deadline: Instant,
+        host: &NativeProfile<'_>,
+    ) -> Result<Self, PlatformError> {
         if !op.supplies_current_authority()
             || principal.kind != PrincipalKind::Administrator
             || principal.tenant.as_ref() != Some(&op.target.tenant)

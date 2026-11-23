@@ -56,7 +56,7 @@ impl Process {
         Self::spawn(command)
     }
 
-    fn spawn(mut command: Command) -> Self {
+    pub fn spawn(mut command: Command) -> Self {
         let child = command
             .stdin(Stdio::null())
             .stdout(Stdio::piped())

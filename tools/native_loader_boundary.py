@@ -48,6 +48,12 @@ LOADER = f"{CRATE}/src/aot/loader.rs"
 # requires a new review. The engine version is checked above both exceptions.
 FIXED_RESULT = f"{CRATE}/src/host/runtime/fixed_result.rs"
 FIXED_RESULT_SHA256 = "250215cc98e4aa89d079b1d5434de202ee864eedc4ceb5d1d8dbc6b423626f3f"
+# The owner table prepays both backings before allocating the replacement.
+# This helper requests a checked, nonzero array layout and transfers that
+# exact allocation into an empty Vec. The original table drops the old
+# storage before refunding the overlap. Pin only this reviewed source.
+OWNER_STORAGE = f"{CRATE}/src/host/runtime/owner_storage.rs"
+OWNER_STORAGE_SHA256 = "33d20f43db13f08d7d456cc55c673d80390d873f75780fda63ad86dec7a2a148"
 # The random-byte result forwards only Result<Vec<u8>, RandomError> through the
 # same pinned generated ABI. The exact output buffer is zeroized/freed before
 # its affine ProviderCall drops. No host pointer, resource or raw access is added.
@@ -310,6 +316,11 @@ def validate(root: Path) -> list[str]:
         elif relative == FIXED_RESULT:
             if hashlib.sha256(source.encode("utf-8")).hexdigest() != FIXED_RESULT_SHA256:
                 errors.append("audited fixed-result lowering changed; review its pinned ABI and original physical owner")
+            else:
+                source = ""
+        elif relative == OWNER_STORAGE:
+            if hashlib.sha256(source.encode("utf-8")).hexdigest() != OWNER_STORAGE_SHA256:
+                errors.append("audited owner-table allocation changed; review exact layout and original-ledger custody")
             else:
                 source = ""
         elif relative == RANDOM_RESULT:

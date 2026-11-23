@@ -140,9 +140,26 @@ impl WaitQueue {
     pub(crate) fn notify_all(&self) {
         let original_count = self.count.get();
         assert!(original_count <= MAX_WAITERS, "logical notify bound");
-        for _ in 0..original_count {
-            if !self.notify_one(|_| {}) {
-                break;
+        if original_count <= 1 {
+            self.notify_one(|_| {});
+            return;
+        }
+        // A wake may resume another thread that retires a waiter and queues a
+        // new one. Keep original identities on this stack, never node pointers
+        // across a wake. New arrivals stay queued for a later notification.
+        let mut original = [None; MAX_WAITERS];
+        {
+            let mut next = self.head.get();
+            for token in &mut original[..original_count] {
+                let node = unsafe { next.as_ref() }.expect("missing queued waiter");
+                *token = Some(node.token);
+                next = node.next.get();
+            }
+        }
+        for token in original[..original_count].iter().flatten() {
+            let head = unsafe { self.head.get().as_ref() }.map(|node| node.token);
+            if head == Some(*token) {
+                self.notify_one(|_| {});
             }
         }
     }

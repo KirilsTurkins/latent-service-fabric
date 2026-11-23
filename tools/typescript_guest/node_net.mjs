@@ -70,7 +70,7 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     #endCallbacks; #nextEndCallback = 0; #endFailureQueued = false; #endWriteGate;
     #invalidEndCallbacks; #nextInvalidEndCallback = 0; #invalidEndError;
     #invalidEndQueued = false; #invalidEndAdmitted = false;
-    #readBusy = false; #writeBusy = false; #connectBusy = false; #chunk; #quietRead = false;
+    #readBusy = false; #writeBusy = false; #connectBusy = false; #chunk;
     #progressing = false; #stopReady = false; #stopUncertain = false; #closeStarted = false; #nativeClosed = false;
     #cleanupFailed = false; #notificationQueued = false; #notificationDone = false;
     #connecting = false; #connected = false; #destroyed = false; #closed = false;
@@ -337,9 +337,10 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     }
     #pumpReads() {
       if (this.#readBusy || !this.#connected || this.#eof || this.#destroyed) return;
+      // Keep at most one completed window while paused. Even if resume has
+      // already been requested, its queued delivery must precede another read.
+      if (this.#buffered !== undefined) return;
       if (!this.#flowing && !(this.#ending && this.#finished)) return;
-      if (!this.#flowing && this.#buffered !== undefined) throw unsupported('paused-end-unread-data', this.#writeAttempted);
-      this.#quietRead = !this.#flowing;
       this.#readBusy = true;
       let failed = false, cause;
       try { transport.read(this.#token, windowBytes, undefined, this.#onRead, this); }
@@ -365,9 +366,6 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (this.#destroyed) {
         transport.disposeChunk(this.#token, chunk); this.#chunk = undefined; this.#readBusy = false; return;
       }
-      // A paused graceful-close probe can observe real EOF only. Actual data
-      // remains owned in quarantine; it is never discarded or relabelled EOF.
-      if (this.#quietRead) throw unsupported('paused-end-unread-data', this.#writeAttempted);
       let failed = false, cause;
       // The completed read tail plus copy plus sibling write stay within three.
       try { transport.chunkBytes(this.#token, chunk, this.#onCopy, this); }

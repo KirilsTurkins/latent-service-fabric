@@ -9,14 +9,12 @@ It adds no guest import and no transactional outbox.
 
 ## Transactional inbox status
 
-The ordinary pull profile starts a fresh activation on redelivery. On
-Development, configuring `transactionalTriggers` fails with
-`transactionalTriggers.scopeCustodyUnavailable`. The protected store can
-validate an existing processing scope against its checkpoint and inspect
-an earlier command using its authenticated input. Creating the first scope
-and recovering it safely across broker replacement or an older restore still
-need an operator-approved source. An outbound event staged by a signed
-command uses a separate, available installation.
+The ordinary pull profile starts a fresh activation on redelivery. The
+standalone transactional profile requires a protected `transactionalTriggers`
+configuration and matches each configured source against retained history and
+the external checkpoint before starting its pull owner. Enroll new sources
+through the [offline recovery command](../testing/installed-transaction-recovery.md#enroll-a-transactional-inbox-source).
+An outbound event staged by a signed command uses a separate installation.
 [Configuration gate](../../apps/latentd/src/config/derive.rs) · [Deferred publication](../development/deferred-jetstream.md)
 
 ## Authority and binding

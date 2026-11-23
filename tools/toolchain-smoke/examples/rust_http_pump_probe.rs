@@ -78,7 +78,7 @@ impl pump::Readiness for Started {
 struct Control;
 impl Guest for Control {
     fn poke() {
-        pump::Pump::current().step();
+        pump::Pump::signal_driver();
     }
     async fn run(key: u32) -> u32 {
         let operation = Operation::new(key);
@@ -95,7 +95,7 @@ impl Guest for Control {
         drop(operation);
     }
     async fn drain() {
-        pump::Pump::current().drain_retired().await;
+        pump::Pump::drain_retired().await;
     }
 }
 export!(Control);

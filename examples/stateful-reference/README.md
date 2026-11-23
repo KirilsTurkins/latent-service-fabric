@@ -96,6 +96,17 @@ confer no namespace, result-read or effect grants. Their policy identities,
 provider installations and current-user access must be applied independently
 through the maintained operator workflow.
 
+For an incoming edit, pass `--inbox-binding ../protected-inbox-binding.json` to
+the deployment helper and install its `transactionalTrigger` in the node's
+protected `TriggerConfig.bindings`. Supply the trigger ID, principal subject,
+stream, consumer, literal filter subject, logical processing scope, root budget,
+duplicate window and recorded stream qualification. Use an incoming subject and
+credential separate from the draft-change output. Publish the command's existing
+`lsf-wit-values-v1` edit input on the qualified incoming stream. The binding
+pins the same draft entity and namespace incarnation as the signed edit operation.
+Approve its exact inbox custody before starting the consumer. A second delivery
+of the same stream sequence resolves the original command.
+
 `tools/check_stateful_reference.mjs` drives one frontend against the selected
 actual node backend. It checks SSR DOM reuse, the captured immutable client
 asset, submit/query freshness, stale-edit rejection, original lost-result

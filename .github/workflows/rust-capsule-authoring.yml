@@ -476,6 +476,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 3
   scratch-refusals:
+    env:
+      RUSTUP_TOOLCHAIN: "1.97.1"
     if: ${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}
     name: Signed ordinary Rust scratch refusal and fresh-state packet
     needs: authoring

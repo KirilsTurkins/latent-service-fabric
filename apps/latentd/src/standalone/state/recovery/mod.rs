@@ -4,6 +4,7 @@ mod authority;
 mod catalog;
 mod codecs;
 mod execution;
+mod inbox_enrollment;
 mod migration;
 mod operation;
 mod original_resume;
@@ -15,6 +16,8 @@ mod scope;
 mod selection;
 
 pub use execution::NativeRecoveryReport;
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(super) use operation::inspect_checkpoint;
 pub(in crate::standalone) use operation::{recover, RecoveryOwners};
 pub use request::NativeRecoveryRequest;
 

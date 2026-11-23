@@ -207,11 +207,11 @@ orchestration and durable application timers remain Phase 6.
 
 ## Incoming identity, formats and linked retention
 
-The following describes the transactional inbox contract. Standalone configuration
-currently refuses `transactionalTriggers` with `transactionalTriggers.scopeCustodyUnavailable`.
-The implemented protected-store checks compare existing source history and its
-checkpoint watermark. Authorizing a first source and reconciling an older restore
-remain prerequisites for enabling delivery. The ordinary pull trigger can redeliver.
+The protected store checks transactional source history against its external
+checkpoint watermark before enabling delivery. An administrator enrolls a first
+source offline through the current signed command and a purpose-specific policy.
+If an older restore or an interrupted enrollment leaves the inventories out of
+agreement, source validation holds delivery. The ordinary pull trigger can redeliver.
 [Trigger installation](../runtime/nats-triggers.md#transactional-inbox-status)
 
 Incoming identity binds tenant/namespace/incarnation, granted source binding and

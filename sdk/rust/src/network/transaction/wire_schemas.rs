@@ -322,6 +322,27 @@ pub(super) static LATENT_CONTROL_V1_DISPATCHERSNAPSHOT: Schema = Schema {
             maximum: 128,
             oneof: 0,
         },
+        Field {
+            number: 23,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 1,
+        },
+        Field {
+            number: 24,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 2,
+        },
+        Field {
+            number: 25,
+            kind: Kind::U64,
+            repeated: false,
+            maximum: 128,
+            oneof: 3,
+        },
     ],
 };
 

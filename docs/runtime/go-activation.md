@@ -67,6 +67,41 @@ parking/waking update that same task; blocked work remains charged. Only actual
 `gdestroy` settlement releases its logical owner. Recycled stacks remain in the
 original Store's charged linear memory until physical Store retirement.
 
+The host's logical-owner handle vector starts empty and grows against the
+original memory ledger only when another handle needs storage. A growth first
+preflights the existing token, phase and limit checks, charging the original
+fuel budget; the actual registration still rechecks and commits under the
+runtime lock. A failed storage preparation also rechecks registration errors
+and charges that bounded check before reporting the failure. Replacement
+storage is prepaid while the old allocation remains charged, and the old charge
+is released only after its backing is freed. Each new owner backing requests
+the exact prepaid array layout from the global allocator and transfers it to an
+empty vector; it does not depend on `Vec::try_reserve_exact` returning a
+particular capacity. The accounting model's fixed allocation bookkeeping is
+not a bound on allocator rounding or process RSS. The runtime record slab and
+configured timer table remain separately prepaid and retain their existing
+allocation assumptions; this change alone does not make all no-concurrency
+accounting lazy.
+
+An opt-in local first-owner control can run the retained v2 checkpoint
+component's ordinary no-sibling mode with the existing signed local node:
+
+```bash
+LSF_GUEST_SDK_LANGUAGE=go LSF_GO_CHECKPOINT_FIXTURE=/path/to/go-checkpoints \
+  cargo test --locked -p latent-wasmtime --features development-go-lazy-owner-observer \
+  --test local_service runtime::go::lazy_owner::signed_go_first_owner_uses_original_lazy_backing \
+  -- --ignored --exact --nocapture
+```
+
+It checks the fixture's source, runtime bridge, WIT, toolchain lock and
+component identities, observes one accepted Task on the original budget, and
+requires a one-slot backing and normal result 42. It uses an explicit
+8,192-record test ceiling and does not force an import or settlement failure.
+The observation is fixed-size, opt-in and stores no capability token. A
+successful retained-component run would qualify only that historical component
+on the tested host; it would not establish current Go compiler identity,
+aggregate accounting or kernel final-free. No such guest run is claimed here.
+
 The generated async entry closes admission after the ordinary handler returns,
 waits for every accepted sibling to exit, then seals the result. A sibling panic,
 unknown parked work, denied admission or unconfirmed settlement cannot produce

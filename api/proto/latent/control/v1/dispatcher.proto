@@ -65,6 +65,12 @@ message DispatcherSnapshot {
   // separate current observations, not a cross-owner atomic snapshot.
   uint64 counts_observed_at_unix_millis = 21;
   bool clock_continuity_proven = 22;
+  // These values use the same native observation as the durable counts.
+  optional uint64 dispatching_effects = 23;
+  optional uint64 unresolved_payload_bytes = 24;
+  // Absent when there is no unresolved effect or the observation clock
+  // cannot establish elapsed time.
+  optional uint64 oldest_unresolved_age_millis = 25;
 }
 
 message InspectDispatcherResponse {

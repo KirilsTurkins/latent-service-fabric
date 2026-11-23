@@ -74,7 +74,7 @@ impl monotonic_clock::Guest for StandardRuntime {
 }
 impl exports::latent::rust_http_retirement::owner::Guest for StandardRuntime {
     async fn drain() {
-        pump::Pump::current().drain_retired().await;
+        pump::Pump::drain_retired().await;
     }
 }
 export!(StandardRuntime);

@@ -56,14 +56,20 @@ Shared [transaction HTTP](../development/transaction-http-v1.md) uses those
 owners for commands, fresh queries, original results and scoped effect status.
 A signed operation can select [deferred HTTP](../development/deferred-http-installation.md)
 or [deferred JetStream](../development/deferred-jetstream.md). Each requires its
-own staging and dispatch bindings. Transactional **incoming** triggers are still
-[refused at configuration](../runtime/nats-triggers.md#transactional-inbox-status). Missing namespace installation exposes authenticated management
+own staging and dispatch bindings. Transactional incoming triggers require a
+matching retained source and external checkpoint before startup.
+[Trigger configuration](../runtime/nats-triggers.md#transactional-inbox-status)
+
+Missing namespace installation exposes authenticated management
 until creation and restart capture the current lifecycle. A changed deployment
 needs a new startup selection.
 
-Use Development source for these profiles. The published alpha.5 tools have
-their own versioned guides. The [installed recovery tests](../testing/installed-transaction-recovery.md)
-identify which native and packaged scenarios have execution evidence.
+On Linux x86-64, the Development node exposes `latentd transaction-recovery`
+for protected offline actions. Stop the node and supply its configuration,
+tenant, protected administrator credential file and protected request file.
+The [installed recovery guide](../testing/installed-transaction-recovery.md)
+describes the exact inputs and execution coverage. The published alpha.5
+tools have their own versioned guides.
 
 ## Execution security profile
 

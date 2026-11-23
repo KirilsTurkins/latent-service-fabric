@@ -220,6 +220,7 @@ fn operation(contract: &str, name: &str) -> bool {
             "namespace-restore",
             "namespace-schema-migrate",
             "namespace-review-recovery",
+            "namespace-enroll-inbox-source",
             "namespace-resume",
             "effect-plan",
             "effect-reconcile",

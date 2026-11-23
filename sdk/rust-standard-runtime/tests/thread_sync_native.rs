@@ -230,6 +230,27 @@ fn condvar_notification_after_unlock_before_park_is_not_lost() {
 }
 
 #[test]
+fn broadcast_leaves_a_new_waiter_queued_when_an_original_waiter_retires() {
+    let queue: &'static wait::WaitQueue = Box::leak(Box::new(wait::WaitQueue::new()));
+    let first = queue.prepare(None);
+    let retiring = queue.prepare(None);
+    let next = std::rc::Rc::new(cell::RefCell::new(None));
+    let admitted = next.clone();
+    runtime::on_wake(move || {
+        retiring.cancel();
+        admitted.borrow_mut().replace(queue.prepare(None));
+    });
+
+    queue.notify_all();
+    assert!(first.wait());
+    assert!(!queue.is_empty());
+    assert!(queue.notify_one(|_| {}));
+    assert!(next.borrow_mut().take().unwrap().wait());
+    assert!(queue.is_empty());
+    assert_eq!(runtime::live(), 0);
+}
+
+#[test]
 fn condvar_false_timeout_requires_matching_admitted_timer_event_and_reacquires_mutex() {
     let mutex = mutex::Mutex::new(); let condvar = condvar::Condvar::new();
     runtime::index(1); mutex.lock();
