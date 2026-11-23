@@ -72,8 +72,15 @@ public final class State {
         }
         @Override public void close() {
             if (closed) return;
-            try { raw.close(); }
-            finally { closed = true; view.pages--; }
+            // Check the page is not borrowed before consuming its handle. If
+            // the destructor fails, the consumed handle cannot prove release:
+            // keep the parent fenced instead of silently dropping the count.
+            Resource resource = raw;
+            resource.borrow();
+            resource.releaseBorrow();
+            raw.close();
+            closed = true;
+            view.pages--;
         }
     }
     public static Result<Command, Bindings.LatentStateKeyValueStateError> acquireCommand() {

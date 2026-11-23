@@ -81,6 +81,9 @@ export class Page {
   }
   close(): void {
     if (this.#closed) return;
+    // A failed destructor consumes the owner without proving release. The
+    // preflight keeps its parent fenced on any subsequent close attempt.
+    this.owner.borrow(() => {});
     this.owner.close();
     this.#closed = true;
     this.view.pageClosed(this);

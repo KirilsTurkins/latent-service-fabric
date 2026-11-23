@@ -306,6 +306,23 @@ fn ordinary_activation_success_never_acknowledges_a_transactional_input() {
 }
 
 #[test]
+fn durable_business_rejection_selects_terminal_broker_acknowledgement() {
+    use super::super::{consumer::Ack, execution::terminal_broker_disposition, TriggerTerminal};
+    use latent_commit::atomic::Outcome;
+
+    assert_eq!(
+        terminal_broker_disposition(Outcome::Committed),
+        Some((TriggerTerminal::Succeeded, Ack::Success))
+    );
+    assert_eq!(
+        terminal_broker_disposition(Outcome::Rejected),
+        Some((TriggerTerminal::DeclaredFailure, Ack::Terminate))
+    );
+    assert_eq!(terminal_broker_disposition(Outcome::Pending), None);
+    assert_eq!(terminal_broker_disposition(Outcome::Aborted), None);
+}
+
+#[test]
 fn simultaneous_scope_cannot_claim_different_stream_origins() {
     let mut config = config();
     let mut duplicate = config.bindings[0].clone();

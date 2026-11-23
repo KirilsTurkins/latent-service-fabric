@@ -693,7 +693,8 @@ impl StandaloneNode {
                 .state
                 .as_ref()
                 .ok_or_else(mode_error)?
-                .inbox_factory(&settings.configuration)?;
+                .inbox_factory(settings)
+                .await?;
             let deadline = self.startup_deadline.ok_or_else(mode_error)?;
             let poller = self
                 .providers
