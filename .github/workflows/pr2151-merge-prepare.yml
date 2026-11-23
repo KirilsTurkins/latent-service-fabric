@@ -31,111 +31,35 @@ jobs:
       - name: Resolve exact-parent merge and validate without write credentials
         env:
           READ_TOKEN: ${{ github.token }}
-          RESOLUTION_PACKET: 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
         run: |
           python3 - <<'PY'
-          import base64, hashlib, json, os, re, shutil, subprocess, sys, zlib
-          from pathlib import Path
-          root = Path.cwd()
-          out = Path(os.environ['RUNNER_TEMP']) / 'pr2151-resolution'
-          out.mkdir(exist_ok=True)
-          raw = zlib.decompress(base64.b64decode(os.environ['RESOLUTION_PACKET'], validate=True))
-          assert len(raw) == 24528 and hashlib.sha256(raw).hexdigest() == '327280226f1befd04f4747db57185cc0fdd68968f2a695ec3c59ded6ddad2461'
-          packet = json.loads(raw); m = packet['manifest']
-          (out / 'packet.json').write_bytes(raw)
-          def git(*args, check=True):
-              p = subprocess.run(['git', *args], capture_output=True, timeout=180)
-              if check and p.returncode:
-                  raise RuntimeError('git operation failed: ' + p.stderr.decode(errors='replace')[-4000:])
-              return p
-
-          def text(*args): return git(*args).stdout.decode().strip()
-          def blob(data): return hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-          assert text('rev-parse', 'HEAD') == m['head']
-          assert not text('status', '--porcelain')
-          # No credential persists in the repository or enters a test subprocess.
-          credential = base64.b64encode(('x-access-token:' + os.environ.pop('READ_TOKEN')).encode()).decode()
-          git('-c', 'http.https://github.com/.extraheader=AUTHORIZATION: basic ' + credential,
-              'fetch', '--no-tags', '--depth=200', 'origin', m['development'])
-          del credential
-          assert text('merge-base', m['head'], m['development']) == m['commonAncestor']
-          merged = git('-c', 'user.name=PR 2151 validation', '-c', 'user.email=validation@localhost',
-                       'merge', '--no-commit', '--no-ff', m['development'], check=False)
-          (out / 'merge.log').write_bytes(merged.stdout + merged.stderr)
-          assert merged.returncode in (0, 1)
-          assert text('rev-parse', 'MERGE_HEAD') == m['development']
-          conflicts = set(text('diff', '--name-only', '--diff-filter=U').splitlines())
-          assert conflicts <= set(m['resolvedConflicts']), sorted(conflicts)
-          for item in packet['transport']:
-              path = item['path']; target = root / path
-              assert target.resolve().is_relative_to(root) and not target.is_symlink()
-              original = git('show', item['sourceRef'] + ':' + path).stdout
-              assert blob(original) == item['sourceBlob'], path
-              cursor = 0
-              for start, end, value in item['edits']:
-                  assert cursor <= start <= end <= len(original)
-                  cursor = end
-              result = original
-              for start, end, value in reversed(item['edits']): result = result[:start] + value.encode() + result[end:]
-              assert len(result) == item['bytes'] and hashlib.sha256(result).hexdigest() == item['sha256'] and blob(result) == item['gitBlob'], path
-              target.parent.mkdir(parents=True, exist_ok=True); target.write_bytes(result)
-          git('add', '--', *(x['path'] for x in packet['transport']))
-          assert not text('diff', '--name-only', '--diff-filter=U')
-          for group, ref in [('preserveOurs', m['head']), ('preserveDevelopment', m['development'])]:
-              for path in m[group]: assert (root/path).read_bytes() == git('show', ref+':'+path).stdout, path
-          git('diff', '--cached', '--check')
-          tree = text('write-tree')
-          def stable():
-              assert text('rev-parse','HEAD') == m['head'] and text('rev-parse','MERGE_HEAD') == m['development']
-              assert text('write-tree') == tree
-              git('diff', '--quiet')
-              assert not text('ls-files','--others','--exclude-standard')
-          stable()
-          env = dict(os.environ, PYTHONDONTWRITEBYTECODE='1', LSF_PYTHON_POLICY_BASE=m['development'])
-          observations = []
-          for number, command in enumerate(m['validationCommands']):
-              stable()
-              args = [sys.executable if x == '{python}' else x for x in command]
-              with (out/f'validation-{number}.log').open('wb') as log:
-                  p = subprocess.run(args, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=1200)
-              output = (out/f'validation-{number}.log').read_text(errors='replace')
-              print(f'validation-{number}: exit={p.returncode}\n'+output[-700:], flush=True)
-              assert p.returncode == 0, f'validation-{number}'
-              assert not re.search(r'OK \(skipped=', output), f'validation-{number}: unexpected skip'
-              observations.append({'command':args,'exit':p.returncode,'summary':output[-300:]})
-              stable()
-          # These repository-wide validators see the real complete merged checkout.
-          for number, args in enumerate([[sys.executable,'-B','tools/validate_repository.py'],
-                                        [sys.executable,'-B','tools/ci_coverage.py','--receipt','target/ci/pr2151-inventory.json']], start=6):
-              with (out/f'validation-{number}.log').open('wb') as log:
-                  p = subprocess.run(args, env=env, stdout=log, stderr=subprocess.STDOUT, timeout=1200)
-              output=(out/f'validation-{number}.log').read_text(errors='replace')
-              print(f'validation-{number}: exit={p.returncode}\n'+output[-700:],flush=True)
-              assert p.returncode == 0, f'validation-{number}'
-              observations.append({'command':args,'exit':p.returncode,'summary':output[-300:]})
-              stable()
-          overlay=[]
-          known={x['path']:x['gitBlob'] for x in packet['transport']}
-          for path in text('diff','--cached','--name-only','--no-renames',m['development']).splitlines():
-              rows=text('ls-files','--stage','--',path).splitlines()
-              if not rows:
-                  overlay.append({'path':path,'mode':'100644','type':'blob','sha':None}); continue
-              assert len(rows)==1
-              mode,sha,stage=rows[0].split('\t',1)[0].split(); assert stage=='0'
-              if known.get(path)!=sha:
-                  assert any(sha == blob(p.stdout) for ref in [m['head'],m['development']]
-                             if (p:=git('show',ref+':'+path,check=False)).returncode==0), ('unreviewed auto-merge',path)
-              overlay.append({'path':path,'mode':mode,'type':'blob','sha':sha})
-          for item in packet['transport']:
-              target=out/'postimages'/item['path'];target.parent.mkdir(parents=True,exist_ok=True)
-              target.write_bytes((root/item['path']).read_bytes())
-          report={'status':'passed','head':m['head'],'development':m['development'],
-                  'tree':tree,'baseTree':text('rev-parse',m['development']+'^{tree}'),
-                  'conflicts':sorted(conflicts),'overlay':overlay,'validation':observations,
-                  'qualification':'Focused tests and source validators only; fresh complete signed CI remains required.'}
-          (out/'report.json').write_text(json.dumps(report,indent=2)+'\n')
-          (out/'merged-vs-development.patch').write_bytes(git('diff','--cached','--binary',m['development']).stdout)
-          print(json.dumps({k:report[k] for k in ['status','head','development','tree','conflicts','overlay']},indent=2))
+          import hashlib, os, urllib.request, yaml
+          # Reuse the immutable, byte-authenticated recipe and resolution packet.
+          # The first run stopped before applying any files: its real Git merge
+          # exposed two more overlapping files than the retained snapshots did.
+          url = 'https://raw.githubusercontent.com/KirilsTurkins/latent-service-fabric/12c0d647b536d90da771428e4d94fe194e919dd3/.github/workflows/pr2151-merge-prepare.yml'
+          with urllib.request.urlopen(url, timeout=60) as response:
+              source = response.read(30000)
+          assert hashlib.sha1(b'blob '+str(len(source)).encode()+b'\0'+source).hexdigest() == '81228afd52a685869afc986e668ae1f0495e4e9f'
+          recipe = yaml.safe_load(source)
+          step = next(x for x in recipe['jobs']['validate']['steps'] if x.get('name') == 'Resolve exact-parent merge and validate without write credentials')
+          os.environ['RESOLUTION_PACKET'] = step['env']['RESOLUTION_PACKET']
+          script = step['run']
+          prefix = "python3 - <<'PY'\n"
+          assert script.startswith(prefix) and script.endswith('PY\n')
+          script = script[len(prefix):-3]
+          old = "assert conflicts <= set(m['resolvedConflicts']), sorted(conflicts)"
+          new = "assert conflicts <= set(m['resolvedConflicts']) | {'tools/tests/test_java_date_link_guard.py', 'tools/validate_repository.py'}, sorted(conflicts)"
+          assert script.count(old) == 1
+          script = script.replace(old, new)
+          # The date-link file already has a checked postimage in the packet.
+          # Repository validation differs only in the upstream provenance comment;
+          # retain development's exact file, including every current source guard.
+          old = "git('add', '--', *(x['path'] for x in packet['transport']))"
+          new = "(root/'tools/validate_repository.py').write_bytes(git('show', m['development']+':tools/validate_repository.py').stdout)\ngit('add', '--', 'tools/validate_repository.py', *(x['path'] for x in packet['transport']))"
+          assert script.count(old) == 1
+          script = script.replace(old, new)
+          exec(compile(script, '<reviewed-pr2151-resolution>', 'exec'))
           PY
       - name: Retain bounded merge and validation evidence
         if: always()
@@ -186,7 +110,7 @@ jobs:
               results.append({'path':item['path'],'sha':result['sha']})
           (root/'stored-blobs.json').write_text(json.dumps(results,indent=2)+'\n')
           print(json.dumps(results,indent=2))
-          # Deliberately no commit, tree, branch update, checkout or source execution here.
+          # No commit, tree, branch update, checkout or source execution here.
           PY
       - uses: KirilsTurkins/lsf-upload-artifact@c37718fd4e24a4c372572ce4f21b3969a72ba8dc
         with:
