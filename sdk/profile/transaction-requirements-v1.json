@@ -248,7 +248,7 @@
       {
         "service": "latent.control.v1.DispatcherService",
         "source": "api/proto/latent/control/v1/dispatcher.proto",
-        "sourceSha256": "sha256:ce665aedc04693b05562e716d73b3e5942367dbd13b218c78246198fdffbe4f6",
+        "sourceSha256": "sha256:d370a4c868fb838ff98580964b4c514b59d4e8421525464e53f8679fca8925a5",
         "operations": [
           {
             "name": "InspectDispatcher",

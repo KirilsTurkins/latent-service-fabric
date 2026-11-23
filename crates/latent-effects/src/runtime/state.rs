@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex};
 
-use crate::authority::DispatchOwners;
+use crate::authority::{DispatchOwners, EffectTime};
 use crate::dispatch_store::DispatchCounts;
 use latent_state::store_io::StoreIoSnapshot;
 use serde::Serialize;
@@ -15,6 +15,7 @@ use super::{DispatcherConfig, DispatcherControlGeneration, DispatcherError};
 pub struct DispatcherSnapshot {
     pub durable: DispatchCounts,
     pub counts_observed_at_millis: u64,
+    pub oldest_unresolved_age_millis: Option<u64>,
     pub queued: usize,
     pub active_jobs: usize,
     pub retained_attempt_bytes: u64,
@@ -60,7 +61,7 @@ pub(super) struct State {
     pub command_owners: usize,
     pub command_clock_floor: u64,
     pub counts: DispatchCounts,
-    pub counts_time: u64,
+    pub counts_time: EffectTime,
     pub scheduling_retired: bool,
 }
 
@@ -165,7 +166,10 @@ impl Shared {
                 command_owners: 0,
                 command_clock_floor,
                 counts: DispatchCounts::default(),
-                counts_time: 0,
+                counts_time: EffectTime {
+                    unix_millis: 0,
+                    continuity_proven: false,
+                },
                 scheduling_retired: false,
             }),
             notify: Notify::new(),
@@ -224,9 +228,18 @@ impl Shared {
             .state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let oldest_unresolved_age_millis = if state.counts_time.continuity_proven {
+            state
+                .counts
+                .oldest_unresolved_millis
+                .and_then(|oldest| state.counts_time.unix_millis.checked_sub(oldest))
+        } else {
+            None
+        };
         DispatcherSnapshot {
             durable: state.counts,
-            counts_observed_at_millis: state.counts_time,
+            counts_observed_at_millis: state.counts_time.unix_millis,
+            oldest_unresolved_age_millis,
             queued: jobs.queued,
             active_jobs: jobs.active_reads + jobs.active_writes,
             retained_attempt_bytes: jobs.retained_operation_bytes,
