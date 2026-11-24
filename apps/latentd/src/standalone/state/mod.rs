@@ -45,12 +45,14 @@ pub(crate) fn check_retained(
     use std::sync::Arc;
 
     let state = settings.state.as_ref().ok_or_else(unavailable)?;
-    if state.create_if_missing
-        && latent_protected_files::ProtectedRoot::open(&state.store.root)?
-            .check_empty()
-            .is_ok()
-    {
-        return Ok(());
+    if state.create_if_missing {
+        let root = latent_protected_files::ProtectedRoot::open(&state.store.root)?;
+        if root.check_empty().is_ok() {
+            // A surviving external checkpoint still owns the prior store.
+            // An empty replacement directory is not a new installation.
+            return latent_protected_files::ProtectedRoot::open(&state.checkpoint_root)?
+                .check_empty();
+        }
     }
     let clock: Arc<dyn ActivationClock> = Arc::new(SystemActivationClock);
     let mut bootstrap = StateBootstrap::new_state(state, &clock)?;
