@@ -14,7 +14,7 @@ pub(super) fn open(
     for _ in 0..=config.limits.maximum_records {
         metadata.push(pools.reserve_protocol_metadata(4 * RECORD_BYTES)?);
     }
-    let root = Directory::root(path).map_err(local)?;
+    let root = Directory::root(path, true).map_err(local)?;
     let lock = root
         .open_file("LOCK", true, !root.present("LOCK").map_err(local)?, 0)
         .map_err(local)?;

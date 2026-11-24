@@ -199,6 +199,19 @@ def stage_adapters(runtimes: dict[str, Path], destination: Path) -> dict[str, Pa
     return result
 
 
+def stage_sdk_packages(roots: dict[str, Path], cache: Path) -> dict[str, Path]:
+    """Copy each pinned package once and observe its own immutable subtree."""
+    cache.mkdir()
+    selected = {}
+    for name, source in roots.items():
+        if name.startswith('nuget/'):
+            destination = cache / name.removeprefix('nuget/')
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(source, destination, symlinks=True)
+            selected[name] = destination
+    return selected
+
+
 def stage(compiler, workspace: Path) -> DotnetIsolation:
     """Build a compiler distribution containing only selected SDK inputs."""
     host_tool_path = compiler.commands.environment.get('PATH')
@@ -225,15 +238,8 @@ def stage(compiler, workspace: Path) -> DotnetIsolation:
     shutil.copyfile(compiler.dotnet, dotnet_root / 'dotnet')
     (dotnet_root / 'dotnet').chmod(0o700)
     selected['dotnet-host'] = dotnet_root
-    packages = root / 'sdk-packages'
-    packages.mkdir()
-    for name, source in compiler.roots.items():
-        if not name.startswith('nuget/'):
-            continue
-        destination = packages / name.removeprefix('nuget/')
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copytree(source, destination, symlinks=True)
-    selected['sdk-nuget-packages'] = packages
+    compiler.package_cache = workspace / 'nuget-packages'
+    selected.update(stage_sdk_packages(compiler.roots, compiler.package_cache))
     selected['wasi-sdk'] = compiler.wasi_sdk
     adapter = root / 'runtime-adapters'
     compiler.runtimes = stage_adapters(compiler.runtimes, adapter)
@@ -283,8 +289,6 @@ def stage(compiler, workspace: Path) -> DotnetIsolation:
     selected['namespace-identity'] = identity
     compiler.dotnet = tools['dotnet']
     compiler.python = python_bin
-    compiler.package_cache = workspace / 'nuget-packages'
-    shutil.copytree(packages, compiler.package_cache, symlinks=True)
     compiler.wac = composer / 'wac'
     compiler.wac = compiler.wac.resolve(strict=True)
     tools['component-composer'] = compiler.wac
@@ -315,6 +319,7 @@ def stage(compiler, workspace: Path) -> DotnetIsolation:
                                 **options)
     isolation.namespace_identity_files = {identity / name: '/etc/' + name for name in ('passwd', 'group', 'nsswitch.conf')}
     isolation.enable_children(helpers)
+    isolation.protect_inputs(compiler.package_cache)
     isolation.receipt['distributionObserver'] = {'profile': 'dotnet-compiler-internal-links-v1', 'maximumEntries': 65536, 'maximumBytes': 4 * 1024**3}
     isolation.receipt['compilerAliases'] = {'/bin/sh': isolation.tool_before['shell']}
     isolation.receipt['compilerHostGlobalization'] = 'invariant'

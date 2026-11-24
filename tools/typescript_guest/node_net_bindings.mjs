@@ -1,5 +1,6 @@
 import { borrowReleaseHandoff } from './import_cancellation.mjs';
 import { createNodeNetTransport } from './node_net_transport.mjs';
+import { inlinedExportTaskBlock } from './source_splicer.mjs';
 
 export const NET_PROFILE = 'lsf-node-net-tcp-v1';
 export const NET_PRIVATE = 'lsf:typescript-node-net-transport';
@@ -64,14 +65,23 @@ export function nodeNetBindings(source, parse, profile, exported) {
     const tries = fn.body.body.filter(node => node.type === 'TryStatement');
     if (tries.length !== 1) fail();
     const original = tries[0], statement = original.block.body[0];
-    if (original.finalizer || original.block.body.length !== 1 ||
-        statement?.type !== 'ExpressionStatement' || statement.expression.type !== 'AssignmentExpression' ||
-        statement.expression.operator !== '=' || !id(statement.expression.left, 'ret') ||
-        statement.expression.right.type !== 'AwaitExpression') fail();
-    const awaited = statement.expression.right.argument;
-    if (awaited.type !== 'CallExpression' || !id(awaited.callee, '_withGlobalCurrentTaskMetaAsync') ||
-        awaited.arguments.length !== 1 || awaited.arguments[0].type !== 'ObjectExpression') fail();
-    const properties = awaited.arguments[0].properties;
+    if (original.finalizer || original.block.body.length !== 1) fail();
+    let applicationArguments;
+    if (statement.type === 'BlockStatement') {
+      applicationArguments = statement.body[0]?.declarations?.[0]?.init;
+      if (applicationArguments?.type !== 'ObjectExpression' ||
+          source.slice(statement.start, statement.end) !==
+            inlinedExportTaskBlock(source.slice(applicationArguments.start, applicationArguments.end))) fail();
+    } else {
+      if (statement.type !== 'ExpressionStatement' || statement.expression.type !== 'AssignmentExpression' ||
+          statement.expression.operator !== '=' || !id(statement.expression.left, 'ret') ||
+          statement.expression.right.type !== 'AwaitExpression') fail();
+      const awaited = statement.expression.right.argument;
+      if (awaited.type !== 'CallExpression' || !id(awaited.callee, '_withGlobalCurrentTaskMetaAsync') ||
+          awaited.arguments.length !== 1 || awaited.arguments[0].type !== 'ObjectExpression') fail();
+      applicationArguments = awaited.arguments[0];
+    }
+    const properties = applicationArguments.properties;
     if (properties.length !== 3 || properties.some(node => node.type !== 'Property' || node.computed || node.kind !== 'init') ||
         properties.map(node => node.key.name).sort().join(',') !== 'componentIdx,fn,taskID') fail();
     const caller = properties.find(node => id(node.key, 'fn')).value;

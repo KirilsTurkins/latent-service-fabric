@@ -1,0 +1,402 @@
+{
+  "schemaVersion": "latent.sdk.private-dependencies.common-runtime.v1",
+  "issue": 694,
+  "observedOn": "2026-11-24",
+  "status": "passed",
+  "scope": "signed executions of previously compiled components on one source-built Linux native runtime",
+  "nativeTuple": {
+    "receipt": {
+      "sha256": "sha256:633f4e2c82aab7cc67e2f2fd41b8b89ce7fc4727d86b5aeafc796fdc06b392ed",
+      "bytes": 1495
+    },
+    "sourceHead": "269fe85be9e29a0e3410ead65b7e1c1bce0aa4a3",
+    "sourceTree": "9c3c25abe7d04f71a909ab758965db7062f69420",
+    "tupleRole": "ordinary-defaults",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.9",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:fe79200be22ba4c17ac67421d07de938e468dfc31527bbb047e09ca55d12c0d9",
+        "bytes": 76504192,
+        "actualFeatures": []
+      },
+      "latentd": {
+        "sha256": "sha256:13e9eed77303fe07c38ad97dd6e13228dee1b3141840e26eae98b654343bd204",
+        "bytes": 212829512,
+        "actualFeatures": []
+      },
+      "package": {
+        "sha256": "sha256:d70ef2ad0c3fd2f1d1e9fd9140e335bbb9eac2fafa5e38666cf23d8600c1334d",
+        "bytes": 19690680,
+        "actualFeatures": []
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:7c55c8a7a19d544d31c05611dd5ea7027dc6105d45bd948eb22d025af2cd5368",
+        "bytes": 14404648,
+        "actualFeatures": []
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:90911e308c6fc7c07d77ec2b1faf3b867abae36b087d4704570ceb5584cff510",
+        "bytes": 26143816,
+        "actualFeatures": []
+      }
+    }
+  },
+  "nativeSourceInputs": {
+    "sha256": "sha256:74bd1a3cb6425ff81430af64ff76f3123dfd3de946b6115687affa897e501620",
+    "files": 4024,
+    "bytes": 48264388,
+    "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+    "hermetic": false,
+    "implicitCompilerInputs": "not-attested"
+  },
+  "managedCompilerProfile": {
+    "sha256": "sha256:199eb2f4f23ccbc2b2e363afb3b0f82099567c7f46d22b86ba8131b19484c48a",
+    "bytes": 652
+  },
+  "nativeArchive": {
+    "sha256": "sha256:41c429887664d10cef5e7dddf87aa38c49ead21dc1f8192183a83af63b13eee3",
+    "bytes": 72220288
+  },
+  "nativeBuildObservation": {
+    "sha256": "sha256:cff7f4cf62d3e0e3f8e7c0265de2c7d11b2193732bccdf50f5dc5246f6629ab5",
+    "bytes": 2358
+  },
+  "retainedCampaign": {
+    "sha256": "sha256:08557b3d6342ac12853d0a463775ebc9d734874a2992ce78170b1e5adb1651cf",
+    "bytes": 10403
+  },
+  "campaignSeconds": 389.798,
+  "languages": [
+    "c",
+    "rust",
+    "java",
+    "go",
+    "typescript",
+    "dotnet"
+  ],
+  "signedCases": 105,
+  "additionalPreEntryRefusals": 8,
+  "groups": {
+    "c": {
+      "component": {
+        "sha256": "sha256:8fb889eb4dd01bf3e12121387daaa3b82b7ca1467b06d54ed92c9d5b72ba716a",
+        "bytes": 128782
+      },
+      "producerReceipt": {
+        "sha256": "sha256:b92cf3ac7cd258c78d973324c0229489e9cbdb2e3154b81741768dca7a19414b",
+        "bytes": 1036
+      },
+      "signedReceipt": {
+        "sha256": "sha256:b655bd7227a439d9ecac9f16652c0b09f164ed48a55d418553cf409c47570578",
+        "bytes": 17796
+      },
+      "seconds": 3.488,
+      "cases": [
+        "normal"
+      ],
+      "signedCases": 1,
+      "additionalPreEntryRefusals": 0,
+      "cleanNodeShutdown": true,
+      "peer": {
+        "startedRequests": 1,
+        "committedMutations": 0,
+        "rejectedRequests": 0,
+        "openConnections": 0
+      }
+    },
+    "c-libfetch": {
+      "component": {
+        "sha256": "sha256:20060fa6e3a28c6002166fded2294f5c7901f0e35eca3b063f9e7e1426cb644b",
+        "bytes": 132882
+      },
+      "producerReceipt": {
+        "sha256": "sha256:07322de1c738600e9c26b55083972b03f8e06f2bdaaf824971601bc0692a27df",
+        "bytes": 190454
+      },
+      "signedReceipt": {
+        "sha256": "sha256:559f1acf5c0c93bc069f4488827f2570c7d4385048b0f3c5d6ea53fcc1847115",
+        "bytes": 51349
+      },
+      "seconds": 4.016,
+      "cases": [
+        "normal",
+        "not-found",
+        "denied",
+        "early-close",
+        "sibling"
+      ],
+      "signedCases": 5,
+      "additionalPreEntryRefusals": 0,
+      "cleanNodeShutdown": true,
+      "peer": {
+        "startedRequests": 6,
+        "committedMutations": 0,
+        "rejectedRequests": 0,
+        "openConnections": 0
+      }
+    },
+    "c-libucl": {
+      "component": {
+        "sha256": "sha256:ad04c83e6bddc2bb2d9116165c02521a5ac0e5c7266098612484a1525402a4d5",
+        "bytes": 336998
+      },
+      "producerReceipt": {
+        "sha256": "sha256:07322de1c738600e9c26b55083972b03f8e06f2bdaaf824971601bc0692a27df",
+        "bytes": 190454
+      },
+      "signedReceipt": {
+        "sha256": "sha256:809df35f509a6b6c4a49b2ff610f79e74ecde22423d937962f391e86389aa24a",
+        "bytes": 21043
+      },
+      "seconds": 5.913,
+      "cases": [
+        "normal",
+        "not-found",
+        "denied",
+        "file",
+        "glob"
+      ],
+      "signedCases": 5,
+      "additionalPreEntryRefusals": 0,
+      "cleanNodeShutdown": true,
+      "peer": {
+        "startedRequests": 2,
+        "committedMutations": 0,
+        "rejectedRequests": 0,
+        "openConnections": 0
+      }
+    },
+    "rust": {
+      "component": {
+        "sha256": "sha256:2b9e5e34865f5e6fa45c193ef5b0f3805faf1c1413da977d0ea00c1ab349cad3",
+        "bytes": 964369
+      },
+      "producerReceipt": {
+        "sha256": "sha256:a7b0a65c45c485e116fdb429fb1174816194836e5eb505aed7f988b25b4521bf",
+        "bytes": 1005466
+      },
+      "signedReceipt": {
+        "sha256": "sha256:90281c8d27315416051dd8c5d65035c3c4dc32ac9ba79102cc0bb86ea4159d5d",
+        "bytes": 225768
+      },
+      "seconds": 11.452,
+      "signedCases": 4,
+      "additionalPreEntryRefusals": 2,
+      "cleanNodeShutdown": true,
+      "peerContacts": 4
+    },
+    "java": {
+      "component": {
+        "sha256": "sha256:39919fd1d2c7d93835c4f1fd522e970569eb732d520343d40e13398a704816b8",
+        "bytes": 1174774
+      },
+      "producerReceipt": {
+        "sha256": "sha256:05ae3895f4379c0fb77be21ff259b274565d45ee85f0e0ffbcacda4284c6db60",
+        "bytes": 67176
+      },
+      "signedReceipt": {
+        "sha256": "sha256:71da7345269cb8f12e9fba70991a5554736699d94c0485f976d721cb8ffdd6d8",
+        "bytes": 17852
+      },
+      "seconds": 7.468,
+      "cases": [
+        "json",
+        "http404",
+        "http500",
+        "truncated",
+        "oversized",
+        "forbidden",
+        "early",
+        "redirect",
+        "post",
+        "uncertain",
+        "alternate-denied",
+        "direct-factory",
+        "fresh"
+      ],
+      "signedCases": 13,
+      "additionalPreEntryRefusals": 0,
+      "cleanNodeShutdown": true,
+      "peer": {
+        "startedRequests": 11,
+        "committedMutations": 1,
+        "rejectedRequests": 0,
+        "openConnections": 0
+      }
+    },
+    "go": {
+      "component": {
+        "sha256": "sha256:78ef8a3cec6d8c35b9c76e701f069007b1a9bd1e129c563b1ffe20d0a20518f2",
+        "bytes": 10521268
+      },
+      "producerReceipt": {
+        "sha256": "sha256:57a1f35af4e211c0854dd11a9e859b289b9a5dd66413944ac28552577104bac6",
+        "bytes": 83995
+      },
+      "signedReceipt": {
+        "sha256": "sha256:4956d73a076a5b65b09749b472b1122372fea4214b7fb4566f1bd062c6213338",
+        "bytes": 36865
+      },
+      "seconds": 41.599,
+      "cases": [
+        "sling-json",
+        "sling-http404",
+        "sling-http500",
+        "sling-truncated",
+        "sling-oversized",
+        "sling-malformed-json",
+        "sling-forbidden",
+        "sling-cancel-headers",
+        "sling-partial-context-cancel",
+        "sling-post",
+        "sling-uncertain",
+        "sling-alternate-denied",
+        "sling-pre-cancelled",
+        "sling-sibling-cancel",
+        "sling-fresh",
+        "requests-json",
+        "requests-http404",
+        "requests-http500",
+        "requests-truncated",
+        "requests-oversized",
+        "requests-malformed-json",
+        "requests-forbidden",
+        "requests-cancel-headers",
+        "requests-partial-context-cancel",
+        "requests-post",
+        "requests-uncertain",
+        "requests-alternate-denied",
+        "requests-pre-cancelled",
+        "requests-sibling-cancel",
+        "requests-fresh"
+      ],
+      "signedCases": 30,
+      "additionalPreEntryRefusals": 0,
+      "cleanNodeShutdown": true,
+      "peer": {
+        "startedRequests": 24,
+        "committedMutations": 2,
+        "rejectedRequests": 0,
+        "openConnections": 0
+      }
+    },
+    "typescript": {
+      "component": {
+        "sha256": "sha256:1f826d5dd5924a684ee409880ef1c4603e7f31f505282a2fd73ab0f354509d01",
+        "bytes": 12671284
+      },
+      "producerReceipt": {
+        "sha256": "sha256:a5e39b1d47d8b1cbfaf18e9b72f8a1c51082e722d779788b9e3deafa7ffc537b",
+        "bytes": 134973
+      },
+      "signedReceipt": {
+        "sha256": "sha256:0f0f935f4126971600adee0d1edf0353a7a0ba9cda8e7785b1de903ba7b64e56",
+        "bytes": 72599
+      },
+      "seconds": 269.995,
+      "cases": [
+        "ky-json",
+        "wretch-json",
+        "outside-json",
+        "ky-http404",
+        "wretch-http404",
+        "observed-empty-clone",
+        "latin1-clone",
+        "abort-headers",
+        "abort-body",
+        "uncertain-post",
+        "denied-target",
+        "public-guest-extension",
+        "public-extension-denied",
+        "root-cancel",
+        "root-deadline",
+        "fresh"
+      ],
+      "signedCases": 27,
+      "additionalPreEntryRefusals": 4,
+      "cleanNodeShutdown": true,
+      "peer": {
+        "startedRequests": 14,
+        "committedMutations": 1,
+        "rejectedRequests": 0,
+        "openConnections": 0
+      }
+    },
+    "dotnet": {
+      "component": {
+        "sha256": "sha256:6e50e566d95708590f65b3dd6b8e5f671f38e5de8ebfb99d40e3ee75125ecb74",
+        "bytes": 10813979
+      },
+      "producerReceipt": {
+        "sha256": "sha256:48cc99bf936d0c2b4822705305bbdf70e8d00442828a75cdc6b141f5d7ce3280",
+        "bytes": 29723
+      },
+      "signedReceipt": {
+        "sha256": "sha256:375b92d17d24eec31399be36e25a35bb1b32edef2ea2a003855680e975aa7354",
+        "bytes": 48917
+      },
+      "seconds": 40.664,
+      "cases": [
+        "flurl-json",
+        "refit-json",
+        "outside-alpha",
+        "outside-delta",
+        "flurl-404",
+        "refit-404",
+        "flurl-500",
+        "refit-500",
+        "flurl-pending-cancel",
+        "refit-pending-cancel",
+        "reserved-header",
+        "foreign-target",
+        "flurl-post",
+        "uncertain-post",
+        "flurl-pre-cancelled",
+        "refit-pre-cancelled",
+        "early-body-dispose",
+        "guest-extension",
+        "guest-extension-denied",
+        "fresh-default"
+      ],
+      "signedCases": 20,
+      "additionalPreEntryRefusals": 2,
+      "cleanNodeShutdown": true,
+      "peer": {
+        "contacts": 15,
+        "completedWrites": 11,
+        "mutations": 1,
+        "allClosed": true
+      }
+    }
+  },
+  "earlierAttempt": {
+    "status": "incomplete",
+    "record": {
+      "sha256": "sha256:e99e5d0ba7f3d90df8f7126290b015f69f42afb51f33d41e068c509049049064",
+      "bytes": 9240
+    },
+    "rust": {
+      "reason": "controller-packaging-observation-clock",
+      "component": {
+        "sha256": "sha256:ead72f1b0f2c5b9b1f75ec81f2b42ef568b74402757b534536f133cb73b912b4",
+        "bytes": 966033
+      }
+    },
+    "typescript": {
+      "reason": "fetch-runtime-typed-result",
+      "component": {
+        "sha256": "sha256:1f826d5dd5924a684ee409880ef1c4603e7f31f505282a2fd73ab0f354509d01",
+        "bytes": 12671284
+      }
+    },
+    "nativeTuple": {
+      "sha256": "sha256:73e079c917caac409f0d4f95771fb9a18aa4543db90b40faa42cc852cd6cad5c",
+      "bytes": 1495
+    }
+  },
+  "allGuestCompilersFromThisRevision": false,
+  "publisherAuthenticated": false,
+  "productionStreamProfileQualified": false,
+  "fullTicketQualification": false
+}

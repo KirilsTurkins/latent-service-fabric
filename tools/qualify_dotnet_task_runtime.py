@@ -180,10 +180,11 @@ if __name__ == '__main__':
         for name in ('output', 'tools'):
             parser.add_argument('--' + name, type=Path, required=True)
         parser.add_argument('--source-commit', required=True)
+        parser.add_argument('--local', action='store_true', help='Start the 22-minute qualification deadline locally')
         arguments = parser.parse_args()
         from tools.dotnet_root_return import qualify_current_products
         print(json.dumps(qualify_current_products(arguments.output.resolve(), arguments.tools.resolve(),
-                                                 arguments.source_commit)))
+                                                 arguments.source_commit, local=arguments.local)))
         raise SystemExit(0)
     if '--root-return' in sys.argv[1:]:
         parser = argparse.ArgumentParser(description='Closed NORMAL root-return fixture')

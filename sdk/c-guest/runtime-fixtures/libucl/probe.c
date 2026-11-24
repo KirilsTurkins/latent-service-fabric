@@ -27,6 +27,35 @@ static int domain(const ucl_object_t *object) {
         equal_string(ucl_object_lookup(object, "empty"), "", 0);
 }
 
+struct callback_state {
+    unsigned calls;
+    bool failed;
+};
+
+static bool observe_include(const unsigned char *data, size_t length, const ucl_object_t *arguments,
+                            const ucl_object_t *context, void *userdata) {
+    struct callback_state *state = userdata;
+    if (!arguments && state->calls == 0 && length == 6 && !memcmp(data, "before", 6)) {
+        ++state->calls;
+        return true;
+    }
+    if (!arguments && state->calls == 1 && length == 5 && !memcmp(data, "after", 5) && domain(context)) {
+        /* Reenter the unchanged library while it still owns the outer callback. */
+        const unsigned char input[] = "step = 2;";
+        struct ucl_parser *nested = ucl_parser_new(UCL_PARSER_NO_FILEVARS);
+        ucl_object_t *object = nested && ucl_parser_add_chunk(nested, input, sizeof(input) - 1)
+            ? ucl_parser_get_object(nested) : NULL;
+        int64_t step = 0;
+        const ucl_object_t *field = object ? ucl_object_lookup(object, "step") : NULL;
+        const bool valid = field && ucl_object_toint_safe(field, &step) && step == 2;
+        ucl_object_unref(object);
+        if (nested) ucl_parser_free(nested);
+        if (valid) { ++state->calls; return true; }
+    }
+    state->failed = true;
+    return false;
+}
+
 bool exports_examples_libfetch_api_run(probe_string_t *input, probe_string_t *result,
                                     probe_string_t *error) {
     if (!input->len || input->len > 4096 || memchr(input->ptr, 0, input->len)) {
@@ -50,8 +79,8 @@ bool exports_examples_libfetch_api_run(probe_string_t *input, probe_string_t *re
             free(copy); probe_string_dup(error, "invalid-input"); return false;
         }
     }
-    static const char prefix[] = ".include(url=true) \"";
-    static const char suffix[] = "\";\n";
+    static const char prefix[] = ".observe \"before\";\n.include(url=true) \"";
+    static const char suffix[] = "\";\n.observe \"after\";\n";
     const size_t length = strlen(url);
     char *source = malloc(sizeof(prefix) - 1 + length + sizeof(suffix));
     if (!source) { free(copy); probe_string_dup(error, "input-memory"); return false; }
@@ -59,10 +88,14 @@ bool exports_examples_libfetch_api_run(probe_string_t *input, probe_string_t *re
     memcpy(source + sizeof(prefix) - 1, url, length);
     memcpy(source + sizeof(prefix) - 1 + length, suffix, sizeof(suffix));
     free(copy);
-    const char *selected = local_file ? ".include \"/not-available.ucl\";\n" :
-        local_glob ? ".include(glob=true) \"/not-available-*.ucl\";\n" : source;
+    const char *selected = local_file ? ".observe \"before\";\n.include \"/not-available.ucl\";\n.observe \"after\";\n" :
+        local_glob ? ".observe \"before\";\n.include(glob=true) \"/not-available-*.ucl\";\n.observe \"after\";\n" : source;
+    struct callback_state callbacks = {0};
     struct ucl_parser *parser = ucl_parser_new(UCL_PARSER_NO_FILEVARS);
     if (!parser) { free(source); probe_string_dup(error, "parser-memory"); return false; }
+    if (!ucl_parser_register_context_macro(parser, "observe", observe_include, &callbacks)) {
+        ucl_parser_free(parser); free(source); probe_string_dup(error, "callback-registration"); return false;
+    }
     const bool parsed = ucl_parser_add_chunk(parser, (const unsigned char *)selected, strlen(selected));
     ucl_object_t *object = parsed ? ucl_parser_get_object(parser) : NULL;
     const int valid = parsed && domain(object);
@@ -71,6 +104,9 @@ bool exports_examples_libfetch_api_run(probe_string_t *input, probe_string_t *re
     free(source);
     /* Upstream's successful URL loader does not fclose its FILE. Do not invent
      * a pointer or retirement ACK; original Store abandonment remains charged. */
+    if (callbacks.failed || callbacks.calls != (parsed ? 2u : 1u)) {
+        probe_string_dup(error, "callback-order"); return false;
+    }
     if (!parsed) { probe_string_dup(error, "include-rejected"); return false; }
     if (!valid || local_file || local_glob) {
         probe_string_dup(error, "domain-mismatch"); return false;

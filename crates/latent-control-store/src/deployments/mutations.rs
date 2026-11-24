@@ -107,12 +107,19 @@ impl DirectoryDeploymentRepository {
                 publication.has_control(),
             )
             .await?;
-            self.commit_versioned(
+            let changed: Vec<_> = seen.iter().collect();
+            let schemas = self
+                .prepare_apply_schemas(compiled.catalog(), &changed, Some(previous))
+                .await?;
+            self.commit_checked(
                 previous.generation,
                 publication.transaction,
                 compiled,
+                None,
+                schemas.as_ref(),
                 &mut work,
-            )?;
+            )?
+            .durability?;
             Ok(generation)
         }
         .await;
@@ -178,11 +185,19 @@ impl DirectoryDeploymentRepository {
                 .record_by_id(&receipt.deployment.manifest.id)
                 .ok_or_else(crate::deployment_operations::corrupt)?
                 .publication_reference(self.artifacts.as_ref())?;
+            let schemas = self
+                .prepare_apply_schemas(
+                    compiled.catalog(),
+                    &[&receipt.deployment.manifest.id],
+                    Some(previous),
+                )
+                .await?;
             let outcome = self.commit_checked(
                 previous.generation,
                 publication.transaction,
                 compiled,
                 Some(&precondition),
+                schemas.as_ref(),
                 &mut work,
             )?;
             after_commit();
@@ -256,6 +271,7 @@ impl DirectoryDeploymentRepository {
                 publication.transaction,
                 compiled,
                 Some(&precondition),
+                None,
                 &mut work,
             )?;
             after_commit();

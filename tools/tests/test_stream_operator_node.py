@@ -162,7 +162,7 @@ class UnavailableInspection(unittest.TestCase):
         with self.assertRaises(DevError):
             programme.inspection_frontend(subprocess.CompletedProcess([], 0, encode(value), b'error'))
         self.assertEqual(len(programme.INSPECT_CASES), len(set(programme.INSPECT_CASES)))
-        self.assertEqual(len(programme.INSPECT_CASES), 8)
+        self.assertEqual(len(programme.INSPECT_CASES), 9)
 
 
 if __name__ == '__main__':

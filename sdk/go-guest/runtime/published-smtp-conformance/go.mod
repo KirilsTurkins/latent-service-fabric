@@ -4,7 +4,7 @@ go 1.27.4
 
 require (
 	github.com/cenkalti/backoff/v4 v4.0.0
-	github.com/emersion/go-smtp v0.25.0
+	github.com/emersion/go-smtp v0.25.1
 	github.com/reactivex/rxgo/v2 v2.5.0
 	go.bytecodealliance.org/pkg v0.2.3
 )

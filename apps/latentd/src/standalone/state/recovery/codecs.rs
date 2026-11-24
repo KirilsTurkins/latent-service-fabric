@@ -27,6 +27,7 @@ pub(super) struct Codecs {
     pub namespace: NamespaceRecord,
     pub identity: StoreIdentity,
     pub quotas: Vec<TenantQuota>,
+    pub payloads: Option<super::super::store::InventoryPayloads>,
     pub checkpoint: ExternalCheckpoint,
     pub original: Arc<NativeReservation>,
     pub _metadata: NativeBufferPermit,
@@ -129,11 +130,12 @@ impl Codecs {
         view: &ReadView,
     ) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
         self.check()?;
-        let observed = super::super::validation::validate_inventory(
+        let observed = super::super::validation::validate_offline_inventory(
             view,
             &self.identity,
             &self.quotas,
             &self.original,
+            self.payloads.as_ref(),
         )?;
         if observed != self.checkpoint.inbox_custody() {
             return Err(StoreError::Conflict);
@@ -168,6 +170,9 @@ impl Codecs {
     }
     pub fn row(&self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
         self.check()?;
+        // This codec checks portable archive rows. The archive format carries
+        // logical rows but has no protected stream for provider-owned bytes.
+        super::super::validation::reject_unverified_payload(key, bytes)?;
         match latent_state::inbox_scope::retained_scope(key, bytes) {
             Ok(scope) => {
                 return if scope.tenant == self.namespace.tenant.0

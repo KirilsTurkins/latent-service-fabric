@@ -1068,7 +1068,19 @@ await done.promise;assert.deepEqual(sequence,['write','ready','write']);assert.d
 
     def test_actual_captured_initializer_and_export_guard_fail_closed(self):
         self.javascript(f"""
+import {{inlineExportTaskMeta,lazyTaskCompletion}} from {json.dumps((ROOT/'tools/typescript_guest/source_splicer.mjs').as_uri())};
 const {{proof,original,changed}}=await capturedInitializer();
+const inlined=lazyTaskCompletion(inlineExportTaskMeta(original,parse),parse);
+const integrated=nodeNetBindings(inlined,parse,NET_PROFILE,proof.exports);
+const inlinedExport=parse(integrated,{{ecmaVersion:'latest',sourceType:'module'}}).body.find(node=>node.id?.name===proof.exports[0][0]);
+const rootGuard=inlinedExport.body.body.find(node=>node.type==='TryStatement').block.body;
+assert.equal(rootGuard[0].type,'BlockStatement');
+assert.equal(rootGuard[1].expression.right.callee.property.name,'beginAcceptedClose');
+assert.equal(rootGuard[2].consequent.expression.type,'AwaitExpression');
+assert.equal(rootGuard[3].expression.callee.name,'__lsfNodeNetRootCheck');
+const changedReturn=inlined.replace('ret = await fn();','ret = 0;');
+assert.notEqual(changedReturn,inlined);
+assert.throws(()=>nodeNetBindings(changedReturn,parse,NET_PROFILE,proof.exports),/shape/);
 assert.equal(nodeNetBindings(original,()=>{{throw Error('must not parse')}},undefined),original);
 const tree=parse(changed,{{ecmaVersion:'latest',sourceType:'module'}});
 const run=tree.body.find(node=>node.id?.name===proof.exports[0][0]);
@@ -1305,6 +1317,71 @@ socket.write('x',error=>{assert.equal(error,undefined);events.push('nonempty');s
 await closed.promise;
 assert.deepEqual(events.slice(16),['returned','empty','nonempty']);assert.equal(writes,1);f.transport.assertEmpty();
 """)
+
+    def test_connect_refusal_preserves_the_idle_timer_and_discards_the_refused_listener(self):
+        self.javascript('''
+const t = target(), timers = new Map();
+let next = 0, contacts = 0, stale = 0, fresh = 0, failTimer = false;
+t.setTimeout = fn => {
+  if (failTimer) throw Error('timer-admission');
+  timers.set(++next, fn); return next;
+};
+t.clearTimeout = id => timers.delete(id);
+const native = {
+  connect: () => { ++contacts; return settled({}); },
+  read: () => settled(undefined),
+  shutdown: () => settled({}),
+  close: () => settled({}),
+};
+const transport = createNodeNetTransport(native, t, () => ({}));
+const {Socket} = createNodeNetModule(transport, Buffer, () => false, t);
+const socket = new Socket().setTimeout(20);
+const firstTimer = [...timers.keys()];
+const returning = transport.beginRootReturn();
+assert.throws(() => socket.connect(12345, '127.0.0.1', () => ++stale), /canonical-return-admission/);
+assert.equal(socket.listenerCount('connect'), 0);
+assert.deepEqual([...timers.keys()], firstTimer);
+assert.equal(contacts, 0);
+assert.equal(socket.connecting, false);
+transport.endRootReturn(returning);
+
+failTimer = true;
+assert.throws(() => socket.connect(12345, '127.0.0.1', () => ++stale), /timer-admission/);
+assert.equal(socket.listenerCount('connect'), 0);
+assert.equal(contacts, 0);
+assert.equal(socket.connecting, false);
+transport.assertEmpty();
+failTimer = false;
+socket.connect(12345, '127.0.0.1', () => { ++fresh; socket.destroy(); });
+await turn(); await turn();
+assert.deepEqual([stale, fresh, contacts], [0, 1, 1]);
+assert.equal(timers.size, 0);
+transport.assertEmpty();
+
+const full = fixture();
+full.transport.reserve(); full.transport.reserve();
+const waiting = new full.net.Socket();
+assert.throws(() => waiting.connect(12345, '127.0.0.1', () => ++stale), /socket-port-limit/);
+assert.equal(waiting.listenerCount('connect'), 0);
+assert.equal(waiting.connecting, false);
+assert.deepEqual(full.calls, []);
+
+const reentrant = fixture(), outer = new reentrant.net.Socket(), nested = new reentrant.net.Socket();
+const originalOnce = outer.once, refused = Error('listener-setup');
+outer.once = function () {
+  assert.throws(() => this.connect(12345), cause => cause.code === 'ERR_SOCKET_CLOSED');
+  nested.connect(12345, () => nested.destroy());
+  throw refused;
+};
+assert.throws(() => outer.connect(12345, () => ++stale), cause => cause === refused);
+assert.equal(outer.connecting, false);
+assert.equal(outer.listenerCount('connect'), 0);
+outer.once = originalOnce;
+outer.connect(12345, () => outer.destroy());
+await turn(); await turn();
+assert.deepEqual(reentrant.calls, ['connect', 'connect', 'close', 'close']);
+reentrant.transport.assertEmpty();
+''')
 
     def test_unconnected_and_destroyed_public_state_matches_normal_node_logical_state(self):
         self.javascript(r"""

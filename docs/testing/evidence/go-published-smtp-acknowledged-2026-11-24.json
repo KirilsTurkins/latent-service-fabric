@@ -1,0 +1,243 @@
+{
+  "schemaVersion": "latent.go.published-smtp.runtime.v2",
+  "sourceRevision": "bc4320049800976505730bbe64e8060c7df2967a",
+  "status": "passed",
+  "sourceDigest": "sha256:f286905d3cc3982f3ec69dd59cf3270dfa7a883e4510038d5eee2b5bee4b88a8",
+  "normalProviderInstalled": false,
+  "kernelAccountingQualified": false,
+  "fullGoNetworkingQualified": false,
+  "hostTlsAccountingQualified": false,
+  "cacheReference": {
+    "cases": [
+      "TestCacheRetainsIdentityThroughGC",
+      "TestCacheRejectsOversizedDERBeforeParseOrCopy",
+      "TestCacheRejectsNinthDistinctCertificateAndRetainsHits",
+      "TestCacheAggregateDERBudgetAndNoEviction",
+      "TestCacheParseFailureMatchesUpstreamAndConsumesNoEntry",
+      "TestFreshCacheStartsEmpty",
+      "TestConcurrentSameCertificatePublishesOnce",
+      "TestCacheExactPerDERBoundaryAndOneByteRefusal"
+    ],
+    "compilerDigest": "sha256:de0ae3e082ce7599eae4fb69fa2ef1e43b8f31ffd3fce62cdf81930aa9005050",
+    "cacheSourceDigest": "sha256:22b814966b7b64ab962c581c8216702158e5c7e9e9ad20359fa3fae6235de959",
+    "testSourceDigest": "sha256:ece110165f1e366051cb6157b123523126782425eece80056f857edc115368e6",
+    "projection": "package-declaration-only; exact-production-cache-body",
+    "entries": 8,
+    "maximumDERBytes": 16384,
+    "maximumAggregateDERBytes": 65536
+  },
+  "program": "published",
+  "contractsExecutableDigest": "sha256:2aa4ef63c996824593a2911b7605bb5d3a7f4a981a8220266aa00e6e19ea642a",
+  "component": {
+    "profile": "go-component-activation-v7",
+    "sourceUnchanged": true,
+    "sourceDigest": "sha256:814bf7745aa3bba97c8f9df38826198c7e09e7dfc04478ea2b906da5eef305eb",
+    "componentDigest": "sha256:0e703be920423b734bdf4d0c021b2ec84f973490e92f0e1daa359470f02c18b5",
+    "compilerInputsDigest": "sha256:eed79e238058147da53f795e8937948536ffbe4ab0bf2cb38488823b3d9d48db",
+    "dependencyClosure": {
+      "applicationLibraries": [
+        {
+          "artifact": "go-module/4235e03e7c3e4aa099d0a2b2",
+          "module": "github.com/emersion/go-smtp",
+          "version": "v0.25.0",
+          "ordinaryApi": "smtp.Dial/DialStartTLS/Noop/SendMail/Quit",
+          "selection": "application-root-direct"
+        },
+        {
+          "artifact": "go-module/ba869f0334fb902d63e2a41c",
+          "module": "github.com/reactivex/rxgo/v2",
+          "version": "v2.5.0",
+          "ordinaryApi": "rxgo.Defer/BackOffRetry/Observe",
+          "selection": "application-root-direct"
+        },
+        {
+          "artifact": "go-module/1236d82465b41f874fc2c9c9",
+          "module": "github.com/cenkalti/backoff/v4",
+          "version": "v4.0.0",
+          "ordinaryApi": "backoff.NewConstantBackOff/WithMaxRetries",
+          "selection": "application-root-direct"
+        }
+      ],
+      "transitiveEdges": [
+        {
+          "dependency": "github.com/emersion/go-sasl@v0.0.0-20241020182733-b788ff22d5a6",
+          "minimumVersion": "v0.0.0-20241020182733-b788ff22d5a6",
+          "nativeToolchainDirective": false,
+          "owner": "github.com/emersion/go-smtp@v0.25.0",
+          "selected": "go-module/3029a45dfbeb46ffac5456df"
+        },
+        {
+          "dependency": "github.com/cenkalti/backoff/v4@v4.0.0",
+          "minimumVersion": "v4.0.0",
+          "nativeToolchainDirective": false,
+          "owner": "github.com/reactivex/rxgo/v2@v2.5.0",
+          "selected": "go-module/1236d82465b41f874fc2c9c9"
+        }
+      ],
+      "moduleSources": [
+        {
+          "module": "github.com/emersion/go-smtp",
+          "version": "v0.25.0",
+          "path": "client.go",
+          "digest": "sha256:d58f4d0771450006e19046f1a33d2f6af2af5a1adab3d2847902c75149f91345",
+          "size": 26681
+        },
+        {
+          "module": "github.com/emersion/go-sasl",
+          "version": "v0.0.0-20241020182733-b788ff22d5a6",
+          "path": "sasl.go",
+          "digest": "sha256:8ebb9e2fa76be5f335df941f439d3dcd8e438f3433b5e2b4830c04905efc1897",
+          "size": 1760
+        },
+        {
+          "module": "github.com/reactivex/rxgo/v2",
+          "version": "v2.5.0",
+          "path": "observable_operator.go",
+          "digest": "sha256:ea8113d12a6cee90ad0de05dbf4c8d680091ef931b77b68226cb7f238b8e786b",
+          "size": 79102
+        },
+        {
+          "module": "github.com/cenkalti/backoff/v4",
+          "version": "v4.0.0",
+          "path": "timer.go",
+          "digest": "sha256:573cf5acb47aed687ec55dededb00a18ad82429ee9ad0e9ca60c4872197a2c89",
+          "size": 750
+        }
+      ],
+      "smtpRetryPolicy": "none",
+      "workerTimer": "separate RxGo/backoff stage before network",
+      "generators": "never-executed",
+      "acquisition": "native-MVS-zip-h1-reviewed-lock",
+      "nativeGraphDigest": "sha256:a62067038385ae882bc8fbc777115e500d4399561a431cc39f4cec4ad387e770",
+      "lockDigest": "sha256:7a872ed55dadb9027400e33cc906e2a6a4d7132b25e43d01f9a6c13c496c8504"
+    },
+    "authoringObservationDigest": "sha256:0dea57b15c352c1b2c93a6a373bd0571ded5be3fa1ce5cd73721c194145f8d8d",
+    "authoringPackageAssembled": false
+  },
+  "observations": {
+    "cases": [
+      {
+        "case": "published-smtp-plain",
+        "contacts": 1,
+        "mode": 0,
+        "result": "published-smtp-plain"
+      },
+      {
+        "case": "published-starttls13",
+        "contacts": 1,
+        "mode": 1,
+        "result": "published-smtp-tls13"
+      },
+      {
+        "case": "published-hostname-refused",
+        "contacts": 1,
+        "mode": 2,
+        "result": "published-starttls-hostname-refused"
+      },
+      {
+        "case": "published-trust-refused",
+        "contacts": 1,
+        "mode": 3,
+        "result": "published-starttls-trust-refused"
+      },
+      {
+        "case": "published-starttls12",
+        "contacts": 1,
+        "mode": 4,
+        "result": "published-smtp-tls12"
+      },
+      {
+        "case": "published-fresh-starttls13",
+        "contacts": 1,
+        "mode": 5,
+        "result": "published-smtp-tls13"
+      },
+      {
+        "case": "published-starttls-delivery",
+        "contacts": 1,
+        "mode": 6,
+        "result": "published-smtp-delivery-acknowledged"
+      }
+    ],
+    "userSpaceOwners": [
+      {
+        "case": "published-smtp-plain",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "published-starttls13",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "published-hostname-refused",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "published-trust-refused",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "published-starttls12",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "published-fresh-starttls13",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      },
+      {
+        "case": "published-starttls-delivery",
+        "instances": 0,
+        "ioOwners": 0,
+        "kernelRetirementQualified": false,
+        "stores": 0,
+        "streamOwners": 0
+      }
+    ],
+    "completion": {
+      "cases": 7,
+      "cleanLogicalProviderStop": true,
+      "contacts": 7,
+      "hostTlsQualified": false,
+      "kernelRetirementQualified": false,
+      "normalProviderInstalled": false,
+      "peerMutations": 1
+    }
+  },
+  "selectedRuntimeLimits": {
+    "executors": 2,
+    "nativeOwners": 2,
+    "profile": "go-component-activation-v7",
+    "queuedWork": 16,
+    "results": 2,
+    "tasks": 16,
+    "timers": 2,
+    "waits": 4
+  },
+  "sourceUnchanged": true,
+  "nativeCompiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "nativeExecutableDigest": "sha256:f39428c34a7c98c8d0f196787ebadc7f14cfaf65eb7ce67f34f675a9a1e6e532"
+}

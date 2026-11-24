@@ -1,25 +1,28 @@
 mod rollback;
+pub(in crate::deployments) mod state;
 mod web;
 use crate::rollouts::{corrupt, error, Result};
 use latent_artifacts::{ArtifactRepository, RetainedPackageSource};
 use latent_contracts::{compare_descriptors, ComparisonLimits, StructuralCompatibility};
 use latent_core::{PackageDigest, PlatformErrorCode, ReleaseDigest, TenantId};
+use latent_manifest::ManifestValidationProfile;
 use latent_packaging::{
     compare_packages, inspect_bundle, BundleInput, PackageBundle, PackageComparisonLimits,
     PackagingLimits,
 };
 pub(super) use rollback::compare as rollback;
-const MAX_PACKAGE: usize = 32 * 1024 * 1024;
+pub(in crate::deployments) const MAX_PACKAGE: usize = 32 * 1024 * 1024;
 fn incompatible() -> latent_core::PlatformError {
     error(
         PlatformErrorCode::IncompatibleContract,
         "rollout-incompatible-release",
     )
 }
-fn bundle(
+pub(in crate::deployments) fn bundle(
     source: RetainedPackageSource,
     tenant: &TenantId,
     release: &ReleaseDigest,
+    manifest_profile: ManifestValidationProfile,
 ) -> Result<PackageBundle> {
     if source.tenant() != tenant
         || source.component() != release
@@ -35,7 +38,10 @@ fn bundle(
             configuration,
             layers,
         },
-        PackagingLimits::default(),
+        PackagingLimits {
+            manifest_profile,
+            ..PackagingLimits::default()
+        },
     )?;
     if bundle.layout().digest() != &expected
         || bundle
@@ -51,6 +57,7 @@ pub(super) async fn compare(
     tenant: &TenantId,
     old_release: &crate::rollouts::RolloutRelease,
     candidate_release: &crate::rollouts::RolloutRelease,
+    manifest_profile: ManifestValidationProfile,
 ) -> Result<(Option<PackageDigest>, Option<PackageDigest>)> {
     let old = &old_release.component;
     let candidate = &candidate_release.component;
@@ -124,8 +131,14 @@ pub(super) async fn compare(
     }
     match (old_source, new_source) {
         (Some(old_source), Some(new_source)) => {
-            let old_bundle = bundle(old_source, tenant, old)?;
-            let new_bundle = bundle(new_source, tenant, candidate)?;
+            let old_bundle = bundle(old_source, tenant, old, manifest_profile)?;
+            let new_bundle = bundle(new_source, tenant, candidate, manifest_profile)?;
+            state::require_compatible(
+                &old_bundle,
+                &old_release.deployment_id,
+                &new_bundle,
+                &candidate_release.deployment_id,
+            )?;
             let report =
                 compare_packages(&old_bundle, &new_bundle, PackageComparisonLimits::default())?;
             if !report.allows_replacement(None) {
@@ -158,6 +171,11 @@ fn descriptors(
         || next.verified_digest() != candidate
         || previous.manifest().world != next.manifest().world
         || previous.manifest().imports != next.manifest().imports
+        || previous
+            .manifest()
+            .imports
+            .iter()
+            .any(|import| state::transaction_import(&import.contract.0))
         || previous.contracts().is_empty()
     {
         return Err(incompatible());

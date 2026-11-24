@@ -46,7 +46,7 @@ struct Fault {
     skip: usize,
 }
 impl Directory {
-    pub fn root(path: &Path) -> Result<Arc<Self>> {
+    pub fn root(path: &Path, create: bool) -> Result<Arc<Self>> {
         if !path.is_absolute() || path.as_os_str().len() > 4096 {
             return Err(Error::Invalid);
         }
@@ -68,7 +68,7 @@ impl Directory {
                 return Err(Error::Invalid);
             };
             let last = index + 1 == names.len();
-            if last {
+            if last && create {
                 directory.validate()?;
                 match fs::mkdirat(&directory.file, *name, Mode::RWXU) {
                     Ok(()) => {

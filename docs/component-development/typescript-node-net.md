@@ -6,6 +6,31 @@ the explicit TypeScript import-runtime candidate, the exact maintained stream
 interface and an independently granted TCP endpoint. Importing this module
 grants no authority and enables no production provider.
 
+The signed Linux rerun at `704231a7db2007daab2228219d140aee5be91fbe`
+compiled unmodified `is-port-reachable@4.0.0` with the inlined export frame
+and the 16,384-byte paused read window. Under the existing budget, the
+published client sent FIN and one original read stayed pending until peer EOF.
+The denied endpoint received zero connections. All eight cases released the
+observed stream, broker, pool, Store and activation owners after root exit.
+The test used the development provider on loopback. The case results, costs
+and compiler identities are in the [signed socket receipt](../testing/evidence/typescript-socket-paused-end-2026-11-23.json).
+
+The follow-up reran the eight cases and exercised a ninth on the same signed
+component. A peer sent one byte and EOF while the primary socket was paused.
+A second connection signalled the guest to resume only after the host observed
+one delivered byte and a single pending read across both connections. The
+guest received the buffered byte once, followed by end and close. Its original
+budget covered 955,950,071 fuel and 12,189,239 peak guest bytes.
+
+When both socket slots are occupied or root return has started, `connect`
+leaves the existing idle timer and listeners untouched. An admitted socket holds its
+slot through timer and listener setup. If setup fails, another socket can use
+that slot. The 32 pinned Node controls exercise these cases, including a
+second socket opened during listener setup. Nine signed loopback invocations
+on the rebuilt component covered the published client, paused delivery,
+cancellation and post-root cleanup.
+[Socket results and per-invocation resource use](../testing/evidence/typescript-socket-connect-admission-2026-11-24.json)
+
 The source implementation supports `Socket`, `connect`/`createConnection`,
 connection and data events, copied Buffer chunks, pause/resume, serialized
 writes, backpressure, writable readiness after zero progress, timeout events,

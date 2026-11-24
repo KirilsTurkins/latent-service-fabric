@@ -1,0 +1,298 @@
+{
+  "schemaVersion": "latent.c.libucl.caller-callback.signed-summary.v1",
+  "issue": 690,
+  "source": "8911985e56d02edcfbfa55abc325303ecd6964d9",
+  "sourceTree": "f7eef608a167530b277723b8b883bc6f27c03682",
+  "observedOn": "2026-11-24",
+  "entry": "tools/qualify_c_standard_facilities.py --libucl-http --build-native",
+  "status": "passed",
+  "sourceTests": 39,
+  "nativeTuple": {
+    "receipt": {
+      "sha256": "sha256:2268cd24a0617e363600bc9d0082b2a5200062cec1e289c51be2b3d4bafbe2d6",
+      "bytes": 1495
+    },
+    "sourceHead": "8911985e56d02edcfbfa55abc325303ecd6964d9",
+    "sourceTree": "f7eef608a167530b277723b8b883bc6f27c03682",
+    "tupleRole": "ordinary-defaults",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.9",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:8e753d6e1091a435196c5a3d26023e10241863efa34e0711879a1c11e3ef1fef",
+        "bytes": 78851920,
+        "actualFeatures": []
+      },
+      "latentd": {
+        "sha256": "sha256:fe8bd09e952b3ddf0596c3a33629f9796703381a000ae23b4ab27b33b5c80c9e",
+        "bytes": 214257848,
+        "actualFeatures": []
+      },
+      "package": {
+        "sha256": "sha256:78ed627079f74622d6b07eb42f1e49ec264c6d2136d2bff56bb4a788cf36b695",
+        "bytes": 22183904,
+        "actualFeatures": []
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:556f9b3e47eb8270683d942580dccfead4c717b39080b0f87c2ec9594f7913dc",
+        "bytes": 15217168,
+        "actualFeatures": []
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:8d616dac1aee230330838bdb1048791c28ed8e08a9bfecb4698e9199ece88504",
+        "bytes": 28448736,
+        "actualFeatures": []
+      }
+    }
+  },
+  "limits": {
+    "parentSeconds": 1320,
+    "commandSeconds": 900,
+    "cleanupReserveSeconds": 5,
+    "jobs": 2,
+    "cells": 10,
+    "components": 2
+  },
+  "signedClients": {
+    "libfetch": {
+      "component": {
+        "sha256": "sha256:20060fa6e3a28c6002166fded2294f5c7901f0e35eca3b063f9e7e1426cb644b",
+        "bytes": 132882
+      },
+      "runtimeInputsDigest": "sha256:2acecfaaefb177bce86eb143f06de33849327dc653e594ec13e03add6f75166a",
+      "cases": [
+        {
+          "case": "normal",
+          "exitCode": 0,
+          "peerRequests": 1,
+          "peerMutations": 0,
+          "retirement": {
+            "activation": "c-libfetch-normal",
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0
+          }
+        },
+        {
+          "case": "not-found",
+          "exitCode": 3,
+          "peerRequests": 1,
+          "peerMutations": 0,
+          "retirement": {
+            "activation": "c-libfetch-not-found",
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0
+          }
+        },
+        {
+          "case": "denied",
+          "exitCode": 3,
+          "peerRequests": 0,
+          "peerMutations": 0,
+          "retirement": {
+            "activation": "c-libfetch-denied",
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0
+          }
+        },
+        {
+          "case": "early-close",
+          "exitCode": 0,
+          "peerRequests": 1,
+          "peerMutations": 0,
+          "retirement": {
+            "activation": "c-libfetch-early-close",
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0
+          }
+        },
+        {
+          "case": "sibling",
+          "exitCode": 0,
+          "peerRequests": 3,
+          "peerMutations": 0,
+          "retirement": {
+            "activation": "c-libfetch-sibling",
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0
+          },
+          "sibling": {
+            "sourceBoundFirstFreadPending": true,
+            "completedSiblingBeforeGateRelease": true,
+            "nativePollPendingObserved": false
+          }
+        }
+      ],
+      "peer": {
+        "startedRequests": 6,
+        "completedResponseWrites": 5,
+        "committedMutations": 0,
+        "openConnections": 0
+      },
+      "nodeReaped": true,
+      "cleanShutdown": true
+    },
+    "libucl": {
+      "component": {
+        "sha256": "sha256:6a98358dfbb082c6f6ffc18073b402ad54c1417fa5217b6b0f820e91986c8da1",
+        "bytes": 338727
+      },
+      "runtimeInputsDigest": "sha256:2acecfaaefb177bce86eb143f06de33849327dc653e594ec13e03add6f75166a",
+      "cases": [
+        {
+          "case": "normal",
+          "exitCode": 0,
+          "peerRequests": 1,
+          "peerMutations": 0,
+          "retirement": {
+            "activation": "c-libucl-normal",
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0
+          },
+          "guestResult": {
+            "ok": "ucl:7:café:first:λ:0"
+          },
+          "outboundRequests": 1
+        },
+        {
+          "case": "not-found",
+          "exitCode": 3,
+          "peerRequests": 1,
+          "peerMutations": 0,
+          "retirement": {
+            "activation": "c-libucl-not-found",
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0
+          },
+          "guestResult": {
+            "err": "include-rejected"
+          },
+          "outboundRequests": 1
+        },
+        {
+          "case": "denied",
+          "exitCode": 3,
+          "peerRequests": 0,
+          "peerMutations": 0,
+          "retirement": {
+            "activation": "c-libucl-denied",
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0
+          },
+          "guestResult": {
+            "err": "include-rejected"
+          },
+          "outboundRequests": 0
+        },
+        {
+          "case": "file",
+          "exitCode": 3,
+          "peerRequests": 0,
+          "peerMutations": 0,
+          "retirement": {
+            "activation": "c-libucl-file",
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0
+          },
+          "guestResult": {
+            "err": "include-rejected"
+          },
+          "outboundRequests": 0
+        },
+        {
+          "case": "glob",
+          "exitCode": 3,
+          "peerRequests": 0,
+          "peerMutations": 0,
+          "retirement": {
+            "activation": "c-libucl-glob",
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0
+          },
+          "guestResult": {
+            "err": "include-rejected"
+          },
+          "outboundRequests": 0
+        }
+      ],
+      "peer": {
+        "startedRequests": 2,
+        "completedResponseWrites": 2,
+        "committedMutations": 0,
+        "openConnections": 0
+      },
+      "nodeReaped": true,
+      "cleanShutdown": true
+    }
+  },
+  "callbackObservations": {
+    "basis": "The caller validates callback count and order before returning. The successful post-include callback also checks the outer object, parses and checks a new object, and disposes the nested parser before returning. Counts follow from the observed guest results and these source guards.",
+    "perCase": {
+      "normal": {
+        "before": 1,
+        "after": 1,
+        "nestedParserCompleted": true
+      },
+      "not-found": {
+        "before": 1,
+        "after": 0,
+        "nestedParserCompleted": false
+      },
+      "denied": {
+        "before": 1,
+        "after": 0,
+        "nestedParserCompleted": false
+      },
+      "file": {
+        "before": 1,
+        "after": 0,
+        "nestedParserCompleted": false
+      },
+      "glob": {
+        "before": 1,
+        "after": 0,
+        "nestedParserCompleted": false
+      }
+    }
+  },
+  "originals": {
+    "qualified.json": {
+      "bytes": 190420,
+      "sha256": "sha256:bb405c31027b10729478fa0e8421fbf80040241f1f0a3bc317563531a0f6cbf8"
+    },
+    "source-tests.log": {
+      "bytes": 139,
+      "sha256": "sha256:14230bbca6d68b2071972c6aa8a356d85cb2a6acfca4899e2221aa1cfd80194c"
+    },
+    "node-libfetch-qualified.json": {
+      "bytes": 51312,
+      "sha256": "sha256:489e0e653537c6036c68e136b635593fc20148e5c617e335d7e19d74d14894f0"
+    },
+    "node-libucl-qualified.json": {
+      "bytes": 21048,
+      "sha256": "sha256:b1f2b0e054920022ab98dc2672b16238c604efef46f4d1317a6f5c64334e8640"
+    },
+    "node-libucl-invocation-c-libucl-normal.json": {
+      "bytes": 1256,
+      "sha256": "sha256:4ab7537730b3dd8f60b8cd03edd9617f932ce086294ed7b8d77649f58b4872bd"
+    },
+    "node-libucl-invocation-c-libucl-not-found.json": {
+      "bytes": 1207,
+      "sha256": "sha256:b5dfa603c4f2ecfebac38946cb3d1f9fa26b76a55ac0f4781d2e443f97bf8ca2"
+    },
+    "node-libucl-invocation-c-libucl-denied.json": {
+      "bytes": 1201,
+      "sha256": "sha256:573a96985b81b2c952c2777e24bd658c0a979a31421f0f0ae8debf728d8c8d76"
+    },
+    "node-libucl-invocation-c-libucl-file.json": {
+      "bytes": 1195,
+      "sha256": "sha256:ab46598f68290b57ab2a839eea20d4d2c4abf30e52aa884c8fc17f573863e54e"
+    },
+    "node-libucl-invocation-c-libucl-glob.json": {
+      "bytes": 1195,
+      "sha256": "sha256:d1d9452ea02b1d0a8b0e0764f6d51e5587b052d048f67c3c08b6199666d7aced"
+    }
+  },
+  "full690Qualified": false,
+  "fullCCostModelQualified": false,
+  "publisherAuthenticated": false
+}

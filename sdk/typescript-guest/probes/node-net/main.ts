@@ -3,8 +3,48 @@
 import net, {Socket} from 'node:net';
 import isPortReachable from 'is-port-reachable';
 
+function heldPausedPayload(port: number): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const primary = new Socket(), control = new Socket();
+    let resumed = false, ended = false, closed = 0, received = '';
+    const done = () => {
+      if (++closed === 2) resolve('node-net:paused-payload:pass');
+    };
+    primary.on('error', reject);
+    control.on('error', reject);
+    primary.once('connect', () => {
+      primary.end();
+      control.connect(port, '127.0.0.1');
+    });
+    primary.once('end', () => {
+      if (!resumed || received !== 'Q') { reject(new Error('node-net:early-eof')); return; }
+      ended = true;
+    });
+    primary.once('close', hadError => {
+      if (hadError || !ended || primary.bytesRead !== 1) {
+        reject(new Error('node-net:paused-payload-close')); return;
+      }
+      done();
+    });
+    control.once('close', hadError => {
+      if (hadError || !resumed) { reject(new Error('node-net:control-close-order')); return; }
+      done();
+    });
+    control.once('data', bytes => {
+      if (bytes.length !== 1 || bytes[0] !== 114 || primary.bytesRead !== 1 || ended) {
+        reject(new Error('node-net:missing-paused-payload')); return;
+      }
+      resumed = true;
+      primary.on('data', chunk => { received += chunk.toString('utf8'); });
+      control.destroy();
+    });
+    primary.connect(port, '127.0.0.1');
+  });
+}
+
 export const api = {
   run(mode: number, port: number): Promise<string> {
+    if (mode === 7) return heldPausedPayload(port);
     if (mode === 5 || mode === 6)
       return isPortReachable(port, {host: '127.0.0.1'}).then(reachable => 'node-net:published:' + reachable);
     if (!Number.isInteger(mode) || mode < 0 || mode > 4)
