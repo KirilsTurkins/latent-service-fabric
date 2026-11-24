@@ -6,6 +6,7 @@ import base64
 from contextlib import ExitStack
 import json
 from pathlib import Path
+import re
 import secrets
 import tempfile
 import time
@@ -247,6 +248,14 @@ def library_error(payload,client_name,expected):
             or client_name=='golem' and public['isRequest'] and not public['isTimeout']
                 and code=='set_first_byte_timeout'),'rust-http-exact-unsupported-option-setter-not-other-error')
         exact=True
+    elif expected=='error:guest-reader-stream':
+        # Golem's request-body writer formats the public WASI stream resource.
+        # Its handle is opaque. The separate default GET observes HttpRequestDenied.
+        handle = re.fullmatch(r'StreamError::LastOperationFailed\(Error \{ handle: Resource \{ handle: (0|[1-9][0-9]{0,9}) \} \}\)', code or '')
+        require(client_name=='golem' and phase=='send' and public['isRequest']
+            and not any(public[name] for name in ('isBuilder','isBody','isDecode','isTimeout','isStatus','serdeJsonError'))
+            and value['display']=='error sending request' and handle is not None
+            and int(handle[1]) < 2**32, 'rust-http-real-golem-request-body-stream-failure')
     elif expected=='error:request-denied':
         require(phase=='send' and not public['serdeJsonError'] and code=='ErrorCode::HttpRequestDenied',
             'rust-http-real-request-denied-not-unavailable')
@@ -301,6 +310,9 @@ def library_error(payload,client_name,expected):
 
 def outcome(row,spec,client_name,revision,budget):
     _name,_mode,_path,expected,outbound,_vector,action=spec
+    if expected=='error:guest-reader-stream':
+        require(client_name=='golem' and tuple(spec)==('guest-reader-denied','reader-post','foreign',
+            'error:guest-reader-stream',0,None,''),'rust-http-opaque-reader-denial-only-for-foreign-body')
     if expected=='error:malformed-framing':
         require(tuple(spec)==('malformed-framing','bytes','/conformance/body/malformed',
             'error:malformed-framing',1,'malformed-framing',''),
