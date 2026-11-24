@@ -250,17 +250,20 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     }
     listenerCount(name) { return this.#listeners.get(name)?.length || 0; }
     emit(name, ...args) { return this.#emit(name, ...args); }
+    #prepareConnect(listener) {
+      this.#touch();
+      if (listener) this.once('connect', listener);
+      if (this.#destroyed) throw error('ERR_SOCKET_CLOSED', 'connect');
+    }
     connect(...args) {
       if (snapshotActive()) throw error('ERR_LSF_SNAPSHOT_EFFECT', 'connect');
       if (this.#token || this.#connecting || this.#connected || this.#destroyed)
         throw error('ERR_SOCKET_CLOSED', 'connect');
       const [request, listener] = destination(args);
-      // Refresh the configured idle clock before publishing a listener or
-      // reserving a native socket: timer refusal must not leave a half-connect.
-      this.#touch();
-      if (listener) this.once('connect', listener);
-      this.#token = transport.reserve(this.#afterTail, this); // BEFORE CAP connect.
-      this.#connecting = true; this.#connectBusy = true; this.#remotePort = request.port;
+      this.#connecting = true;
+      try { this.#token = transport.reserve(this.#afterTail, this, this.#prepareConnect, listener); }
+      catch (cause) { this.#connecting = false; throw cause; }
+      this.#connectBusy = true; this.#remotePort = request.port;
       let failed = false, cause;
       try { transport.connect(this.#token, request, this.#onConnect, this); }
       catch (value) { failed = true; cause = value; }
