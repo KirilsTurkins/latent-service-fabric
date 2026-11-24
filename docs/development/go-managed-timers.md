@@ -137,9 +137,16 @@ drops. Each case requires the expected cancellation or deadline outcome and idle
 Store, provider and quota observations; a fresh activation follows. The
 original Task16, Wait4 and Timer2 limits remain.
 
-This specifies a bounded, instrumented qualification, not a claim that it has
-executed, that every cancellation interleaving is covered, or that process RSS
-and kernel final-free have been measured.
+On November 24 the v7 overlap programme completed seven signed Go 1.27.4
+invocations on Linux. Reset/Reset and Reset/Stop completed both directly and
+after a garbage collection. Two more invocations stopped the root while both
+goroutines were parked. They reported cancellation and deadline expiry
+respectively. The original provider wait dropped in all six overlap cases.
+A fresh activation then succeeded. Each invocation finished with zero live
+Stores and instances, provider waits, fuel, memory and admission reservations.
+The instrumented programme measures these interleavings and their activation
+counters. Kernel retirement and aggregate Go resource costs remain open.
+[Component, per-case results and provider witnesses](../testing/evidence/go-v7-timer-overlap-2026-11-24.json)
 
 ## Go 1.27.4 and the v7 profile
 
