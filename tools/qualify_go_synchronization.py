@@ -849,9 +849,9 @@ def qualify(root: Path, output: Path, fixture: Path, negative: Path | None, revi
                                  'sleep-cancel-v7': 'lsf.go-v7-sleep-cancel-reference.v1'}[programme], 'sourceRevision': revision,
                'sourceBefore': before, 'sourceAfter': after, 'compilerInputsBefore': material,
                'compilerInputsAfter': after_material, 'case': plan['case'], 'signedCases': rows,
-               'signedInvocations': {'synchronization': len(rows), 'admission': 8, 'queued': 20,
-                                     'managed-timers': len(rows), 'managed-v7-timers': len(rows),
-                                     'task-saturation': 3, 'timer-overlap': 7, 'timer-overlap-v7': 7, 'timer-fired-v7': len(rows), 'zero-clock-v7': len(rows), 'ticker-clock-v7': len(rows), 'wall-clock-v7': len(rows), 'sleep-cancel-v7': 2 * len(rows)}[programme], 'guestTaskCeiling': 16,
+               'signedInvocations': {'admission': 8, 'queued': 20, 'task-saturation': 3,
+                                     'sleep-cancel-v7': 2 * len(rows)}.get(programme, len(rows)),
+               'guestTaskCeiling': 16,
                'managedCapacity': 8, 'waitCeiling': 4, 'newRuntimeProfile': False,
                'kernelTlsOrCrossTenantQualified': False, 'fullGoRuntimeQualified': False}
     if programme == 'synchronization':

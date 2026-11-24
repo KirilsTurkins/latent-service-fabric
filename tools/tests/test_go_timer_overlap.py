@@ -3,6 +3,7 @@ import copy
 import json
 from pathlib import Path
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -41,6 +42,33 @@ def stderr():
 
 
 class GoTimerOverlap(unittest.TestCase):
+    def test_receipt_counts_each_validated_invocation_on_both_profiles(self):
+        for campaign, case in (('timer-overlap', reference.TIMER_OVERLAP_CASE),
+                               ('timer-overlap-v7', reference.V7_TIMER_OVERLAP_CASE)):
+            output = stdout().replace(reference.TIMER_OVERLAP_CASE.encode(), case.encode())
+            observed = SimpleNamespace(returncode=0, output=output, stderr=stderr())
+            suite = {'id': 'latent-wasmtime.test.local-service',
+                     'expectedIgnored': [case], 'timeoutSeconds': 900}
+            available = {case, *(f'other_{index}' for index in range(53))}
+            with self.subTest(campaign=campaign), tempfile.TemporaryDirectory() as temporary, \
+                    patch.object(reference.sys, 'platform', 'linux'), \
+                    patch.object(reference.artifacts, 'require_source'), \
+                    patch.object(reference, 'source_snapshot', return_value={'digest': 'unchanged'}), \
+                    patch.object(reference, 'compile_identity', return_value={'digest': 'fixture'}), \
+                    patch.object(reference.registry, 'load', return_value={'suites': [suite]}), \
+                    patch.object(reference.discovery, 'listing', side_effect=[available, {case}]), \
+                    patch.object(reference.discovery, 'validate_cases'), \
+                    patch.object(reference, 'run_owned', side_effect=lambda cmd, **_:
+                        SimpleNamespace(returncode=0, output=b'', stderr=b'')
+                        if cmd[0] == 'git' or '--list' in cmd else observed):
+                folder = Path(temporary)
+                receipt = reference.qualify(reference.ROOT, folder / 'out', folder / 'fixture', None,
+                                            'test-revision', campaign)
+                persisted = json.loads((folder / 'out' / 'receipt.json').read_bytes())
+                self.assertEqual(persisted, receipt)
+                self.assertEqual(receipt['signedCases'], cases())
+                self.assertEqual(receipt['signedInvocations'], len(receipt['signedCases']))
+
     def test_v7_overlap_campaign_requires_its_own_signed_case_and_complete_witness(self):
         fixture = Path('owned-v7-overlap')
         self.assertEqual(reference.campaign('timer-overlap-v7', fixture, None),
