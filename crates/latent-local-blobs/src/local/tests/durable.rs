@@ -877,6 +877,7 @@ fn same_label_different_live_engine_cannot_authorize_release() {
 
 #[test]
 fn recovery_checks_actual_required_bytes_and_rejects_foreign_view_or_corruption() {
+    const BODY: &[u8] = b"retained proof";
     let state_root = temporary_root();
     let other_root = temporary_root();
     let blob_root = temporary_root();
@@ -884,7 +885,7 @@ fn recovery_checks_actual_required_bytes_and_rejects_foreign_view_or_corruption(
     let other = database(other_root.path(), true, "same-label");
     let owner =
         LocalBlobStore::open_durable(blob_root.path(), "private", limits(), &state).unwrap();
-    let blob = put(&owner, b"proof");
+    let blob = put(&owner, BODY);
     let pin = owner
         .capture_durable_reference(&scope(), &blob, &|| Ok(()))
         .unwrap();
@@ -896,9 +897,36 @@ fn recovery_checks_actual_required_bytes_and_rejects_foreign_view_or_corruption(
     owner
         .verify_required_reference(&view, &key, &bytes, &|| Ok(()))
         .unwrap();
+    let mut output = Vec::new();
+    owner
+        .stream_required_reference(
+            &view,
+            &key,
+            &bytes,
+            &mut [0; 4],
+            |chunk| {
+                assert!(chunk.len() <= 4);
+                output.extend_from_slice(chunk);
+                Ok(())
+            },
+            &|| Ok(()),
+        )
+        .unwrap();
+    assert_eq!(output, BODY);
     let foreign = other.snapshot().unwrap();
     assert_eq!(
         owner.verify_required_reference(&foreign, &key, &bytes, &|| Ok(())),
+        Err(LocalBlobError::PermissionDenied)
+    );
+    assert_eq!(
+        owner.stream_required_reference(
+            &foreign,
+            &key,
+            &bytes,
+            &mut [0; 4],
+            |_| panic!("foreign store must not export bytes"),
+            &|| Ok(()),
+        ),
         Err(LocalBlobError::PermissionDenied)
     );
     drop((view, foreign, pin));
@@ -912,7 +940,7 @@ fn recovery_checks_actual_required_bytes_and_rejects_foreign_view_or_corruption(
         .unwrap()
         .clone();
     let path = blob_root.path().join("objects").join(object).join("data");
-    std::fs::write(&path, b"wrong").unwrap();
+    std::fs::write(&path, b"altered bytes!").unwrap();
     let view = state.snapshot().unwrap();
     assert_eq!(
         owner.verify_required_reference(&view, &key, &bytes, &|| Ok(())),

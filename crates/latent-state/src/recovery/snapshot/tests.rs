@@ -220,6 +220,129 @@ fn export(fixture: &Fixture) -> (Vec<u8>, SnapshotReceipt) {
 }
 
 #[test]
+fn linked_snapshot_requires_and_verifies_each_retained_payload_frame() {
+    use crate::payload_references::{
+        LocalPayloadIdentity, PayloadOwner, PayloadOwnerKind, PreparedPayloadReferences,
+    };
+
+    const DATA: &[u8] = b"retained archive payload";
+    struct Source;
+    impl SnapshotPayloadSource for Source {
+        fn stream(
+            &mut self,
+            _: &ReadView,
+            _: &RowKey,
+            _: &[u8],
+            output: &mut dyn FnMut(&[u8]) -> Result<(), SnapshotError>,
+        ) -> Result<(), SnapshotError> {
+            for chunk in DATA.chunks(4) {
+                output(chunk)?;
+            }
+            Ok(())
+        }
+    }
+
+    let fixture = fixture();
+    let payload = LocalPayloadIdentity {
+        tenant: "tenant".into(),
+        provider: "local".into(),
+        provider_epoch: 1,
+        provider_configuration: [67; 32],
+        blob_namespace: "private".into(),
+        digest: Sha256::digest(DATA).into(),
+        size: DATA.len() as u64,
+        media_type: "text/plain".into(),
+    };
+    let updates = [PayloadOwnerKind::Result, PayloadOwnerKind::Effect].map(|kind| {
+        (
+            None,
+            Some(PayloadReference {
+                owner: PayloadOwner {
+                    tenant: "tenant".into(),
+                    namespace: "business".into(),
+                    incarnation: 1,
+                    kind,
+                    identity: [3; 32],
+                    generation: 1,
+                    format: "retained-v1".into(),
+                },
+                payload: payload.clone(),
+            }),
+        )
+    });
+    let view = fixture.store.snapshot().unwrap();
+    let prepared = PreparedPayloadReferences::prepare(&view, &updates).unwrap();
+    let mut batch = AtomicBatch::default();
+    prepared.append_to(&mut batch).unwrap();
+    drop(view);
+    fixture.store.apply(batch).unwrap();
+    let mut bytes = Vec::new();
+    let selected = |_: &ReadView| {
+        Ok(SnapshotClosure {
+            inventory: RetainedInventory::default(),
+            required_artifacts: fixture.metadata.required_artifacts.clone(),
+        })
+    };
+    assert!(matches!(
+        export_reviewed_snapshot(
+            &fixture.store,
+            fixture.metadata.clone(),
+            &mut bytes,
+            deadline(),
+            selected,
+            |_| Ok(()),
+            None,
+        ),
+        Err(SnapshotError::Review(StoreError::UnsupportedFormat))
+    ));
+    assert!(bytes.is_empty());
+    let receipt = export_reviewed_snapshot(
+        &fixture.store,
+        fixture.metadata.clone(),
+        &mut bytes,
+        deadline(),
+        selected,
+        |_| Ok(()),
+        Some(&mut Source),
+    )
+    .unwrap();
+    assert!(bytes.starts_with(PAYLOAD_MAGIC));
+    assert_eq!(
+        receipt.manifest.payloads,
+        Some(SnapshotPayloadInventory {
+            owners: 2,
+            bytes: 2 * DATA.len() as u64,
+        })
+    );
+    let mut input = Cursor::new(bytes.clone());
+    assert_eq!(
+        inspect_snapshot(&mut input, deadline(), |_, _| Ok(())).unwrap(),
+        receipt
+    );
+    assert_eq!(
+        visit_snapshot_rows_bounded(
+            &mut input,
+            &receipt,
+            deadline(),
+            |_, _| Ok(()),
+            |_, _| panic!("logical import must refuse linked archives"),
+            PAGE_BYTES,
+            SNAPSHOT_NAMESPACES,
+        ),
+        Err(StoreError::UnsupportedFormat)
+    );
+    let first_payload = bytes
+        .windows(DATA.len())
+        .position(|chunk| chunk == DATA)
+        .unwrap();
+    bytes[first_payload] ^= 1;
+    assert_eq!(
+        inspect_snapshot(&mut Cursor::new(bytes), deadline(), |_, _| Ok(())),
+        Err(StoreError::Corrupt)
+    );
+}
+
+#[test]
 fn actual_engine_snapshot_captures_all_ten_families_and_exact_source_identity() {
     let fixture = fixture();
     let (bytes, receipt) = export(&fixture);

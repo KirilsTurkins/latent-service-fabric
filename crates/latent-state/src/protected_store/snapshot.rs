@@ -13,7 +13,7 @@ use super::{ProtectedStoreError, ProtectedStoreOwner};
 use crate::embedded::{ReadView, RowKey, StoreError};
 use crate::recovery::snapshot::{
     export_reviewed_snapshot, RequiredArtifact, SnapshotClosure, SnapshotError, SnapshotMetadata,
-    SnapshotReceipt,
+    SnapshotPayloadSource, SnapshotReceipt,
 };
 use crate::store_io::{StoreIoError, StoreIoKind, StoreIoRetirement, StoreIoRetirementWitness};
 
@@ -287,6 +287,36 @@ impl ProtectedStoreOwner {
         maximum_file_bytes: u64,
         profile: super::ProtectedSnapshotProfile,
     ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
+        self.create_reviewed_snapshot_with_payloads(
+            config,
+            metadata,
+            original,
+            validate,
+            verify_artifact,
+            validate_row,
+            current,
+            maximum_file_bytes,
+            profile,
+            None,
+        )
+    }
+
+    /// Export linked payloads using the installed source on the same native
+    /// custody. A missing source only permits a logical archive.
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_reviewed_snapshot_with_payloads(
+        &self,
+        config: ProtectedSnapshotConfig,
+        metadata: SnapshotMetadata,
+        original: Arc<NativeReservation>,
+        validate: impl FnOnce(&ReadView) -> Result<SnapshotClosure, SnapshotError> + Send + 'static,
+        verify_artifact: impl FnMut(&RequiredArtifact) -> Result<(), StoreError> + Send + 'static,
+        validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError> + Send + 'static,
+        current: Arc<dyn Fn() -> Result<(), StoreError> + Send + Sync>,
+        maximum_file_bytes: u64,
+        profile: super::ProtectedSnapshotProfile,
+        mut payload_source: Option<Box<dyn SnapshotPayloadSource>>,
+    ) -> Result<ProtectedSnapshotJob, ProtectedStoreError> {
         let bytes = config.validate()?;
         metadata.validate().map_err(ProtectedStoreError::Store)?;
         if self.limits.maximum_value_bytes > profile.row_bytes() {
@@ -313,6 +343,7 @@ impl ProtectedStoreOwner {
                 original.original_deadline(),
                 validate,
                 verify_artifact,
+                payload_source.as_deref_mut(),
             )
             .and_then(|receipt| file.verify(&receipt, validate_row));
             match outcome {

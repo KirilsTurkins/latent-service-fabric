@@ -10,6 +10,7 @@ use crate::{
         history::NamespaceHistory,
         NamespaceRecord, NamespaceStatus,
     },
+    payload_references::{self, PayloadReference, MAX_REFERENCE_BYTES},
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -20,6 +21,10 @@ use std::{
 };
 
 const MAGIC: &[u8] = b"latent-offline-snapshot\0\x02";
+const PAYLOAD_MAGIC: &[u8] = b"latent-offline-snapshot\0\x03";
+const LOGICAL_FORMAT: &str = "latent.offline-snapshot.v2";
+const PAYLOAD_FORMAT: &str = "latent.offline-snapshot.v3";
+const PAYLOAD_CHUNK_BYTES: usize = 8 * 1024;
 const ENGINE: &str = crate::embedded::STORE_FORMAT;
 pub const SNAPSHOT_ROWS: u64 = 65_536;
 pub const SNAPSHOT_LOGICAL_BYTES: u64 = 128 * 1024 * 1024;
@@ -126,6 +131,31 @@ struct InventoryEntry {
     count: RetainedCount,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SnapshotPayloadInventory {
+    pub owners: u64,
+    pub bytes: u64,
+}
+
+impl SnapshotPayloadInventory {
+    fn observe(&mut self, reference: &PayloadReference) -> Result<(), StoreError> {
+        self.owners = self.owners.checked_add(1).ok_or(StoreError::Capacity)?;
+        self.bytes = self
+            .bytes
+            .checked_add(reference.payload.size)
+            .ok_or(StoreError::Capacity)?;
+        if self.owners > SNAPSHOT_ROWS || self.bytes > SNAPSHOT_FILE_BYTES {
+            return Err(StoreError::Capacity);
+        }
+        Ok(())
+    }
+
+    fn present(self) -> Option<Self> {
+        (self.owners != 0).then_some(self)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct SnapshotManifest {
@@ -142,6 +172,8 @@ pub struct SnapshotManifest {
     pub rows: u64,
     pub logical_bytes: u64,
     pub rows_digest: [u8; 32],
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub payloads: Option<SnapshotPayloadInventory>,
     #[serde(deserialize_with = "limits::inventory")]
     inventory: Vec<InventoryEntry>,
 }
@@ -165,7 +197,12 @@ impl SnapshotManifest {
 
     pub fn validate(&self) -> Result<(), StoreError> {
         self.metadata.validate()?;
-        if self.format != "latent.offline-snapshot.v2" || self.engine != ENGINE {
+        let format = if self.payloads.is_some() {
+            PAYLOAD_FORMAT
+        } else {
+            LOGICAL_FORMAT
+        };
+        if self.format != format || self.engine != ENGINE {
             return Err(StoreError::UnsupportedFormat);
         }
         if crate::store_identity::StoreIdentity::decode(&self.source_store_identity)?.encode()
@@ -179,6 +216,11 @@ impl SnapshotManifest {
             || self.rows > SNAPSHOT_ROWS
             || self.logical_bytes > SNAPSHOT_LOGICAL_BYTES
             || self.rows_digest == [0; 32]
+            || self.payloads.is_some_and(|payloads| {
+                payloads.owners == 0
+                    || payloads.owners > self.rows
+                    || payloads.bytes > SNAPSHOT_FILE_BYTES
+            })
         {
             return Err(StoreError::Capacity);
         }
@@ -249,6 +291,18 @@ pub struct SnapshotClosure {
     pub required_artifacts: Vec<RequiredArtifact>,
 }
 
+/// An installed provider streams the exact original owner's immutable bytes
+/// on the protected store worker and within the original recovery deadline.
+pub trait SnapshotPayloadSource: Send {
+    fn stream(
+        &mut self,
+        view: &ReadView,
+        key: &RowKey,
+        value: &[u8],
+        output: &mut dyn FnMut(&[u8]) -> Result<(), SnapshotError>,
+    ) -> Result<(), SnapshotError>;
+}
+
 /// Source-engine faults are separate from operator-file, review and deadline
 /// refusal. A failed output never quarantines a healthy source database.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -311,6 +365,7 @@ pub(crate) fn export_snapshot(
         deadline,
         |view| validate(view).map_err(SnapshotError::source),
         verify_artifact,
+        None,
     )
 }
 
@@ -323,6 +378,7 @@ pub(crate) fn export_reviewed_snapshot(
     deadline: Instant,
     validate: impl FnOnce(&ReadView) -> Result<SnapshotClosure, SnapshotError>,
     mut verify_artifact: impl FnMut(&RequiredArtifact) -> Result<(), StoreError>,
+    mut payload_source: Option<&mut (dyn SnapshotPayloadSource + 'static)>,
 ) -> Result<SnapshotReceipt, SnapshotError> {
     metadata.validate().map_err(SnapshotError::Review)?;
     validate_deadline(deadline).map_err(SnapshotError::source)?;
@@ -344,16 +400,38 @@ pub(crate) fn export_reviewed_snapshot(
     for artifact in &metadata.required_artifacts {
         verify_artifact(artifact).map_err(SnapshotError::Review)?;
     }
+    let includes_payloads =
+        !payload_references::required_owner_page(&view, None, 1, MAX_REFERENCE_BYTES)
+            .map_err(SnapshotError::source)?
+            .references
+            .is_empty();
+    if includes_payloads && payload_source.is_none() {
+        return Err(SnapshotError::Review(StoreError::UnsupportedFormat));
+    }
+    let mut payloads = SnapshotPayloadInventory::default();
     let mut sink = SnapshotWriter {
         output,
         hash: Sha256::new(),
         bytes: 0,
         deadline,
     };
-    sink.write(MAGIC)?;
+    sink.write(if includes_payloads {
+        PAYLOAD_MAGIC
+    } else {
+        MAGIC
+    })?;
     let observed = visit_view_checked(&view, deadline, |header, key, value| {
         for bytes in [&header[..], &key.key, value] {
             sink.write(bytes)?;
+        }
+        if let Some(reference) = payload_owner(key, value).map_err(SnapshotError::source)? {
+            payloads
+                .observe(&reference)
+                .map_err(SnapshotError::Review)?;
+            let source = payload_source
+                .as_deref_mut()
+                .ok_or(SnapshotError::Review(StoreError::UnsupportedFormat))?;
+            sink.write_payload(source, &view, key, value, &reference)?;
         }
         Ok(())
     })
@@ -362,7 +440,12 @@ pub(crate) fn export_reviewed_snapshot(
         RowWalkError::Visit(error) => error,
     })?;
     let manifest = SnapshotManifest {
-        format: "latent.offline-snapshot.v2".into(),
+        format: if includes_payloads {
+            PAYLOAD_FORMAT
+        } else {
+            LOGICAL_FORMAT
+        }
+        .into(),
         engine: ENGINE.into(),
         source_store_identity,
         metadata,
@@ -370,6 +453,7 @@ pub(crate) fn export_reviewed_snapshot(
         rows: observed.rows,
         logical_bytes: observed.logical_bytes,
         rows_digest: observed.digest,
+        payloads: payloads.present(),
         inventory: inventory
             .entries()
             .iter()
@@ -397,6 +481,16 @@ pub(crate) fn export_reviewed_snapshot(
         file_bytes: sink.bytes,
         manifest,
     })
+}
+
+fn payload_owner(key: &RowKey, value: &[u8]) -> Result<Option<PayloadReference>, StoreError> {
+    if !payload_references::owns_row(key) {
+        return Ok(None);
+    }
+    let Some(reference) = payload_references::owner_reference(key, value)? else {
+        return Ok(None);
+    };
+    Ok((reference.owner_key()? == *key).then_some(reference))
 }
 
 /// Descriptive summary of one bounded coherent native row walk. It provides
@@ -585,6 +679,10 @@ pub(crate) fn visit_snapshot_rows_bounded(
     row_bytes: usize,
     namespace_count: usize,
 ) -> Result<(), StoreError> {
+    // The logical importer has no protected destination blob owner.
+    if expected.manifest.payloads.is_some() {
+        return Err(StoreError::UnsupportedFormat);
+    }
     input
         .seek(SeekFrom::Start(0))
         .map_err(|_| StoreError::Unavailable)?;
@@ -622,11 +720,14 @@ fn inspect_stream_with_visit(
         row_bytes,
         namespace_count,
     };
-    if reader.read(MAGIC.len())? != MAGIC {
+    let magic = reader.read(MAGIC.len())?;
+    let includes_payloads = magic == PAYLOAD_MAGIC;
+    if !includes_payloads && magic != MAGIC {
         return Err(StoreError::UnsupportedFormat);
     }
     let mut rows = 0u64;
     let mut logical_bytes = 0u64;
+    let mut payloads = SnapshotPayloadInventory::default();
     let mut rows_hash = Sha256::new();
     let mut previous = None::<(Family, Vec<u8>)>;
     let mut namespaces = Vec::new();
@@ -691,6 +792,13 @@ fn inspect_stream_with_visit(
         rows_hash.update(&rest);
         rows_hash.update(&key.key);
         rows_hash.update(&value);
+        if let Some(reference) = payload_owner(&key, &value)? {
+            if !includes_payloads {
+                return Err(StoreError::UnsupportedFormat);
+            }
+            payloads.observe(&reference)?;
+            reader.read_payload(&reference)?;
+        }
         previous = Some((family, key.key.clone()));
         visit(key, value)?;
     }
@@ -700,12 +808,16 @@ fn inspect_stream_with_visit(
     {
         return Err(StoreError::Corrupt);
     }
+    if includes_payloads != payloads.present().is_some() {
+        return Err(StoreError::Corrupt);
+    }
     reader.finish(
         rows,
         logical_bytes,
         rows_hash.finalize().into(),
         &namespaces,
         source_store_identity.as_deref(),
+        payloads.present(),
     )
 }
 
@@ -887,6 +999,7 @@ impl<R: Read> SnapshotReader<'_, R> {
         rows_digest: [u8; 32],
         namespaces: &[Vec<u8>],
         source_store_identity: Option<&[u8]>,
+        payloads: Option<SnapshotPayloadInventory>,
     ) -> Result<SnapshotReceipt, StoreError> {
         let manifest_bytes = usize::try_from(u32::from_le_bytes(
             self.read(4)?.try_into().map_err(|_| StoreError::Corrupt)?,
@@ -910,6 +1023,7 @@ impl<R: Read> SnapshotReader<'_, R> {
             || manifest.rows != rows
             || manifest.logical_bytes != logical_bytes
             || manifest.rows_digest != rows_digest
+            || manifest.payloads != payloads
             || source_store_identity != Some(manifest.source_store_identity.as_slice())
             || namespaces.iter().ne(manifest
                 .namespaces
@@ -937,27 +1051,78 @@ impl<R: Read> SnapshotReader<'_, R> {
     }
 
     fn read(&mut self, length: usize) -> Result<Vec<u8>, StoreError> {
-        checkpoint(self.deadline)?;
         if length > 4 * 1024 * 1024 {
             return Err(StoreError::Capacity);
         }
+        let mut bytes = vec![0u8; length];
+        self.read_exact(&mut bytes)?;
+        Ok(bytes)
+    }
+
+    fn read_payload(&mut self, reference: &PayloadReference) -> Result<(), StoreError> {
+        if self.read(1)? != [2] {
+            return Err(StoreError::Corrupt);
+        }
+        let mut digest = Sha256::new();
+        let mut remaining = reference.payload.size;
+        let mut scratch = [0; PAYLOAD_CHUNK_BYTES];
+        while remaining != 0 {
+            let count = usize::try_from(remaining.min(scratch.len() as u64))
+                .map_err(|_| StoreError::Capacity)?;
+            let chunk = &mut scratch[..count];
+            self.read_exact(chunk)?;
+            digest.update(chunk);
+            remaining -= count as u64;
+        }
+        if <[u8; 32]>::from(digest.finalize()) != reference.payload.digest {
+            return Err(StoreError::Corrupt);
+        }
+        Ok(())
+    }
+
+    fn read_exact(&mut self, bytes: &mut [u8]) -> Result<(), StoreError> {
+        checkpoint(self.deadline)?;
         let next = self
             .bytes
-            .checked_add(u64::try_from(length).map_err(|_| StoreError::Capacity)?)
+            .checked_add(u64::try_from(bytes.len()).map_err(|_| StoreError::Capacity)?)
             .ok_or(StoreError::Capacity)?;
         if next > SNAPSHOT_FILE_BYTES {
             return Err(StoreError::Capacity);
         }
-        let mut bytes = vec![0u8; length];
         self.input
-            .read_exact(&mut bytes)
+            .read_exact(bytes)
             .map_err(|_| StoreError::Corrupt)?;
-        self.hash.update(&bytes);
+        self.hash.update(bytes);
         self.bytes = next;
-        Ok(bytes)
+        Ok(())
     }
 }
 impl<W: Write> SnapshotWriter<'_, W> {
+    fn write_payload(
+        &mut self,
+        source: &mut dyn SnapshotPayloadSource,
+        view: &ReadView,
+        key: &RowKey,
+        value: &[u8],
+        reference: &PayloadReference,
+    ) -> Result<(), SnapshotError> {
+        self.write(&[2])?;
+        let mut remaining = reference.payload.size;
+        let mut digest = Sha256::new();
+        source.stream(view, key, value, &mut |chunk| {
+            let count = u64::try_from(chunk.len()).map_err(|_| SnapshotError::Capacity)?;
+            remaining = remaining
+                .checked_sub(count)
+                .ok_or(SnapshotError::Review(StoreError::Corrupt))?;
+            self.write(chunk)?;
+            digest.update(chunk);
+            Ok(())
+        })?;
+        if remaining != 0 || <[u8; 32]>::from(digest.finalize()) != reference.payload.digest {
+            return Err(SnapshotError::Review(StoreError::Corrupt));
+        }
+        Ok(())
+    }
     fn write(&mut self, bytes: &[u8]) -> Result<(), SnapshotError> {
         checkpoint(self.deadline).map_err(SnapshotError::source)?;
         let next = self

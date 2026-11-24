@@ -69,7 +69,15 @@ Namespace inspection also checks required local payloads when the protected
 configuration selects the original durable blob installation. Recovery reopens
 the existing store and blob owner with the configured mode and verifies the
 retained references and bytes. Missing, corrupt or foreign payloads refuse the
-inspection. Snapshot, restore and migration still require an inline-only store.
+inspection.
+
+Snapshot export carries linked local payloads in a protected v3 archive.
+`manifest.payloads` counts the independently retained owners and the bytes
+exported for them. The archive places each byte stream after its exact owner
+row, and readback checks its length and digest. The configured snapshot file
+limit includes these bytes. Inline-only snapshots retain the v2 format.
+Keep the original provider directory and state until a restore can be staged
+and verified. Restore and migration currently require an inline-only archive.
 
 When the archive contains anchored inbox sources, restore inspection and
 staging report `inboxReplay` with the exact source inventory generation and

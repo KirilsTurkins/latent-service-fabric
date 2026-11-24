@@ -170,9 +170,20 @@ impl Codecs {
     }
     pub fn row(&self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
         self.check()?;
-        // This codec checks portable archive rows. The archive format carries
-        // logical rows but has no protected stream for provider-owned bytes.
-        super::super::validation::reject_unverified_payload(key, bytes)?;
+        // Only export has the original verified payload source. Restore and
+        // migration need their own protected destination before accepting it.
+        if matches!(self.action, Action::Snapshot { .. }) {
+            use latent_state::payload_references;
+            if payload_references::owns_row(key) {
+                return if payload_references::row_tenant(key, bytes)? == self.namespace.tenant.0 {
+                    Ok(())
+                } else {
+                    Err(StoreError::Conflict)
+                };
+            }
+        } else {
+            super::super::validation::reject_unverified_payload(key, bytes)?;
+        }
         match latent_state::inbox_scope::retained_scope(key, bytes) {
             Ok(scope) => {
                 return if scope.tenant == self.namespace.tenant.0

@@ -588,9 +588,10 @@ async fn snapshot(
     let artifact = Arc::clone(&codecs);
     let row = Arc::clone(&codecs);
     let current = Arc::clone(&codecs);
+    let payload_source = snapshot_payload_source(&codecs);
     let (snapshot, result) = awaited(
         store
-            .create_reviewed_snapshot_profile(
+            .create_reviewed_snapshot_with_payloads(
                 file_config(file),
                 metadata,
                 Arc::clone(&codecs.original),
@@ -603,6 +604,7 @@ async fn snapshot(
                 Arc::new(move || current.check()),
                 codecs.authority.file_bytes,
                 latent_state::protected_store::ProtectedSnapshotProfile::SingleNamespace,
+                payload_source,
             )
             .map_err(protected)?,
         &codecs,
@@ -619,6 +621,91 @@ async fn snapshot(
         });
     }
     Ok(report)
+}
+
+fn snapshot_payload_source(
+    codecs: &Arc<Codecs>,
+) -> Option<Box<dyn latent_state::recovery::snapshot::SnapshotPayloadSource>> {
+    #[cfg(target_os = "linux")]
+    if codecs.payloads.is_some() {
+        return Some(Box::new(SnapshotPayloads(Arc::clone(codecs))));
+    }
+    let _ = codecs;
+    None
+}
+
+#[cfg(target_os = "linux")]
+struct SnapshotPayloads(Arc<Codecs>);
+
+#[cfg(target_os = "linux")]
+impl latent_state::recovery::snapshot::SnapshotPayloadSource for SnapshotPayloads {
+    fn stream(
+        &mut self,
+        view: &latent_state::embedded::ReadView,
+        key: &latent_state::embedded::RowKey,
+        value: &[u8],
+        output: &mut dyn FnMut(
+            &[u8],
+        )
+            -> Result<(), latent_state::recovery::snapshot::SnapshotError>,
+    ) -> Result<(), latent_state::recovery::snapshot::SnapshotError> {
+        use latent_blobs::local::LocalBlobError;
+        use latent_core::native_capacity::NativeBufferClass;
+        use latent_state::recovery::snapshot::SnapshotError;
+
+        let codecs = &self.0;
+        codecs.check().map_err(SnapshotError::Review)?;
+        let (store, provider) = codecs
+            .payloads
+            .as_ref()
+            .ok_or(SnapshotError::Review(StoreError::UnsupportedFormat))?;
+        let reference = latent_state::payload_references::owner_reference(key, value)
+            .map_err(SnapshotError::Review)?
+            .ok_or(SnapshotError::Review(StoreError::Corrupt))?;
+        if reference.payload.tenant != provider.tenant
+            || reference.payload.provider != provider.id
+            || reference.payload.provider_epoch != provider.epoch
+            || reference.owner.namespace != codecs.namespace.id.0
+            || reference.owner.incarnation != codecs.namespace.version.incarnation
+        {
+            return Err(SnapshotError::Review(StoreError::UnsupportedFormat));
+        }
+        let mut scratch = [0; 8192];
+        let _memory = codecs
+            .original
+            .reserve_buffer(NativeBufferClass::Work, scratch.len() as u64)
+            .map_err(|_| SnapshotError::Capacity)?;
+        let mut output_error = None;
+        let transferred = store.stream_required_reference(
+            view,
+            key,
+            value,
+            &mut scratch,
+            |chunk| {
+                output(chunk).map_err(|error| {
+                    output_error = Some(error);
+                    LocalBlobError::Unavailable
+                })
+            },
+            &|| codecs.check().map_err(|_| LocalBlobError::Cancelled),
+        );
+        if let Some(error) = output_error {
+            return Err(error);
+        }
+        transferred.map_err(|error| {
+            SnapshotError::Review(match error {
+                LocalBlobError::Corrupt | LocalBlobError::NotFound | LocalBlobError::Invalid => {
+                    StoreError::Corrupt
+                }
+                LocalBlobError::PermissionDenied => StoreError::UnsupportedFormat,
+                LocalBlobError::Capacity => StoreError::Capacity,
+                LocalBlobError::Cancelled | LocalBlobError::DeadlineExceeded => {
+                    StoreError::SnapshotExpired
+                }
+                _ => StoreError::Unavailable,
+            })
+        })
+    }
 }
 
 async fn metadata_action(

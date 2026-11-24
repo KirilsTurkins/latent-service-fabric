@@ -5,7 +5,7 @@ use super::{
     model, record, Arc, LocalBlobError, LocalBlobLimits, LocalBlobReader, LocalBlobStore,
     LocalReferenceInventory, LocalReferencePage, Ordering, Path, Result, TenantId, RECORD_BYTES,
 };
-use crate::BlobReference;
+use crate::{BlobRange, BlobReference};
 use latent_state::{
     embedded::{EmbeddedStore, ReadView, RowKey, StoreBinding, StoreError},
     payload_references::{
@@ -14,6 +14,7 @@ use latent_state::{
     store_identity::StoreIdentity,
 };
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 mod required;
 pub use required::RequiredBlobInventory;
@@ -248,6 +249,59 @@ impl LocalBlobStore {
         bytes: &[u8],
         checkpoint: &dyn Fn() -> Result<()>,
     ) -> Result<()> {
+        let (reader, _) = self.open_required_reference(view, key, bytes, checkpoint)?;
+        drop(reader);
+        checkpoint()?;
+        let _ = view.is_empty().map_err(storage)?;
+        self.check_owner()
+    }
+
+    /// Copy the exact bytes of one retained owner into a staged recovery sink.
+    /// The caller authorizes the provider and supplies prepaid scratch and a
+    /// bounded, private destination. An error invalidates any bytes already
+    /// delivered to the sink. The physical reader stays pinned until return.
+    pub fn stream_required_reference(
+        &self,
+        view: &ReadView,
+        key: &RowKey,
+        bytes: &[u8],
+        scratch: &mut [u8],
+        mut write_chunk: impl FnMut(&[u8]) -> Result<()>,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<()> {
+        let chunk_bytes = scratch.len().min(self.inner.limits.maximum_chunk_bytes);
+        if chunk_bytes == 0 {
+            return Err(LocalBlobError::Capacity);
+        }
+        let (reader, expected_digest) =
+            self.open_required_reference(view, key, bytes, checkpoint)?;
+        let mut digest = Sha256::new();
+        let mut offset = 0_u64;
+        let size = reader.reference().size_bytes;
+        while offset < size {
+            let _ = view.is_empty().map_err(storage)?;
+            let length = (size - offset).min(chunk_bytes as u64);
+            let chunk = &mut scratch[..usize::try_from(length).expect("bounded chunk size")];
+            reader.read(&BlobRange { offset, length }, chunk, checkpoint)?;
+            digest.update(&*chunk);
+            write_chunk(chunk)?;
+            offset += length;
+        }
+        if <[u8; 32]>::from(digest.finalize()) != expected_digest {
+            return Err(LocalBlobError::Corrupt);
+        }
+        checkpoint()?;
+        let _ = view.is_empty().map_err(storage)?;
+        self.check_owner()
+    }
+
+    fn open_required_reference(
+        &self,
+        view: &ReadView,
+        key: &RowKey,
+        bytes: &[u8],
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<(LocalBlobReader, [u8; 32])> {
         let mode = self.inner.durable.as_ref().ok_or(LocalBlobError::Invalid)?;
         let binding = self
             .inner
@@ -297,10 +351,7 @@ impl LocalBlobStore {
                 LocalBlobError::NotFound => LocalBlobError::Corrupt,
                 other => other,
             })?;
-        drop(reader);
-        checkpoint()?;
-        let _ = view.is_empty().map_err(storage)?;
-        self.check_owner()
+        Ok((reader, reference.payload.digest))
     }
 
     /// Trusted setup on the fixed native storage owner. The actual selected
