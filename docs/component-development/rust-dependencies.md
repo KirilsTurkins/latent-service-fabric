@@ -31,6 +31,22 @@ python tools/rust_capsule.py dependencies ./my-rust
 python tools/rust_capsule.py build ./my-rust --offline --output ./my-rust/target/build-1 --repository https://github.com/example/application
 ```
 
+## Ship a JSON resource with an HTTP client
+
+Place `price-card.json` next to the outside crate's `src/lib.rs`. The Rust
+compiler embeds its bytes, so the application can read the resource after the
+original crate directory has been removed. In the HTTP example, each private
+crate uses `serde_json::from_slice(include_bytes!("price-card.json"))` to parse
+the expected price card. It fetches a card with `waki::Client::new()` or
+`golem_wasi_http::Client::new()` and compares the two parsed values. Both
+clients also handle a JSON error body from a real HTTP 404 response.
+
+The example pins the existing transitive `ahash` dependency to `0.8.12` in
+the outside crate's `Cargo.toml`. This keeps the offline build within the
+sixteen executable inputs reviewed for this example. The capture and signed
+results include both tenant deployments and their peer observations.
+[Private library evidence](../testing/evidence/sdk-private-library-invocations-2026-11-23.json)
+
 ## Call a local crate from the greeting handler
 
 Create a crate outside the capsule project. In its `Cargo.toml`, set the

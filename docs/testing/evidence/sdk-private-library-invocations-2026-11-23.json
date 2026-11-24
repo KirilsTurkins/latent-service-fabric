@@ -1325,5 +1325,432 @@
     },
     "publisherAuthenticated": false,
     "hermetic": false
+  },
+  "additionalRustPrivateResourceHttp": {
+    "observedOn": "2026-11-24",
+    "nativeAndBackendSource": "9f75d2d8a5e0c19243da1f97f19b089cfd8043e5",
+    "nativeProductReceipt": "sha256:74cd8e0373c99dca02b302b0f6dfd8605cc44a0e01a13855e96f08ece227dfb6",
+    "backendReceipt": {
+      "sha256": "sha256:8a522e39e282f6bcd2a877edcb2b570da8196d4ff9cefb27bea2a6f075276086",
+      "bytes": 4443
+    },
+    "environment": "Local Linux x86_64 on WSL. The standalone run used the source-built HTTP adapter and native products from the same revision.",
+    "qualification": "Outside crates generated for this run. Their captured src/lib.rs, Cargo.toml and price-card.json inventories were compared with the maintained fixture generated with the same nonce.",
+    "localBuildReceipt": "sha256:f6e1f143a74123b7584498165f110f5d9e488d3b2fc7d7788342608908d42bb0",
+    "captureReceipt": "sha256:7c662109e833b620279b54ad5061d6ae57f88ae2f4a1aebfcd49d43eacf324e7",
+    "nodeReceipt": "sha256:a7b0a65c45c485e116fdb429fb1174816194836e5eb505aed7f988b25b4521bf",
+    "privatePackages": [
+      {
+        "package": {
+          "package": "outside-wasi-http-alpha-a2a9169dc8a9deaf",
+          "version": "1.41642.5790",
+          "alias": "alpha"
+        },
+        "includeBytes": {
+          "sha256": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+          "bytes": 57
+        },
+        "sourceInventory": "sha256:0beb956fde9baa7b2c3f3cb41aa5b3d4c8feb447c2042690ed6c1ffd9c8051ef"
+      },
+      {
+        "package": {
+          "package": "outside-wasi-http-delta-a2a9169dc8a9deaf",
+          "version": "2.41642.5790",
+          "alias": "delta"
+        },
+        "includeBytes": {
+          "sha256": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+          "bytes": 57
+        },
+        "sourceInventory": "sha256:51a9276c537b49317a7705950b09cb6ed9ae8a68cb4ef01be2c903b536d953c2"
+      }
+    ],
+    "clients": [
+      {
+        "package": "waki",
+        "version": "0.5.1",
+        "artifact": "waki/0.5.1/ac90bfd6cc544efa",
+        "archiveSha256": "sha256:6e2db2daf1dfbadf228fd8b3c22b96a359135fd673b3d2c203274ee6a0df9c77",
+        "capturedOriginal": {
+          "digest": "sha256:e197211d80e8d66faa724fb8e255588a2078f290aa127f04c021cf4cbf3d2158",
+          "size": 7146
+        },
+        "selectedFeatures": [
+          "json"
+        ]
+      },
+      {
+        "package": "golem-wasi-http",
+        "version": "0.2.0",
+        "artifact": "golem-wasi-http/0.2.0/9cc6ac8d6b6c6b0f",
+        "archiveSha256": "sha256:6e80794383f6d363e1f756c5ec9fa6ca0459824e54f9eef53b6b03491fb9d166",
+        "capturedOriginal": {
+          "digest": "sha256:8aa3f291ea1c35aeb569e08c457b6e7b53946c9af06c59f84e651885ee52feb4",
+          "size": 2593
+        },
+        "selectedFeatures": [
+          "default",
+          "json"
+        ]
+      }
+    ],
+    "originalLibrariesRemoved": true,
+    "implicitExecutableApproval": false,
+    "catalogueRegistration": false,
+    "applicationTransportInjected": false,
+    "libraryCodePatched": false,
+    "beforePin": {
+      "candidateDigest": "sha256:4e9717b3f9eabf4f18678c0b3a2eecea1256506cbee50505c69a68e16cca0aba",
+      "ahash": "0.8.13",
+      "executableInputs": 21,
+      "additionalBuildInputs": [
+        {
+          "package": "getrandom",
+          "version": "0.4.3"
+        },
+        {
+          "package": "rustversion",
+          "version": "1.0.23"
+        },
+        {
+          "package": "wasm-bindgen",
+          "version": "0.2.130"
+        },
+        {
+          "package": "wasm-bindgen-macro",
+          "version": "0.2.130"
+        },
+        {
+          "package": "wasm-bindgen-shared",
+          "version": "0.2.130"
+        }
+      ],
+      "result": "Fixture refused the changed executable set during capture."
+    },
+    "acceptedCandidate": "sha256:b4dc28093860953823bfb9ae64df3a65286f1bfaf153f6b6b7db5d734c50e21a",
+    "sdkLockDigest": "sha256:e3575b78c98e77794f2461f990795c635d560d91bab63c477ed9125bbb66906c",
+    "explicitlyApprovedBuildInputs": [
+      {
+        "package": "ahash",
+        "version": "0.8.12",
+        "archiveSha256": "5a15f179cd60c4584b8a8c596927aadc462e27f2ca70c04e0071964a73ba7a75"
+      },
+      {
+        "package": "displaydoc",
+        "version": "0.2.7",
+        "archiveSha256": "c6232dd377dcc64799954cbd3a9bb882e9cdc1308ccd87b1c098f1fb2eaf82a8"
+      },
+      {
+        "package": "icu_normalizer_data",
+        "version": "2.4.0",
+        "archiveSha256": "20f0088bfb7441f7a37fa0c9e20cb1e9cba1cac6b9ce8cd2a6dc44294f8e8cbc"
+      },
+      {
+        "package": "icu_properties_data",
+        "version": "2.4.0",
+        "archiveSha256": "b98f29af82d02b163fe50161388350e743bb3107cc8e8c2f7314cb505faddfcf"
+      },
+      {
+        "package": "prettyplease",
+        "version": "0.2.37",
+        "archiveSha256": "479ca8adacdd7ce8f1fb39ce9ecccbfe93a3f1344b3d0d97f20bc0196208f62b"
+      },
+      {
+        "package": "serde_json",
+        "version": "1.0.149",
+        "archiveSha256": "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
+      },
+      {
+        "package": "waki-macros",
+        "version": "0.5.1",
+        "archiveSha256": "a061143f321cc5eeb523f60bdbcd45cfc3ee8851f8cf24f7a4b963bddc5642eb"
+      },
+      {
+        "package": "wit-bindgen-rt",
+        "version": "0.34.0",
+        "archiveSha256": "744845cde309b8fa32408d6fb67456449278c66ea4dcd96de29797b302721f02"
+      },
+      {
+        "package": "wit-bindgen-rust-macro",
+        "version": "0.34.0",
+        "archiveSha256": "c967731fc5d50244d7241ecfc9302a8929db508eea3c601fbc5371b196ba38a5"
+      },
+      {
+        "package": "wit-bindgen-rust",
+        "version": "0.34.0",
+        "archiveSha256": "f6919521fc7807f927a739181db93100ca7ed03c29509b84d5f96b27b2e49a9a"
+      },
+      {
+        "package": "wit-bindgen",
+        "version": "0.57.1",
+        "archiveSha256": "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
+      },
+      {
+        "package": "yoke-derive",
+        "version": "0.8.4",
+        "archiveSha256": "ec8ebde2db3681e8c9980cc27822030e68752690ddfa9473e739aeb4dbde6d71"
+      },
+      {
+        "package": "zerocopy-derive",
+        "version": "0.8.64",
+        "archiveSha256": "a5cbd820fe3e35fb38c83b6dc7e6b1618bc46e0cd10073ae94e8d52dc468d8b9"
+      },
+      {
+        "package": "zerocopy",
+        "version": "0.8.64",
+        "archiveSha256": "ed43f3060383c64b000f3c630550aebdfa9d3b76d48de32390483dd2cc7e0865"
+      },
+      {
+        "package": "zerofrom-derive",
+        "version": "0.1.8",
+        "archiveSha256": "f75b4683f6c7f45248d4d64056a24298c6281e0993356d7d1b4a1a962ef10d4a"
+      },
+      {
+        "package": "zerovec-derive",
+        "version": "0.11.7",
+        "archiveSha256": "c3743ddbf47738d929cd1ae2e199d40d0162979dfe31aef8ae646d2bf00bf97a"
+      }
+    ],
+    "offlineBuildMarker": "sha256:327d5b342121abca3f47ba9397c95eaa18135797bde2d4931bebe51a7f7a89b3",
+    "component": {
+      "sha256": "sha256:2b9e5e34865f5e6fa45c193ef5b0f3805faf1c1413da977d0ea00c1ab349cad3",
+      "bytes": 964369
+    },
+    "signedDeployments": 2,
+    "signedGuestExecutions": 16,
+    "invocationBudget": {
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "childCalls": 0,
+      "cpuFuel": 1000000000,
+      "effectCount": 0,
+      "logBytes": 0,
+      "memoryBytes": 16777216,
+      "outboundRequests": 8,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "wallTimeLimitMillis": 5000
+    },
+    "preEntryRefusals": [
+      {
+        "tenant": "examples",
+        "exitCode": 4,
+        "code": "permission-denied",
+        "guestFuel": 0,
+        "outboundRequests": 0,
+        "peerContacts": 0
+      },
+      {
+        "tenant": "foreign",
+        "exitCode": 4,
+        "code": "permission-denied",
+        "guestFuel": 0,
+        "outboundRequests": 0,
+        "peerContacts": 0
+      }
+    ],
+    "cases": [
+      {
+        "case": "examples-private-0-json",
+        "tenant": "examples",
+        "client": "waki",
+        "privateCrate": "alpha",
+        "reply": "fresh:waki:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "109984",
+        "peakMemoryBytes": "8044850"
+      },
+      {
+        "case": "foreign-private-0-json",
+        "tenant": "foreign",
+        "client": "waki",
+        "privateCrate": "alpha",
+        "reply": "fresh:waki:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "109984",
+        "peakMemoryBytes": "8044870"
+      },
+      {
+        "case": "examples-private-1-json",
+        "tenant": "examples",
+        "client": "waki",
+        "privateCrate": "delta",
+        "reply": "fresh:waki:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "109995",
+        "peakMemoryBytes": "8044850"
+      },
+      {
+        "case": "foreign-private-1-json",
+        "tenant": "foreign",
+        "client": "waki",
+        "privateCrate": "delta",
+        "reply": "fresh:waki:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "109995",
+        "peakMemoryBytes": "8044870"
+      },
+      {
+        "case": "examples-private-2-json",
+        "tenant": "examples",
+        "client": "golem",
+        "privateCrate": "alpha",
+        "reply": "fresh:golem:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "140892",
+        "peakMemoryBytes": "10129042"
+      },
+      {
+        "case": "foreign-private-2-json",
+        "tenant": "foreign",
+        "client": "golem",
+        "privateCrate": "alpha",
+        "reply": "fresh:golem:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "140892",
+        "peakMemoryBytes": "10129061"
+      },
+      {
+        "case": "examples-private-3-json",
+        "tenant": "examples",
+        "client": "golem",
+        "privateCrate": "delta",
+        "reply": "fresh:golem:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "140903",
+        "peakMemoryBytes": "10129044"
+      },
+      {
+        "case": "foreign-private-3-json",
+        "tenant": "foreign",
+        "client": "golem",
+        "privateCrate": "delta",
+        "reply": "fresh:golem:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "140903",
+        "peakMemoryBytes": "10129061"
+      },
+      {
+        "case": "examples-private-4-http404",
+        "tenant": "examples",
+        "client": "waki",
+        "privateCrate": "alpha",
+        "reply": "fresh:waki:404:domain-error",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "92398",
+        "peakMemoryBytes": "8044900"
+      },
+      {
+        "case": "foreign-private-4-http404",
+        "tenant": "foreign",
+        "client": "waki",
+        "privateCrate": "alpha",
+        "reply": "fresh:waki:404:domain-error",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "92398",
+        "peakMemoryBytes": "8044920"
+      },
+      {
+        "case": "examples-private-5-http404",
+        "tenant": "examples",
+        "client": "golem",
+        "privateCrate": "alpha",
+        "reply": "fresh:golem:404:domain-error",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "124739",
+        "peakMemoryBytes": "10129113"
+      },
+      {
+        "case": "foreign-private-5-http404",
+        "tenant": "foreign",
+        "client": "golem",
+        "privateCrate": "alpha",
+        "reply": "fresh:golem:404:domain-error",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "124739",
+        "peakMemoryBytes": "10129117"
+      },
+      {
+        "case": "examples-private-6-repeat",
+        "tenant": "examples",
+        "client": "waki",
+        "privateCrate": "delta",
+        "reply": "fresh:waki:repeat:200:domain:7:café:first|λ:",
+        "outboundRequests": 2,
+        "peerContacts": 2,
+        "fuel": "210429",
+        "peakMemoryBytes": "8045273"
+      },
+      {
+        "case": "foreign-private-6-repeat",
+        "tenant": "foreign",
+        "client": "waki",
+        "privateCrate": "delta",
+        "reply": "fresh:waki:repeat:200:domain:7:café:first|λ:",
+        "outboundRequests": 2,
+        "peerContacts": 2,
+        "fuel": "210429",
+        "peakMemoryBytes": "8045293"
+      },
+      {
+        "case": "examples-private-7-repeat",
+        "tenant": "examples",
+        "client": "golem",
+        "privateCrate": "delta",
+        "reply": "fresh:golem:repeat:200:domain:7:café:first|λ:",
+        "outboundRequests": 2,
+        "peerContacts": 2,
+        "fuel": "272698",
+        "peakMemoryBytes": "10139843"
+      },
+      {
+        "case": "foreign-private-7-repeat",
+        "tenant": "foreign",
+        "client": "golem",
+        "privateCrate": "delta",
+        "reply": "fresh:golem:repeat:200:domain:7:café:first|λ:",
+        "outboundRequests": 2,
+        "peerContacts": 2,
+        "fuel": "272698",
+        "peakMemoryBytes": "10139849"
+      }
+    ],
+    "tenantPeers": {
+      "examples": {
+        "contacts": 10,
+        "mutations": 0,
+        "completedWrites": 10,
+        "allClosed": true
+      },
+      "foreign": {
+        "contacts": 10,
+        "mutations": 0,
+        "completedWrites": 10,
+        "allClosed": true
+      }
+    },
+    "reaped": true,
+    "shutdown": {
+      "clean": true,
+      "activeConnections": 0,
+      "activeActivations": 0,
+      "liveStores": 0,
+      "liveInstances": 0,
+      "liveHostStates": 0,
+      "instanceReservations": 0
+    },
+    "scope": "Ordinary typed HTTP and crate-owned resources. The signed invocations did not combine this client with standard threads."
   }
 }
