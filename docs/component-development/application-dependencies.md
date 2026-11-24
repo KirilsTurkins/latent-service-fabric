@@ -92,6 +92,17 @@ recorded for each language.
 
 ### Review a compiler execution request
 
+The packaged Linux CLI exercised this workflow with Refit 16.4.0 in two
+clean workspaces. Both used the same eight captured NuGet packages and
+produced the same generator output manifest. The approved build in each
+workspace stayed within the 4 GiB attempt limit, and explicitly selecting the
+approval again reused the same attempt. Omitting it returned a new refusal.
+The component and package digests differed between the independent builds.
+The second component ran 20 signed calls through Flurl, Refit and the private
+library on the matching node. Two additional invocations were refused before
+guest entry, and the peer closed every connection.
+[Packaged commands, build measurements and signed results](../testing/evidence/dotnet-installed-refit-approval-2026-11-24.json)
+
 A captured Cargo build tool, Java annotation processor or NuGet source generator
 can require explicit approval. In a project created from a matching installed
 toolkit, first run the ordinary trusted build. If it stops at
