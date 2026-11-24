@@ -178,7 +178,7 @@ export class DraftClient {
   private last?: Envelope;
   private authorityEpoch = 0;
 
-  constructor(routes: Routes, {fetcher = globalThis.fetch, csrfHeaders = () => ({}), origin = globalThis.location?.origin, initialView}: {
+  constructor(routes: Routes, {fetcher = globalThis.fetch?.bind(globalThis), csrfHeaders = () => ({}), origin = globalThis.location?.origin, initialView}: {
     fetcher?: typeof fetch; csrfHeaders?: () => Record<string, string>; origin?: string; initialView?: DraftView;
   } = {}) {
     if (typeof origin !== 'string' || new URL(origin).origin !== origin || typeof fetcher !== 'function')

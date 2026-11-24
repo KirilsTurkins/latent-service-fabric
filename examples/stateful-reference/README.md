@@ -115,6 +115,9 @@ Pass `--renderer-selection ../renderer-selection.json` to the deployment helper
 with the frontend's current `publication`, `revision` and `deploymentGeneration`.
 Apply the emitted exact GET and HEAD document triggers alongside the draft API
 triggers.
+The local browser fixture uses the loopback origin
+`http://stateful.localhost:19092` so Chromium can generate command identities
+with Web Crypto. Configure that exact origin in the node's browser ingress.
 
 For an incoming edit, pass `--inbox-binding ../protected-inbox-binding.json` to
 the deployment helper and install its `transactionalTrigger` in the node's

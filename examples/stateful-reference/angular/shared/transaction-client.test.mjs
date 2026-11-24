@@ -24,6 +24,17 @@ function response(disposition, {error, revision = '1', units = 3, token = namesp
 }
 function client(fetcher) { return new DraftClient(routes, {origin: 'https://node.example', fetcher}); }
 
+test('the default fetch transport retains its browser receiver', async (context) => {
+  context.mock.method(globalThis, 'fetch', function (url) {
+    assert.equal(this, globalThis);
+    assert.equal(url, 'https://node.example/draft/query?input=WyJkZW1vIl0');
+    return response('query');
+  });
+  const app = new DraftClient(routes, {origin: 'https://node.example'});
+  const result = await app.query('demo');
+  assert.equal(result.value.revision, '1');
+});
+
 test('unavailable query is reported without discarding the original command', async () => {
   const app = client(async () => new Response(JSON.stringify({profile: 'transaction-http-v1',
     disposition: 'query', representation: 'receipt-only', result: null}), {status: 503}));

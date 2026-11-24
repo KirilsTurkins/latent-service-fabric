@@ -19,6 +19,7 @@ from tools.java_transaction_qualification.evidence import Evidence, RecordingCli
 from tools.phase2_operator_process import Process, require, write_json
 from tools.rust_capsule_project import fresh
 from tools.stateful_reference_conductor import Backend, attest_originals, decode, regular, select
+from tools.stateful_reference_deployment import HOST
 
 ROOT = Path(__file__).resolve().parents[1]
 LANGUAGES = ("rust", "c", "typescript", "go", "java", "dotnet")
@@ -50,6 +51,7 @@ def validate_inputs(inputs: dict) -> tuple[str, list[dict]]:
             and (scope != "six-backend-matrix" or set(languages) == set(LANGUAGES)), "exact-app-guest-matrix")
     require(isinstance(inputs["browser"], dict) and set(inputs["browser"]) == {
         "origin", "toolchain", "chrome", "frontend", "users"}, "closed-app-browser-configuration")
+    require(inputs["browser"]["origin"] == f"http://{HOST}", "local-app-browser-origin")
     return scope, plans
 
 

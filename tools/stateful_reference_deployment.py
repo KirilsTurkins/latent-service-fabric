@@ -16,7 +16,7 @@ from tools.dev_workflow.transaction_binding import validate
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = "examples:order-draft/api@1.0.0"
-HOST = "stateful.test:19092"
+HOST = "stateful.localhost:19092"
 MAX_U64 = (1 << 64) - 1
 ENTITIES = ("alice", "bob")
 INBOX_FIELDS = {"id", "principalSubject", "stream", "consumer", "filterSubject",
