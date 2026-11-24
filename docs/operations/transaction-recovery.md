@@ -39,13 +39,13 @@ printf '%s\n' '[]' |
     --incarnation "$Incarnation" --input - --budget "$QueryBudget"
 ```
 
-For this aggregate, `ExpectedVersions` is a JSON file with one entry for
-`aggregate/count`. Use its base64 key `YWdncmVnYXRlL2NvdW50`. Decode the
-query payload's base64 `data` as JSON, then base64-encode its original
-`key-version` byte array for the entry's `version` field. When the query
-observed an absent key, use `{"key":"YWdncmVnYXRlL2NvdW50","absent":true}`
-as that entry. The file contains an array. Use one application-generated
-`ClientKey` for the edit and retain the exact input and expected versions.
+For this aggregate, the expected versions file is a JSON array with one entry
+for the state key at `aggregate/count`. Base64-encode that key and put it in the
+entry's `key` field. Decode the query payload's base64 `data` as JSON and encode its
+original `key-version` byte array as base64 for the entry's `version` field.
+If the query observed an absent key, set the entry's `absent` field to true and
+omit `version`. Use one application-generated `ClientKey` for the edit and retain
+the exact input and expected versions.
 
 ```bash
 printf '%s\n' '[{"delta":1,"reject":false}]' |
