@@ -76,8 +76,10 @@ dev test --workspace "$Workspace" --environment node
 
 Check both the returned value and the peer's request count. The signed C
 example returned `card:7:5:57:1776131770` after one GET. Its empty URL path
-returns the declared `invalid-url` error before calling the library. Also
-exercise a path outside the grant and check that the peer receives no request.
+returns the declared `invalid-url` error before calling the library. With a
+second origin outside the grant, the same guest callback returned `card-status:5`
+and the peer received zero connections. A fresh authorized call returned the
+price card. Both calls left zero activation and provider owners.
 A library's handling of an HTTP 404 is a separate case in which the peer
 actually responds. For a request with an uncertain outcome, use the original
 operation's recovery record before deciding whether to send a new request.
