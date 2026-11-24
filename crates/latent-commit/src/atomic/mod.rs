@@ -18,7 +18,9 @@ pub use captured::{CapturedIntent, IntentCaptureContext};
 pub use census::tenant_census_contribution;
 pub use inbox_replay::inspect_inbox;
 pub use ownership::{AttemptRetirement, PhysicalAttemptWork, RetiredAttempt};
-pub use payload_links::inspect_payload_reference;
+pub use payload_links::{
+    inspect_payload_reference, verify_retained_result_payload, ResultPayloadVerifier,
+};
 pub use record::{
     attempt_row_key, command_row_key, result_row_key, CommandRecord, DurableResult, InboxIdentity,
     SourceIdentity,

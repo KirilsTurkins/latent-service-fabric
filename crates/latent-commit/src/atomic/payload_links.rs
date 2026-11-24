@@ -28,6 +28,50 @@ pub fn inspect_payload_reference(
     validate_linked(view, key, bytes)
 }
 
+/// Trusted protected-store port for a qualified local immutable provider.
+pub type ResultPayloadVerifier = dyn Fn(&ReadView, &RowKey, &[u8], &dyn Fn() -> Result<(), AtomicError>) -> Result<(), AtomicError>
+    + Send
+    + Sync;
+
+/// Verify the physical closure of this authorized, still-retained body before
+/// exposing its inline value. Other owners and receipt-only reads stay separate.
+pub fn verify_retained_result_payload(
+    view: &ReadView,
+    record: &CommandRecord,
+    result: Option<&DurableResult>,
+    verifier: Option<&ResultPayloadVerifier>,
+    checkpoint: &dyn Fn() -> Result<(), AtomicError>,
+) -> Result<(), AtomicError> {
+    let Some(value) = result.and_then(DurableResult::value) else {
+        return Ok(());
+    };
+    let owner = anchor(record)?;
+    let key = owner.row_key()?;
+    let bytes = view.get_bounded(&key, MAX_REFERENCE_BYTES)?;
+    let links = read(view, record)?;
+    let linked = links.as_ref().and_then(|links| {
+        links
+            .references
+            .iter()
+            .find(|reference| reference.owner == owner)
+    });
+    match (linked, bytes.as_deref()) {
+        (Some(reference), Some(bytes)) => {
+            if catalogue::owner_reference(&key, bytes)?.as_ref() != Some(reference) {
+                return Err(AtomicError::Corrupt);
+            }
+            catalogue::validate_row(view, &key, bytes)?;
+            verify_value(reference, value)?;
+            let verify = verifier.ok_or(AtomicError::UnsupportedFormat)?;
+            checkpoint()?;
+            verify(view, &key, bytes, checkpoint)?;
+            checkpoint()
+        }
+        (None, None) => Ok(()),
+        _ => Err(AtomicError::Corrupt),
+    }
+}
+
 pub(super) fn anchor(record: &CommandRecord) -> Result<PayloadOwner, AtomicError> {
     Ok(PayloadOwner {
         tenant: record.key.tenant.clone(),

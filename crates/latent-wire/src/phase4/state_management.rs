@@ -119,6 +119,7 @@ struct Inner {
     dispatcher: Option<latent_effects::runtime::DispatcherManagementPort>,
     recovery_bindings: Option<Vec<StateManagementRecoveryBinding>>,
     command_source: Option<latent_effects::runtime::CommandAdmissionSource>,
+    result_payload_verifier: Option<Arc<latent_commit::atomic::ResultPayloadVerifier>>,
     resident_metadata: Vec<Arc<latent_core::native_capacity::NativeBufferPermit>>,
 }
 struct AdmittedRequest {
@@ -241,6 +242,7 @@ impl StateManagementBackend {
             recovery_bindings: None,
             resident_metadata: memory,
             command_source: None,
+            result_payload_verifier: None,
         })))
     }
 
@@ -305,6 +307,20 @@ impl StateManagementBackend {
             return Err(invalid());
         }
         inner.command_source = Some(source);
+        Ok(self)
+    }
+
+    /// The composition root can install its exact local payload verifier before
+    /// this backend is shared. Result authorization remains independently required.
+    pub fn with_result_payload_verifier(
+        mut self,
+        verifier: Option<Arc<latent_commit::atomic::ResultPayloadVerifier>>,
+    ) -> Result<Self, PlatformError> {
+        let inner = Arc::get_mut(&mut self.0).ok_or_else(invalid)?;
+        if inner.result_payload_verifier.is_some() {
+            return Err(invalid());
+        }
+        inner.result_payload_verifier = verifier;
         Ok(self)
     }
 

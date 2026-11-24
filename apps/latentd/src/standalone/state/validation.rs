@@ -285,45 +285,68 @@ impl PayloadVerifier for LocalPayloadVerifier<'_> {
 }
 
 /// Bind dispatch to the exact local immutable provider that passed protected
-/// startup. The original attempt checks its capacity/deadline during file I/O.
+/// startup. The original attempt checks its capacity and deadline during I/O.
 #[cfg(target_os = "linux")]
 pub(super) fn dispatch_payload_verifier(
     store: std::sync::Arc<latent_blobs::local::LocalBlobStore>,
     provider: crate::config::ProviderIdentity,
 ) -> std::sync::Arc<latent_effects::runtime::DispatchPayloadVerifier> {
-    use latent_blobs::local::LocalBlobError;
     std::sync::Arc::new(move |view, key, bytes, checkpoint| {
-        let reference = latent_state::payload_references::owner_reference(key, bytes)?
-            .ok_or(StoreError::Corrupt)?;
-        if reference.payload.tenant != provider.tenant
-            || reference.payload.provider != provider.id
-            || reference.payload.provider_epoch != provider.epoch
-        {
-            return Err(StoreError::UnsupportedFormat.into());
-        }
-        let reader = store.pin_required_reference(view, key, bytes, &|| {
-            checkpoint().map_err(|_| LocalBlobError::Cancelled)
-        });
-        let reader = match reader {
-            Ok(reader) => reader,
-            Err(LocalBlobError::Cancelled) => {
-                checkpoint()?;
-                return Err(StoreError::Unavailable.into());
-            }
-            Err(error) => {
-                return Err(match error {
-                    LocalBlobError::Corrupt
-                    | LocalBlobError::NotFound
-                    | LocalBlobError::Invalid => StoreError::Corrupt,
-                    LocalBlobError::PermissionDenied => StoreError::UnsupportedFormat,
-                    LocalBlobError::Capacity | LocalBlobError::Busy => StoreError::Capacity,
-                    _ => StoreError::Unavailable,
-                }
-                .into());
-            }
-        };
-        Ok(Box::new(reader))
+        pin_installed_payload(&store, &provider, view, key, bytes, &|| {
+            checkpoint().map_err(latent_effects::dispatch_store::DispatchStoreError::from)
+        })
+        .map(|reader| Box::new(reader) as latent_effects::runtime::DispatchPayloadPin)
     })
+}
+
+#[cfg(target_os = "linux")]
+pub(super) fn result_payload_verifier(
+    store: std::sync::Arc<latent_blobs::local::LocalBlobStore>,
+    provider: crate::config::ProviderIdentity,
+) -> std::sync::Arc<latent_commit::atomic::ResultPayloadVerifier> {
+    std::sync::Arc::new(move |view, key, bytes, checkpoint| {
+        // Result delivery uses the already retained inline bytes; its original
+        // physical reader only performs verification on this worker.
+        pin_installed_payload(&store, &provider, view, key, bytes, checkpoint).map(drop)
+    })
+}
+
+#[cfg(target_os = "linux")]
+fn pin_installed_payload<E: From<StoreError>>(
+    store: &latent_blobs::local::LocalBlobStore,
+    provider: &crate::config::ProviderIdentity,
+    view: &ReadView,
+    key: &RowKey,
+    bytes: &[u8],
+    checkpoint: &dyn Fn() -> Result<(), E>,
+) -> Result<latent_blobs::local::LocalBlobReader, E> {
+    use latent_blobs::local::LocalBlobError;
+    let reference = latent_state::payload_references::owner_reference(key, bytes)?
+        .ok_or(StoreError::Corrupt)?;
+    if reference.payload.tenant != provider.tenant
+        || reference.payload.provider != provider.id
+        || reference.payload.provider_epoch != provider.epoch
+    {
+        return Err(StoreError::UnsupportedFormat.into());
+    }
+    match store.pin_required_reference(view, key, bytes, &|| {
+        checkpoint().map_err(|_| LocalBlobError::Cancelled)
+    }) {
+        Ok(reader) => Ok(reader),
+        Err(LocalBlobError::Cancelled) => {
+            checkpoint()?;
+            Err(StoreError::Unavailable.into())
+        }
+        Err(error) => Err(match error {
+            LocalBlobError::Corrupt | LocalBlobError::NotFound | LocalBlobError::Invalid => {
+                StoreError::Corrupt
+            }
+            LocalBlobError::PermissionDenied => StoreError::UnsupportedFormat,
+            LocalBlobError::Capacity | LocalBlobError::Busy => StoreError::Capacity,
+            _ => StoreError::Unavailable,
+        }
+        .into()),
+    }
 }
 
 /// Return an inbox watermark only after the same physical payload checks.

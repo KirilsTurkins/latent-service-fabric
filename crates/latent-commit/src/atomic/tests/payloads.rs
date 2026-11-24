@@ -1353,6 +1353,51 @@ async fn rejected_result_retains_real_blob_until_response_expiry() {
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn authoritative_rejection_reads_verify_the_original_local_payload() {
+    let fixture = Fixture::new();
+    let name = "verify-result-blob";
+    let claim = fixture.claim(name);
+    let key = fixture.input(name).key;
+    let view = fixture.state.snapshot().unwrap();
+    let rejected =
+        CompleteEnvelope::rejection(&view, claim, "declined".into(), value(b"body"), time(200))
+            .unwrap()
+            .attach_verified_payloads(
+                &view,
+                &fixture.session,
+                vec![PayloadAttachment {
+                    target: PayloadAttachmentTarget::Result,
+                    payload: fixture.capture().await,
+                }],
+            )
+            .unwrap();
+    drop(view);
+    publish_payload_envelope(&fixture, rejected);
+    let view = fixture.state.snapshot().unwrap();
+    let (record, result) = inspect(&view, &key, time(201), |_, _| Ok(())).unwrap();
+    let store = fixture.provider.store().clone();
+    let verifier: &ResultPayloadVerifier = &move |view, key, bytes, checkpoint| {
+        checkpoint()?;
+        store
+            .verify_required_reference(view, key, bytes, &|| Ok(()))
+            .map_err(|_| AtomicError::Corrupt)
+    };
+    assert_eq!(
+        verify_retained_result_payload(&view, &record, result.as_ref(), None, &|| Ok(())),
+        Err(AtomicError::UnsupportedFormat)
+    );
+    assert_eq!(
+        verify_retained_result_payload(&view, &record, result.as_ref(), Some(verifier), &|| {
+            Err(AtomicError::PermissionDenied)
+        }),
+        Err(AtomicError::PermissionDenied)
+    );
+    verify_retained_result_payload(&view, &record, result.as_ref(), Some(verifier), &|| Ok(()))
+        .unwrap();
+    verify_retained_result_payload(&view, &record, None, None, &|| Ok(())).unwrap();
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn response_expiry_keeps_real_shared_effect_blobs_until_reviewed_purge() {
     use latent_effects::{
         authority::EffectTime,

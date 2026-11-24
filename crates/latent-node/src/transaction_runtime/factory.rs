@@ -33,6 +33,7 @@ pub struct TransactionAdmissionOwners {
     time: Arc<dyn CommandTimeSource>,
     command: CommandAdmissionSource,
     native: NativeCapacityOwner,
+    result_payload_verifier: Option<Arc<latent_commit::atomic::ResultPayloadVerifier>>,
     pub(super) lanes: super::entity_queue::EntityQueue,
 }
 impl TransactionAdmissionOwners {
@@ -132,8 +133,19 @@ impl TransactionAdmissionOwners {
             time: Arc::new(super::command_role::CommandClock(command.clone())),
             command,
             native,
+            result_payload_verifier: None,
             lanes,
         })
+    }
+
+    /// Install the composition root's physical result reader before admission.
+    #[must_use]
+    pub fn with_result_payload_verifier(
+        mut self,
+        verifier: Option<Arc<latent_commit::atomic::ResultPayloadVerifier>>,
+    ) -> Self {
+        self.result_payload_verifier = verifier;
+        self
     }
 }
 

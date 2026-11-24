@@ -296,7 +296,19 @@ fn lookup(
         _ => (record, result),
     };
     let payload = matches!(request, contract::Request::LookupCommand(_));
-    let window = ResultWindow::capture(&record, result.as_ref().filter(|_| payload));
+    let body = result.as_ref().filter(|_| payload);
+    atomic::verify_retained_result_payload(
+        &view,
+        &record,
+        body,
+        read.inner.result_payload_verifier.as_deref(),
+        &|| {
+            read.with_namespace(&namespace, &lifecycle, read.deadline, &mut || {})
+                .map_err(|_| AtomicError::PermissionDenied)
+        },
+    )
+    .map_err(native_error)?;
+    let window = ResultWindow::capture(&record, body);
     let owner = Arc::new(ResponseOwner {
         namespace: Arc::new(namespace),
         lifecycle,

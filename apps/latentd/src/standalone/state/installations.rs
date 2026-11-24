@@ -266,7 +266,8 @@ pub(super) async fn load(
                     * latent_artifacts::TRANSACTION_ASSET_RESPONSE_BYTES,
             )?
             .with_dispatcher(effects.management_port())?
-            .with_command_recovery(effects.command_admission_source())?,
+            .with_command_recovery(effects.command_admission_source())?
+            .with_result_payload_verifier(kernel.result_payload_verifier())?,
         )
     };
     Ok(InstalledState {

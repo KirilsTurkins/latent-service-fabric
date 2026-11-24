@@ -18,6 +18,7 @@ impl NativeTransactionAdmission {
         let inbox_scope = self.inbox_scope.clone();
         let time = Arc::clone(&self.owners.time);
         let retained = Arc::clone(&authority);
+        let verifier = self.owners.result_payload_verifier.clone();
         let keeper: Arc<dyn std::any::Any + Send + Sync> = Arc::new(Arc::clone(&authority));
         let bytes = self.retained_capacity()?.request_bytes();
         let job = self
@@ -57,13 +58,26 @@ impl NativeTransactionAdmission {
                 let result = observation::atomic(
                     Phase::ExistingReplay,
                     read.and_then(|(command, result)| {
-                        if command.attempt() == selected.attempt() {
-                            return Ok((command, result.map(Arc::new)));
-                        }
-                        // A durable retry receipt selected this older generation.
-                        // Do not replace its immutable outcome with the latest one.
-                        drop(result);
-                        historical_attempt(&view, &selected, observed)
+                        let (command, result) = if command.attempt() == selected.attempt() {
+                            (command, result.map(Arc::new))
+                        } else {
+                            // A durable retry receipt selected this older generation.
+                            // Keep its immutable outcome even if a newer attempt exists.
+                            drop(result);
+                            historical_attempt(&view, &selected, observed)?
+                        };
+                        latent_commit::atomic::verify_retained_result_payload(
+                            &view,
+                            &command,
+                            result.as_deref(),
+                            verifier.as_deref(),
+                            &|| {
+                                retained
+                                    .with_current(&mut || {})
+                                    .map_err(|_| AtomicError::PermissionDenied)
+                            },
+                        )?;
+                        Ok((command, result))
                     }),
                 );
                 match result {
