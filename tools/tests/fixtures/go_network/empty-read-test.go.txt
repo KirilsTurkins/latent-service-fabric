@@ -45,6 +45,7 @@ type wire struct {
 	calls, closes int
 	data          []byte
 	end           bool
+	destination   *byte
 }
 type readResult struct {
 	w       *wire
@@ -54,6 +55,22 @@ type readResult struct {
 func (w *wire) ReadContext(_ context.Context, maximum uint32, _ lsfWit.Option[uint32]) readResult {
 	w.calls++
 	return readResult{w: w, maximum: maximum}
+}
+
+type countResult int
+
+func (r countResult) IsErr() bool { return false }
+func (r countResult) Err() int    { return 0 }
+func (r countResult) Ok() int     { return int(r) }
+
+func (w *wire) ReadIntoContext(_ context.Context, dst []byte, _ lsfWit.Option[uint32]) countResult {
+	w.calls++
+	w.destination = &dst[0]
+	if w.end {
+		return 0
+	}
+	w.closes++
+	return countResult(copy(dst, w.data))
 }
 func (r readResult) IsErr() bool     { return false }
 func (r readResult) Err() int        { return 0 }
@@ -123,9 +140,10 @@ func TestNonemptyExpiredStillRefusesBeforeDispatch(t *testing.T) {
 func TestNonemptyReadPreservesProviderPathAndEOF(t *testing.T) {
 	c := conn()
 	c.stream.data = []byte("a")
-	dst := make([]byte, 2)
+	dst := []byte{0, 127}
 	n, err := c.Read(dst)
-	if n != 1 || err != nil || string(dst[:n]) != "a" || c.stream.calls != 1 || c.stream.closes != 1 || c.readBusy {
+	if n != 1 || err != nil || string(dst[:n]) != "a" || dst[1] != 127 ||
+		c.stream.destination != &dst[0] || c.stream.calls != 1 || c.stream.closes != 1 || c.readBusy {
 		t.Fatal("nonempty-data")
 	}
 	c.stream.end = true

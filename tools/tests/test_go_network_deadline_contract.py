@@ -14,8 +14,20 @@ PENDING = b'''    fn pending(
         if timeout.is_some_and(|value| value > 10_000 || (value == 0 && direction != 2)) {
             return Err(error(StreamErrorCode::InvalidInput));
         }
+        if timeout == Some(0) {
+            let immediate = cfg!(target_os = "linux")
+                && state.socket.as_mut().is_some_and(|physical| {
+                    physical
+                        .resource()
+                        .stream
+                        .as_ref()
+                        .is_some_and(|socket| !socket.protected_owner())
+                });
+            if !immediate { return Err(error(StreamErrorCode::InvalidInput)); }
+        }
         let mut deadline = self.deadline.min(state.last_progress + self.idle);
-        let observation = direction == 2 && !socket.host_tls() && !socket.protected_owner();
+        let observation = direction == 2 && !socket.protected_owner()
+            && (!socket.host_tls() || timeout == Some(0));
         let requested = timeout.map(|value| now + Duration::from_millis(u64::from(value)));
         if !observation {
             if let Some(requested) = requested {
@@ -79,9 +91,10 @@ class PendingDeadlineGuardTests(unittest.TestCase):
                 self.assertEqual(PENDING.count(old), 1)
                 self.assert_refused(PENDING.replace(old, new) + callers())
 
-    def test_observation_exception_remains_plain_tcp_readiness_only(self):
-        for old in (b'direction == 2 && ', b'!socket.host_tls() && ',
-                    b' && !socket.protected_owner()'):
+    def test_tls_observation_requires_a_zero_time_linux_poll_on_an_unprotected_owner(self):
+        for old in (b'direction == 2 && ', b'!socket.host_tls() || ', b' || timeout == Some(0)',
+                    b' && !socket.protected_owner()', b'cfg!(target_os = "linux")',
+                    b'if !immediate', b'.is_some_and(|socket| !socket.protected_owner())'):
             with self.subTest(marker=old):
                 self.assertEqual(PENDING.count(old), 1)
                 self.assert_refused(PENDING.replace(old, b'') + callers())

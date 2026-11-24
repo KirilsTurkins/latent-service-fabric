@@ -44,6 +44,29 @@ func (c *Connection) ReadContext(ctx context.Context, maximum uint32, timeout wi
 	return wit.Ok[wit.Option[*Chunk], StreamError](wit.Some(&Chunk{ownership.New(r.Ok().Some())}))
 }
 
+// ReadIntoContext reads at most one chunk into the caller's nonempty buffer.
+// A successful count of zero means EOF. The original chunk owns the borrowed
+// bytes until they have been copied into destination.
+func (c *Connection) ReadIntoContext(ctx context.Context, destination []byte, timeout wit.Option[uint32]) wit.Result[int, StreamError] {
+	if len(destination) > int(MaximumChunkBytes) {
+		destination = destination[:MaximumChunkBytes]
+	}
+	r := c.ReadContext(ctx, uint32(len(destination)), timeout)
+	if r.IsErr() {
+		return wit.Err[int, StreamError](r.Err())
+	}
+	if r.Ok().IsNone() {
+		return wit.Ok[int, StreamError](0)
+	}
+	chunk := r.Ok().Some()
+	defer chunk.Close()
+	data := chunk.copyBytesContext(ctx, destination)
+	if data.IsErr() {
+		return wit.Err[int, StreamError](data.Err())
+	}
+	return wit.Ok[int, StreamError](len(data.Ok()))
+}
+
 func (c *Connection) WriteContext(ctx context.Context, bytes []byte, timeout wit.Option[uint32]) wit.Result[uint32, StreamError] {
 	if len(bytes) == 0 || len(bytes) > int(MaximumChunkBytes) {
 		return wit.Err[uint32, StreamError](StreamError{Code: ErrorCodeInvalidInput})
@@ -116,6 +139,10 @@ func (c *Connection) CloseContext(ctx context.Context) wit.Result[Observation, S
 // Each chunk is consumed once. The copied bytes stay in the bounded guest heap;
 // the host chunk is dropped only after the canonical borrow really terminates.
 func (c *Chunk) BytesContext(ctx context.Context) wit.Result[[]byte, StreamError] {
+	return c.copyBytesContext(ctx, nil)
+}
+
+func (c *Chunk) copyBytesContext(ctx context.Context, destination []byte) wit.Result[[]byte, StreamError] {
 	if ctx == nil {
 		return wit.Err[[]byte, StreamError](StreamError{Code: ErrorCodeInvalidInput})
 	}
@@ -125,10 +152,18 @@ func (c *Chunk) BytesContext(ctx context.Context) wit.Result[[]byte, StreamError
 	if r.IsErr() {
 		return r
 	}
-	if len(r.Ok()) == 0 || len(r.Ok()) > int(MaximumChunkBytes) {
+	data := r.Ok()
+	if len(data) == 0 || len(data) > int(MaximumChunkBytes) {
 		panic("lsf: invalid stream chunk")
 	}
-	return wit.Ok[[]byte, StreamError](append([]byte(nil), r.Ok()...))
+	if destination == nil {
+		return wit.Ok[[]byte, StreamError](append([]byte(nil), data...))
+	}
+	if len(data) > len(destination) {
+		panic("lsf: stream read exceeded requested bound")
+	}
+	n := copy(destination, data)
+	return wit.Ok[[]byte, StreamError](destination[:n])
 }
 
 func (c *Chunk) Close() { c.owner.Close(func(value *raw.Chunk) { value.Drop() }) }

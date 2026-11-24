@@ -199,3 +199,21 @@ cases passed, alongside the original chunk-boundary counterexample. All seven
 archive members passed CRC/SHA-256 checks, and all seven exercised inputs match
 that source. All eight original Go control bodies remain unchanged; the earlier
 eight-case observation retains its own source identity. No owner, deadline or fragment bound changes.
+
+## Read buffer ownership
+
+An ordinary Go socket read accepts up to 16,384 bytes into the caller's buffer.
+The adapter copies the canonical bytes before releasing its original chunk.
+The exported chunk API still returns an independently owned byte slice to callers
+of `BytesContext`. A short read leaves the remainder of the caller's buffer
+untouched.
+
+On Linux x86-64 with Go 1.27.4, the native chunk-copy benchmark for a 16 KiB
+payload measured three allocations and 16,432 bytes on the parent and two
+allocations and 48 bytes with the caller's buffer. The benchmark used the
+production Go ownership code and a double for the raw chunk. Each of the two
+separately compiled signed profiles passed 13 TCP cases with five peer contacts,
+including fragmented reads, cancellation during the second read, and a fresh
+connection after cancellation. All 13 cases per profile retired their user-space
+owners. These signed runs used the explicit development TCP provider.
+[Source identities, allocation samples and signed observations](../testing/evidence/go-read-into-caller-buffer-2026-11-24.json)

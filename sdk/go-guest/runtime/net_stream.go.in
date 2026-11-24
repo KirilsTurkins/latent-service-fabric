@@ -242,30 +242,17 @@ func (c *lsfStreamConn) Read(bytes []byte) (int, error) {
 	if eof {
 		return 0, lsfIO.EOF
 	}
-	maximum := len(bytes)
-	if maximum > lsfStreamMaximumChunk {
-		maximum = lsfStreamMaximumChunk
-	}
-	r := c.stream.ReadContext(context.Background(), uint32(maximum), timeout)
+	r := c.stream.ReadIntoContext(context.Background(), bytes, timeout)
 	if r.IsErr() {
 		return 0, c.opError("read", &lsfStreamError{r.Err()})
 	}
-	if r.Ok().IsNone() {
+	if r.Ok() == 0 {
 		c.mu.Lock()
 		c.readEOF = true
 		c.mu.Unlock()
 		return 0, lsfIO.EOF
 	}
-	chunk := r.Ok().Some()
-	defer chunk.Close()
-	data := chunk.BytesContext(context.Background())
-	if data.IsErr() {
-		return 0, c.opError("read", &lsfStreamError{data.Err()})
-	}
-	if len(data.Ok()) > maximum {
-		panic("lsf: stream read exceeded requested bound")
-	}
-	return copy(bytes, data.Ok()), nil
+	return r.Ok(), nil
 }
 
 func (c *lsfStreamConn) Write(bytes []byte) (int, error) {
