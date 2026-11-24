@@ -202,6 +202,13 @@ libfetch normal/404/denied/early-close/sibling and libucl normal/404/denied/file
 All ten retirements were idle and both nodes shut down cleanly and were reaped.
 The sibling result is source/peer-bound; native poll-Pending was not observed.
 
+The libucl caller registered a context macro around its ordinary URL include.
+The first callback used caller-owned state. The second inspected the parsed HTTP
+response, then created and disposed a nested parser while the outer callback
+was running. The missing URL, denied URL, file and glob cases each returned
+after the first callback. Both rebuilt clients passed all ten signed cases.
+[Callback and sibling results](../testing/evidence/c-libucl-callbacks-signed-2026-11-24.json)
+
 The [catalogue-free signed programme](../testing/evidence/c-outside-capture-signed-2026-10-31.json)
 adds two identity variants of one developer-owned library, not two additional
 independent clients. Both normal builds used a copied SDK source root without
