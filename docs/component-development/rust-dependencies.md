@@ -261,8 +261,9 @@ a source or bound-tool change refuses the build and retains the prior deployment
 without automatic reapproval, promotion or mutation replay. Stop watch, review the
 new failed request and explicitly choose another identity before restarting it.
 Approval is not inherited from capture, package names, a prior source snapshot,
-test-fixture consent or ordinary recipe trust. Other languages, custom recipes,
-duplicate options and malformed digests reject this selection before dispatch.
+test-fixture consent or ordinary recipe trust. The Java and .NET maintained adapters also consume explicitly selected processor
+and generator approvals. Custom recipes, other language adapters, duplicate
+options and malformed digests reject the selection before dispatch.
 The detached route's source controls do not establish a successful current hosted
 watch or identify the unretained executable package in an earlier refusal.
 

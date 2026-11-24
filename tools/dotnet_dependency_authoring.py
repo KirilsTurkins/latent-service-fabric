@@ -276,11 +276,14 @@ def failure(operation: str, error: Exception) -> dict:
 
 
 def frontend(project: Path, action: str, *, workspace: str, state_root: Path | None = None,
-             tool_root: str | None = None, selections: tuple[str, ...] = (), environment='node') -> list[str]:
+             tool_root: str | None = None, selections: tuple[str, ...] = (), environment='node',
+             executable_approval=None) -> list[str]:
     from tools.dev_workflow import common, dependencies, project as dev_project
+    from tools.dev_workflow.executable_approval import watch_arguments
     owner, _app, _sdk = seal(project)
     descriptor, _identity = dev_project.load(owner)
     common.require(descriptor['language'] == 'dotnet', 'nuget-authoring-project-language')
+    approval = watch_arguments(descriptor, action, executable_approval)
     dependencies.verify(owner, descriptor)
     status(owner)
     argv = ['--state-root', str(state_root)] if state_root is not None else []
@@ -292,6 +295,7 @@ def frontend(project: Path, action: str, *, workspace: str, state_root: Path | N
         argv += ['dev', 'up', '--workspace', workspace, '--project', str(owner), '--watch']
         if tool_root is not None:
             argv += ['--tool-root', tool_root]
+        argv.extend(approval)
         for selected in selections:
             argv += ['--test-select', selected]
     else:

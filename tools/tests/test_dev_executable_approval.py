@@ -1,4 +1,4 @@
-"""Detached Rust consent stays explicit, source-bound and private."""
+"""Detached compiler consent stays explicit, source-bound and private."""
 from __future__ import annotations
 
 import copy
@@ -15,7 +15,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from tools import application_dependencies as captures, application_dependency_approval as consumer
-from tools import rust_capsule, rust_capsule_build, rust_capsule_project
+from tools import dotnet_capsule, java_capsule, rust_capsule, rust_capsule_build, rust_capsule_project
 from tools.application_dependency_store import DependencyError
 from tools.build_snapshot import canonical
 from tools.dev_workflow import build, build_cache, build_client, cli, common, paths, project, snapshot, state
@@ -28,12 +28,15 @@ from tools.tests.test_dev_contracts import descriptor
 A, B = common.digest(b'approval-a'), common.digest(b'approval-b')
 
 
-def maintained():
+def maintained(language='rust'):
     value = descriptor()
+    value['language'] = language
+    owner = project.LANGUAGES[language]
+    value['template']['ownerIssue'] = owner
     value['inputRoots'] = ['app']
     value['scenarios'] = ['app/tests.json']
-    value['build'].update(argv=list(selected.ARGV), workingDirectory='app', outputRoot='output',
-        hostTargets=['linux-x86_64'], adapter={'language': 'rust', 'ownerIssue': 544, 'version': '1'},
+    value['build'].update(argv=project.guest_recipe_arguments(language), workingDirectory='app', outputRoot='output',
+        hostTargets=['linux-x86_64'], adapter={'language': language, 'ownerIssue': owner, 'version': '1'},
         inventory={'path': 'guest-tools.json', 'sha256': A}, tools=[
             {'name': 'python', 'path': 'sdk/bin/python', 'version': '3.13.5', 'sha256': common.digest(b'python')},
             {'name': 'recipe', 'path': 'recipe/tools/dev_guest_recipe.py', 'version': '1', 'sha256': common.digest(b'adapter')}])
@@ -64,16 +67,17 @@ class DetachedSelection(unittest.TestCase):
             values.append(value)
         with patch.object(build.process, 'run', side_effect=AssertionError('process dispatch')):
             for value in values:
-                with self.subTest(value=value), self.assertRaisesRegex(common.DevError, 'maintained-rust'):
+                with self.subTest(value=value), self.assertRaisesRegex(common.DevError, 'maintained-compiler'):
                     build.compile_recipe(Path('/unused'), Path('/unused'), value, {}, {}, 0, lambda: None, executable_approval=A)
             for value in ('', 'a' * 64, 'sha256:' + 'A' * 64, [], False):
                 with self.subTest(value=value), self.assertRaisesRegex(common.DevError, 'invalid-sha256'):
                     selected.selection(maintained(), value)
         self.assertIsNone(selected.selection(descriptor(), None))
 
-    def test_cli_and_rust_watch_reject_duplicate_or_malformed_before_dispatch(self):
-        for parser, args in ((cli.parser(), ['dev', 'build', '--workspace', 'test-rust']),
-                             (rust_capsule.parser(), ['watch', '.', '--workspace', 'test-rust'])):
+    def test_cli_and_language_watch_reject_duplicate_or_malformed_before_dispatch(self):
+        watch = [(owner.parser(), ['watch', '.', '--workspace', 'test-' + language])
+                 for language, owner in (('rust', rust_capsule), ('java', java_capsule), ('dotnet', dotnet_capsule))]
+        for parser, args in [(cli.parser(), ['dev', 'build', '--workspace', 'test-rust']), *watch]:
             self.assertIsNone(parser.parse_args(args).executable_approval)
             self.assertEqual(parser.parse_args([*args, '--executable-approval', A]).executable_approval, A)
             for extra in (['--executable-approval', 'bad'], ['--executable-approval', A, '--executable-approval', B]):
@@ -114,7 +118,7 @@ class DetachedSelection(unittest.TestCase):
                     self.assertEqual(payload.get('executableApproval'), approval)
                     self.assertEqual('executableApproval' in payload, approval is not None)
             connection.reset_mock()
-            with patch.object(project, 'load', return_value=(descriptor(), A)), self.assertRaisesRegex(common.DevError, 'maintained-rust'):
+            with patch.object(project, 'load', return_value=(descriptor(), A)), self.assertRaisesRegex(common.DevError, 'maintained-compiler'):
                 build_client.run(root, connection, root, '/selected-tools', executable_approval=A)
             connection.call.assert_not_called()
 
@@ -334,32 +338,39 @@ class DetachedConsumer(unittest.TestCase):
         self.assertEqual(sum(call.args[0] == 'deploy' for call in connection.call.call_args_list), 1)
 
 
-class PrivateRequestViewer(unittest.TestCase):
-    def setUp(self):
+class RequestFixture:
+    def prepare_viewer(self, language):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
         self.controller, self.original = self.root / 'controller', self.root / 'original'
         for path in (self.controller, self.original, self.original / 'app'):
             paths.new_directory(path)
-        (self.original / 'app/main.rs').write_bytes(b'fn main() {}')
+        application = {'rust': ('main.rs', b'fn main() {}'), 'java': ('App.java', b'class App {}'),
+                       'dotnet': ('App.cs', b'class App {}')}[language]
+        (self.original / 'app' / application[0]).write_bytes(application[1])
         (self.original / 'app/sdk-lock.json').write_bytes(b'unchanged sdk lock\n')
         library = self.root / 'outside-build-tool'
         paths.new_directory(library)
-        (library / 'build.rs').write_bytes(b'fn main() {}')
-        manifest = {'formatVersion': 1, 'language': 'rust', 'selection': {'runtimeProfile': 'closed'},
+        tool = {'rust': ('build.rs', b'fn main() {}'), 'java': ('Processor.java', b'class Processor {}'),
+                'dotnet': ('Generator.cs', b'class Generator {}')}[language]
+        (library / tool[0]).write_bytes(tool[1])
+        manifest = {'formatVersion': 1, 'language': language, 'selection': {'runtimeProfile': 'closed'},
             'nativeLocks': [], 'artifacts': [{'id': 'outside/tool/1', 'role': 'build-tool', 'format': 'directory',
                 'mount': 'dependencies/build-tool', 'source': {'path': str(library)}, 'dependencies': [], 'metadata': {}}], 'transformations': []}
         (self.original / captures.MANIFEST).write_bytes(canonical(manifest))
         (self.original / captures.LOCK).write_bytes(canonical(captures.capture(self.original)))
-        self.value = maintained()
-        names = set(rust_capsule_build.selected_recipe()) | {'examples/echo-contract/capsule.json', 'examples/echo-contract/deployment.json'}
+        self.value = maintained(language)
+        if language == 'rust':
+            names = set(rust_capsule_build.selected_recipe()) | {'examples/echo-contract/capsule.json', 'examples/echo-contract/deployment.json'}
+        else:
+            names = {'tools/java_capsule_build.py' if language == 'java' else 'tools/dotnet_guest/build.py'}
         files = {name: (rust_capsule_project.ROOT / name).read_bytes() for name in names}
         self.recipe_raw = rust_capsule_project.inventory(files)
         entries = [{'path': 'recipe/' + name, 'sha256': common.digest(raw), 'size': len(raw)} for name, raw in sorted(files.items())]
         entries += [{'path': 'sdk/bin/python', 'sha256': common.digest(b'python'), 'size': 6},
                     {'path': 'recipe/tools/dev_guest_recipe.py', 'sha256': common.digest(b'adapter'), 'size': 7}]
-        self.inventory = {'schemaVersion': 'latent.dev.guest-tools.v1', 'language': 'rust', 'ownerIssue': 544,
+        self.inventory = {'schemaVersion': 'latent.dev.guest-tools.v1', 'language': language, 'ownerIssue': project.LANGUAGES[language],
             'sourceCommit': self.value['template']['revision'], 'hostAbi': self.value['hostAbi'], 'host': 'linux-x86_64', 'files': entries}
         self.inventory['identity'] = common.digest(common.encode(self.inventory))
         inventory_raw = common.encode(self.inventory)
@@ -382,7 +393,7 @@ class PrivateRequestViewer(unittest.TestCase):
         self.output = self.working / 'output'
         paths.new_directory(self.output)
         (self.output / 'recipe-inputs.json').write_bytes(self.recipe_raw)
-        source_raw = rust_capsule_project.inventory(capture_source(self.working / 'app', 'rust').files)
+        source_raw = rust_capsule_project.inventory(capture_source(self.working / 'app', language).files)
         (self.output / 'source-inputs.json').write_bytes(source_raw)
         file = lambda name: {'name': name, 'digest': common.digest(name.encode()), 'size': 1}
         self.compiler = {'formatVersion': 1, 'profile': viewer.PROFILE,
@@ -393,7 +404,7 @@ class PrivateRequestViewer(unittest.TestCase):
             'network': 'denied', 'ambientHome': 'absent', 'credentials': 'not-inherited',
             'boundary': 'trusted-single-user-compiler-host-not-hardened-multitenant-vm'}
         (self.output / 'rust-compiler-inputs.json').write_bytes(canonical(self.compiler))
-        verified = captures.verify_inputs(self.working, 'rust')
+        verified = captures.verify_inputs(self.working, language)
         recipe = common.digest(canonical({'recipe': common.digest(self.recipe_raw), 'sourceSnapshot': common.digest(source_raw)}))
         specification = consumer.request(verified, SimpleNamespace(receipt=self.compiler), recipe)
         self.request = {'formatVersion': 1, 'identity': common.digest(canonical(specification)), 'specification': specification}
@@ -403,6 +414,65 @@ class PrivateRequestViewer(unittest.TestCase):
     def observe(self):
         with state.lock(self.controller), state.lock(self.controller, 'build-control.lock', timeout=1):
             return viewer.read(self.controller)
+
+
+class ManagedRequestViewer(RequestFixture, unittest.TestCase):
+    def test_only_the_controller_observed_refusal_is_available_for_review(self):
+        for language in ('java', 'dotnet'):
+            with self.subTest(language=language):
+                self.prepare_viewer(language)
+                self.assertEqual(selected.selection(self.value, self.request['identity']), self.request['identity'])
+                (self.output / 'BUILD-FAILED.json').write_bytes(canonical({'stage': 'contracts'}))
+                viewer.retain_managed_refusal(self.working, self.value)
+                with self.assertRaises(common.DevError):
+                    self.observe()
+                (self.output / 'BUILD-FAILED.json').write_bytes(canonical({'stage': 'executable-input-approval'}))
+                viewer.retain_managed_refusal(self.working, self.value)
+                result = self.observe()
+                self.assertFalse(result['executionApproved'])
+                self.assertEqual(result['request'], self.request)
+                changed = copy.deepcopy(self.request)
+                changed['specification']['compilerInputsDigest'] = B
+                changed['identity'] = common.digest(canonical(changed['specification']))
+                self.request_path.write_bytes(canonical(changed))
+                with self.assertRaisesRegex(common.DevError, 'managed-refusal-mismatch'):
+                    self.observe()
+
+
+@unittest.skipUnless(sys.platform == 'linux', 'the published helper targets Linux')
+class PackagedRequestViewer(RequestFixture, unittest.TestCase):
+    def test_matching_helper_reviews_owned_attempts_without_a_source_checkout(self):
+        from tools import build_dev_frontend
+        import json
+
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            archive = directory / 'helper.pyz'
+            build_dev_frontend.helper(archive)
+            script = """import json, pathlib, sys
+sys.path.insert(0, sys.argv[1])
+from tools.dev_workflow import executable_approval_request as viewer, state
+root = pathlib.Path(sys.argv[2])
+with state.lock(root), state.lock(root, 'build-control.lock', timeout=1):
+    result = viewer.read(root)
+assert not pathlib.Path(viewer.__file__).is_file()
+print(json.dumps([result['request']['identity'], result['executionApproved']]))
+"""
+            for language in ('rust', 'java', 'dotnet'):
+                with self.subTest(language=language):
+                    self.prepare_viewer(language)
+                    if language != 'rust':
+                        (self.output / 'BUILD-FAILED.json').write_bytes(canonical({'stage': 'executable-input-approval'}))
+                        viewer.retain_managed_refusal(self.working, self.value)
+                    completed = subprocess.run([sys.executable, '-I', '-B', '-c', script, str(archive), str(self.controller)],
+                        cwd=directory, capture_output=True, text=True, timeout=30)
+                    self.assertEqual(completed.returncode, 0, completed.stderr)
+                    self.assertEqual(json.loads(completed.stdout), [self.request['identity'], False])
+
+
+class PrivateRequestViewer(RequestFixture, unittest.TestCase):
+    def setUp(self):
+        self.prepare_viewer('rust')
 
     def test_explicit_private_view_recomputes_real_producer_without_approval_or_source_mutation(self):
         watched = [self.original / 'latent.project.json', self.original / 'app/sdk-lock.json',

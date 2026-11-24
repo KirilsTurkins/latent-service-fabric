@@ -240,13 +240,11 @@ def frontend(project: Path, action: str, *, workspace: str, state_root: Path | N
              tool_root: str | None = None, selections: tuple[str, ...] = (), environment='node',
              executable_approval=None) -> list[str]:
     from tools.dev_workflow import common, dependencies, project as dev_project
+    from tools.dev_workflow.executable_approval import watch_arguments
     root, _app, _sdk = seal(project)
     descriptor, _identity = dev_project.load(root)
     common.require(descriptor['language'] == 'rust', 'cargo-authoring-project-language')
-    if executable_approval is not None:
-        from tools.dev_workflow.executable_approval import selection
-        common.require(action == 'watch', 'executable-approval-requires-watch')
-        selection(descriptor, executable_approval)
+    approval = watch_arguments(descriptor, action, executable_approval)
     dependencies.verify(root, descriptor)
     status(root)
     argv = ['--state-root', str(state_root)] if state_root is not None else []
@@ -258,8 +256,7 @@ def frontend(project: Path, action: str, *, workspace: str, state_root: Path | N
         argv += ['dev', 'up', '--workspace', workspace, '--project', str(root), '--watch']
         if tool_root is not None:
             argv += ['--tool-root', tool_root]
-        if executable_approval is not None:
-            argv += ['--executable-approval', executable_approval]
+        argv.extend(approval)
         for selected in selections:
             argv += ['--test-select', selected]
     else:

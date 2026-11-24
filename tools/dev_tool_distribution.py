@@ -251,7 +251,7 @@ def templates(payload: Path, commit: str, language: str, *, host_abi: str = HOST
             "service": owner["service"], "language": language, "hostAbi": host_abi,
             "template": {"ownerIssue": project.LANGUAGES[language], "revision": commit, "sha256": record["identity"]},
             "inputRoots": ["app", "tests"], "exclude": [],
-            "build": {"argv": ["python", "-I", "-B", "@tool:recipe", "--language", language, "--project", ".", "--output", "../output"],
+            "build": {"argv": project.guest_recipe_arguments(language),
                 "workingDirectory": "app", "outputRoot": "output", "target": "wasm-component",
                 "hostTargets": ["linux-x86_64"], "timeoutSeconds": 900, "maximumOutputBytes": 262144,
                 "tools": pins, "inventory": selected, "adapter": {"language": language, "ownerIssue": project.LANGUAGES[language], "version": "1"}},

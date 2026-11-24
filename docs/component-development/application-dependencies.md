@@ -62,10 +62,46 @@ when the capsule selected `latent:http/phase-timing@0.4.0`, which exposes
 the peer's status text. With `latent:http/streaming@0.3.0`, Wretch handled
 the 404 and Ky reported that status text was unavailable. The phase run also
 exercised cancellation and a fresh call from a second tenant on the same node.
+An installed Linux TypeScript toolkit then built the private resource and
+timer project offline. Its signed package passed 27 guest executions and four
+pre-I/O refusals across the primary, missing-provider and two-tenant cases.
+
+The installed .NET toolkit first refused the Refit generator. After approval of
+that exact compiler request, it built the same captured application offline.
+The signed Flurl and Refit package passed 20 guest executions and two pre-entry
+refusals. The peer saw 15 connections and one mutation. All 20 guest executions
+passed the physical retirement check.
+
 The
 [six-language execution record](../testing/evidence/sdk-private-library-invocations-2026-11-23.json)
 includes the dependency locks, tool and component identities, grants, results
 and node measurements.
+
+### Review a compiler execution request
+
+A captured Cargo build tool, Java annotation processor or NuGet source generator
+can require explicit approval. In a project created from a matching installed
+toolkit, first run the ordinary trusted build. If it stops at
+`executable-input-approval`, use the same workspace to inspect the private
+request after the compiler exits.
+
+```powershell
+$review = latent-dev --state-root $StateRoot dev executable-approval-request --workspace $Workspace | ConvertFrom-Json
+$review.result.request.specification | ConvertTo-Json -Depth 32
+```
+
+Review the selected executable inputs, original and transformed bytes, compiler,
+source and isolation policy. If you authorize this exact request, pass its digest
+to a fresh build.
+
+```powershell
+$approved = $review.result.request.identity
+latent-dev --state-root $StateRoot dev build --workspace $Workspace --project $Project --executable-approval $approved
+```
+
+The same digest can be passed explicitly to `dev up --watch` or to the language
+authoring tool's `watch` command. A change to any bound input requires fresh
+review. Keep the private specification in the developer workspace.
 
 ### Choose an HTTP client
 

@@ -10,6 +10,10 @@ from .common import HOST_ABI, TRANSACTION_HOST_ABI, MAX_DOCUMENT, decode, digest
 LANGUAGES = {"rust": 544, "c": 545, "typescript": 546, "go": 547, "java": 548, "dotnet": 549}
 
 
+def guest_recipe_arguments(language: str) -> list[str]:
+    return ['python', '-I', '-B', '@tool:recipe', '--language', language, '--project', '.', '--output', '../output']
+
+
 def validate(value: dict) -> dict:
     members(value, {"schemaVersion", "name", "tenant", "service", "language", "template", "hostAbi",
                     "inputRoots", "exclude", "build", "artifacts", "scenarios"}, {"dependencyInputs", "resourceInputs"})

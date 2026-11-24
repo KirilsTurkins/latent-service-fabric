@@ -2674,5 +2674,292 @@
         "cleanNodeStop": true
       }
     ]
+  },
+  "installedTypeScriptPrivateDependencies": {
+    "observedOn": "2026-11-24",
+    "status": "passed",
+    "candidateSource": "1b2f7ac3d27603f7b5310f3bad2f09d3c6b19b5b",
+    "archive": {
+      "sha256": "sha256:8dc6465c7b3b463a4fd66c36bf14b73ca7ed83df14ec8311cbecd84e003a66fd",
+      "bytes": 193239443
+    },
+    "manifest": {
+      "sha256": "sha256:71b21f2d8dd71a66b7a016258af8eba7368847fd97d46144af25f4823d3396e0",
+      "bytes": 218001
+    },
+    "target": "linux-x86_64",
+    "toolkitHostAbi": "lsf-host-abi-phase3-v5",
+    "candidateBuilder": "tools/build_dev_guest_tools.py --language typescript",
+    "captureCommand": "recipe/tools/typescript_capsule.py dependencies",
+    "buildCommand": "recipe/tools/dev_guest_recipe.py --language typescript",
+    "packageEntry": "tools.dev_workflow.build_artifacts.package and tools.dev_workflow.build_provenance.complete",
+    "captureIdentity": "sha256:539d777f70d39139113e7420072ab8f9bf32be1f96ba7dc3d01e5907bd605ac9",
+    "commandOutcomes": [
+      {
+        "name": "verify-capture",
+        "exitCode": 0
+      },
+      {
+        "name": "offline-build",
+        "exitCode": 0
+      }
+    ],
+    "compilerNetwork": "denied",
+    "effectiveUser": 1000,
+    "readOnlyInputs": true,
+    "checkoutMounted": false,
+    "publicRelease": false,
+    "publisherAuthenticated": false,
+    "fullFrontendWatchExercised": false,
+    "component": {
+      "sha256": "sha256:cd4f316836675ee10597f63f7e3a3058e791204c5f32a068edc7fd5840ddb9d9",
+      "bytes": 12681663
+    },
+    "packageDigest": "sha256:d15a5c6ce5e204d241f86589fe1b2b1c6f0ba07b8d977968bd8b53b2285cffdb",
+    "compilerEvidence": {
+      "component.wasm": {
+        "sha256": "sha256:cd4f316836675ee10597f63f7e3a3058e791204c5f32a068edc7fd5840ddb9d9",
+        "bytes": 12681663
+      },
+      "build-observation.json": {
+        "sha256": "sha256:50b373d7f57f806d45746ef144b81ae6f22d9cb37200c840cd6b568fd7b34c43",
+        "bytes": 4359
+      },
+      "BUILD-COMPLETE.json": {
+        "sha256": "sha256:16e35dcf84074d42c8b503e58f1247a8ba112a676dd49ae32155615cd944aeca",
+        "bytes": 2770
+      },
+      "bundle-selected-inputs.json": {
+        "sha256": "sha256:f7511cb2fef873a47dfba73f04e5845ac2890153d58ecce4860732bf6f78a92c",
+        "bytes": 28641
+      },
+      "typescript-runtime-selection.json": {
+        "sha256": "sha256:c07306ac83c2a882b90a2d6f62bef14eaadd487d4b5b5b2ebecc0612c696a129",
+        "bytes": 15690
+      }
+    },
+    "capturedBuild": {
+      "sha256": "sha256:a59f2817f97ac21e782ed735d38373c3fbb12cb341b393584781baa46f6a3450",
+      "bytes": 284
+    },
+    "signedExecution": {
+      "sha256": "sha256:4c4e248dabae8d3677a82fc370f1ba4e96ba6ab2bae53e29f820c98393736978",
+      "bytes": 117991
+    },
+    "signedGuestExecutions": 27,
+    "preIoRefusals": 4,
+    "nodeReaped": true,
+    "cleanShutdown": true,
+    "nodeEntry": "tools.qualify_typescript_fetch_phases.execute",
+    "componentHttpContract": "latent:http/phase-timing@0.4.0",
+    "compatibilityHostManifest": "wit/host-abi-phase3-v7.json",
+    "compilerSourceRevision": "ac7d99a419ede0e90793bb9076505bfc9ea44342",
+    "nativeSourceRevision": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+    "nativeSourceIdentity": "sha256:c839ec43b877991cb8e9ab6bbd8dc229d1e5fb938e459545ad0d4be7f53bb690",
+    "nativeQualification": {
+      "sha256": "sha256:25b7eedb5f0bd7824358e3b7245b76b8033bf504642de9739fae37d0a063320a",
+      "bytes": 25175
+    },
+    "runtimeInputs": {
+      "sha256": "sha256:5bb7a2104e69a09787c314fa0ef78969e2d310abcca5f14e4f1a0d73b2e7c187",
+      "bytes": 7548
+    },
+    "privatePackage": {
+      "name": "outside-fetch-toolkit-resource",
+      "version": "1.7.1",
+      "files": {
+        "index.d.ts": {
+          "digest": "sha256:02d7329042b54cc04ea153b879fafd85251bc24530f92f622a00412afe23f9a8",
+          "size": 53
+        },
+        "index.mjs": {
+          "digest": "sha256:3f971af0a4d848ad47caeb7a8977e35b40b939a06b1c4f3560bef9dc081ee4fa",
+          "size": 457
+        },
+        "package.json": {
+          "digest": "sha256:d050c8290b94c8216d82bad7d2b18fbb2184077aaae08a7e1bc27879d21738b3",
+          "size": 240
+        },
+        "price-card.txt": {
+          "digest": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+          "size": 57
+        }
+      },
+      "acceptedIdentity": "sha256:539d777f70d39139113e7420072ab8f9bf32be1f96ba7dc3d01e5907bd605ac9",
+      "sourceAbsentDuringBuild": true
+    },
+    "clients": [
+      "Ky 2.2.0",
+      "Wretch 3.0.9"
+    ],
+    "invocationOutcomes": 31,
+    "mainCases": [
+      "ky-json",
+      "wretch-json",
+      "outside-json",
+      "ky-http404",
+      "wretch-http404",
+      "observed-empty-clone",
+      "latin1-clone",
+      "abort-headers",
+      "abort-body",
+      "uncertain-post",
+      "denied-target",
+      "public-guest-extension",
+      "public-extension-denied",
+      "root-cancel",
+      "root-deadline",
+      "fresh"
+    ],
+    "mainPeer": {
+      "startedRequests": 14,
+      "committedMutations": 1,
+      "completedResponseWrites": 11,
+      "rejectedRequests": 0,
+      "openConnections": 0
+    },
+    "crossTenantQualified": true,
+    "twoTenantsOnSameNode": true,
+    "componentEqualsEarlierSourceCandidate": false
+  },
+  "installedDotnetPrivateDependencies": {
+    "observedOn": "2026-11-24",
+    "status": "passed",
+    "candidateSource": "410648ba301a9c47a1fb7fa38d413ac20f45d642",
+    "archive": {
+      "sha256": "sha256:8dd398300186c9ec79f6c47f4e8b52abaf64350608d3fbcab74274491d44e5e8",
+      "bytes": 871611117
+    },
+    "manifest": {
+      "sha256": "sha256:30682e3d09d3bf7d1ba1b41e0100de90204c947121c130b48645e32f5cb647db",
+      "bytes": 263618
+    },
+    "target": "linux-x86_64",
+    "toolkitHostAbi": "lsf-host-abi-phase3-v5",
+    "candidateBuilder": "tools/build_dev_guest_tools.py --language dotnet",
+    "captureCommand": "recipe/tools/dotnet_capsule.py dependencies",
+    "buildCommand": "recipe/tools/dev_guest_recipe.py --language dotnet",
+    "packageEntry": "tools.dev_workflow.build_artifacts.package and tools.dev_workflow.build_provenance.complete",
+    "captureIdentity": "sha256:d1648d6ee466791fd0c410523768d06f77b811956e8ceb72b8a6ae3680cb42c4",
+    "commandOutcomes": [
+      {
+        "name": "verify-capture",
+        "exitCode": 0
+      },
+      {
+        "name": "unapproved",
+        "exitCode": 1
+      },
+      {
+        "name": "approved-build",
+        "exitCode": 0
+      }
+    ],
+    "compilerNetwork": "denied",
+    "effectiveUser": 1000,
+    "readOnlyInputs": true,
+    "checkoutMounted": false,
+    "publicRelease": false,
+    "publisherAuthenticated": false,
+    "fullFrontendWatchExercised": false,
+    "component": {
+      "sha256": "sha256:af0657ef1865b76a8bc577b56cbce784c07ce1366c61354b2afd6e71db488838",
+      "bytes": 10813463
+    },
+    "packageDigest": "sha256:e09bf3ee6419199f5b4994ee9efc6fcd4e53dc3a289a24f1da4a142b0acba940",
+    "compilerEvidence": {
+      "component.wasm": {
+        "sha256": "sha256:af0657ef1865b76a8bc577b56cbce784c07ce1366c61354b2afd6e71db488838",
+        "bytes": 10813463
+      },
+      "build-observation.json": {
+        "sha256": "sha256:441e01282d8d390b5ef42f071c732d4f318e26b88fb42ee679118783fb98a02e",
+        "bytes": 8979
+      },
+      "BUILD-COMPLETE.json": {
+        "sha256": "sha256:3892d09cfd191f26e38076c4f90b3b8596f6f569fa5ac9a851514576ff305591",
+        "bytes": 5734
+      },
+      "executable-input-outputs.json": {
+        "sha256": "sha256:58bc599aeecbda641a206bc2234e6a35a7f72646a42e8fa5dfddd8416b023fc9",
+        "bytes": 2207
+      }
+    },
+    "capturedBuild": {
+      "sha256": "sha256:84c10be725d7cea09b88756ae528d5dfc572748243e69a5ce1b401ab4335defb",
+      "bytes": 445
+    },
+    "signedExecution": {
+      "sha256": "sha256:5458d77a5663a63d5c6329552d9c046f2d7ebee37902b74cadfa04e710aa747a",
+      "bytes": 48917
+    },
+    "signedGuestExecutions": 20,
+    "preIoRefusals": 2,
+    "nodeReaped": true,
+    "cleanShutdown": true,
+    "nodeEntry": "tools.dotnet_published_http_node.run",
+    "nativeSourceInputs": {
+      "sha256": "sha256:c071acafd05ff2855166281917a3b3b4f0a6127b13a0c161cea3c4428b75b490",
+      "bytes": 56654
+    },
+    "nativeQualification": {
+      "sha256": "sha256:956494b5328de021aafc05ef74fb3b1db49bf892896acd552150b1aa50c26a4f",
+      "bytes": 31161
+    },
+    "privatePackages": [
+      {
+        "identity": "Outside.Http.bad80257feff00271cb2.Alpha",
+        "version": "1.0.0"
+      },
+      {
+        "identity": "Outside.Http.bad80257feff00271cb2.Delta",
+        "version": "1.0.0"
+      }
+    ],
+    "clients": [
+      "Flurl.Http 4.0.2",
+      "Refit 16.4.0"
+    ],
+    "defaultFactories": [
+      "FlurlClient()",
+      "RestService.CreateHttpClient(endpoint, settings)",
+      "RestService.ForGenerated<IDomainApi>(client, settings)"
+    ],
+    "refusedStage": "executable-input-approval",
+    "approvedRequest": "sha256:425acf1e55f03bc396b60f7de4f26852666513de4bb4251e8a9051b23a01ff21",
+    "reviewedExecutables": 1,
+    "signedCases": [
+      "flurl-json",
+      "refit-json",
+      "outside-alpha",
+      "outside-delta",
+      "flurl-404",
+      "refit-404",
+      "flurl-500",
+      "refit-500",
+      "flurl-pending-cancel",
+      "refit-pending-cancel",
+      "reserved-header",
+      "foreign-target",
+      "flurl-post",
+      "uncertain-post",
+      "flurl-pre-cancelled",
+      "refit-pre-cancelled",
+      "early-body-dispose",
+      "guest-extension",
+      "guest-extension-denied",
+      "fresh-default"
+    ],
+    "preEntryRefusals": [
+      "runtime-missing",
+      "http-missing"
+    ],
+    "physicalRetirementVerifiedCases": 20,
+    "peer": {
+      "contacts": 15,
+      "completedWrites": 11,
+      "mutations": 1,
+      "allClosed": true
+    }
   }
 }

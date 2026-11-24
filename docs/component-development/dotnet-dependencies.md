@@ -109,6 +109,9 @@ preflight does not establish authenticated private-feed execution qualification.
 
 Resolution holds a project-owned authoring lock and stages native restore locks, asset metadata and original archives privately. It rechecks sources, SDK, descriptor, resolver and hash helper before publication. Failed attempts preserve the accepted lock and roll back their own published native/manifest bytes while preserving concurrent user edits. A successful resolution remains a candidate until exact review; cache presence grants no trust. A frontend project stores the manifest, accepted lock and CAS at its outer project root, with native inputs bound to its selected application directory. An inner shadow capture is rejected.
 
+Use the [workspace approval commands](application-dependencies.md#review-a-compiler-execution-request)
+to inspect a refused installed build and select that generator request for build or watch.
+
 For a maintained frontend project, `test PROJECT --workspace WORKSPACE --select TEST` and `watch PROJECT --workspace WORKSPACE --select TEST` verify the same reviewed closure before delegating to normal `dev test` and `dev up --watch`. These commands preserve operator grants, recipe trust, package signing and admission; a changed lock or recipe requires normal fresh trust. `--frontend` requires its exact `--frontend-sha256`, or the owner delegates through its maintained source controller. Uncertain remote mutations retain their original exit code and are never retried automatically. The source controls exercise command delegation and transactional failure boundaries; actual signed .NET watch/update qualification remains a separate required gate.
 
 Selected usernames and passwords must be nonempty strings of at most 16384
