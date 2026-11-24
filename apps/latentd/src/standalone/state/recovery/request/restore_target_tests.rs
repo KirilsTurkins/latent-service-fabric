@@ -86,7 +86,7 @@ fn omitted_restore_target_keeps_original_selection_without_inventing_an_identity
             source
         );
     }
-    assert!(Action::Review {}
+    assert!(Action::InspectNamespace {}
         .restore_destination_identity(&source)
         .is_err());
 }
@@ -118,5 +118,29 @@ fn explicit_restore_target_cannot_supply_grants_cutoffs_or_unknown_fields() {
             input["request"][field] = true.into();
             assert!(decode(&input).is_err());
         }
+    }
+}
+
+#[test]
+fn restore_review_requires_the_three_original_preconditions() {
+    let mut expected_view = b"NV\x02".to_vec();
+    expected_view.resize(67, 0);
+    let original = json!({
+        "publication": format!("publication:sha256:{}", "1".repeat(64)),
+        "request": {
+            "action": "review",
+            "expectedView": expected_view,
+            "snapshotDigest": format!("sha256:{}", "2".repeat(64)),
+            "windowAcknowledgement": format!("sha256:{}", "3".repeat(64)),
+        },
+    });
+    assert_eq!(
+        decode(&original).unwrap().request.purposes(),
+        &["namespace-review-recovery"]
+    );
+    for field in ["expectedView", "snapshotDigest", "windowAcknowledgement"] {
+        let mut missing = original.clone();
+        missing["request"].as_object_mut().unwrap().remove(field);
+        assert!(decode(&missing).is_err(), "{field}");
     }
 }

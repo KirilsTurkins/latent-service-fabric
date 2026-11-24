@@ -205,6 +205,20 @@ def package_companion(output: Path, project: dict, files: dict[str, bytes]) -> t
     return ("transaction-binding.json", "asset", "application/vnd.latent.transaction-binding.v1+json")
 
 
+def package_schema_assets(output: Path, files: dict[str, bytes]) -> list[tuple[str, str, str]]:
+    """Carry the schema and ABI requirements already selected by the author."""
+    from tools.guest_compatibility_build import host_abi
+    host_abi(files)
+    names = ("state-schema.json", "transaction-profile.json")
+    for name in names:
+        if not 0 < len(files[name]) <= 64 * 1024:
+            raise ValueError("transaction schema asset exceeds its native read limit")
+    for name in names:
+        with (output / name).open("xb") as asset:
+            asset.write(files[name])
+    return [(name, "asset", "application/json") for name in names]
+
+
 def packaging_arguments(files: dict[str, bytes]) -> tuple[str, ...]:
     """Select offline compatibility from the verified captured host profile."""
     from tools.guest_compatibility_build import host_abi

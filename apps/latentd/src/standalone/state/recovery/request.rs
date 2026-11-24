@@ -99,7 +99,11 @@ pub(super) enum Action {
         manifest_digest: String,
         window_acknowledgement: String,
     },
-    Review {},
+    Review {
+        expected_view: Vec<u8>,
+        snapshot_digest: String,
+        window_acknowledgement: String,
+    },
     InspectCloseEffects {
         operation_id: String,
         effect_ids: Vec<String>,
@@ -212,7 +216,7 @@ impl Action {
             Self::StageMigration { .. } | Self::CompleteMigration { .. } => {
                 &["namespace-schema-migrate"]
             }
-            Self::Review {} | Self::InspectCloseEffects { .. } | Self::CloseEffects { .. } => {
+            Self::Review { .. } | Self::InspectCloseEffects { .. } | Self::CloseEffects { .. } => {
                 &["namespace-review-recovery"]
             }
             Self::Resume { .. }
@@ -272,7 +276,17 @@ impl Action {
                 super::assets::digest_bytes(checkpoint_manifest_digest)?;
                 Ok(())
             }
-            Self::InspectNamespace {} | Self::Review {} => Ok(()),
+            Self::InspectNamespace {} => Ok(()),
+            Self::Review {
+                expected_view,
+                snapshot_digest,
+                window_acknowledgement,
+            } => {
+                view(expected_view)?;
+                super::assets::digest_bytes(snapshot_digest)?;
+                super::assets::digest_bytes(window_acknowledgement)?;
+                Ok(())
+            }
             Self::InspectInboxSource { binding } | Self::InspectInboxBroker { binding } => {
                 identity(binding)
             }
@@ -496,7 +510,8 @@ mod tests {
         let decode = |sources| {
             NativeRecoveryRequest::decode(
                 &serde_json::to_vec(&serde_json::json!({"publication":publication,
-                    "decoderSources":sources,"request":{"action":"review"}}))
+                    "decoderSources":sources,"request":{"action":"inspect-close-effects",
+                        "operationId":"close-1","effectIds":["b".repeat(64)],"reason":"resolve uncertainty"}}))
                 .unwrap(),
             )
         };

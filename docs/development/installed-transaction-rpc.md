@@ -16,6 +16,13 @@ namespace incarnation and result-read policy. The companion's formats are
 selected deployment and preserves its operation narrowing. Additional grant
 constraints refuse until their adapter is implemented.
 
+The maintained guest builders include the exact captured `state-schema.json`
+and `transaction-profile.json` in the signed package. When a package carries a
+schema asset, standalone selection verifies that the retained asset matches
+the companion's `stateSchema` digest. A signed schema describes the
+application's format. Migration still needs its own approved decoder,
+authorization and checkpoint.
+
 The state provider binding must describe the actual protected engine profile,
 configuration digest and configured epoch. `ProtectedStoreConfig::inspection_profile`
 computes that descriptive identity from the selected engine limits; the
