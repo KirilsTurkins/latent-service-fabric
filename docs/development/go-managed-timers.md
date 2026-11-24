@@ -137,6 +137,34 @@ drops. Each case requires the expected cancellation or deadline outcome and idle
 Store, provider and quota observations; a fresh activation follows. The
 original Task16, Wait4 and Timer2 limits remain.
 
-This specifies a bounded, instrumented qualification, not a claim that it has
-executed, that every cancellation interleaving is covered, or that process RSS
-and kernel final-free have been measured.
+On November 24 the v7 overlap programme completed seven signed Go 1.27.4
+invocations on Linux. Reset/Reset and Reset/Stop completed both directly and
+after a garbage collection. Two more invocations stopped the root while both
+goroutines were parked. They reported cancellation and deadline expiry
+respectively. The original provider wait dropped in all six overlap cases.
+A fresh activation then succeeded. Each invocation finished with zero live
+Stores and instances, provider waits, fuel, memory and admission reservations.
+The instrumented programme measures these interleavings and their activation
+counters. Kernel retirement and aggregate Go resource costs remain open.
+[Component, per-case results and provider witnesses](../testing/evidence/go-v7-timer-overlap-2026-11-24.json)
+
+The v5 and v7 profiles also ran both cases where `Stop` reached the pending
+timer first. In Stop/Reset, `Stop` returned true, `Reset` returned false and
+the timer was active again. In Stop/Stop, the calls returned true and false
+and the timer stayed stopped. Both goroutines parked on the original wait.
+The signed programme verified its physical release in all eight overlap cases
+per profile. Each profile completed nine invocations including a fresh final
+call. The observed Stores, instances, provider waits and reservations returned
+to zero after each call.
+[v5 and v7 components, earlier failed checks and per-call observations](../testing/evidence/go-stop-first-timer-races-2026-11-24.json)
+
+## Go 1.27.4 and the v7 profile
+
+The managed v7 programme completed 43 signed invocations with its original
+limit of two timers and four waits. Five further invocations exercised
+a five-nanosecond timer at monotonic zero, coalesced ticker periods, wall-clock
+jumps and root cancellation before a sleep elapsed. Those clock cases used a
+controlled provider. A separate six-call programme used the instrumented guest
+to observe stop and reset after the original host wait returned. All three
+components were compiled from the same source revision.
+[Components, limits and signed outcomes](../testing/evidence/go-v7-managed-timers-current-2026-11-24.json)

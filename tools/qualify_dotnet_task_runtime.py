@@ -14,7 +14,7 @@ from tools.build_observation import build_environment
 from tools.dotnet_guest.build import build
 from tools.dotnet_guest.compiler import runtime_inputs
 from tools.dotnet_guest.task_wait import PROFILE, validate_current_receipt
-from tools.dotnet_task_runtime_fixture import EVENT_WAIT_MODE, QUALIFICATION_CASES, RESET_NOTIFICATION_MODE, expected, prepare, selected_fixture
+from tools.dotnet_task_runtime_fixture import EVENT_WAIT_MODE, QUALIFICATION_CASES, RESET_NOTIFICATION_MODE, TIMER_CHANGE_CASES, expected, prepare, selected_fixture
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
 from tools.qualify_dotnet_standard_console import inherited
@@ -68,7 +68,7 @@ def require_reset_notification_receipt(captured, observed):
             and all(type(row) is dict for row in cases)
             and [row.get('mode') for row in cases] == list(QUALIFICATION_CASES),
             'dotnet-tasks-exact-case-inventory')
-    for mode in (EVENT_WAIT_MODE, *event_context.CASES, RESET_NOTIFICATION_MODE):
+    for mode in (EVENT_WAIT_MODE, *event_context.CASES, *TIMER_CHANGE_CASES, RESET_NOTIFICATION_MODE):
         witness = cases[QUALIFICATION_CASES.index(mode)]
         invocation = witness.get('invocation')
         retirement = witness.get('retirement')
@@ -180,10 +180,11 @@ if __name__ == '__main__':
         for name in ('output', 'tools'):
             parser.add_argument('--' + name, type=Path, required=True)
         parser.add_argument('--source-commit', required=True)
+        parser.add_argument('--local', action='store_true', help='Start the 22-minute qualification deadline locally')
         arguments = parser.parse_args()
         from tools.dotnet_root_return import qualify_current_products
         print(json.dumps(qualify_current_products(arguments.output.resolve(), arguments.tools.resolve(),
-                                                 arguments.source_commit)))
+                                                 arguments.source_commit, local=arguments.local)))
         raise SystemExit(0)
     if '--root-return' in sys.argv[1:]:
         parser = argparse.ArgumentParser(description='Closed NORMAL root-return fixture')

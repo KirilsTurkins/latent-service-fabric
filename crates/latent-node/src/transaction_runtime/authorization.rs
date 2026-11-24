@@ -12,6 +12,32 @@ use std::{sync::Arc, time::Instant};
 
 pub use crate::PolicyCallBinding;
 
+#[derive(Clone)]
+pub(super) enum IntentBindings {
+    Single(Option<Arc<PolicyCallBinding>>),
+    Paired {
+        http: (String, Arc<PolicyCallBinding>),
+        event: (String, Arc<PolicyCallBinding>),
+    },
+}
+impl IntentBindings {
+    fn policies(&self) -> [Option<&Arc<PolicyCallBinding>>; 2] {
+        match self {
+            Self::Single(binding) => [binding.as_ref(), None],
+            Self::Paired { http, event } => [Some(&http.1), Some(&event.1)],
+        }
+    }
+
+    fn select(&self, name: &str, operation: &str) -> Option<&PolicyCallBinding> {
+        match self {
+            Self::Single(binding) => binding.as_deref(),
+            Self::Paired { http, .. } if operation == "http" && name == http.0 => Some(&http.1),
+            Self::Paired { event, .. } if operation == "event" && name == event.0 => Some(&event.1),
+            Self::Paired { .. } => None,
+        }
+    }
+}
+
 pub struct StateAuthorization {
     policy: Arc<PolicyStore>,
     pub(super) authority: Arc<NamespaceAuthority>,
@@ -20,10 +46,11 @@ pub struct StateAuthorization {
     service: String,
     publication: ReleaseUseEligibility,
     state: Arc<PolicyCallBinding>,
-    intents: Option<Arc<PolicyCallBinding>>,
+    intents: IntentBindings,
     pub(super) budget: ActivationBudget,
     pub(super) role: Option<Arc<super::command_role::CommandRole>>,
     pub(super) retention: Option<Arc<super::TransactionRetention>>,
+    ingress: Option<Arc<dyn super::TransactionIngressFence>>,
     pub(super) cancelled_metadata: Option<Arc<super::cancellation::CancellationAbortPermit>>,
 }
 impl StateAuthorization {
@@ -54,6 +81,34 @@ impl StateAuthorization {
         intents: Option<Arc<PolicyCallBinding>>,
         budget: ActivationBudget,
     ) -> Result<Self, PlatformError> {
+        Self::new_with_intents(
+            policy,
+            authority,
+            namespace,
+            principal,
+            service,
+            publication,
+            state,
+            IntentBindings::Single(intents),
+            budget,
+        )
+    }
+
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Retain the same independent admission owners for every intent profile"
+    )]
+    pub(super) fn new_with_intents(
+        policy: Arc<PolicyStore>,
+        authority: Arc<NamespaceAuthority>,
+        namespace: NamespaceRead,
+        principal: InvocationPrincipal,
+        service: String,
+        publication: ReleaseUseEligibility,
+        state: Arc<PolicyCallBinding>,
+        intents: IntentBindings,
+        budget: ActivationBudget,
+    ) -> Result<Self, PlatformError> {
         let scope = authority.ownership();
         if principal.tenant.as_ref() != Some(&scope.tenant)
             || principal.subject != scope.caller.owner_subject
@@ -66,7 +121,7 @@ impl StateAuthorization {
         {
             return Err(denied());
         }
-        for binding in std::iter::once(&state).chain(intents.as_ref()) {
+        for binding in std::iter::once(&state).chain(intents.policies().into_iter().flatten()) {
             if binding.policies.is_empty()
                 || binding.policies.len() > 8
                 || binding.operations.is_empty()
@@ -101,6 +156,7 @@ impl StateAuthorization {
             budget,
             role: None,
             retention: None,
+            ingress: None,
             cancelled_metadata: None,
         })
     }
@@ -113,6 +169,26 @@ impl StateAuthorization {
     pub(super) fn with_retention(mut self, retention: Arc<super::TransactionRetention>) -> Self {
         self.retention = Some(retention);
         self
+    }
+
+    pub(super) fn with_ingress(
+        mut self,
+        ingress: Option<Arc<dyn super::TransactionIngressFence>>,
+    ) -> Self {
+        self.ingress = ingress;
+        self
+    }
+
+    pub(super) fn with_ingress_current(
+        &self,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if let Some(ingress) = &self.ingress {
+            let mut action = Some(action);
+            ingress.with_current(&mut || action.take().ok_or_else(denied)?())
+        } else {
+            action()
+        }
     }
 
     pub(super) fn authorize(
@@ -140,7 +216,21 @@ impl StateAuthorization {
         output_bytes: usize,
         action: impl FnOnce(&SealedPolicyDecision<'_>) -> Result<T, PlatformError>,
     ) -> Result<T, PlatformError> {
-        self.evaluate(operation, input_bytes, output_bytes, false, action)
+        self.evaluate(operation, input_bytes, output_bytes, false, None, action)
+    }
+
+    pub(super) fn authorize_intent(
+        &self,
+        name: &str,
+        operation: &str,
+        input_bytes: usize,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        let binding = self.intents.select(name, operation).ok_or_else(denied)?;
+        self.evaluate("stage", input_bytes, 0, false, Some(binding), |decision| {
+            self.authority
+                .with_operation(&self.policy, decision, &self.namespace, "stage", action)
+        })
     }
 
     pub(super) fn authorize_completion(
@@ -157,11 +247,11 @@ impl StateAuthorization {
         &self,
         action: impl FnOnce(&SealedPolicyDecision<'_>) -> Result<T, PlatformError>,
     ) -> Result<T, PlatformError> {
-        self.evaluate("commit", 0, 0, true, action)
+        self.evaluate("commit", 0, 0, true, None, action)
     }
 
     pub(super) fn authorize_query_completion(&self) -> Result<(), PlatformError> {
-        self.evaluate("query-info", 0, 0, true, |_| Ok(()))
+        self.evaluate("query-info", 0, 0, true, None, |_| Ok(()))
     }
 
     pub(super) fn with_response_current(
@@ -169,13 +259,13 @@ impl StateAuthorization {
         operation: &str,
         action: impl FnOnce() -> Result<(), PlatformError>,
     ) -> Result<(), PlatformError> {
-        self.evaluate(operation, 0, 0, true, |decision| {
+        self.evaluate(operation, 0, 0, true, None, |decision| {
             self.authority.with_retained_response(
                 &self.policy,
                 decision,
                 &self.namespace,
                 operation,
-                action,
+                || self.with_ingress_current(action),
             )
         })
     }
@@ -186,14 +276,10 @@ impl StateAuthorization {
         input_bytes: usize,
         output_bytes: usize,
         completion: bool,
+        intent_binding: Option<&PolicyCallBinding>,
         action: impl FnOnce(&SealedPolicyDecision<'_>) -> Result<T, PlatformError>,
     ) -> Result<T, PlatformError> {
-        let intent = operation == "stage";
-        let binding = if intent {
-            self.intents.as_ref().ok_or_else(denied)?
-        } else {
-            &self.state
-        };
+        let binding = intent_binding.unwrap_or(&self.state);
         let now = Instant::now();
         if !completion {
             if let Some(retention) = &self.retention {
@@ -242,7 +328,7 @@ impl StateAuthorization {
                 principal: &self.principal,
                 service: &self.service,
                 publication: self.publication.publication().as_str(),
-                capability: if intent {
+                capability: if intent_binding.is_some() {
                     INTENT_CONTRACT
                 } else {
                     STATE_CONTRACT

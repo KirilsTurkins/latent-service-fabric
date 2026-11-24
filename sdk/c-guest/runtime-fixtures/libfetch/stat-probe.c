@@ -12,7 +12,13 @@ static bool range_request(const char *mode, const char *text, probe_string_t *re
                           probe_string_t *error) {
     struct url *url = fetchParseURL(text);
     if (!url) { probe_string_dup(error, "range-url"); return false; }
+    bool chunked = !strcmp(mode, "range-chunked");
+    bool early = !strcmp(mode, "range-short-body");
+    bool excess = !strcmp(mode, "range-long-body");
     url->offset = !strcmp(mode, "range-unsolicited") ? 0 : 5;
+    if (chunked) url->offset = 6;
+    if (early) url->offset = 7;
+    if (excess) url->offset = 8;
     struct url_stat stat;
     FILE *file = fetchXGet(url, &stat, "A");
     int saved = errno, code = fetchLastErrCode;
@@ -25,7 +31,7 @@ static bool range_request(const char *mode, const char *text, probe_string_t *re
                                 ? "invalid-content-range" : "unexpected-range-error");
         return false;
     }
-    if (strcmp(mode, "range") && strcmp(mode, "range-ignored")) {
+    if (strcmp(mode, "range") && strcmp(mode, "range-ignored") && !chunked && !early && !excess) {
         fclose(file); fetchFreeURL(url); probe_string_dup(error, "unexpected-range-success"); return false;
     }
     uint32_t checksum = 0;
@@ -41,6 +47,17 @@ static bool range_request(const char *mode, const char *text, probe_string_t *re
         if (n < sizeof(bytes)) break;
     }
     int failed = ferror(file);
+    if (early || excess) {
+        const char *expected = early ? "HTTP body ended before its content range" : "HTTP body exceeded its content range";
+        bool length_error = failed && !feof(file) && errno == EIO && fetchLastErrCode == FETCH_PROTO
+            && !strcmp(fetchLastErrString, expected);
+        int closed = fclose(file);
+        fetchFreeURL(url);
+        char detail[64];
+        snprintf(detail, sizeof(detail), "range-body-length:%zu:%u", count, (unsigned)checksum);
+        probe_string_dup(error, length_error && !closed ? detail : "unexpected-range-body-result");
+        return false;
+    }
     if (fclose(file) != 0) failed = 1;
     if (failed) {
         fetchFreeURL(url); probe_string_dup(error, "range-body-error"); return false;
@@ -92,7 +109,7 @@ bool exports_examples_libfetch_api_run(probe_string_t *input, probe_string_t *re
             ? "redirect-unsupported" : "unexpected-stat-error";
         free(copy); probe_string_dup(error, message); return false;
     }
-    if (strcmp(copy, "normal") && strcmp(copy, "fresh")) {
+    if (strcmp(copy, "normal") && strcmp(copy, "fresh") && strcmp(copy, "modified")) {
         free(copy); probe_string_dup(error, "unexpected-stat-success"); return false;
     }
     free(copy);

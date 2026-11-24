@@ -21,6 +21,8 @@
 
 struct response_stream {
     lsf_body_t body;
+    size_t range_remaining;
+    bool range_body;
     bool eof;
     bool failed;
     int saved_errno;
@@ -92,7 +94,11 @@ static ssize_t response_read(void *object, char *destination, size_t length) {
         errno = stream->saved_errno; return -1;
     }
     if (stream->eof) return 0;
-    const uint32_t maximum = length < LSF_FETCH_READ_BYTES ? (uint32_t)length : LSF_FETCH_READ_BYTES;
+    uint32_t maximum = length < LSF_FETCH_READ_BYTES ? (uint32_t)length : LSF_FETCH_READ_BYTES;
+    /* Keep valid partial bytes even if more data follows the declared range.
+     * Once the range is consumed, one real read distinguishes EOF from excess. */
+    if (stream->range_body && maximum > stream->range_remaining)
+        maximum = stream->range_remaining ? (uint32_t)stream->range_remaining : 1;
     latent_http_streaming_result_option_own_chunk_http_error_t result = {0};
     result.is_err = !latent_http_streaming_read(lsf_body_borrow(&stream->body), maximum,
                                                 &result.val.ok, &result.val.err);
@@ -100,9 +106,21 @@ static ssize_t response_read(void *object, char *destination, size_t length) {
         http_failure(result.val.err.tag);
         goto failed;
     }
-    if (!result.val.ok.is_some) { stream->eof = true; return 0; }
+    if (!result.val.ok.is_some) {
+        if (stream->range_body && stream->range_remaining) {
+            failure(FETCH_PROTO, EIO, "HTTP body ended before its content range");
+            goto failed;
+        }
+        stream->eof = true;
+        return 0;
+    }
     lsf_http_chunk_t chunk = {0};
     lsf_http_chunk_adopt(&chunk, result.val.ok.val);
+    if (stream->range_body && !stream->range_remaining) {
+        lsf_http_chunk_close(&chunk);
+        failure(FETCH_PROTO, EIO, "HTTP body exceeded its content range");
+        goto failed;
+    }
     latent_http_streaming_result_list_u8_http_error_t bytes = {0};
     bytes.is_err = !latent_http_streaming_chunk_bytes(lsf_http_chunk_borrow(&chunk),
                                                     &bytes.val.ok, &bytes.val.err);
@@ -118,6 +136,7 @@ static ssize_t response_read(void *object, char *destination, size_t length) {
         failure(FETCH_PROTO, EIO, "Invalid HTTP chunk; EOF was not observed");
         goto failed;
     }
+    if (stream->range_body) stream->range_remaining -= count;
     memcpy(destination, bytes.val.ok.ptr, count);
     probe_list_u8_free(&bytes.val.ok);
     lsf_http_chunk_close(&chunk);
@@ -207,6 +226,64 @@ static int http_status_category(uint16_t status) {
     }
 }
 
+static bool ascii_name(const uint8_t *text, const char *lowercase, size_t size) {
+    for (size_t i = 0; i < size; ++i) {
+        uint8_t c = text[i];
+        if (c >= 'A' && c <= 'Z') c += 'a' - 'A';
+        if (c != (uint8_t)lowercase[i]) return false;
+    }
+    return true;
+}
+
+static int date_digits(const uint8_t *text, size_t count) {
+    int value = 0;
+    for (size_t i = 0; i < count; ++i) {
+        if (text[i] < '0' || text[i] > '9') return -1;
+        value = value * 10 + text[i] - '0';
+    }
+    return value;
+}
+
+static int date_abbreviation(const uint8_t *text, const char *names) {
+    for (int i = 0; names[3 * i]; ++i)
+        if (ascii_name(text, names + 3 * i, 3)) return i;
+    return -1;
+}
+
+/* Parse the public HTTP calendar fields without consulting the guest locale,
+ * current time or timezone. FreeBSD libfetch also accepts the UTC spelling. */
+static time_t http_date(const probe_string_t *date) {
+    if (date->len != 29) return 0;
+    const uint8_t *p = date->ptr;
+    if (p[3] != ',' || p[4] != ' ' || p[7] != ' ' || p[11] != ' ' ||
+        p[16] != ' ' || p[19] != ':' || p[22] != ':' || p[25] != ' ' ||
+        (memcmp(p + 26, "GMT", 3) && memcmp(p + 26, "UTC", 3)) ||
+        date_abbreviation(p, "sunmontuewedthufrisat") < 0) return 0;
+    int month = date_abbreviation(p + 8, "janfebmaraprmayjunjulaugsepoctnovdec");
+    int year = date_digits(p + 12, 4), day = date_digits(p + 5, 2);
+    int hour = date_digits(p + 17, 2), minute = date_digits(p + 20, 2), second = date_digits(p + 23, 2);
+    if (month < 0 || year < 0 || day < 1 || day > 31 || hour < 0 || hour > 23 ||
+        minute < 0 || minute > 59 || second < 0 || second > 60) return 0;
+    struct tm calendar = {.tm_year = year - 1900, .tm_mon = month, .tm_mday = day,
+                          .tm_hour = hour, .tm_min = minute, .tm_sec = second == 60 ? 59 : second};
+    time_t result = timegm(&calendar);
+    if (calendar.tm_mday != day || calendar.tm_mon != month || calendar.tm_year != year - 1900) return 0;
+    return result + (second == 60);
+}
+
+static time_t last_modified(const latent_http_streaming_list_header_t *headers) {
+    const probe_string_t *value = NULL;
+    for (size_t i = 0; i < headers->len; ++i) {
+        const latent_http_streaming_header_t *field = &headers->ptr[i];
+        if (field->name.len == sizeof("last-modified") - 1 &&
+            ascii_name(field->name.ptr, "last-modified", sizeof("last-modified") - 1)) {
+            if (value) return 0;
+            value = &field->value;
+        }
+    }
+    return value ? http_date(value) : 0;
+}
+
 static bool content_length(const latent_http_streaming_list_header_t *headers, bool head,
                            size_t *length, off_t *representation_size, bool *known) {
     bool found = false;
@@ -216,14 +293,8 @@ static bool content_length(const latent_http_streaming_list_header_t *headers, b
     for (size_t i = 0; i < headers->len; ++i) {
         const latent_http_streaming_header_t *header = &headers->ptr[i];
         static const char name[] = "content-length";
-        if (header->name.len != sizeof(name) - 1) continue;
-        bool match = true;
-        for (size_t at = 0; at < sizeof(name) - 1; ++at) {
-            uint8_t value = header->name.ptr[at];
-            if (value >= 'A' && value <= 'Z') value += 'a' - 'A';
-            if (value != (uint8_t)name[at]) match = false;
-        }
-        if (!match) continue;
+        if (header->name.len != sizeof(name) - 1 ||
+            !ascii_name(header->name.ptr, name, sizeof(name) - 1)) continue;
         if (found || !header->value.len) return false;
         found = true;
         uint64_t value = 0;
@@ -265,14 +336,8 @@ static bool content_range(const latent_http_streaming_list_header_t *headers,
     for (size_t i = 0; i < headers->len; ++i) {
         const latent_http_streaming_header_t *header = &headers->ptr[i];
         static const char name[] = "content-range";
-        if (header->name.len != sizeof(name) - 1) continue;
-        bool match = true;
-        for (size_t at = 0; at < sizeof(name) - 1; ++at) {
-            uint8_t value = header->name.ptr[at];
-            if (value >= 'A' && value <= 'Z') value += 'a' - 'A';
-            if (value != (uint8_t)name[at]) match = false;
-        }
-        if (!match) continue;
+        if (header->name.len != sizeof(name) - 1 ||
+            !ascii_name(header->name.ptr, name, sizeof(name) - 1)) continue;
         if (found || header->value.len < 8) return false;
         found = true;
         const uint8_t *cursor = header->value.ptr, *end = cursor + header->value.len;
@@ -392,12 +457,13 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
     bool valid_range = true;
     if (status == 206) {
         /* Subtract after ordering to avoid an overflowing range end. */
-        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && requested_offset > 0 && known_length &&
+        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && requested_offset > 0 &&
             content_range(&completed.val.ok.headers, &actual_offset, &partial_length, &representation_size) &&
             actual_offset <= requested_offset &&
             (uint64_t)requested_offset - (uint64_t)actual_offset < (uint64_t)partial_length &&
-            partial_length == length;
+            (!known_length || partial_length == length);
     }
+    const time_t modified = stat ? last_modified(&completed.val.ok.headers) : 0;
     lsf_streaming_metadata_close(&completed.val.ok);
     if (status < 200 || status >= 300) {
         if (status >= 300 && status < 400) failure(FETCH_MOVED, ENOTSUP, "HTTP redirects are outside this profile");
@@ -416,16 +482,18 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
         failure(FETCH_PROTO, EIO, "Invalid or inconsistent HTTP content range");
         goto fail_file;
     }
+    if (status == 206) {
+        stream->range_body = true;
+        stream->range_remaining = partial_length;
+    }
     /* Servers may ignore Range and return 200; tell the caller its real start. */
     url->offset = actual_offset;
     url->length = partial_length;
     if (stat) {
         /* Selected wasm32 WASI size_t is 32-bit and off_t is signed 64-bit.
-         * Keep a valid maximum-size header distinct from missing length.
-         * This profile does not interpret Last-Modified; both times are the
-         * original unknown sentinel, never a fabricated local clock value. */
+         * Keep a valid maximum-size header distinct from missing length. */
         stat->size = representation_size;
-        stat->atime = stat->mtime = 0;
+        stat->atime = stat->mtime = modified;
     }
     return file;
 fail_file:

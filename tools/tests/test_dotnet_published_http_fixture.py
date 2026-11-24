@@ -1,8 +1,11 @@
 """Capture identities and immutable ordinary default-client project boundaries."""
 import io
 import json
+import os
 from pathlib import Path
+import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 import zipfile
 import copy
@@ -19,6 +22,28 @@ from tools.rust_capsule_project import snapshot
 
 
 class PublishedHttpCapture(unittest.TestCase):
+    def test_installed_recipe_passes_the_exact_reviewed_generator_to_the_offline_builder(self):
+        from tools import dev_guest_recipe as recipe
+        from tools.dev_workflow.common import digest
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            app, output, staged = root / 'app', root / 'output', root / 'build-cache/managed'
+            app.mkdir()
+            (staged / 'tools').mkdir(parents=True)
+            approval = digest(b'reviewed Refit generator closure')
+            argv = ['dev_guest_recipe.py', '--language', 'dotnet', '--project', str(app),
+                    '--output', str(output), '--executable-approval', approval]
+            with patch.object(sys, 'argv', argv), patch.object(sys, 'platform', 'linux'), \
+                    patch.object(sys, 'stdout', SimpleNamespace(buffer=io.BytesIO())), \
+                    patch.object(recipe.platform, 'machine', return_value='x86_64'), patch.dict(os.environ), \
+                    patch('tools.dev_managed_tools.unpack', return_value=staged), \
+                    patch('tools.dotnet_guest.build.build') as build:
+                self.assertEqual(recipe.main(), 0)
+            build.assert_called_once()
+            self.assertEqual(build.call_args.kwargs, {'tools': staged / 'tools', 'offline': True,
+                                                      'executable_approval': approval})
+
     def test_real_peer_oracle_requires_all_contacts_and_actual_uncertain_mutation(self):
         from tools import dotnet_published_http_node as node
         from tools.standard_http.peer import Peer

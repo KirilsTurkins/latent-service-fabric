@@ -66,7 +66,8 @@ def application_world(seed: bytes) -> bytes:
     return (source.replace("world service {\n", insertion, 1) + auxiliary).encode("utf8")
 
 
-def create(output: Path, language: str, name: str | None = None, draft_id: str = "demo", *, http_profile: str | None = None) -> Path:
+def create(output: Path, language: str, name: str | None = None, draft_id: str = "demo", *,
+           http_profile: str | None = None, event_profile: str | None = None) -> Path:
     if language not in LANGUAGES:
         raise ValueError("unsupported order-draft guest language")
     if not isinstance(draft_id, str) or not re.fullmatch(r"[a-z0-9][a-z0-9-]{0,31}", draft_id):
@@ -74,6 +75,9 @@ def create(output: Path, language: str, name: str | None = None, draft_id: str =
     if http_profile is not None and (not isinstance(http_profile, str)
             or re.fullmatch(r"qualified-http-v1:[0-9a-f]{64}", http_profile) is None):
         raise ValueError("configured qualified HTTP idempotency profile is required")
+    if event_profile is not None and (not isinstance(event_profile, str)
+            or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", event_profile) is None):
+        raise ValueError("configured JetStream idempotency profile is required")
     name = "order-draft-" + language if name is None else name
     if not re.fullmatch(r"[a-z][a-z0-9]*(?:-[a-z0-9]+)*", name) or len(name) > 64:
         raise ValueError("order-draft project name must be bounded lowercase kebab case")
@@ -96,7 +100,7 @@ def create(output: Path, language: str, name: str | None = None, draft_id: str =
     # Keep each language's existing compiler/runtime memory, fuel and watchdog
     # bounds; only narrow the inherited application state/intent allowances.
     if "limits" in project:
-        project["limits"].update(stateReadBytes=4096, stateWriteBytes=1024, effectCount=2)
+        project["limits"].update(stateReadBytes=1024 * 1024, stateWriteBytes=64 * 1024, effectCount=2)
         if project["limits"].get("outboundRequests", 0) != 0 or project["limits"].get("childCalls", 0) != 0:
             raise ValueError("order-draft project cannot inherit immediate HTTP or child authority")
     project_path.write_text(json.dumps(project, indent=2) + "\n", encoding="utf8", newline="\n")
@@ -110,11 +114,18 @@ def create(output: Path, language: str, name: str | None = None, draft_id: str =
     declaration_path.write_text(json.dumps(declaration, indent=2) + "\n", encoding="utf8", newline="\n")
     from tools.dev_workflow.transaction_binding import validate
     validate(declaration_path.read_bytes(), capsule=project["service"], deployment=project["name"], binding=project["name"])
-    from tools.transaction_guest_project import HTTP_REQUIREMENTS, reference_http_requirements
-    (project_root / HTTP_REQUIREMENTS).unlink(missing_ok=True)
-    if http_profile is not None:
-        requirements = reference_http_requirements(project, declaration_path.read_bytes(), http_profile)
-        (project_root / HTTP_REQUIREMENTS).write_text(json.dumps(requirements, indent=2) + "\n", encoding="utf8", newline="\n")
+    from tools.transaction_guest_project import (
+        EVENT_REQUIREMENTS, HTTP_REQUIREMENTS, reference_event_requirements, reference_http_requirements,
+    )
+    for name, profile, prepare in (
+        (HTTP_REQUIREMENTS, http_profile, reference_http_requirements),
+        (EVENT_REQUIREMENTS, event_profile, reference_event_requirements),
+    ):
+        path = project_root / name
+        path.unlink(missing_ok=True)
+        if profile is not None:
+            requirements = prepare(project, declaration_path.read_bytes(), profile)
+            path.write_text(json.dumps(requirements, indent=2) + "\n", encoding="utf8", newline="\n")
     # The original SDK lock retains its original template provenance. Edited
     # application source is captured by the normal language build observation.
     authored = {"formatVersion": 1, "application": "order-draft-v1", "language": language, "world": WORLD,
@@ -124,6 +135,8 @@ def create(output: Path, language: str, name: str | None = None, draft_id: str =
                 "stateSchema": declaration["stateSchema"], "namespace": declaration["namespace"]}
     if http_profile is not None:
         authored["httpProfile"] = http_profile
+    if event_profile is not None:
+        authored["eventProfile"] = event_profile
     (project_root / "order-draft-source.json").write_text(json.dumps(authored, indent=2) + "\n", encoding="utf8", newline="\n")
     return project_root
 
@@ -135,8 +148,10 @@ def main() -> int:
     parser.add_argument("--name")
     parser.add_argument("--draft-id", default="demo")
     parser.add_argument("--http-profile", help="Exact idempotency profile of the configured qualified HTTP adapter")
+    parser.add_argument("--event-profile", help="Exact idempotency profile of the configured JetStream adapter")
     args = parser.parse_args()
-    output = create(args.output, args.language, args.name, args.draft_id, http_profile=args.http_profile)
+    output = create(args.output, args.language, args.name, args.draft_id,
+                    http_profile=args.http_profile, event_profile=args.event_profile)
     print(json.dumps({"project": str(output), "language": args.language, "world": WORLD}))
     return 0
 

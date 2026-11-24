@@ -416,68 +416,74 @@ async fn capture(
                 } else {
                     None
                 };
-                let intents = if operation.deferred_event.is_some() {
-                    event::install(
-                        asset.get(),
-                        &operation,
-                        &deployment.manifest,
-                        &event_adapters,
-                        &policy,
-                        &authority,
-                        selected.as_ref(),
-                        &worker_original,
-                        deadline,
-                        &event_registry,
-                        Arc::clone(&metadata_memory),
-                    )?
-                } else {
-                    http::install(
-                        asset.get(),
-                        &operation,
-                        &deployment.manifest,
-                        &adapters,
-                        &policy,
-                        &authority,
-                        selected.as_ref(),
-                        &worker_original,
-                        deadline,
-                        &registry,
-                        Arc::clone(&metadata_memory),
-                    )?
-                };
+                let event_intent = event::install(
+                    asset.get(),
+                    &operation,
+                    &deployment.manifest,
+                    &event_adapters,
+                    &policy,
+                    &authority,
+                    selected.as_ref(),
+                    &worker_original,
+                    deadline,
+                    &event_registry,
+                    Arc::clone(&metadata_memory),
+                )?;
+                let http_intent = http::install(
+                    asset.get(),
+                    &operation,
+                    &deployment.manifest,
+                    &adapters,
+                    &policy,
+                    &authority,
+                    selected.as_ref(),
+                    &worker_original,
+                    deadline,
+                    &registry,
+                    Arc::clone(&metadata_memory),
+                )?;
                 asset.get().with_current(&mut |_| Ok(()))?;
                 let (asset, capture_memory) = asset.into_parts();
                 let (metadata, declaration, publication, _digest, _original) = asset.into_parts();
                 let binding =
                     policy::management_binding(&operation, &declaration, quota, management_state);
                 let installation = if let Some(selected) = selected {
-                    Some(
-                        TransactionInstallation::new(
-                            metadata,
-                            declaration,
-                            &deployment.manifest,
-                            publication,
-                            Arc::new(state_binding),
-                            intents,
-                            recovery,
-                            operation.result_policy,
-                            ResultPolicy {
-                                replay: ReplayPolicy::Full,
-                                maximum_result_bytes:
-                                    latent_core::transaction_contract::VALUE_BYTES,
-                                result_millis: 86_400_000,
-                                identity_millis: 604_800_000,
-                                maximum_attempts: 16,
-                            },
-                        )?
-                        .with_current_selection(
-                            Arc::new(selection::ChargedSelection::new(
-                                selected,
-                                Arc::clone(&metadata_memory),
-                            )),
-                            &owners,
-                        )?,
-                    )
+                    let (single_intent, paired_intents) = match (http_intent, event_intent) {
+                        (Some(http), Some(event)) => (None, Some((http, event))),
+                        (Some((_, binding)), None) | (None, Some((_, binding))) => {
+                            (Some(binding), None)
+                        }
+                        (None, None) => (None, None),
+                    };
+                    let installation = TransactionInstallation::new(
+                        metadata,
+                        declaration,
+                        &deployment.manifest,
+                        publication,
+                        Arc::new(state_binding),
+                        single_intent,
+                        recovery,
+                        operation.result_policy,
+                        ResultPolicy {
+                            replay: ReplayPolicy::Full,
+                            maximum_result_bytes: latent_core::transaction_contract::VALUE_BYTES,
+                            result_millis: 86_400_000,
+                            identity_millis: 604_800_000,
+                            maximum_attempts: 16,
+                        },
+                    )?;
+                    let installation = if let Some((http, event)) = paired_intents {
+                        installation.with_paired_intents(http, event)?
+                    } else {
+                        installation
+                    };
+                    Some(installation.with_current_selection(
+                        Arc::new(selection::ChargedSelection::new(
+                            selected,
+                            Arc::clone(&metadata_memory),
+                        )),
+                        &owners,
+                    )?)
                 } else {
                     None
                 };

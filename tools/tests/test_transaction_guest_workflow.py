@@ -1,6 +1,7 @@
 """Profile and companion integrity; these cases claim no guest execution."""
 from __future__ import annotations
 
+import base64
 import copy
 import json
 from pathlib import Path
@@ -8,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tools.dev_workflow import build_artifacts, build_cache, bundle, common, project, tool_inventory, transaction_binding
+from tools.dev_workflow import build_artifacts, build_cache, bundle, common, node_test_profile, node_transaction_query, project, scenarios, tool_inventory, transaction_binding
 from tools.tests.test_dev_contracts import descriptor
 from tools.transaction_guest_project import augment
 
@@ -112,10 +113,12 @@ class TransactionGuestWorkflowTests(unittest.TestCase):
                 selected = json.loads((captured / "template.json").read_bytes())["project"]
                 self.assertEqual(selected["hostAbi"], common.TRANSACTION_HOST_ABI)
                 self.assertEqual(selected["artifacts"]["transactionBinding"], "output/transaction-binding.json")
-                scenarios = json.loads((captured / "tests/scenarios.json").read_bytes())["scenarios"]
-                self.assertTrue(all("transactional-state" in case["requires"] for case in scenarios))
-                self.assertTrue(all(not any("state" in grant or "intents" in grant
-                    for grant in case.get("execution", {}).get("grants", [])) for case in scenarios))
+                cases = json.loads((captured / "tests/scenarios.json").read_bytes())["scenarios"]
+                self.assertEqual(len(cases), 1)
+                self.assertIn("transactional-state", cases[0]["requires"])
+                self.assertEqual(cases[0]["transactionQuery"]["namespace"], "transactional-aggregate")
+                self.assertEqual(cases[0]["transactionQuery"]["incarnation"], "1")
+                self.assertNotIn("execution", cases[0])
                 if language == "rust":
                     other = payload / "default"
                     # The default still distributes the three existing tutorials.
@@ -125,6 +128,77 @@ class TransactionGuestWorkflowTests(unittest.TestCase):
                     shutil.copytree(payload / "recipe", other / "recipe")
                     compiler_inventory(other, "a" * 40, language)
                     self.assertEqual(set(templates(other, "a" * 40, language)), {"greeting", "word-count", "shipping"})
+
+    def test_phase4_fixture_preparation_preserves_installed_state_and_providers(self):
+        selected = {**descriptor(), "hostAbi": common.TRANSACTION_HOST_ABI}
+        retained = {"state": {"formatVersion": 2, "operations": []},
+                    "budgetProfile": {"mode": "phase4", "maximumStateReadBytes": 262144},
+                    "providers": {"formatVersion": 1, "bindings": []},
+                    "capabilityPolicies": {"formatVersion": 1}}
+        configuration, fixtures = node_test_profile.configuration(retained, selected)
+        self.assertEqual(configuration, retained)
+        self.assertIsNot(configuration["state"], retained["state"])
+        self.assertEqual(fixtures, {})
+        self.assertEqual(node_test_profile.scope(selected)["hostAbi"], common.TRANSACTION_HOST_ABI)
+        with self.assertRaisesRegex(common.DevError, "transaction-test-requires-configured-phase4-node"):
+            node_test_profile.configuration({}, selected)
+        with self.assertRaisesRegex(common.DevError, "stateless-test-will-not-replace-phase4-node-profile"):
+            node_test_profile.configuration(retained, descriptor())
+
+    def test_node_query_uses_original_scope_and_never_runs_in_portable(self):
+        token = base64.b64encode(b"original-view").decode("ascii")
+        case = {"id": "fresh-query", "service": "examples/aggregate", "contract": "examples:aggregate/api@1.0.0",
+                "function": "query", "mediaType": node_transaction_query.MEDIA_TYPE, "input": "query.json",
+                "requires": ["transactional-state"], "fixtures": [], "timeoutMillis": 5000, "required": True,
+                "expect": {"category": "success", "payload": "result.json"},
+                "transactionQuery": {"namespace": "original", "incarnation": str(2**64 - 1), "entity": "a",
+                                     "route": "aggregate", "minimumViewVersion": token}}
+        revision = {"publicationId": "publication", "revisionId": "revision",
+                    "releaseDigest": "component", "routeGeneration": str(2**64 - 1)}
+        view = {"namespace": {"namespace": "original", "incarnation": str(2**64 - 1)},
+                "version": {"data": token, "encoding": "base64"}}
+        response = {"category": "success", "outcomeKnown": True, "data": {
+            "source": {**revision, "componentDigest": "component"}, "view": view,
+            "invocation": {"activationId": "read-only", "consumption": None, "result": {"kind": "success",
+                "value": {"payload": {"data": "W10=", "encoding": "base64"}, "mediaType": case["mediaType"]}}}
+        }}
+        class Client:
+            def call(self, *arguments, **options):
+                raise AssertionError("unintercepted client operation")
+
+        original = {"schemaVersion": "latent.dev.scenarios.v1", "scenarios": [case]}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / case["input"]).write_bytes(b"[]")
+            (root / case["expect"]["payload"]).write_bytes(b"[]")
+            with patch.object(node_transaction_query.state, "atomic") as budget, patch.object(
+                node_transaction_query, "validate", wraps=node_transaction_query.validate
+            ) as validate:
+                def adapter(selected, raw):
+                    with patch.object(Client, "call", return_value=response) as call:
+                        result = node_transaction_query.execute(root, Client(), selected, raw, {"effectCount": 3})
+                    args, kwargs = call.call_args
+                    self.assertEqual(args[:3], ("--phase4", "transaction", "query"))
+                    self.assertEqual(args[args.index("--incarnation") + 1], str(2**64 - 1))
+                    self.assertEqual(args[args.index("--minimum-view-version") + 1], token)
+                    self.assertEqual(kwargs["stdin"], b"[]")
+                    return result
+
+                report = scenarios.run(original, root, "node", [], adapter, {},
+                                       supported={"transactional-state"}, expected_revision=revision)
+                self.assertTrue(report["passed"])
+                self.assertEqual(report["results"][0]["transactionView"], view)
+                budget.assert_called_once_with(root, "test-budget.json", {"stateWriteBytes": 0, "effectCount": 0})
+                validate.assert_called()
+            report = scenarios.run(original, root, "portable", [], lambda *_: self.fail("portable invocation"),
+                                   {}, supported=set())
+            self.assertEqual(report["results"][0]["status"], "unsupported")
+
+        for coercion in (0, "0", "01", str(2**64), "unrecognized"):
+            invalid = copy.deepcopy(original)
+            invalid["scenarios"][0]["transactionQuery"]["incarnation"] = coercion
+            with self.subTest(coercion=coercion), self.assertRaises(common.DevError):
+                scenarios.validate(invalid, "node")
 
     def test_phase4_bundle_cannot_claim_a_portable_or_non_guest_profile(self):
         entries = [{"path": name, "size": 1, "sha256": common.digest(name.encode()), "executable": False}

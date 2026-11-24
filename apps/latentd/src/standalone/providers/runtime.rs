@@ -85,6 +85,16 @@ pub(in crate::standalone) struct ProviderRuntime {
 }
 
 impl ProviderRuntime {
+    pub(in crate::standalone) async fn inspect_incoming(
+        &self,
+        settings: &crate::config::triggers::TriggerSettings,
+        tenant: &str,
+        binding: &str,
+        deadline: Instant,
+    ) -> Result<latent_nats::triggers::BrokerInputProgress, PlatformError> {
+        triggers::inspect(&self.pools, settings, tenant, binding, deadline).await
+    }
+
     #[cfg(test)]
     pub(in crate::standalone) async fn install_control_test_poller(
         &self,
@@ -388,6 +398,9 @@ impl ProviderRuntime {
                 owner.runtime.install_phase_http(provider)?;
             }
             if let Some(blob) = &config.blob {
+                let recovery_only = state_bootstrap
+                    .as_ref()
+                    .is_some_and(|state| state.recovery_only);
                 let root = settings
                     .data_directory
                     .join(format!("provider-blobs-{}", blob.identity.id));
@@ -396,18 +409,18 @@ impl ProviderRuntime {
                         let root = root.clone();
                         let namespace = blob.namespace.clone();
                         owner.pools.control_blocking(move || {
-                            LocalBlobStore::open_with_checkpoint(
-                                &root,
-                                &namespace,
-                                LocalBlobLimits::default(),
-                                &|| {
-                                    if Instant::now() >= deadline {
-                                        Err(latent_blobs::local::LocalBlobError::DeadlineExceeded)
-                                    } else {
-                                        Ok(())
-                                    }
-                                },
-                            )
+                            let open = if recovery_only {
+                                LocalBlobStore::reopen_with_checkpoint
+                            } else {
+                                LocalBlobStore::open_with_checkpoint
+                            };
+                            open(&root, &namespace, LocalBlobLimits::default(), &|| {
+                                if Instant::now() >= deadline {
+                                    Err(latent_blobs::local::LocalBlobError::DeadlineExceeded)
+                                } else {
+                                    Ok(())
+                                }
+                            })
                         })
                     },
                     deadline,

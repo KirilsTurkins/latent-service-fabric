@@ -12,7 +12,7 @@ from tools.build_observation import file_identity
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot, write_json
 from tools.dotnet_guest.sdk import install as install_sdk
 from tools.dotnet_guest import runtime, http_errors, task_wait, closed_filesystem
-from tools.dotnet_guest.resources import install as install_resources
+from tools.dotnet_guest.resources import install as install_resources, msbuild_literal
 from tools.guest_compatibility_build import interface_names
 
 SDK_VERSION = "10.0.100"
@@ -171,6 +171,15 @@ class Compiler:
 
     def run(self, name, executable, *arguments):
         executable = Path(executable).resolve(strict=True)
+        if arguments[:1] == ('build',) and executable == self.dotnet.resolve(strict=True):
+            # Roslyn records these paths in debug documents, CallerFilePath and
+            # deterministic assembly identities. Only the private compiler copy
+            # has a stable logical name. Keep the original command paths for I/O.
+            workspace = str(self.commands.root.parent)
+            # Roslyn doubles path-map delimiters. MSBuild also parses commas in
+            # command-line properties before it forwards the value to Roslyn.
+            prefix = msbuild_literal(workspace.replace('=', '==')).replace(',', '%2C%2C')
+            arguments = (*arguments, '-p:PathMap=' + prefix + '=/_/lsf')
         if self.isolation is None:
             return self.commands.run(name, executable, *arguments)
         return self.commands.run(name, *self.isolation.wrap(executable, [str(value) for value in arguments],

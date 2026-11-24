@@ -133,6 +133,47 @@ class StreamOperator(unittest.TestCase):
         self.assertTrue(policy["requireAudit"])
         self.assertEqual(policy["ceiling"], stream.CEILING)
 
+    def test_explicit_operations_bind_grant_revoke_and_reopen_to_the_same_selection(self):
+        root = self.root / "read-only-owner"
+        paths.new_directory(root)
+        selected = ["connect", "read", "ready", "inspect", "close", "chunk-bytes"]
+        operator = stream.StreamOperator(root, self.client, **self.options, operations=selected[::-1])
+        operator.grant()
+        binding = self.client.records["provider-binding:" + self.options["binding_id"]]["document"]
+        policy = self.client.records["policy:" + self.options["policy_id"]]["document"]
+        self.assertEqual(binding["restriction"]["operations"], selected)
+        self.assertEqual(policy["rules"][0]["operations"], selected)
+        self.assertEqual(policy["rules"][0]["resources"]["endpoints"], [self.options["destination"]])
+        reopened = stream.StreamOperator(root, self.client, **self.options, operations=selected)
+        reopened.revoke()
+        revoked = self.client.records["policy:" + self.options["policy_id"]]["document"]["rules"][0]
+        self.assertEqual((revoked["effect"], revoked["operations"]), ("deny", selected))
+        with self.assertRaisesRegex(DevError, "stream-operator-owner-changed"):
+            stream.StreamOperator(root, self.client, **self.options)
+
+    def test_full_selection_reopens_the_original_owner_and_recovers_its_pending_grant(self):
+        operator = self.operator()
+        original = (self.operator_root / "stream-operator-owner.json").read_bytes()
+        self.assertNotIn("operations", operator.owner)
+        self.client.uncertain = True
+        with self.assertRaises(DevError):
+            operator.grant()
+        reopened = stream.StreamOperator(self.operator_root, self.client, **self.options,
+                                         operations=list(reversed(stream.OPERATIONS)))
+        self.assertEqual((self.operator_root / "stream-operator-owner.json").read_bytes(), original)
+        reopened.recover()
+        self.assertIsNone(reopened.journal.read()["pending"])
+        self.assertEqual(reopened._binding()["restriction"]["operations"], stream.OPERATIONS)
+
+    def test_invalid_operation_lists_never_claim_an_owner(self):
+        for index, operations in enumerate(([], None, "read", ["read", "read"], ["unknown"], [[]], [False])):
+            root = self.root / ("invalid-operations-" + str(index))
+            paths.new_directory(root)
+            with self.subTest(operations=operations), self.assertRaisesRegex(DevError, "stream-operator-invalid-operations"):
+                stream.StreamOperator(root, self.client, **self.options, operations=operations)
+            self.assertFalse((root / "stream-operator-owner.json").exists())
+        self.assertFalse(self.client.records)
+
     def test_scoped_ipv6_is_rejected_before_owner_or_policy_mutation(self):
         self.assertEqual(stream.endpoint({"host": "2001:db8::1", "port": 443, "transport": "tcp"})["host"],
                          "2001:db8::1")
@@ -762,6 +803,22 @@ class StreamOperator(unittest.TestCase):
         self.assertEqual(result["tenantUsage"]["scope"], "tenant")
         self.assertEqual(result["revision"]["publicationId"], self.options["publication"])
         self.assertFalse(result["executionPermission"])
+
+    def test_tenant_only_inspection_requires_explicit_scoped_usage(self):
+        operator = self.operator()
+        operator.grant()
+        scoped = {**self.client.inspection, "nodeUsage": None}
+        responses = {
+            "node-wide": {**scoped, "nodeUsage": {"scope": "node"}},
+            "absent tenant": {**scoped, "tenantUsage": None},
+            "wrong tenant scope": {**scoped, "tenantUsage": {"scope": "node"}},
+            "missing node field": {key: value for key, value in scoped.items() if key != "nodeUsage"},
+        }
+        for label, response in responses.items():
+            with self.subTest(label=label):
+                self.client.inspection = response
+                with self.assertRaisesRegex(DevError, "inspection-scope-changed"):
+                    operator.inspect("mail-deployment", tenant_only=True)
 
     def test_inspection_rejects_reused_deployment_with_missing_or_foreign_publication(self):
         operator = self.operator()

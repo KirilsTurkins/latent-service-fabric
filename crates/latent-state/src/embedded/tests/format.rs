@@ -52,7 +52,7 @@ fn v1_upgrade_preserves_original_rows_and_existing_read_views() {
         file_status: None,
     };
     assert_eq!(
-        disk_format::inspect(&store.database().unwrap()),
+        disk_format::inspect(&*store.database().unwrap()),
         Ok(State::Legacy)
     );
     let original = store.snapshot().unwrap();
@@ -69,7 +69,7 @@ fn v1_upgrade_preserves_original_rows_and_existing_read_views() {
         ]
     );
     assert_eq!(
-        disk_format::inspect(&store.database().unwrap()),
+        disk_format::inspect(&*store.database().unwrap()),
         Ok(State::Current)
     );
     let published = description(&store.database().unwrap());
@@ -95,7 +95,7 @@ fn v1_upgrade_preserves_original_rows_and_existing_read_views() {
     drop(store);
     let reopened = EmbeddedStore::open_file(file(&path), StoreLimits::default()).unwrap();
     assert_eq!(
-        disk_format::inspect(&reopened.database().unwrap()),
+        disk_format::inspect(&*reopened.database().unwrap()),
         Ok(State::Current)
     );
     assert!(description(&reopened.database().unwrap())
@@ -274,7 +274,7 @@ async fn interrupted_first_creation_refuses_unseeded_engine_and_recovers_durable
         } else {
             let store = EmbeddedStore::open_file(file(&path), StoreLimits::default()).unwrap();
             assert_eq!(
-                disk_format::inspect(&store.database().unwrap()),
+                disk_format::inspect(&*store.database().unwrap()),
                 Ok(State::Current)
             );
             assert!(description(&store.database().unwrap())
@@ -310,7 +310,7 @@ async fn interrupted_v1_upgrade_reopens_same_business_rows_and_never_downgrades(
         drop(db);
         let store = EmbeddedStore::open_file(file(&path), StoreLimits::default()).unwrap();
         assert_eq!(
-            disk_format::inspect(&store.database().unwrap()),
+            disk_format::inspect(&*store.database().unwrap()),
             Ok(State::Current)
         );
         let view = store.snapshot().unwrap();
@@ -344,7 +344,7 @@ fn backend_sync_failure_during_upgrade_refuses_readiness_and_requires_exact_reop
     assert!(status.close_observed());
     let reopened = EmbeddedStore::open_file(file(&path), StoreLimits::default()).unwrap();
     assert_eq!(
-        disk_format::inspect(&reopened.database().unwrap()),
+        disk_format::inspect(&*reopened.database().unwrap()),
         Ok(State::Current)
     );
     let view = reopened.snapshot().unwrap();

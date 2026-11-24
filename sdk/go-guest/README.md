@@ -36,6 +36,12 @@ authenticates its 29 selected upstream files and scheduler postimages; it does
 not authenticate the current 1.27.4 toolchain. Earlier signed receipts and
 diagnostic catalogues retain their original compiler version.
 
+The Go 1.27.4 network profile verifies all four selected standard-library files
+before generating the declared-stream overlay. Go changed address conversion in
+three direct dial methods. Ordinary `DialContext` still uses the declared stream
+provider. Direct `DialTCP` returns the profile's unsupported-operation error.
+[Go 1.27.4 network source comparison](../../docs/testing/evidence/go-network-source-1.27.4-2026-11-24.json)
+
 The opt-in [maintenance worker profile](../../docs/development/go-managed-idle.md)
 reserves finite original-ledger capacity for the pinned runtime's internal
 workers and fences retirement. Its signed programmes retain their original

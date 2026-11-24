@@ -28,6 +28,7 @@ const FOURTH: i32 = 160;
 const UNIT: i32 = 192;
 const ASYNC_RESULT: i32 = 224;
 const OBSERVATION: i32 = 256;
+pub const PARKED_OWNER_RELOCATION: u32 = 33;
 pub const COMPLETED_CYCLES: u32 = 40;
 
 pub fn bytes() -> Vec<u8> {
@@ -345,7 +346,7 @@ fn begin_wait(body: &mut Function, delay: i64) {
         ],
     );
 }
-fn observe_root_only(body: &mut Function) {
+fn observe_tasks(body: &mut Function, tasks: i32, parked: i32) {
     emit(
         body,
         [
@@ -354,9 +355,14 @@ fn observe_root_only(body: &mut Function) {
         ],
     );
     success(body, OBSERVATION);
-    load(body, OBSERVATION + 12, 4);
-    emit(body, [Instruction::I32Const(1), Instruction::I32Eq]);
-    require(body);
+    for (offset, expected) in [(12, tasks), (40, parked)] {
+        load(body, OBSERVATION + offset, 4);
+        emit(body, [Instruction::I32Const(expected), Instruction::I32Eq]);
+        require(body);
+    }
+}
+fn observe_root_only(body: &mut Function) {
+    observe_tasks(body, 1, 0);
     for offset in [20, 28] {
         load(body, OBSERVATION + offset, 4);
         body.instruction(&Instruction::I32Eqz);
@@ -586,6 +592,28 @@ fn guest() -> Module {
         case(&mut body, mode, |b| completed_cycles(b, mode == 27));
     }
     case(&mut body, 32, completed_failed_cycles);
+    case(&mut body, PARKED_OWNER_RELOCATION.cast_signed(), |b| {
+        register(b, 0, false, SECOND);
+        success(b, SECOND);
+        token(b, PARK, Some(SECOND));
+        success(b, UNIT);
+        settled(b, None);
+        observe_tasks(b, 1, 1);
+
+        // Reuse the released capacity, then close independent admission.
+        register(b, 0, false, THIRD);
+        success(b, THIRD);
+        emit(b, [Instruction::I32Const(UNIT), Instruction::Call(CLOSE)]);
+        success(b, UNIT);
+        observe_tasks(b, 2, 1);
+
+        token(b, WAKE, Some(SECOND));
+        success(b, UNIT);
+        observe_tasks(b, 2, 0);
+        settled(b, Some(SECOND));
+        observe_tasks(b, 1, 0);
+        remember(b, THIRD);
+    });
     case(&mut body, 28, |b| {
         token(b, PARK, None);
         success(b, UNIT);
@@ -661,20 +689,7 @@ fn guest() -> Module {
             // task. The async host timer cannot retain an exclusive Store borrow.
             register(b, 0, false, SECOND);
             success(b, SECOND);
-            emit(
-                b,
-                [
-                    Instruction::I32Const(OBSERVATION),
-                    Instruction::Call(OBSERVE),
-                ],
-            );
-            success(b, OBSERVATION);
-            load(b, OBSERVATION + 12, 4);
-            emit(b, [Instruction::I32Const(2), Instruction::I32Eq]);
-            require(b);
-            load(b, OBSERVATION + 40, 4);
-            emit(b, [Instruction::I32Const(1), Instruction::I32Eq]);
-            require(b);
+            observe_tasks(b, 2, 1);
             settled(b, Some(SECOND));
             finish_wait(b);
             success(b, ASYNC_RESULT);

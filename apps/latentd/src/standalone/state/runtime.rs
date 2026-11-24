@@ -97,6 +97,17 @@ impl From<StateShutdownReport> for StateRetirementReport {
 }
 
 impl StandaloneStateRuntime {
+    pub(in crate::standalone) fn bind_transaction_schema_owner(
+        &self,
+        deployments: &latent_control_store::DirectoryDeploymentRepository,
+    ) -> Result<(), PlatformError> {
+        deployments.bind_transaction_schema_owner(
+            &self.kernel.store,
+            &self.kernel.namespaces,
+            &self.kernel.native,
+        )
+    }
+
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     pub(in crate::standalone) async fn inbox_factory(
         &self,

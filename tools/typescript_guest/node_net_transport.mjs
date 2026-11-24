@@ -192,15 +192,23 @@ export function createNodeNetTransport(calls, target, inspect) {
       if (!returning || owner !== returning) throw failure('root-return-not-held');
       returning = undefined; drain = undefined;
     },
-    reserve(afterTail, receiver) {
+    reserve(afterTail, receiver, prepare, listener) {
       if (afterTail !== undefined && typeof afterTail !== 'function') throw failure('socket-progress');
+      if (prepare !== undefined && typeof prepare !== 'function') throw failure('socket-setup');
       if (returning) throw failure('canonical-return-admission');
       if (slots.length >= 2) throw failure('socket-port-limit');
       const token = freeze({});
-      push(slots, {token, pending: [], chunks: [], connection: undefined,
+      const item = {token, pending: [], chunks: [], connection: undefined,
         connecting: false, connectDone: false, closing: false, closed: false, unknown: false, terminalIntent: false,
         faulted: false, fault: undefined, userFaulted: false, afterTail, receiver, progressing: false,
-        callbackTails: 0, externalTails: 0, notification: false, stop: undefined});
+        callbackTails: 0, externalTails: 0, notification: false, stop: undefined};
+      push(slots, item);
+      // Setup may invoke a timer or a listener override that opens another socket.
+      // Hold this slot through setup. No native operation can start with its token yet.
+      if (prepare !== undefined) {
+        try { apply(prepare, receiver, [listener]); }
+        catch (cause) { remove(slots, indexOf(slots, item)); throw cause; }
+      }
       return token;
     },
     acceptTerminal(token) {

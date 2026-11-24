@@ -109,10 +109,21 @@ the exact signed publication selected for the consumer:
   "publication": "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "principal": {"kind": "administrator", "subject": "workflow-operator"},
   "destination": {"host": "127.0.0.1", "port": 32123, "transport": "tcp"},
+  "operations": ["connect", "read", "ready", "inspect", "close", "chunk-bytes"],
   "bindingId": "stream-installed",
   "policyId": "stream-allow"
 }
 ```
+
+The example limits the application to receiving data. It may open the
+connection, wait for readiness, read and inspect chunks, and close. Both
+the provider binding and the publication policy carry the same operations.
+A library that sends bytes needs `write` in its reviewed selection.
+
+The field accepts a nonempty set of distinct operation names. Their order has
+no effect. Omitting it retains the existing eight-operation TCP policy. Reopen
+a restricted operator with the same selection when inspecting, revoking,
+recovering or adopting a generation. Its durable owner binds that selection.
 
 The digests above are placeholders. A publication identifier must use the
 canonical `publication:sha256:` prefix followed by 64 lowercase hexadecimal
@@ -158,6 +169,13 @@ the same private CLI, client configuration, specification and state directory.
 This requests the deployment and its tenant usage through the tenant-scoped
 capability RPC. The response contains `nodeUsage: null`. Omit `--tenant-only`
 with a node-operator credential to include node-wide usage and quarantine counts.
+
+An authenticated tenant administrator inspected its deployment through the frozen
+Linux frontend on a standalone node. The response identified the tenant scope
+and returned `nodeUsage: null`. The same credential received a permission
+denial for node-wide usage. The run used a signed test fixture with the clock
+provider installed and checked that the policies and deployment stayed intact.
+[Packaged inspection results](../testing/evidence/stream-operator-tenant-inspection-2026-11-23.json)
 
 For a retained stream observation, the authenticated node-operator usage result
 includes optional `nodeUsage.streamQuarantinedConnections` as a decimal string.

@@ -1,0 +1,865 @@
+{
+  "schemaVersion": "latent.go.stack-ceiling.runtime.v1",
+  "sourceRevision": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+  "sourceDigest": "sha256:26f8d1be0d65a2478b5c8a120c2f1966b0e10f21dfbfe08441cb0ded7bbe59de",
+  "status": "passed",
+  "profile": "go-component-activation-v7",
+  "effectiveBudget": {
+    "cpuFuel": 1000000000,
+    "memoryBytes": 67108864,
+    "wallTimeLimitMillis": 120000,
+    "childCalls": 0,
+    "outboundRequests": 0,
+    "stateReadBytes": 0,
+    "stateWriteBytes": 0,
+    "blobReadBytes": 0,
+    "blobWriteBytes": 0,
+    "logBytes": 0,
+    "effectCount": 0
+  },
+  "runtimeLimits": {
+    "tasks": 16,
+    "executors": 2,
+    "queuedWork": 16,
+    "waits": 4,
+    "timers": 2,
+    "results": 2,
+    "native": 2
+  },
+  "testHostFeature": "development-test-host",
+  "nativeCompiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "nativeExecutableDigest": "sha256:4d81fce74d97aa7d98d3edaac59212d5059d2afa986896c3d3c74b06f8620838",
+  "sourceUnchanged": true,
+  "kernelRetirementQualified": false,
+  "wholeGoCostQualification": false,
+  "command": "python tools/qualify_go_stack_ceiling_runtime.py --source-commit <sourceRevision> --output <fresh-directory>",
+  "receiptDigest": "sha256:aaa59dff1ac193f147b083d39ed74f98ad9ef2d72421b7a3e05c7c8451f08f27",
+  "placementReference": {
+    "compiler": {
+      "name": "go",
+      "digest": "sha256:de0ae3e082ce7599eae4fb69fa2ef1e43b8f31ffd3fce62cdf81930aa9005050",
+      "size": 17256487
+    },
+    "compilerFrameBytes": 22184,
+    "arrayStackOffset": 24,
+    "checksumCopyStackOffset": 8216,
+    "arrayBytes": 8192,
+    "sourceDigest": "sha256:aec1cc9e6d1642642494532125af566407e7c115b7d95920936da9d1fe8d8d80",
+    "diagnosticsDigest": "sha256:65160868ddb7c4b5d495055c07a61bc6ad8cba6c4fc16bd0ee32e23db7506aef",
+    "referenceExecuted": false
+  },
+  "normalBuilds": [
+    {
+      "name": "go-stack-ordinary",
+      "variant": "ordinary",
+      "sourceDigest": "sha256:abd8ccc3167c40ce914904564705380bbe26a1cc27c142d9643ded00f9692c2e",
+      "sourceInputsDigest": "sha256:2df06f269dae23bebada884e00c7c8c188c5d1bd3d006f726bd56e683d154647",
+      "sourceInputs": 130,
+      "limits": {
+        "cpuFuel": 1000000000,
+        "memoryBytes": 67108864,
+        "wallTimeLimitMillis": 120000,
+        "childCalls": 0,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "logBytes": 0,
+        "effectCount": 0
+      },
+      "buildComplete": {
+        "formatVersion": 1,
+        "packageAssembled": true,
+        "observationDigest": "sha256:0872093d986d0c0f6b46163719d0631ae4d02bc7a4996d7b8f9ffcd7d1ed7743",
+        "sourceDigest": "sha256:2df06f269dae23bebada884e00c7c8c188c5d1bd3d006f726bd56e683d154647",
+        "componentDigest": "sha256:2b64393f7f6325647010147be005aa4b04c8edd6b5ef09ed05a626477430f5dd",
+        "sdkBindingDigest": "sha256:5c3032e88fdc36b54843a9dc1c5e587c2d3cdbb89f562da8b9710d816173d842",
+        "buildSeconds": 14.003829,
+        "commands": [
+          {
+            "stage": "go-version",
+            "exitCode": 0,
+            "seconds": 0.012695
+          },
+          {
+            "stage": "generator-version",
+            "exitCode": 0,
+            "seconds": 0.012067
+          },
+          {
+            "stage": "validator-version",
+            "exitCode": 0,
+            "seconds": 0.011629
+          },
+          {
+            "stage": "go-root",
+            "exitCode": 0,
+            "seconds": 0.011521
+          },
+          {
+            "stage": "checkpoint-parser-host",
+            "exitCode": 0,
+            "seconds": 0.011601
+          },
+          {
+            "stage": "checkpoint-parser-controls",
+            "exitCode": 0,
+            "seconds": 7.411228
+          },
+          {
+            "stage": "checkpoint-parser-build",
+            "exitCode": 0,
+            "seconds": 0.287916
+          },
+          {
+            "stage": "typed-bindings",
+            "exitCode": 0,
+            "seconds": 0.031986
+          },
+          {
+            "stage": "typed-bindings",
+            "exitCode": 0,
+            "seconds": 0.021788
+          },
+          {
+            "stage": "locked-module-download",
+            "exitCode": 0,
+            "seconds": 0.257899
+          },
+          {
+            "stage": "vendor-locked-module",
+            "exitCode": 0,
+            "seconds": 0.032384
+          },
+          {
+            "stage": "checkpoint-selected-packages",
+            "exitCode": 0,
+            "seconds": 0.083522
+          },
+          {
+            "stage": "checkpoint-parser",
+            "exitCode": 0,
+            "seconds": 0.011911
+          },
+          {
+            "stage": "closed-runtime",
+            "exitCode": 0,
+            "seconds": 0.012295
+          },
+          {
+            "stage": "component-build",
+            "exitCode": 0,
+            "seconds": 3.185441
+          },
+          {
+            "stage": "component-validate",
+            "exitCode": 0,
+            "seconds": 0.021911
+          },
+          {
+            "stage": "component-wit",
+            "exitCode": 0,
+            "seconds": 0.022171
+          },
+          {
+            "stage": "contracts",
+            "exitCode": 0,
+            "seconds": 0.021935
+          },
+          {
+            "stage": "compatibility-final-wit",
+            "exitCode": 0,
+            "seconds": 0.022183
+          },
+          {
+            "stage": "package",
+            "exitCode": 0,
+            "seconds": 0.617336
+          },
+          {
+            "stage": "inspect",
+            "exitCode": 0,
+            "seconds": 0.421775
+          }
+        ]
+      }
+    },
+    {
+      "name": "go-stack-initializer-cap",
+      "variant": "initializer-cap",
+      "sourceDigest": "sha256:6bfd661d1a5a9784f77ab6eefed1f1197f759d5f7fec3ab7a573b64c78ce6264",
+      "sourceInputsDigest": "sha256:a24d0665b24c83b80c03637919ddc032e6bd2e249accaba0ee743f30ff27618f",
+      "sourceInputs": 130,
+      "limits": {
+        "cpuFuel": 1000000000,
+        "memoryBytes": 67108864,
+        "wallTimeLimitMillis": 120000,
+        "childCalls": 0,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "logBytes": 0,
+        "effectCount": 0
+      },
+      "buildComplete": {
+        "formatVersion": 1,
+        "packageAssembled": true,
+        "observationDigest": "sha256:1911d53e195f8d16396d77f72ad6264e721f2a0c3a3aa5121563aa5c897ce907",
+        "sourceDigest": "sha256:a24d0665b24c83b80c03637919ddc032e6bd2e249accaba0ee743f30ff27618f",
+        "componentDigest": "sha256:27c7f71a2eaed9a49f38f231d6a172396f890d7b668652165e28e6cee52bb0f1",
+        "sdkBindingDigest": "sha256:5c3032e88fdc36b54843a9dc1c5e587c2d3cdbb89f562da8b9710d816173d842",
+        "buildSeconds": 13.727334,
+        "commands": [
+          {
+            "stage": "go-version",
+            "exitCode": 0,
+            "seconds": 0.012181
+          },
+          {
+            "stage": "generator-version",
+            "exitCode": 0,
+            "seconds": 0.011623
+          },
+          {
+            "stage": "validator-version",
+            "exitCode": 0,
+            "seconds": 0.012204
+          },
+          {
+            "stage": "go-root",
+            "exitCode": 0,
+            "seconds": 0.011428
+          },
+          {
+            "stage": "checkpoint-parser-host",
+            "exitCode": 0,
+            "seconds": 0.011492
+          },
+          {
+            "stage": "checkpoint-parser-controls",
+            "exitCode": 0,
+            "seconds": 7.019743
+          },
+          {
+            "stage": "checkpoint-parser-build",
+            "exitCode": 0,
+            "seconds": 0.297565
+          },
+          {
+            "stage": "typed-bindings",
+            "exitCode": 0,
+            "seconds": 0.021801
+          },
+          {
+            "stage": "typed-bindings",
+            "exitCode": 0,
+            "seconds": 0.021539
+          },
+          {
+            "stage": "locked-module-download",
+            "exitCode": 0,
+            "seconds": 0.389105
+          },
+          {
+            "stage": "vendor-locked-module",
+            "exitCode": 0,
+            "seconds": 0.021982
+          },
+          {
+            "stage": "checkpoint-selected-packages",
+            "exitCode": 0,
+            "seconds": 0.093587
+          },
+          {
+            "stage": "checkpoint-parser",
+            "exitCode": 0,
+            "seconds": 0.012025
+          },
+          {
+            "stage": "closed-runtime",
+            "exitCode": 0,
+            "seconds": 0.01164
+          },
+          {
+            "stage": "component-build",
+            "exitCode": 0,
+            "seconds": 3.574206
+          },
+          {
+            "stage": "component-validate",
+            "exitCode": 0,
+            "seconds": 0.023059
+          },
+          {
+            "stage": "component-wit",
+            "exitCode": 0,
+            "seconds": 0.012092
+          },
+          {
+            "stage": "contracts",
+            "exitCode": 0,
+            "seconds": 0.011746
+          },
+          {
+            "stage": "compatibility-final-wit",
+            "exitCode": 0,
+            "seconds": 0.011982
+          },
+          {
+            "stage": "package",
+            "exitCode": 0,
+            "seconds": 0.556776
+          },
+          {
+            "stage": "inspect",
+            "exitCode": 0,
+            "seconds": 0.359484
+          }
+        ]
+      }
+    }
+  ],
+  "componentIdentities": [
+    {
+      "component": "sha256:2b64393f7f6325647010147be005aa4b04c8edd6b5ef09ed05a626477430f5dd",
+      "initializerCap": false
+    },
+    {
+      "component": "sha256:27c7f71a2eaed9a49f38f231d6a172396f890d7b668652165e28e6cee52bb0f1",
+      "initializerCap": true
+    }
+  ],
+  "signedCases": [
+    {
+      "cap": false,
+      "case": "below-cap-GC",
+      "cpuFuel": 39970443,
+      "effectiveRequestBudget": {
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "childCalls": 0,
+        "cpuFuel": 1000000000,
+        "effectCount": 0,
+        "logBytes": 0,
+        "memoryBytes": 67108864,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "wallTimeLimitMillis": 120000
+      },
+      "mode": 0,
+      "numericObservation": null,
+      "outboundRequests": 0,
+      "peakMemoryBytes": 4343407,
+      "reportedEffectCount": 0,
+      "resolvedPublication": "publication:sha256:05e78bb91555df808ba6e157ff63aa82b6e19d619c94ab85184a5b325475b1b3",
+      "resolvedRelease": "sha256:2b64393f7f6325647010147be005aa4b04c8edd6b5ef09ed05a626477430f5dd",
+      "result": {
+        "GC": 1,
+        "beforeGC": 0,
+        "beforeStack": 262144,
+        "checksum": 17756160,
+        "fresh": 1,
+        "liveStack": 655360,
+        "typedResult": "stack|fresh=1|init=3133440|checksum=17756160|before=262144|live=655360|beforeGC=0|gc=1"
+      },
+      "variant": "go-stack-ordinary"
+    },
+    {
+      "cap": true,
+      "case": "growth-cap",
+      "cpuFuel": 45813190,
+      "effectiveRequestBudget": {
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "childCalls": 0,
+        "cpuFuel": 1000000000,
+        "effectCount": 0,
+        "logBytes": 0,
+        "memoryBytes": 67108864,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "wallTimeLimitMillis": 120000
+      },
+      "mode": 1,
+      "numericObservation": {
+        "ambiguous": false,
+        "engineFrameCap": 16,
+        "frames": [
+          {
+            "function": 1393,
+            "functionOffset": 7,
+            "module": 0,
+            "moduleOffset": 1298011
+          },
+          {
+            "function": 705,
+            "functionOffset": 45,
+            "module": 0,
+            "moduleOffset": 694315
+          },
+          {
+            "function": 959,
+            "functionOffset": 3366,
+            "module": 0,
+            "moduleOffset": 963079
+          },
+          {
+            "function": 1398,
+            "functionOffset": 292,
+            "module": 0,
+            "moduleOffset": 1298537
+          },
+          {
+            "function": 1399,
+            "functionOffset": 13,
+            "module": 0,
+            "moduleOffset": 1298567
+          },
+          {
+            "function": 1739,
+            "functionOffset": 126,
+            "module": 0,
+            "moduleOffset": 1608706
+          },
+          {
+            "function": 1739,
+            "functionOffset": 628,
+            "module": 0,
+            "moduleOffset": 1609208
+          },
+          {
+            "function": 1439,
+            "functionOffset": 45,
+            "module": 0,
+            "moduleOffset": 1307206
+          },
+          {
+            "function": 1749,
+            "functionOffset": 73,
+            "module": 0,
+            "moduleOffset": 1612960
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "mayBeTruncated": false,
+        "missingBacktrace": false,
+        "observedErrors": 1,
+        "observedFrames": 9,
+        "trapKind": "unreachable-code"
+      },
+      "outboundRequests": 0,
+      "peakMemoryBytes": 5384224,
+      "reportedEffectCount": 0,
+      "resolvedPublication": "publication:sha256:05e78bb91555df808ba6e157ff63aa82b6e19d619c94ab85184a5b325475b1b3",
+      "resolvedRelease": "sha256:2b64393f7f6325647010147be005aa4b04c8edd6b5ef09ed05a626477430f5dd",
+      "result": {
+        "attribution": "actual-private-v7-cap-frame",
+        "code": "GuestTrap"
+      },
+      "variant": "go-stack-ordinary"
+    },
+    {
+      "cap": false,
+      "case": "fresh-after-growth",
+      "cpuFuel": 39974630,
+      "effectiveRequestBudget": {
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "childCalls": 0,
+        "cpuFuel": 1000000000,
+        "effectCount": 0,
+        "logBytes": 0,
+        "memoryBytes": 67108864,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "wallTimeLimitMillis": 120000
+      },
+      "mode": 0,
+      "numericObservation": null,
+      "outboundRequests": 0,
+      "peakMemoryBytes": 4343443,
+      "reportedEffectCount": 0,
+      "resolvedPublication": "publication:sha256:05e78bb91555df808ba6e157ff63aa82b6e19d619c94ab85184a5b325475b1b3",
+      "resolvedRelease": "sha256:2b64393f7f6325647010147be005aa4b04c8edd6b5ef09ed05a626477430f5dd",
+      "result": {
+        "GC": 1,
+        "beforeGC": 0,
+        "beforeStack": 262144,
+        "checksum": 17756160,
+        "fresh": 1,
+        "liveStack": 655360,
+        "typedResult": "stack|fresh=1|init=3133440|checksum=17756160|before=262144|live=655360|beforeGC=0|gc=1"
+      },
+      "variant": "go-stack-ordinary"
+    },
+    {
+      "cap": true,
+      "case": "raised-limit-cap",
+      "cpuFuel": 45819659,
+      "effectiveRequestBudget": {
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "childCalls": 0,
+        "cpuFuel": 1000000000,
+        "effectCount": 0,
+        "logBytes": 0,
+        "memoryBytes": 67108864,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "wallTimeLimitMillis": 120000
+      },
+      "mode": 2,
+      "numericObservation": {
+        "ambiguous": false,
+        "engineFrameCap": 16,
+        "frames": [
+          {
+            "function": 1393,
+            "functionOffset": 7,
+            "module": 0,
+            "moduleOffset": 1298011
+          },
+          {
+            "function": 705,
+            "functionOffset": 45,
+            "module": 0,
+            "moduleOffset": 694315
+          },
+          {
+            "function": 959,
+            "functionOffset": 3366,
+            "module": 0,
+            "moduleOffset": 963079
+          },
+          {
+            "function": 1398,
+            "functionOffset": 292,
+            "module": 0,
+            "moduleOffset": 1298537
+          },
+          {
+            "function": 1399,
+            "functionOffset": 13,
+            "module": 0,
+            "moduleOffset": 1298567
+          },
+          {
+            "function": 1739,
+            "functionOffset": 126,
+            "module": 0,
+            "moduleOffset": 1608706
+          },
+          {
+            "function": 1739,
+            "functionOffset": 628,
+            "module": 0,
+            "moduleOffset": 1609208
+          },
+          {
+            "function": 1439,
+            "functionOffset": 45,
+            "module": 0,
+            "moduleOffset": 1307206
+          },
+          {
+            "function": 1749,
+            "functionOffset": 73,
+            "module": 0,
+            "moduleOffset": 1612960
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "mayBeTruncated": false,
+        "missingBacktrace": false,
+        "observedErrors": 1,
+        "observedFrames": 9,
+        "trapKind": "unreachable-code"
+      },
+      "outboundRequests": 0,
+      "peakMemoryBytes": 5384260,
+      "reportedEffectCount": 0,
+      "resolvedPublication": "publication:sha256:05e78bb91555df808ba6e157ff63aa82b6e19d619c94ab85184a5b325475b1b3",
+      "resolvedRelease": "sha256:2b64393f7f6325647010147be005aa4b04c8edd6b5ef09ed05a626477430f5dd",
+      "result": {
+        "attribution": "actual-private-v7-cap-frame",
+        "code": "GuestTrap"
+      },
+      "variant": "go-stack-ordinary"
+    },
+    {
+      "cap": false,
+      "case": "fresh-after-raised-limit",
+      "cpuFuel": 39960232,
+      "effectiveRequestBudget": {
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "childCalls": 0,
+        "cpuFuel": 1000000000,
+        "effectCount": 0,
+        "logBytes": 0,
+        "memoryBytes": 67108864,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "wallTimeLimitMillis": 120000
+      },
+      "mode": 0,
+      "numericObservation": null,
+      "outboundRequests": 0,
+      "peakMemoryBytes": 4343479,
+      "reportedEffectCount": 0,
+      "resolvedPublication": "publication:sha256:05e78bb91555df808ba6e157ff63aa82b6e19d619c94ab85184a5b325475b1b3",
+      "resolvedRelease": "sha256:2b64393f7f6325647010147be005aa4b04c8edd6b5ef09ed05a626477430f5dd",
+      "result": {
+        "GC": 1,
+        "beforeGC": 0,
+        "beforeStack": 262144,
+        "checksum": 17756160,
+        "fresh": 1,
+        "liveStack": 655360,
+        "typedResult": "stack|fresh=1|init=3133440|checksum=17756160|before=262144|live=655360|beforeGC=0|gc=1"
+      },
+      "variant": "go-stack-ordinary"
+    },
+    {
+      "cap": true,
+      "case": "initializer-cap",
+      "cpuFuel": 41211682,
+      "effectiveRequestBudget": {
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "childCalls": 0,
+        "cpuFuel": 1000000000,
+        "effectCount": 0,
+        "logBytes": 0,
+        "memoryBytes": 67108864,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "wallTimeLimitMillis": 120000
+      },
+      "mode": 0,
+      "numericObservation": {
+        "ambiguous": false,
+        "engineFrameCap": 16,
+        "frames": [
+          {
+            "function": 1393,
+            "functionOffset": 7,
+            "module": 0,
+            "moduleOffset": 1298011
+          },
+          {
+            "function": 705,
+            "functionOffset": 45,
+            "module": 0,
+            "moduleOffset": 694315
+          },
+          {
+            "function": 959,
+            "functionOffset": 3366,
+            "module": 0,
+            "moduleOffset": 963079
+          },
+          {
+            "function": 1398,
+            "functionOffset": 292,
+            "module": 0,
+            "moduleOffset": 1298537
+          },
+          {
+            "function": 1399,
+            "functionOffset": 13,
+            "module": 0,
+            "moduleOffset": 1298567
+          },
+          {
+            "function": 1739,
+            "functionOffset": 126,
+            "module": 0,
+            "moduleOffset": 1608706
+          },
+          {
+            "function": 1739,
+            "functionOffset": 628,
+            "module": 0,
+            "moduleOffset": 1609208
+          },
+          {
+            "function": 1439,
+            "functionOffset": 45,
+            "module": 0,
+            "moduleOffset": 1307206
+          },
+          {
+            "function": 1749,
+            "functionOffset": 73,
+            "module": 0,
+            "moduleOffset": 1612960
+          },
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ],
+        "mayBeTruncated": false,
+        "missingBacktrace": false,
+        "observedErrors": 1,
+        "observedFrames": 9,
+        "trapKind": "unreachable-code"
+      },
+      "outboundRequests": 0,
+      "peakMemoryBytes": 5384254,
+      "reportedEffectCount": 0,
+      "resolvedPublication": "publication:sha256:d81f86f0c9661101753e82c2965edb8f0dd821c3870a76772c879e5d45b1f698",
+      "resolvedRelease": "sha256:27c7f71a2eaed9a49f38f231d6a172396f890d7b668652165e28e6cee52bb0f1",
+      "result": {
+        "attribution": "actual-private-v7-cap-frame",
+        "code": "GuestTrap"
+      },
+      "variant": "go-stack-initializer-cap"
+    },
+    {
+      "cap": false,
+      "case": "fresh-after-initializer",
+      "cpuFuel": 39973830,
+      "effectiveRequestBudget": {
+        "blobReadBytes": 0,
+        "blobWriteBytes": 0,
+        "childCalls": 0,
+        "cpuFuel": 1000000000,
+        "effectCount": 0,
+        "logBytes": 0,
+        "memoryBytes": 67108864,
+        "outboundRequests": 0,
+        "stateReadBytes": 0,
+        "stateWriteBytes": 0,
+        "wallTimeLimitMillis": 120000
+      },
+      "mode": 0,
+      "numericObservation": null,
+      "outboundRequests": 0,
+      "peakMemoryBytes": 4343473,
+      "reportedEffectCount": 0,
+      "resolvedPublication": "publication:sha256:05e78bb91555df808ba6e157ff63aa82b6e19d619c94ab85184a5b325475b1b3",
+      "resolvedRelease": "sha256:2b64393f7f6325647010147be005aa4b04c8edd6b5ef09ed05a626477430f5dd",
+      "result": {
+        "GC": 1,
+        "beforeGC": 0,
+        "beforeStack": 262144,
+        "checksum": 17756160,
+        "fresh": 1,
+        "liveStack": 655360,
+        "typedResult": "stack|fresh=1|init=3133440|checksum=17756160|before=262144|live=655360|beforeGC=0|gc=1"
+      },
+      "variant": "go-stack-ordinary"
+    }
+  ],
+  "originalOwners": [
+    {
+      "case": "below-cap-GC",
+      "instances": 0,
+      "kernelRetirementQualified": false,
+      "newStores": 1,
+      "reservations": 0,
+      "reservedFuel": 0,
+      "reservedMemory": 0,
+      "stores": 0
+    },
+    {
+      "case": "growth-cap",
+      "instances": 0,
+      "kernelRetirementQualified": false,
+      "newStores": 1,
+      "reservations": 0,
+      "reservedFuel": 0,
+      "reservedMemory": 0,
+      "stores": 0
+    },
+    {
+      "case": "fresh-after-growth",
+      "instances": 0,
+      "kernelRetirementQualified": false,
+      "newStores": 1,
+      "reservations": 0,
+      "reservedFuel": 0,
+      "reservedMemory": 0,
+      "stores": 0
+    },
+    {
+      "case": "raised-limit-cap",
+      "instances": 0,
+      "kernelRetirementQualified": false,
+      "newStores": 1,
+      "reservations": 0,
+      "reservedFuel": 0,
+      "reservedMemory": 0,
+      "stores": 0
+    },
+    {
+      "case": "fresh-after-raised-limit",
+      "instances": 0,
+      "kernelRetirementQualified": false,
+      "newStores": 1,
+      "reservations": 0,
+      "reservedFuel": 0,
+      "reservedMemory": 0,
+      "stores": 0
+    },
+    {
+      "case": "initializer-cap",
+      "instances": 0,
+      "kernelRetirementQualified": false,
+      "newStores": 1,
+      "reservations": 0,
+      "reservedFuel": 0,
+      "reservedMemory": 0,
+      "stores": 0
+    },
+    {
+      "case": "fresh-after-initializer",
+      "instances": 0,
+      "kernelRetirementQualified": false,
+      "newStores": 1,
+      "reservations": 0,
+      "reservedFuel": 0,
+      "reservedMemory": 0,
+      "stores": 0
+    }
+  ],
+  "completion": {
+    "attempts": 7,
+    "capFrames": 3,
+    "components": 2,
+    "effectiveFuel": 1000000000,
+    "effectiveMemory": 67108864,
+    "factories": 3,
+    "freshAfterFailures": 3,
+    "kernelRetirementQualified": false,
+    "observerReset": false,
+    "queuedWork": 16,
+    "wholeGoCostQualification": false
+  }
+}

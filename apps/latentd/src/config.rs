@@ -129,6 +129,12 @@ impl NodeSettings {
         security::check(self)
     }
 
+    #[cfg(target_os = "linux")]
+    pub(crate) fn check_state_roots(&self) -> Result<(), PlatformError> {
+        let state = self.state.as_ref().ok_or_else(|| invalid("state"))?;
+        state::check_protected_roots(&state.store.root, &state.checkpoint_root)
+    }
+
     /// Fixed invocation/network runtime worker count for the embedding owner.
     #[must_use]
     pub const fn runtime_workers(&self) -> usize {

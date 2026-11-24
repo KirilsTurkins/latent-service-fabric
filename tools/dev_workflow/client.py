@@ -17,12 +17,14 @@ CATEGORY_EXIT_CODES = {
 
 
 class Client:
-    def __init__(self, binary: Path, config: Path, directory: Path, *, deadline: float | None = None, observer=None):
+    def __init__(self, binary: Path, config: Path, directory: Path, *, deadline: float | None = None, observer=None,
+                 phase4: bool = False):
         self.binary, self.config, self.directory = binary, config, directory
         self.deadline = deadline
         self.observer, self.calls, self.failed_call = observer, 0, None
         self.observation_failed = False
         self.expected_config_digest = None
+        self.phase4 = phase4
 
     def pin_config(self, expected_digest: str) -> None:
         expected_digest = sha(expected_digest)
@@ -81,8 +83,9 @@ class Client:
         pin = [] if self.expected_config_digest is None else ["--expect-config-digest-stdin"]
         prefix = b"" if self.expected_config_digest is None else (self.expected_config_digest + "\n").encode("ascii")
         input_options = {} if not prefix and stdin is None else {"stdin": prefix + (stdin or b"")}
+        profile = ["--phase4"] if self.phase4 and "--phase4" not in arguments else []
         result = process.run([str(self.binary), "--config", str(self.config), "--output", "json",
-                               *pin, *map(str, arguments)], self.directory, timeout=timeout,
+                               *profile, *pin, *map(str, arguments)], self.directory, timeout=timeout,
                              maximum=1048576, check=check, **input_options)
         self.calls += 1
         value, failure = None, None

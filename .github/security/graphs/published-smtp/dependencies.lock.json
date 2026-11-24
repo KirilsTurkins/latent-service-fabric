@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "module": "wit_component",
   "goVersion": "1.27.4",
-  "manifestSha256": "cbf7109535a882d52b185e97db94b2e2f1b7103797b07bcb0eb3b1f7f01251a9",
-  "sumSha256": "210496761ab4979b656396ecfcc1223a254d2bfd0c51bc6ecb16c9aa7ebc49f2",
+  "manifestSha256": "33d474e250708b76f743f8aa604da93efebd19a0b7925841a31130756acf6e56",
+  "sumSha256": "114503617753e8845f4b6d22641fed00548fdfd09879137f0fae7f41cc17c788",
   "modules": [
     {
       "path": "github.com/cenkalti/backoff/v4",
@@ -25,8 +25,8 @@
     },
     {
       "path": "github.com/emersion/go-smtp",
-      "version": "v0.25.0",
-      "sum": "h1:krfiHrme2JbJYDh0DGuSRbvPpbnQTH/v9CIfPincl1I=",
+      "version": "v0.25.1",
+      "sum": "h1:y6nzefT6PtFeMItFw97GX/ZCkVbh0rqSXG8b3ang8/w=",
       "goModSum": "h1:ZtRRkbTyp2XTHCA+BmyTFTrj8xY4I+b4McvHxCU2gsQ="
     },
     {

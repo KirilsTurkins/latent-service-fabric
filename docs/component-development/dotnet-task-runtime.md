@@ -1,5 +1,32 @@
 # Ordinary managed tasks without HTTP authority
 
+The current signed Linux rerun on development `fc82effe057c99e278646010a3b7f1e0a1cfef80`
+completed 54 node invocations. Its 22 managed-task cases cover the default
+scheduler and ThreadPool, timers and cancellation, a pending manual-reset
+event with a runnable sibling, and captured and suppressed execution contexts.
+Each case retired all active cells, queued work and reserved quota. The
+[case results and per-invocation costs](../testing/evidence/dotnet-ordinary-tasks-current-2026-11-23.json)
+identify the original dependency, compiler profile and component.
+
+The root-return programme passed all 15 signed outcomes across two tenants on
+`dabc1b07103d87c4f513b01f55124504058915bb`. The node observed root closure and
+pending waits while work remained. Handled errors and cancellation finished,
+opaque work and an unhandled fault produced the expected public failures, and
+fresh calls succeeded for each tenant. The original managed causes of those
+two failures remain unknown. The same receipt records all 11 application
+outcomes, four individually missing grants and the original owner ceilings.
+
+To run the separate root-return programme on Linux, use a clean checkout and
+the .NET tools installed from its runtime sources. The local runner builds
+five default native products and a fresh NativeAOT component under the same
+22-minute deadline as the hosted qualification. Its receipt identifies the
+local origin.
+
+```sh
+python3.13 tools/qualify_dotnet_task_runtime.py --root-return-current --local \
+  --source-commit "$(git rev-parse HEAD)" --tools "$dotnet_tools" --output "$new_output"
+```
+
 The selected NativeAOT/WASI profile joins ordinary incomplete managed tasks
 through the original CoreLib ThreadPoolWorkQueue dispatcher and WASI event loop.
 It requires an authenticated canonical async export, declared monotonic CLOCK
@@ -130,6 +157,23 @@ exercised helper/compiler source files and the full runtime-input digest match
 the integrated source. The identified historical native binaries are reused;
 this does not claim a rebuilt current host. Complete simultaneous reset/dispose
 races, shutdown/tenant fencing and managed CPU scheduling remain separate.
+
+## Changing a timer while its callback is running
+
+An outside NuGet library scheduled a worker from a live timer callback. The
+worker used the default task scheduler and called `Change` before or after
+starting `DisposeAsync`. Before disposal, `Change` returned true. After
+disposal started, it returned false. In both orders the disposal task remained
+pending while the callback was active, then completed after exactly one callback.
+The standard .NET 10.0.100 reference and the signed NativeAOT component returned
+the same results.
+
+The Linux node completed 56 invocations, including all 24 task cases and four
+individual missing-grant refusals. Each task finished with zero active, queued
+or quarantined execution cells and zero reserved CPU or memory. The node shut
+down cleanly. The guest came from `6e32468c7167`. The node and four companion
+components came from the verified five-template build at `fc82effe057c`.
+[Component identities, reference output and measured costs](../testing/evidence/dotnet-pending-timer-disposal-2026-11-24.json)
 
 ## Qualification-private WaitAll reference
 

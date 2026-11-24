@@ -102,7 +102,7 @@ class AttemptInventoryRetention(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root, source, tools, value, cli, _ = self.prepared(Path(temporary))
             with patch.object(build, 'compile_recipe') as compile_recipe:
-                with self.assertRaisesRegex(common.DevError, 'executable-approval-requires-maintained-rust-adapter'):
+                with self.assertRaisesRegex(common.DevError, 'executable-approval-requires-maintained-compiler-adapter'):
                     build.execute(root, source, value, tools, trusted=project.trust_identity(value), cli=cli,
                                   executable_approval='sha256:' + 'a' * 64)
             compile_recipe.assert_not_called()
@@ -787,20 +787,24 @@ class CompilerDownloadBounds(unittest.TestCase):
             self.assertIs(caught.exception, failure)
             self.assertEqual(opened.call_count, 1)
 
-    def test_zig_opening_timeouts_retry_only_the_same_pinned_source(self):
+    def test_selected_archives_retry_opening_timeouts_only_on_the_same_url(self):
         import io
-        self.source["connectionAttempts"] = self.builder.SOURCES["zig"]["connectionAttempts"]
-        failures = [TimeoutError("first response"),
-                    self.builder.urllib.error.URLError(TimeoutError("second response"))]
-        with patch.object(self.builder.urllib.request, "urlopen",
-                          side_effect=[*failures, io.BytesIO(self.data)]) as opened, \
-                patch.object(self.builder.time, "monotonic", return_value=0):
-            self.builder.download(self.path, self.source)
-        self.assertEqual(self.path.read_bytes(), self.data)
-        self.assertEqual(opened.call_count, 3)
-        for call in opened.call_args_list:
-            self.assertEqual(call.args, (self.source["url"],))
-            self.assertEqual(call.kwargs, {"timeout": 60})
+        for name in ("zig", "wasm-tools"):
+            with self.subTest(name=name):
+                self.source.update(url=self.builder.SOURCES[name]["url"],
+                                   connectionAttempts=self.builder.SOURCES[name]["connectionAttempts"])
+                failures = [TimeoutError("first response"),
+                            self.builder.urllib.error.URLError(TimeoutError("second response"))]
+                with patch.object(self.builder.urllib.request, "urlopen",
+                                  side_effect=[*failures, io.BytesIO(self.data)]) as opened, \
+                        patch.object(self.builder.time, "monotonic", return_value=0):
+                    self.builder.download(self.path, self.source)
+                self.assertEqual(self.path.read_bytes(), self.data)
+                self.assertEqual(opened.call_count, 3)
+                for call in opened.call_args_list:
+                    self.assertEqual(call.args, (self.source["url"],))
+                    self.assertEqual(call.kwargs, {"timeout": 60})
+                self.path.unlink()
 
     def test_zig_connection_exhaustion_keeps_the_failure_and_discards_output(self):
         self.source["connectionAttempts"] = 3

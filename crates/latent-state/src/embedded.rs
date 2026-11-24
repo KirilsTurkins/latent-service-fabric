@@ -21,6 +21,14 @@ const META: TableDefinition<&str, &[u8]> = TableDefinition::new("format");
 const ROWS: TableDefinition<&[u8], &[u8]> = TableDefinition::new("records-v1");
 static NEXT_VIEW_ID: AtomicUsize = AtomicUsize::new(1);
 
+fn next_view_identity() -> Result<usize, StoreError> {
+    NEXT_VIEW_ID
+        .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+            value.checked_add(1)
+        })
+        .map_err(|_| StoreError::Capacity)
+}
+
 mod bounded_file;
 pub use bounded_file::StoreFileStatus;
 mod compaction;
@@ -261,10 +269,10 @@ impl EmbeddedStore {
 
     fn verify(&self) -> Result<(), StoreError> {
         let database = self.database()?;
-        format::inspect(&database)?;
+        format::inspect(&*database)?;
         let tx = database.begin_read().map_err(|_| StoreError::Unavailable)?;
         let table = tx.open_table(ROWS).map_err(|_| StoreError::Corrupt)?;
-        self.charge_table(&table)?;
+        Self::charge_table(self.limits, &table, || Ok(()))?;
         drop(table);
         drop(tx);
         // Validate the selected 4096-byte page profile through the public
@@ -280,20 +288,22 @@ impl EmbeddedStore {
         Ok(())
     }
     fn charge_table(
-        &self,
+        limits: StoreLimits,
         table: &impl ReadableTable<&'static [u8], &'static [u8]>,
+        mut check_live: impl FnMut() -> Result<(), StoreError>,
     ) -> Result<(), StoreError> {
         let mut count = 0usize;
         let mut bytes = 0usize;
         let mut reservations = crate::reservation::ReservationCoverage::default();
         for row in table.iter().map_err(|_| StoreError::Corrupt)? {
+            check_live()?;
             let (k, v) = row.map_err(|_| StoreError::Corrupt)?;
             let k = k.value();
             let v = v.value();
             if k.len() < 2
-                || k.len() > self.limits.maximum_key_bytes + 1
+                || k.len() > limits.maximum_key_bytes + 1
                 || !(1..=10).contains(&k[0])
-                || v.len() > self.limits.maximum_value_bytes
+                || v.len() > limits.maximum_value_bytes
             {
                 return Err(StoreError::Corrupt);
             }
@@ -304,11 +314,42 @@ impl EmbeddedStore {
                 .checked_add(k.len() + v.len())
                 .and_then(|bytes| bytes.checked_add(reserved))
                 .ok_or(StoreError::Capacity)?;
-            if count > self.limits.maximum_rows || bytes > self.limits.maximum_logical_bytes {
+            if count > limits.maximum_rows || bytes > limits.maximum_logical_bytes {
                 return Err(StoreError::Capacity);
             }
         }
         reservations.verify()
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(crate) fn check_retained(
+        file: &File,
+        limits: StoreLimits,
+        check_live: impl FnMut() -> Result<(), StoreError>,
+        validate: impl FnOnce(&ReadView) -> Result<(), StoreError>,
+    ) -> Result<(), StoreError> {
+        use std::os::fd::AsRawFd;
+
+        let mut builder = Database::builder();
+        builder.set_cache_size(limits.cache_bytes);
+        // Open the already verified inode's descriptor as a read-only engine.
+        // Creating a normal database handle could repair or promote the file.
+        let db = builder
+            .open_read_only(format!("/proc/self/fd/{}", file.as_raw_fd()))
+            .map_err(|_| StoreError::Unavailable)?;
+        format::inspect(&db)?;
+        let tx = db.begin_read().map_err(|_| StoreError::Unavailable)?;
+        let rows = tx.open_table(ROWS).map_err(|_| StoreError::Corrupt)?;
+        Self::charge_table(limits, &rows, check_live)?;
+        drop(rows);
+        let identity = next_view_identity()?;
+        validate(&ReadView {
+            tx: Some(tx),
+            limits,
+            views: Arc::new(AtomicUsize::new(1)),
+            opened: Instant::now(),
+            identity,
+        })
     }
     pub fn snapshot(&self) -> Result<ReadView, StoreError> {
         if self.quarantined.load(Ordering::Acquire) {
@@ -317,11 +358,7 @@ impl EmbeddedStore {
         if self.reclamation.load(Ordering::SeqCst) {
             return Err(StoreError::Capacity);
         }
-        let identity = NEXT_VIEW_ID
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
-                value.checked_add(1)
-            })
-            .map_err(|_| StoreError::Capacity)?;
+        let identity = next_view_identity()?;
         self.views
             .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |v| {
                 (v < self.limits.maximum_read_views).then_some(v + 1)
@@ -485,7 +522,7 @@ impl EmbeddedStore {
                         .map_err(|_| StoreError::Unavailable)?;
                 }
             }
-            self.charge_table(&table)?;
+            Self::charge_table(self.limits, &table, || Ok(()))?;
         }
         accept().map_err(FencedStoreError::Fence)?;
         checkpoint(false);

@@ -14,6 +14,56 @@ complete terminal/pending native and packaged qualification. The
 describes native action inputs, original source identities, destination custody
 and retained acceptance limits.
 
+## Run a command once
+
+Install the signed aggregate's `query` and `update` operations with their
+configured routes. Create the namespace with the authorized operator and the
+signed schema, then restart the node so it binds the installed operations to
+that namespace.
+
+```bash
+latent --config "$OperatorConfig" --phase4 state create \
+  --namespace "$Namespace" --incarnation "$Incarnation" \
+  --authorization-publication "$Publication" --operation-id "$CreateOperation" \
+  --expected-generation 0 --configuration "$NamespaceConfig"
+```
+
+From the invocation credential profile, read the current count and retain the
+original key version if you intend to edit it. Keep the query budget read-only.
+
+```bash
+printf '%s\n' '[]' |
+  latent --config "$InvokeConfig" --output json --phase4 transaction query \
+    --service "$Service" --contract examples:transactional-aggregate/api@1.0.0 \
+    --function query --route "$QueryRoute" --namespace "$Namespace" \
+    --incarnation "$Incarnation" --input - --budget "$QueryBudget"
+```
+
+For this aggregate, the expected versions file is a JSON array with one entry
+for the state key at `aggregate/count`. Base64-encode that key and put it in the
+entry's `key` field. Decode the query payload's base64 `data` as JSON and encode its
+original `key-version` byte array as base64 for the entry's `version` field.
+If the query observed an absent key, set the entry's `absent` field to true and
+omit `version`. Use one application-generated `ClientKey` for the edit and retain
+the exact input and expected versions.
+
+```bash
+printf '%s\n' '[{"delta":1,"reject":false}]' |
+  latent --config "$InvokeConfig" --output json --phase4 transaction invoke \
+    --service "$Service" --contract examples:transactional-aggregate/api@1.0.0 \
+    --function update --route "$CommandRoute" --namespace "$Namespace" \
+    --incarnation "$Incarnation" --client-key "$ClientKey" \
+    --expected-versions "$ExpectedVersions" --input - --budget "$CommandBudget"
+```
+
+For modest test fixtures, the query budget can set `cpuFuel` to 400000000,
+`memoryBytes` to 67108864, `wallTimeLimitMillis` to 15000 and `stateReadBytes`
+to 1048576. The command budget can add `stateWriteBytes` of 1048576 and
+`effectCount` of 1. Keep both within the installed policy.
+Take the commit receipt's `committedVersion.data` for a later query's
+`--minimum-view-version`. If delivery fails, use the original key to recover
+the command before choosing another edit.
+
 ## Preserve the original command
 
 The [commit and recovery diagram](../assets/transaction-command-recovery.svg)

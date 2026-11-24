@@ -1366,7 +1366,7 @@ impl ConnectionOwner {
                         .resource()
                         .stream
                         .as_ref()
-                        .is_some_and(|socket| !socket.host_tls() && !socket.protected_owner())
+                        .is_some_and(|socket| !socket.protected_owner())
                 });
             if !immediate {
                 return Err(error(StreamErrorCode::InvalidInput));
@@ -1396,7 +1396,9 @@ impl ConnectionOwner {
                 .as_ref()
                 .expect("live socket transport"),
         );
-        let observation = direction == 2 && !socket.host_tls() && !socket.protected_owner();
+        let observation = direction == 2
+            && !socket.protected_owner()
+            && (!socket.host_tls() || timeout == Some(0));
         let requested = timeout.map(|value| now + Duration::from_millis(u64::from(value)));
         if !observation {
             if let Some(requested) = requested {

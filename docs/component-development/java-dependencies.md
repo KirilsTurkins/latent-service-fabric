@@ -86,6 +86,10 @@ pinned JDK/compiler cache and actual isolation tools/libraries. Changed inputs
 need a new approval. This operation uses the existing executable-input trust
 protocol; it supplies no guest authority or signing key.
 
+With a maintained installed project, follow the
+[workspace approval commands](application-dependencies.md#review-a-compiler-execution-request)
+to inspect the refused processor request and select its digest for build or watch.
+
 The finite Linux Bubblewrap stage invokes only the explicitly named processors
 with `javac -proc:only`. The ordinary TeaVM compilation retains `-proc:none`.
 The processor classpath can supply passive SOURCE-retention annotation types via

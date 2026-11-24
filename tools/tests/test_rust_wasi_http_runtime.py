@@ -358,6 +358,16 @@ class RuntimeOracles(unittest.TestCase):
                 if mutate=='json-kind' and expected in {'error:request-denied','error:reserved-header'}:continue
                 with self.subTest(client=client,expected=expected,mutate=mutate),self.assertRaises(Exception):
                     node.library_error('library-error:'+json.dumps(changed),client,expected)
+        handle='StreamError::LastOperationFailed(Error { handle: Resource { handle: 4 } })'
+        reader=payload('golem','send','error sending request','real request debug',sourceDisplay=handle)
+        proof=node.library_error(reader,'golem','error:guest-reader-stream')
+        self.assertFalse(proof['exactUnderlyingCategoryProven'])
+        self.assertFalse(proof['nativeErrorInferredFromResourceHandle'])
+        with self.assertRaises(Exception):node.library_error(reader,'golem','error:request-denied')
+        for changed in ('ErrorCode::HttpRequestDenied',handle.replace('4','-1'),handle.replace('4','4294967296'),
+                handle.replace('LastOperationFailed','Closed')):
+            with self.subTest(changed=changed),self.assertRaises(Exception):
+                node.library_error(reader.replace(handle,changed),'golem','error:guest-reader-stream')
         opaque=payload('waki','body','stream failed','input_stream read failed: LastOperationFailed(Error { handle: 1 })')
         proof=node.library_error(opaque,'waki','error:response-size')
         self.assertFalse(proof['exactUnderlyingCategoryProven'])

@@ -6,17 +6,30 @@ from pathlib import Path
 
 from tools.guest_runtime_profiles import profiles
 from . import blob_fixture, event_fixture, local_service_fixture, metric_fixture, paths, secret_fixture, state
-from .common import decode, digest, encode, require
+from .common import TRANSACTION_HOST_ABI, decode, digest, encode, require
 
 
 def scope(descriptor: dict) -> dict:
-    return {name: descriptor[name] for name in ("language", "tenant", "service")}
+    selected = {name: descriptor[name] for name in ("language", "tenant", "service")}
+    if descriptor.get("hostAbi") == TRANSACTION_HOST_ABI:
+        selected["hostAbi"] = TRANSACTION_HOST_ABI
+    return selected
 
 
 def configuration(original: dict, descriptor: dict, fixtures: dict | None = None, *, root: Path | None = None,
                   local_service_refusal_observation: bool = False) -> tuple[dict, dict]:
     require(type(local_service_refusal_observation) is bool and (not local_service_refusal_observation
             or fixtures is not None and "localService" in fixtures), "explicit-local-service-observation-required")
+    if descriptor.get("hostAbi") == TRANSACTION_HOST_ABI:
+        installed = original.get("state")
+        budget = original.get("budgetProfile")
+        require(isinstance(installed, dict) and installed.get("formatVersion") == 2
+                and isinstance(budget, dict) and budget.get("mode") == "phase4",
+                "transaction-test-requires-configured-phase4-node")
+        require(descriptor["tenant"] == "examples" and fixtures is None,
+                "transaction-test-requires-installed-provider-authority")
+        return copy.deepcopy(original), {}
+    require("state" not in original, "stateless-test-will-not-replace-phase4-node-profile")
     require("developmentLocalServiceObservation" not in original, "test-profile-will-not-replace-existing-local-observation")
     require(original["securityProfile"] == "local-experimental-v1", "test-profile-requires-local-installation")
     require(descriptor["tenant"] == "examples" and "providers" not in original,
@@ -103,6 +116,9 @@ def prepare(root: Path, descriptor: dict, *, consent: bool, admission: str = "tr
             or fixtures is not None and "localService" in fixtures), "explicit-local-service-observation-required")
     require(consent is True and root.name.startswith("test-"), "explicit-disposable-test-fixture-consent-required")
     require(admission in {"trusted-local", "signed-fixture"}, "explicit-test-admission-required")
+    if descriptor.get("hostAbi") == TRANSACTION_HOST_ABI:
+        require(admission == "signed-fixture" and fixtures is None,
+                "transaction-test-requires-signed-fixture-and-installed-authority")
     require(admission == "signed-fixture" or descriptor["language"] not in {"java", "dotnet", "go"},
             "managed-runtime-bindings-require-signed-fixture-package")
     if fixtures is not None:
@@ -116,6 +132,9 @@ def prepare(root: Path, descriptor: dict, *, consent: bool, admission: str = "tr
         require(state.load(root, "operations.json")["pending"] is None, "recover-original-operation-before-test-setup")
     runtime = root / "runtime"
     with state.lock(root, "supervisor.lock"), state.lock(runtime, "run.lock"):
+        if descriptor.get("hostAbi") == TRANSACTION_HOST_ABI:
+            current = decode(paths.read(runtime / "config", "node.json"))
+            configuration(current, descriptor)
         if fixtures is not None and "events" in fixtures:
             require(tool_root is not None, "pinned-event-fixture-tool-required")
             event_fixture.prepare(root, descriptor, tool_root, fixtures["events"])

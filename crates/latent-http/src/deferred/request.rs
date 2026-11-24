@@ -65,7 +65,7 @@ pub(super) fn build(
         });
     }
     let mut credential_stamp = Zeroizing::new([0; 32]);
-    inner.credential_references[0]
+    inner.credential_references[owner.credential]
         .binding
         .with_current_value(&mut |bytes| {
             let value = credential(bytes)?;
@@ -98,7 +98,7 @@ pub(super) fn check_credential(
     owner: &AcceptedOperation,
     original: &[u8; 32],
 ) -> Result<(), HttpError> {
-    owner.provider.inner.credential_references[0]
+    owner.provider.inner.credential_references[owner.credential]
         .binding
         .with_current_value(&mut |bytes| {
             credential(bytes)?;

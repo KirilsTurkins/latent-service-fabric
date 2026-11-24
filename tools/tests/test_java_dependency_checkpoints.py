@@ -1,17 +1,79 @@
 """Controller boundary controls; actual JDK/compiler/component execution is separate."""
 import copy
+import json
 from pathlib import Path
+import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from tools import java_dependency_checkpoint_fixture as fixture, java_dependency_checkpoint_node as node
+from tools import qualify_java_dependency_checkpoints as programme
+from tools.dev_workflow.common import DevError
+from tools.java_capsule_build import write_completion
 from tools.qualify_java_dependency_checkpoints import build_evidence
-from tools.rust_capsule_project import write_json
+from tools.phase3_resource_identity import file_identity
+from tools.rust_capsule_project import digest, write_json
 from tools.phase2_operator_process import WorkflowError
 
 
 class JavaDependencyCheckpointTests(unittest.TestCase):
+    def test_large_compiler_classpaths_keep_full_records_and_fit_the_native_signer(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            row = {'stage': 'model', 'command': ['java', '-cp', 'a' * 70000], 'exitCode': 0, 'seconds': 1.5}
+            marker = {'commands': [row, {'stage': 'package', 'exitCode': 0}]}
+            logs = root / 'compiler-logs'
+            logs.mkdir()
+            original = logs / '0-model.command.json'
+            write_json(original, row)
+            with self.assertRaisesRegex(ValueError, 'retained command differs'):
+                write_completion(root, {'commands': [{**row, 'exitCode': 1}]})
+            self.assertFalse((root / 'BUILD-COMPLETE.json').exists())
+            write_completion(root, marker)
+            completed = (root / 'BUILD-COMPLETE.json').read_bytes()
+            self.assertLessEqual(len(completed), 65536)
+            first, second = json.loads(completed)['commands']
+            reference = first.pop('commandRecord')
+            raw = (root / reference['path']).read_bytes()
+            self.assertEqual((digest(raw), len(raw)), (reference['digest'], reference['size']))
+            self.assertEqual(json.loads(raw), row)
+            self.assertEqual(first, {key: value for key, value in row.items() if key != 'command'})
+            self.assertEqual(second, marker['commands'][1])
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            small = {'commands': [{'stage': 'version', 'command': ['java', '-version'], 'exitCode': 0}]}
+            write_completion(root, small)
+            self.assertEqual(json.loads((root / 'BUILD-COMPLETE.json').read_bytes()), small)
+
+    def test_current_native_products_are_rechecked_and_a_missing_archive_cannot_select_them(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            for name in programme.PRODUCTS:
+                (directory / name).write_bytes(name.encode())
+            receipt = directory / 'native-tuple.json'
+            write_json(receipt, {
+                'status': 'passed', 'features': [], 'tupleRole': 'ordinary-defaults',
+                'hostAbiProfile': 'lsf-host-abi-phase3-v5', 'wasmtimeVersion': '48.0.9',
+                'head': '1' * 40, 'tree': '2' * 40,
+                'binaries': {name: file_identity(directory / name) for name in programme.PRODUCTS},
+            })
+            commands = SimpleNamespace(environment={})
+            with patch.object(programme, 'build_default_products', return_value=(directory, receipt)) as build:
+                binaries, origin, verify = programme.select_native(None, commands, directory)
+                self.assertEqual(verify(), origin)
+                binaries['latent'].write_bytes(b'changed')
+                with self.assertRaisesRegex(DevError, 'native-product-mismatch'):
+                    verify()
+                missing = SimpleNamespace(verify_prepared=Mock(side_effect=FileNotFoundError), native_products=Mock())
+                with patch.dict(sys.modules, {'tools.rust_thread_native_products': missing}), \
+                        self.assertRaises(FileNotFoundError):
+                    programme.select_native(directory, commands, directory)
+                missing.native_products.assert_not_called()
+                build.assert_called_once()
+
     def test_original_project_has_only_explicit_runtime_clocks_and_unchanged_limits(self):
         with tempfile.TemporaryDirectory() as temporary:
             app=fixture.project(Path(temporary)/'application')

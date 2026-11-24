@@ -10,6 +10,13 @@ on:
       - 'sdk/java-guest/fibers/conformance/compiler/DependencyCheckpointControl.java'
       - '.github/workflows/java-dependency-checkpoints.yml'
   workflow_dispatch:
+    inputs:
+      native-origin:
+        description: Native products for the six signed checkpoint calls
+        type: choice
+        required: true
+        default: current
+        options: [current, historical]
 permissions:
   contents: read
   actions: read
@@ -31,7 +38,22 @@ jobs:
         with:
           python-version: 3.13.5
       - name: Fetch the immutable native producer source without rebuilding
+        if: github.event_name == 'push' || inputs.native-origin == 'historical'
         run: git fetch --no-tags --depth=1 origin b422af24d86344ac7abb8b8fa56c3782aab63915
+      - uses: dtolnay/rust-toolchain@4716b85f2fac3e324e64fa2810f6b5c3905760a5 # 1.97.1
+        if: inputs.native-origin == 'current'
+      - uses: KirilsTurkins/lsf-rust-cache@653972653a76770ab9b45cca67e4db8221bed334 # v2.9.3 + upstream changes + LSF security fixes
+        if: inputs.native-origin == 'current'
+        with:
+          prefix-key: lsf-ci-dependencies-v2
+          shared-key: host-correctness
+          key: ubuntu-24.04
+          cache-targets: true
+          cache-bin: false
+          cache-workspace-crates: false
+          cache-all-crates: false
+          cache-on-failure: false
+          save-if: false
       - uses: KirilsTurkins/lsf-setup-java@8aaa4ea8191b36cb3f394e91d099da0d31dc02c2 # v6.1.0 + upstream changes + LSF security fixes
         with:
           distribution: temurin
@@ -59,13 +81,23 @@ jobs:
           python3 tools/install_guest_bindgen.py "$RUNNER_TEMP/java-bindgen"
           echo "$RUNNER_TEMP/java-bindgen" >> "$GITHUB_PATH"
       - name: Authenticate the five existing 193-control native products
+        if: github.event_name == 'push' || inputs.native-origin == 'historical'
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 -B tools/rust_thread_native_products.py --output "$RUNNER_TEMP/java-checkpoint-native"
       - name: Reference and actual compiler IR controls then one fresh signed checkpoint target
+        if: github.event_name == 'push' || inputs.native-origin == 'historical'
         run: |
           python3 -B tools/qualify_java_dependency_checkpoints.py \
             --native "$RUNNER_TEMP/java-checkpoint-native" \
+            --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" \
+            --output "$RUNNER_TEMP/java-checkpoints"
+      - name: Build the ordinary native products and run the six signed checkpoint calls
+        id: current-checkpoints
+        if: inputs.native-origin == 'current'
+        run: |
+          python3 -B tools/qualify_java_dependency_checkpoints.py \
+            --build-native \
             --wasi-sdk "$RUNNER_TEMP/wasi-sdk-29.0-x86_64-linux" \
             --output "$RUNNER_TEMP/java-checkpoints"
       - name: Retain bounded source compiler and actual runtime evidence without keys
@@ -78,6 +110,7 @@ jobs:
           path: |
             ${{ runner.temp }}/java-checkpoint-native/*.json
             ${{ runner.temp }}/java-checkpoints/*.json
+            ${{ runner.temp }}/java-checkpoints/native/native-tuple.json
             ${{ runner.temp }}/java-checkpoints/commands/logs/**
             ${{ runner.temp }}/java-checkpoints/controls/controls.json
             ${{ runner.temp }}/java-checkpoints/controls/reference-commands.json
@@ -91,6 +124,7 @@ jobs:
             ${{ runner.temp }}/java-checkpoints/build/*.json
             ${{ runner.temp }}/java-checkpoints/build/component.wasm
             ${{ runner.temp }}/java-checkpoints/build/checkpoint-generated/**
+            ${{ runner.temp }}/java-checkpoints/build/compiler-logs/*.command.json
             ${{ runner.temp }}/java-checkpoints/build/compiler-logs/*-java-to-c.log
             ${{ runner.temp }}/java-checkpoints/build/compiler-logs/*-java-coroutine-*.log
             ${{ runner.temp }}/java-checkpoints/build/compiler-logs/*-c-to-wasm.log

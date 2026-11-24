@@ -6,7 +6,6 @@ import copy
 import os
 from pathlib import Path
 import pwd
-import re
 import sys
 
 from . import build, dependencies, effects, paths, project, protocol, resource_inputs, snapshot, state
@@ -38,7 +37,9 @@ def client(root: Path, *, deadline: float | None = None, runtime_root: Path | No
         require(root == runtime_root / CHILD, "local-dependency-runtime-owner-required")
     layout, current = installation(runtime_root or root)
     config = decode(paths.read(layout.node.parent, layout.node.name))
-    return Client(current / "bin/latent", layout.client, root, deadline=deadline), Journal(root, config["nodeId"], "examples",
+    budget_profile = config.get("budgetProfile", {})
+    phase4 = budget_profile.get("mode") == "phase4"
+    return Client(current / "bin/latent", layout.client, root, deadline=deadline, phase4=phase4), Journal(root, config["nodeId"], "examples",
         settle=lambda operation, result: effects.settle(root, operation, result))
 
 
@@ -129,6 +130,13 @@ def deploy(root: Path, *, test_grants: list | None = None, deadline: float | Non
     require(build_artifacts.package(cli.binary, source, artifacts, min(time.monotonic() + 30, deadline or float("inf")),
             build_cache.monitor(source.parent), cached=True) == receipt["package"], "built-package-modified-before-deploy")
     node = decode(paths.read((runtime_root or root) / "runtime/config", "node.json"))
+    if "transactionBinding" in artifacts:
+        state_config = node.get("state")
+        require(isinstance(state_config, dict) and state_config.get("formatVersion") == 2
+                and node.get("budgetProfile", {}).get("mode") == "phase4"
+                and node["supplyChain"]["mode"] == "enforced",
+                "transaction-deployment-requires-signed-phase4-node")
+        require(test_grants is None, "transaction-deployment-requires-reviewed-source-grants")
     signing = None
     signer = signing_root or root
     if (signer / "test-signing-receipt.json").exists():
@@ -356,12 +364,8 @@ def main() -> int:
         result = protocol.response(request, {"diagnostics": error.diagnostics} if error.diagnostics else {},
                                    code=error.code, uncertain=error.uncertain)
     except InstallError as error:
-        code = str(error)
-        # The installer owns fixed diagnostics. Never render arbitrary stderr or
-        # dynamic file contents as an error, and preserve interrupted mutation state.
-        if not re.fullmatch(r"[a-z][a-z0-9-]{0,100}", code):
-            code = "native-installer-input-or-host-check-failed"
-        result = protocol.response(request, {}, code=code, uncertain=request["operation"] in {"install", "purge"})
+        result = protocol.response(request, {}, code=protocol.installer_error_code(str(error)),
+                                   uncertain=request["operation"] in {"install", "purge"})
     except Exception:
         result = protocol.response(request, {}, code="helper-operation-failed", uncertain=request["operation"] not in
                                    {"hello", "doctor", "status", "logs", "executable-approval-request"})

@@ -1,6 +1,6 @@
 """Unseen captured crates using two unchanged published ordinary HTTP factories.
 
-No application transport, executor, callback adapter or library patch is supplied.
+Both clients use ordinary transports. The optional Golem body reader lives in the guest.
 The normal builder alone selects the separately prepared standard-WASI backend.
 """
 from __future__ import annotations
@@ -19,6 +19,7 @@ from tools.rust_wasi_http_profile import AUTHORITY
 
 SERVICE = 'rust-wasi-http'
 PACKAGE = 'outside-wasi-http-'
+PRICE_CARD = '{"empty":"","id":7,"items":["first","λ"],"name":"café"}'.encode('utf-8')
 LIBRARY = r'''use std::io::Read;
 use std::error::Error as _;
 use std::sync::atomic::{AtomicU32, Ordering};
@@ -66,6 +67,9 @@ fn domain(status: u16, value: serde_json::Value) -> Result<String, String> {
             || value["message"].as_str() != Some("domain-error") { return Err("bad error domain".into()); }
         return Ok(format!("{status}:domain-error"));
     }
+    let card: serde_json::Value = serde_json::from_slice(include_bytes!("price-card.json"))
+        .map_err(|error| error.to_string())?;
+    if card != value { return Err("private price card differs from fetched domain".into()); }
     if status != 200 || value["id"].as_u64() != Some(7)
         || value["name"].as_str() != Some("caf\u{e9}")
         || value["items"][0].as_str() != Some("first")
@@ -135,8 +139,41 @@ fn waki(mode: &str, url: &str) -> Result<String, String> {
         Err(error) => Ok(waki_error!("body", error)),
     }
 }
+struct CardReader {
+    offset: u8,
+    reads: std::rc::Rc<std::cell::Cell<usize>>,
+}
+
+impl Read for CardReader {
+    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+        if buffer.is_empty() { return Ok(0); }
+        self.reads.set(self.reads.get() + 1);
+        if self.offset == 4 { return Ok(0); }
+        buffer[0] = self.offset;
+        self.offset += 1;
+        Ok(1)
+    }
+}
+
+fn golem_reader(client: &golem_wasi_http::Client, url: &str) -> Result<String, String> {
+    let reads = std::rc::Rc::new(std::cell::Cell::new(0));
+    let reader = CardReader { offset: 0, reads: reads.clone() };
+    let request = client.post(url).header("x-conformance", "rust-client")
+        .body(golem_wasi_http::Body::new(reader));
+    let response = match request.send() {
+        Ok(response) => response,
+        Err(error) => return Ok(golem_error("send", error)),
+    };
+    let status = response.status().as_u16();
+    match response.json::<serde_json::Value>() {
+        Ok(value) => Ok(format!("reader:{}:{}", reads.get(), echo(status, value)?)),
+        Err(error) => Ok(golem_error("json", error)),
+    }
+}
+
 fn golem(mode: &str, url: &str) -> Result<String, String> {
     let client = golem_wasi_http::Client::new();
+    if mode == "reader-post" { return golem_reader(&client, url); }
     if mode == "capacity" {
         let mut held = Vec::new();
         for _ in 0..9 {
@@ -221,12 +258,16 @@ def prepare(output: Path, nonce: str):
     for spec in specs:
         source = fresh(root/('outside-'+spec['alias']))
         (source/'src').mkdir()
+        # The client graph resolves ahash transitively. Its 0.8.13 graph selects
+        # five more build tools than the sixteen reviewed by this fixture.
         manifest = (f'[package]\nname="{spec["package"]}"\nversion="{spec["version"]}"\n'
             'edition="2021"\nlicense="Apache-2.0"\n[dependencies]\n'
             'waki={version="=0.5.1",features=["json"]}\n'
-            'golem-wasi-http={version="=0.2.0",features=["json"]}\nserde_json="=1.0.149"\n')
+            'golem-wasi-http={version="=0.2.0",features=["json"]}\nserde_json="=1.0.149"\n'
+            'ahash = { version = "=0.8.12", default-features = false }\n')
         (source/'Cargo.toml').write_bytes(manifest.encode())
         (source/'src/lib.rs').write_bytes(LIBRARY.encode())
+        (source/'src/price-card.json').write_bytes(PRICE_CARD)
         outside.append(source)
     marker = b'    let name = name.trim();'
     require(initial['src/lib.rs'].count(marker) == 1, 'rust-http-runtime-original-template')
@@ -304,6 +345,8 @@ def capture(app: Path, outside: list[Path], specs: list[dict], cargo: Path) -> d
         shutil.rmtree(path)
     return {'developerCrates':specs,'developerSources':[digest(inventory(v)) for v in originals],
         'clients':clients,'candidateDigest':digest(raw),'sdkLockDigest':digest(sdk),
+        'privatePriceCards':[{'package':spec['package'], 'sha256':digest(files['src/price-card.json']),
+                              'bytes':len(files['src/price-card.json'])} for spec,files in zip(specs,originals)],
         'originalLibrariesRemoved':all(not p.exists() for p in outside),
         'executableInputs':executables,'implicitExecutableApproval':False,
         'catalogueRegistration':False,'applicationTransportInjected':False,'libraryCodePatched':False,

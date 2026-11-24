@@ -187,7 +187,23 @@ ceiling because a cold node charges compilation to the activation. Their portabl
 guest deadline remains five seconds, with separate native preparation. Each
 result records the selected deadline; output comparisons do not claim identical
 cold-start timing. The complete selection remains bounded to five minutes.
+Phase 4 query scenarios use the authenticated, installed node with the
+version-2 state configuration. Set `requires` to include `transactional-state`
+and set `transactionQuery` to the intended `namespace` and exact decimal
+string `incarnation`. The optional `route`, `entity`, and
+`minimumViewVersion` select the original route, entity and padded base64
+view version. The runner uses the currently admitted deployment and its
+configured read authority. Keep the captured namespace incarnation in the
+scenario and explicitly update it after provisioning a different namespace.
+The distributed template selects incarnation `"1"` for its first namespace.
+Configure the node's Phase 4 storage and runtime first. In a disposable test
+workspace, `prepare-test --admission signed-fixture` can then sign the captured
+transaction package while preserving the existing store and provider
+configuration. Supply the deployment's reviewed state grant and authorize the
+caller for the query in the node's installed policy.
+
 The current node runner requires an explicitly selected `test-` workspace.
+The following fixture preparation applies to the stateless scenario profiles.
 After building its first project, stop that workspace and run
 `dev prepare-test --workspace test-NAME --consent-test-fixtures --admission
 signed-fixture` before its first deployment. This uses the workspace's installed

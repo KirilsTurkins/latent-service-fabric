@@ -17,6 +17,7 @@ pub struct PreparedDeploymentOperation {
     next_operations: Arc<table::OperationTable>,
     receipt: DeploymentOperationReceipt,
     apply_result: Option<VersionedDeployment>,
+    schemas: Option<super::PreparedSchemas>,
     bytes: Vec<u8>,
     replayed: bool,
     reply: DeploymentReadLease,

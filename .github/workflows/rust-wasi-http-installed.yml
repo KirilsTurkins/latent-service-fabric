@@ -24,7 +24,7 @@ concurrency:
 
 jobs:
   ordinary-clients:
-    name: One installed recipe guest and six signed parsed-client outcomes
+    name: Installed Rust clients, guest body readers and destination grants
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:

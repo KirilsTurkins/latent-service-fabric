@@ -38,10 +38,9 @@ use latent_state::{
     protected_store::{ProtectedStoreError, ProtectedStoreOwner},
     store_io::StoreIoError,
 };
-use std::{
-    sync::Arc,
-    time::{Duration, Instant},
-};
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+use std::time::Duration;
+use std::{sync::Arc, time::Instant};
 
 /// Actual retained request/work/response admission. The implementation belongs
 /// to the node's bounded recovery owner (#397), not an alternate wire pool.
@@ -473,8 +472,10 @@ impl StateManagementBackend {
         let now = self.0.services.clock.monotonic_now();
         let deadline = context
             .transport_expires_at()
-            .unwrap_or(now + Duration::from_secs(30));
-        if now >= deadline || deadline.saturating_duration_since(now) > Duration::from_secs(30) {
+            .unwrap_or(now + super::MAX_MANAGEMENT_TIMEOUT);
+        if now >= deadline
+            || deadline.saturating_duration_since(now) > super::MAX_MANAGEMENT_TIMEOUT
+        {
             return Err(expired());
         }
         let (work_bytes, response_bytes) = if node {

@@ -1,0 +1,174 @@
+{
+  "observedOn": "2026-11-24",
+  "sourceCommit": "c2520515ea2978d647a74d4bb3aa437bb1b065b6",
+  "host": {
+    "system": "6.18.33.2-microsoft-standard-WSL2",
+    "libc": "glibc 2.39",
+    "distribution": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"",
+    "bubblewrap": {
+      "sha256": "sha256:e318903862396f96de3df57264e0158682b952fd3fb53ac23d876413e7b30f71",
+      "bytes": 72160
+    }
+  },
+  "accountUid": 1000,
+  "toolkit": {
+    "source": "c2520515ea2978d647a74d4bb3aa437bb1b065b6",
+    "archive": {
+      "sha256": "sha256:ea61826a9cc5fa8a309d45c8bfc645fd0bf1197781ef2eb098b85acd5f8de45a",
+      "bytes": 871221458
+    },
+    "sourceNode": {
+      "sha256": "sha256:625f33996a74eb278a65ddb2820727c1bb34e007feffc8cb3e072cb1ae902b82",
+      "bytes": 906
+    },
+    "helper": {
+      "sha256": "sha256:e1bd425738cefe4ee2fca2fe417812302d3c5e2df71b6cae9bc67c1431f52a5b",
+      "bytes": 342196
+    },
+    "managed": {
+      "sha256": "sha256:476455c7b10f34f6f5f911b99dc10e2fb704a5b41d817a5885283c41983ebebc",
+      "bytes": 848629107
+    }
+  },
+  "sourceNodeBinaries": {
+    "latent": "sha256:0ad61e8e7d6510937b0762ff82066950245d0035105af9917cb19e34fb8831cf",
+    "latent-aot-compiler": "sha256:939bdaa54dc003fc857305d80664017e333d6ae6681b593b75fee7a57a62c257",
+    "latentd": "sha256:55022fa61e05c3bb20fd72231a734ff2495b5d66b00e9e64d9e4f87d7c634498"
+  },
+  "publicQualification": {
+    "admission": "explicit-signed-fixture-per-reviewed-build",
+    "cleanHost": false,
+    "compilerNetwork": "required-captured-compiler-network-namespace-denied",
+    "deploymentCount": 3,
+    "durationSeconds": 638.441616,
+    "fixture": "sha256:6142c9d0fb7002ac496bd0b496fa372067b5de67618b1d4211e9a67002723727",
+    "helper": "sha256:e1bd425738cefe4ee2fca2fe417812302d3c5e2df71b6cae9bc67c1431f52a5b",
+    "originalInputsRemovedBeforeCompile": true,
+    "outsideInputs": {
+      "library-v1": "sha256:6ee219b1499fd33219cf7110403afbf346bea8c885e713f373319294f918e681",
+      "library-v2": "sha256:32cf9e7ad247fcfe1b50743f3255231f040b774edd54e49405c703c38f07b11e"
+    },
+    "passed": true,
+    "phase": "complete",
+    "publisherAuthenticated": false,
+    "qualifier": "sha256:7a8f494054bbdfba65ebbcde4371047c5a8d3e7a1d2dbdac604f3d506f5fa916",
+    "resolverNetwork": "explicit-native-registry-fetch",
+    "schemaVersion": "latent.dotnet.dependency-watch-qualification.v1",
+    "shutdowns": [
+      {
+        "cleanShutdown": true,
+        "id": "initial",
+        "reaped": true,
+        "state": "stopped",
+        "watchExitCode": 0
+      },
+      {
+        "cleanShutdown": true,
+        "id": "updated",
+        "reaped": true,
+        "state": "stopped",
+        "watchExitCode": 0
+      },
+      {
+        "cleanShutdown": true,
+        "id": "removed",
+        "reaped": true,
+        "state": "stopped",
+        "watchExitCode": 0
+      }
+    ],
+    "sourceCandidate": true,
+    "sourceProbe": "sha256:342bd3d6c468d56bec7bd63b0365f98ef8ac7670132f455b15840ba345419440",
+    "stages": [
+      {
+        "id": "initial",
+        "passed": true
+      },
+      {
+        "id": "updated",
+        "passed": true
+      },
+      {
+        "id": "removed",
+        "passed": true
+      }
+    ]
+  },
+  "publicQualificationFile": {
+    "sha256": "sha256:cf31c143d914f4e18a8208daec069ad8036127aad00ddf1d5e553e850d1f44ae",
+    "bytes": 1359
+  },
+  "selectedGuestValues": {
+    "initial": "42/SDK/captured watch data",
+    "updated": "43/SDK/captured watch data",
+    "removed": "removed/SDK"
+  },
+  "refusedUnreviewedChanges": [
+    {
+      "change": "update",
+      "gate": "BeforeReview",
+      "outcome": "dependency-native-lock-drift"
+    },
+    {
+      "change": "update",
+      "gate": "BeforeTrust",
+      "outcome": "workspace-recipe-trust-required"
+    },
+    {
+      "change": "update",
+      "gate": "BeforeNewSignedWorkspace",
+      "outcome": "signed-test-build-changed-use-new-workspace"
+    },
+    {
+      "change": "remove",
+      "gate": "BeforeReview",
+      "outcome": "dependency-native-lock-drift"
+    },
+    {
+      "change": "remove",
+      "gate": "BeforeTrust",
+      "outcome": "workspace-recipe-trust-required"
+    },
+    {
+      "change": "remove",
+      "gate": "BeforeNewSignedWorkspace",
+      "outcome": "signed-test-build-changed-use-new-workspace"
+    }
+  ],
+  "sourceControls": {
+    "run": 96,
+    "passed": 95,
+    "skipped": 1
+  },
+  "fixedDebianHostRefusal": "supported-distribution-is-ubuntu-24-04",
+  "priorObservations": {
+    "sourceCommit": "40f3d880e5e3a2f2f192478193a64210f6bb29aa",
+    "debian": {
+      "phase": "watch",
+      "deployed": 0,
+      "receipt": {
+        "sha256": "sha256:4aa3d88a5c436b656ec2217e006f60f48554532d37e9ec03f5d94351402dd280",
+        "bytes": 1042
+      }
+    },
+    "ubuntu": {
+      "phase": "prepare",
+      "deployed": 0,
+      "receipt": {
+        "sha256": "sha256:4135ada5bd381251d7cf9e90f1e8deb93162f8a1b3c51ac7ebe983462ea8985e",
+        "bytes": 886
+      },
+      "loaderAudit": {
+        "examined": 183,
+        "absent": {
+          "libtk8.6.so => not found": [
+            "lib/python3.13/lib-dynload/_tkinter.cpython-313-x86_64-linux-gnu.so"
+          ],
+          "libtcl8.6.so => not found": [
+            "lib/python3.13/lib-dynload/_tkinter.cpython-313-x86_64-linux-gnu.so"
+          ]
+        }
+      }
+    }
+  }
+}

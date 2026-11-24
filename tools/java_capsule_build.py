@@ -54,7 +54,7 @@ RECIPE = ("tools/java_capsule.py", "tools/java_capsule_project.py", "tools/java_
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += guest_resources.RECIPE
-RECIPE += guest_dependency_inputs.RECIPE
+RECIPE += guest_dependency_inputs.RECIPE + ("tools/dev_workflow/executable_approval.py",)
 RECIPE += guest_authoring_frontend.RECIPE
 RECIPE += java_server_source.RECIPE
 RECIPE += ("tools/java_generator_authoring.py",)
@@ -78,6 +78,32 @@ def retain_logs(source: Path, output: Path) -> None:
         total += len(data)
         if total > 16 * 1024 * 1024: raise ValueError("Java compiler log retention exceeded")
         with (target / path.name).open("xb") as retained: retained.write(data)
+
+
+def write_completion(output: Path, marker: dict) -> None:
+    """Keep the signer's 64 KiB marker bound while retaining full compiler commands."""
+    def encoded(value):
+        return json.dumps(value, indent=2, ensure_ascii=False).encode() + b'\n'
+
+    data = encoded(marker)
+    if len(data) > 65536:
+        commands = []
+        for index, row in enumerate(marker['commands']):
+            if 'command' not in row:
+                commands.append(row)
+                continue
+            path = Path('compiler-logs') / f"{index}-{row['stage']}.command.json"
+            raw = read_file(output / path)
+            if json.loads(raw) != row:
+                raise ValueError('Java retained command differs from its build observation')
+            summary = {key: value for key, value in row.items() if key != 'command'}
+            summary['commandRecord'] = {'path': path.as_posix(), 'digest': digest(raw), 'size': len(raw)}
+            commands.append(summary)
+        data = encoded({**marker, 'commands': commands})
+        if len(data) > 65536:
+            raise ValueError('Java completion marker exceeds the native signer limit')
+    with (output / 'BUILD-COMPLETE.json').open('xb') as target:
+        target.write(data)
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None,
@@ -379,11 +405,11 @@ def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path
                     "buildSeconds": round(time.monotonic() - start, 6), "commands": compiler.records + commands.records}
                 if runtime_profile in ACTIVATION_PROFILES:
                     marker["javaRuntimeProfile"] = runtime_profile
-                write_json(output / "BUILD-COMPLETE.json", marker)
             finally:
                 if compiler_dir.is_dir():
                     retain_logs(compiler_dir, output)
                     c_failure_context.retain_component_inputs(compiler, temporary / 'compiled', output, failure_contexts)
+            write_completion(output, marker)
         return output
     except BaseException as error:
         write_json(output / "BUILD-FAILED.json", {"formatVersion": 1, "stage": stage,

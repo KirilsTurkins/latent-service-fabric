@@ -16,7 +16,7 @@ from tools.dev_workflow.transaction_binding import validate
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT = "examples:order-draft/api@1.0.0"
-HOST = "stateful.test:19092"
+HOST = "stateful.localhost:19092"
 MAX_U64 = (1 << 64) - 1
 ENTITIES = ("alice", "bob")
 INBOX_FIELDS = {"id", "principalSubject", "stream", "consumer", "filterSubject",
@@ -40,6 +40,28 @@ def pinned(value: object, prefix: str) -> str:
     require(isinstance(value, str) and re.fullmatch(re.escape(prefix) + r"[0-9a-f]{64}", value) is not None,
             "published order-draft identity is invalid")
     return value
+
+
+def renderer_triggers(published: dict, entity: str) -> list[dict]:
+    require(entity in ENTITIES, "only the two finite synthetic draft entities are supported")
+    require(isinstance(published, dict) and set(published) == {
+        "publication", "revision", "deploymentGeneration"}, "published renderer inputs must be closed")
+    target = {
+        "service": "stateful-reference", "contract": "latent:web/application@0.1.0",
+        "function": "handle", "route": "stateful-reference",
+        "publication": pinned(published["publication"], "publication:sha256:"),
+        "revision": pinned(published["revision"], "revision-v1:sha256:"),
+        "deploymentGeneration": published["deploymentGeneration"],
+    }
+    require(type(target["deploymentGeneration"]) is int and 1 <= target["deploymentGeneration"] <= MAX_U64,
+            "published renderer deployment generation must be u64")
+    return [{
+        "apiVersion": "latent.dev/v1alpha1", "kind": "HttpTrigger",
+        "metadata": {"name": f"order-draft-{entity}-document-{method.lower()}", "tenant": "examples"},
+        "spec": {"target": dict(target), "configuration": {
+            "profile": "buffered-v1", "scheme": "http", "host": HOST,
+            "path": "/drafts/" + entity, "pathMatch": "exact", "method": method}},
+    } for method in ("GET", "HEAD")]
 
 
 def inbox_binding(source: dict, command: dict, namespace: str, incarnation: int, entity: str) -> dict:
@@ -71,7 +93,7 @@ def inbox_binding(source: dict, command: dict, namespace: str, incarnation: int,
         "budget": dict(budget),
         "transaction": {"namespace": namespace, "incarnation": incarnation, "entity": entity,
                         "processingScope": source["processingScope"], "qualification": dict(qualification),
-                        "duplicateWindowMillis": window, "stateReadBytes": 4096, "stateWriteBytes": 1024,
+                        "duplicateWindowMillis": window, "stateReadBytes": 1024 * 1024, "stateWriteBytes": 64 * 1024,
                         "effectCount": 2},
     }
 
@@ -156,6 +178,7 @@ def main() -> int:
     parser.add_argument("--result-policy", required=True)
     parser.add_argument("--state-policy", action="append", required=True)
     parser.add_argument("--inbox-binding", type=Path)
+    parser.add_argument("--renderer-selection", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     require(args.companion.is_file() and not args.companion.is_symlink()
@@ -171,6 +194,11 @@ def main() -> int:
     value = derive(args.companion.read_bytes(), json.loads(args.published.read_bytes()), entity=args.entity,
                    incarnation=args.incarnation, result_policy=args.result_policy, state_policies=args.state_policy,
                    inbox_source=inbox_source)
+    if args.renderer_selection is not None:
+        path = args.renderer_selection
+        require(path.is_file() and not path.is_symlink() and path.stat().st_size <= 16384,
+                "renderer selection must be a bounded regular file")
+        value["triggers"].extend(renderer_triggers(json.loads(path.read_bytes()), args.entity))
     with args.output.open("x", encoding="utf8", newline="\n") as stream:
         stream.write(json.dumps(value, indent=2) + "\n")
     return 0

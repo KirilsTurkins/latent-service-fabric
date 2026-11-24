@@ -42,7 +42,7 @@ fn timeout<T>(request: &Request<T>) -> Duration {
         "u" => Duration::from_micros(value),
         "m" => Duration::from_millis(value),
         "S" => Duration::from_secs(value),
-        _ => panic!("test allowance is at most five seconds"),
+        _ => panic!("unexpected test allowance unit"),
     }
 }
 
@@ -95,6 +95,27 @@ async fn requests_use_remaining_time_and_one_sensitive_authorization_header() {
     let failure = session.request(request()).unwrap_err();
     assert_eq!(failure.error["code"], "rpc-timeout");
     assert!(failure.outcome_known);
+    assert!(!session.dispatched());
+}
+
+#[tokio::test(start_paused = true)]
+async fn management_requests_cap_only_the_remaining_original_allowance() {
+    let session = session(Duration::from_secs(85));
+    let limit = latent_wire::phase4::MAX_MANAGEMENT_TIMEOUT;
+    assert_eq!(
+        timeout(&session.request(request()).unwrap()),
+        Duration::from_secs(85)
+    );
+    let management = session
+        .request_with_timeout_limit(request(), limit)
+        .unwrap();
+    assert_eq!(timeout(&management), limit);
+
+    tokio::time::advance(Duration::from_secs(80)).await;
+    let management = session
+        .request_with_timeout_limit(request(), limit)
+        .unwrap();
+    assert_eq!(timeout(&management), Duration::from_secs(5));
     assert!(!session.dispatched());
 }
 

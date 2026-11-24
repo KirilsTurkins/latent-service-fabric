@@ -34,6 +34,7 @@ Current action fields are:
 | `snapshot` | `operationId`, `file: {root,name}` |
 | `inspect-namespace` | none |
 | `inspect-inbox-source` | `binding` |
+| `inspect-inbox-broker` | `binding` |
 | `enroll-inbox-source` | `binding`, `expectedScope`, `expectedView`, `expectedCheckpointGeneration` |
 | `inspect-restore` | `file`, `destinationRoot`, `destinationCheckpointRoot`, `operationId`, `snapshotDigest`, `manifestDigest`, optional `destinationStoreIdentity` |
 | `restore` | the inspect fields plus exact `windowAcknowledgement` |
@@ -59,6 +60,12 @@ encoded current `receipt`, current `view`, and `resourcePhysicallyRetired`.
 Generic resume refuses a retained current migration and cannot replace its
 protected checkpoint and activation owner. Old v1 recipes and bytes retain
 their own approval boundary.
+
+Namespace inspection also checks required local payloads when the protected
+configuration selects the original durable blob installation. Recovery reopens
+the existing store and blob owner with the configured mode and verifies the
+retained references and bytes. Missing, corrupt or foreign payloads refuse the
+inspection. Snapshot, restore and migration still require an inline-only store.
 
 When the archive contains anchored inbox sources, restore inspection and
 staging report `inboxReplay` with the exact source inventory generation and
@@ -116,6 +123,16 @@ publication. Use `inspect-inbox-source` under the `namespace-inspect` policy.
 It returns the configured source's `inputBinding` (64 lowercase hex digits),
 the exact namespace `view` byte array, the `checkpointGeneration`, and whether
 the source is already enrolled.
+
+Use `inspect-inbox-broker` with the same binding, publication and policy for
+live JetStream progress. The node verifies the configured stream and durable
+consumer over the protected input connection. The report includes their
+creation times and the exact delivery and acknowledgement positions as
+decimal strings. For an enrolled source, `latestDeliveryHistory` reports a
+retained commit or rejection for the last delivered stream sequence only
+when the inbox marker, attempt and original command agree. An unconfirmed
+sequence requires review of the recovery window. This inspection performs
+no pull or acknowledgement. Resume remains a separate authorized operation.
 
 To approve a new logical source, run `enroll-inbox-source` under the
 `namespace-enroll-inbox-source` policy. Supply the reported `inputBinding` as

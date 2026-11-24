@@ -147,7 +147,7 @@ pub(super) fn install(
     deadline: std::time::Instant,
     registry: &DispatchRegistry,
     metadata: Arc<latent_core::native_capacity::NativeBufferPermit>,
-) -> Result<Option<Arc<PolicyCallBinding>>, PlatformError> {
+) -> Result<Option<(String, Arc<PolicyCallBinding>)>, PlatformError> {
     let Some((requirements, adapter)) = select(asset, operation, adapters)? else {
         return Ok(None);
     };
@@ -238,6 +238,7 @@ pub(super) fn install(
         &principal,
         &latent_capabilities::namespace::RecoverySelection::ServiceIntegration,
     )?;
+    let intent_name = rule.scope.binding.clone();
     let dispatch = dispatch::DispatchPolicy {
         rule: rule.clone(),
         policy: Arc::clone(policy),
@@ -279,7 +280,7 @@ pub(super) fn install(
             })
         })?;
     }
-    Ok(Some(binding))
+    Ok(Some((intent_name, binding)))
 }
 
 fn denied() -> PlatformError {

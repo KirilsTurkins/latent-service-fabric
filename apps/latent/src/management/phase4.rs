@@ -41,6 +41,9 @@ pub(crate) fn recovery(request: &latent_rpc::phase4::Request) -> Option<serde_js
         }
         Request::InvokeCommand(value) => Some(
             json!({"family":"command","command":value.command.as_ref().map(projection::selector),
+            "target":value.invocation.as_ref().and_then(|v|v.target.as_ref()).map(|v|json!({
+                "service":v.service,"contract":v.contract,"function":v.function,"route":v.route})),
+            "expectedVersionCount":value.expected_versions.len(),
             "retryRequestId":value.retry_attempt.as_ref().map(|v|&v.request_id),"automaticRetry":false}),
         ),
         Request::CancelCommand(value) => Some(

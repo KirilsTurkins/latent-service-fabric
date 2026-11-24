@@ -114,7 +114,7 @@ pub(super) fn install(
     deadline: std::time::Instant,
     registry: &DispatchRegistry,
     metadata: Arc<latent_core::native_capacity::NativeBufferPermit>,
-) -> Result<Option<Arc<PolicyCallBinding>>, PlatformError> {
+) -> Result<Option<(String, Arc<PolicyCallBinding>)>, PlatformError> {
     let Some(config) = &operation.deferred_http else {
         return Ok(None);
     };
@@ -223,6 +223,7 @@ pub(super) fn install(
     if rule.protected_credential_reference != config.credential_reference {
         return Err(denied());
     }
+    let intent_name = rule.scope.binding.clone();
     let dispatch = dispatch_policy(
         Arc::clone(policy),
         asset,
@@ -260,7 +261,7 @@ pub(super) fn install(
             })
         })?;
     }
-    Ok(Some(binding))
+    Ok(Some((intent_name, binding)))
 }
 
 fn dispatch_policy(

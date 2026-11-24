@@ -1,0 +1,479 @@
+{
+  "issue": 694,
+  "date": "2026-11-24",
+  "platform": "linux-x86_64",
+  "sourceRevision": "40f3d880e5e3a2f2f192478193a64210f6bb29aa",
+  "toolkit": {
+    "sha256": "sha256:e42d3ab160763727f1be5348d97ddb9ec2924050279e47640d5e8b69350246f6",
+    "bytes": 871244291
+  },
+  "sourceNodeArchive": {
+    "sha256": "sha256:432463a5d9f8fdf5d681ca14b332b6fa22b88cdf1cc0aab3b21405ab5f9b6a09",
+    "bytes": 58893939
+  },
+  "frontend": {
+    "sha256": "sha256:8a79749ab0c623c787ae6cab4b58bdf951f93b058a983a72aefb6dbb27b380b2",
+    "bytes": 3258544
+  },
+  "frontendArchive": {
+    "sha256": "sha256:92d505a36e9f6ba461f2a1270e722da6a383c69d440af4774fadedb169164bc1",
+    "bytes": 11046196
+  },
+  "helper": {
+    "sha256": "sha256:0919fe400aa95a1e653c7a96e36bb40e0ba4502f95e478ec840051e8cddc749d",
+    "bytes": 342072
+  },
+  "previousBuild": {
+    "sourceRevision": "25ec834c2f79473556228e7078da000b0b938e00",
+    "operation": "public build with approved original Refit generator",
+    "error": "build-cache-byte-limit",
+    "rawObservation": {
+      "bytes": 108,
+      "sha256": "sha256:87ad7b46afe433fd93856c3f78831ee8024a7f643fee8eaca4b6fd8fd1f99158"
+    }
+  },
+  "qualifiedSourceTests": 127,
+  "sourceTestsOutput": {
+    "bytes": 228,
+    "sha256": "sha256:364c73cc1493fa50c56bf186ee818b01aeaa24438df3895d27de9ee96c2f6681"
+  },
+  "originalNuGetPackages": 8,
+  "source": "sha256:91078ba54829213b9689049379de166958c60111d84622d7a2aa0de674fef7e4",
+  "recipe": "sha256:2ddb4b38ef4b4a20751a9253c22342bf5fe59a72a1e6e2fecc3f441231206544",
+  "generator": "refit/16.4.0",
+  "generatorOutputManifest": "sha256:ba4b082b5ab43b0c43f60c03240e33dbff4b3f0060d336ddb1c54ccaafc41315",
+  "sourceCheckoutVisibleToGuestBuild": false,
+  "offlineBuildNetwork": "isolated loopback",
+  "perAttemptByteCeiling": 4294967296,
+  "perAttemptEntryCeiling": 65536,
+  "attemptUsageSamplingIntervalSeconds": 1.5,
+  "firstCleanWorkspace": {
+    "component": "sha256:36d3bb52d0500fcee412ed0d1734b2388b56ba0d24778abae8dfe6b3381a1260",
+    "package": "sha256:d0426d96a7a57bd10f4f4800537c94530da714e1cf22c3d277640fbf28a26610",
+    "approvedAttemptSampling": {
+      "maximumObservedBytes": 3850269217,
+      "maximumObservedEntries": 26325,
+      "samples": 104
+    },
+    "compilerApprovalExplicit": true,
+    "sameAttemptOnExplicitCacheHit": true,
+    "missingSelectionRefusedBeforeAndAfterApproval": true,
+    "stages": [
+      {
+        "name": "open-delivered-nuget-compiler",
+        "exitCode": 0,
+        "seconds": 13.01
+      },
+      {
+        "name": "resolve-locked-local-feed",
+        "exitCode": 0,
+        "seconds": 25.63
+      },
+      {
+        "name": "review-lock",
+        "exitCode": 0,
+        "seconds": 1.24
+      },
+      {
+        "name": "verify-capture",
+        "exitCode": 0,
+        "seconds": 1.21
+      },
+      {
+        "name": "offline-verify-reviewed-selection",
+        "exitCode": 0,
+        "seconds": 1.15
+      },
+      {
+        "name": "connect",
+        "exitCode": 0,
+        "seconds": 0.78
+      },
+      {
+        "name": "trust",
+        "exitCode": 0,
+        "seconds": 0.15
+      },
+      {
+        "name": "unapproved",
+        "exitCode": 2,
+        "seconds": 42.21
+      },
+      {
+        "name": "inspect-private-request",
+        "exitCode": 0,
+        "seconds": 7.88
+      },
+      {
+        "name": "approved",
+        "exitCode": 0,
+        "seconds": 131.5
+      },
+      {
+        "name": "approved-cache",
+        "exitCode": 0,
+        "seconds": 12.25
+      },
+      {
+        "name": "absent-selection",
+        "exitCode": 2,
+        "seconds": 37.18
+      },
+      {
+        "name": "fresh-refusal",
+        "exitCode": 0,
+        "seconds": 7.57
+      }
+    ],
+    "rawFrontendReceipt": {
+      "bytes": 1149,
+      "sha256": "sha256:9f089d940309af3b4571cbfc2b834ec0d5b192141a35e0bc1672c6ee92d99262"
+    }
+  },
+  "secondCleanWorkspace": {
+    "component": "sha256:656038b5ec4c3fca616f7deeecdb37b611cc8acde6307f9056191f72b0837c20",
+    "package": "sha256:7b2163a0de3ebdb2b30ec4947b8eadee24c8f7ce5ea2eaf4ee2fc6d2a3f2dc58",
+    "approvedAttemptSampling": {
+      "maximumObservedBytes": 3850269217,
+      "maximumObservedEntries": 26325,
+      "samples": 97
+    },
+    "compilerApprovalExplicit": true,
+    "sameAttemptOnExplicitCacheHit": true,
+    "missingSelectionRefusedBeforeAndAfterApproval": true,
+    "stages": [
+      {
+        "name": "open-delivered-nuget-compiler",
+        "exitCode": 0,
+        "seconds": 10.54
+      },
+      {
+        "name": "resolve-locked-local-feed",
+        "exitCode": 0,
+        "seconds": 19.43
+      },
+      {
+        "name": "review-lock",
+        "exitCode": 0,
+        "seconds": 1.14
+      },
+      {
+        "name": "verify-capture",
+        "exitCode": 0,
+        "seconds": 1.05
+      },
+      {
+        "name": "offline-verify-reviewed-selection",
+        "exitCode": 0,
+        "seconds": 0.93
+      },
+      {
+        "name": "connect",
+        "exitCode": 0,
+        "seconds": 0.6
+      },
+      {
+        "name": "trust",
+        "exitCode": 0,
+        "seconds": 0.14
+      },
+      {
+        "name": "unapproved",
+        "exitCode": 2,
+        "seconds": 33.65
+      },
+      {
+        "name": "inspect-private-request",
+        "exitCode": 0,
+        "seconds": 6.5
+      },
+      {
+        "name": "approved",
+        "exitCode": 0,
+        "seconds": 121.38
+      },
+      {
+        "name": "approved-cache",
+        "exitCode": 0,
+        "seconds": 10.88
+      },
+      {
+        "name": "absent-selection",
+        "exitCode": 2,
+        "seconds": 33.38
+      },
+      {
+        "name": "fresh-refusal",
+        "exitCode": 0,
+        "seconds": 6.7
+      }
+    ],
+    "rawFrontendReceipt": {
+      "bytes": 1149,
+      "sha256": "sha256:7661661561e4aea425c9e704f74349f95231e0ed9541eb2449f34aaa4f3eb8c9"
+    }
+  },
+  "independentBuildComponentBytesIdentical": false,
+  "independentPackageDigestsIdentical": false,
+  "standaloneNode": {
+    "frontendBuild": "secondCleanWorkspace",
+    "native": {
+      "capsule_authoring": {
+        "sha256": "sha256:90911e308c6fc7c07d77ec2b1faf3b867abae36b087d4704570ceb5584cff510",
+        "bytes": 26143816
+      },
+      "latent": {
+        "sha256": "sha256:0c1c153cf4f995329f60620309e8fd5a9bffc05355ee8cf60141c4ce06f7520d",
+        "bytes": 47194192
+      },
+      "latentd": {
+        "sha256": "sha256:1e2ba9b030da7e1dbc9c70e7e6e12ad984950f497b7ede0e5bbc578a6ddc5b66",
+        "bytes": 129878176
+      }
+    },
+    "nativeRuntimeSource": "40f3d880e5e3a2f2f192478193a64210f6bb29aa",
+    "signingToolSource": "269fe85be9e29a0e3410ead65b7e1c1bce0aa4a3",
+    "controllerPackaging": {
+      "sha256": "sha256:cd776ce7ed303de7706e8dbca6d73a6412d65c25a0300cc6d8d95e115c6d2cba",
+      "bytes": 474
+    },
+    "component": {
+      "sha256": "sha256:656038b5ec4c3fca616f7deeecdb37b611cc8acde6307f9056191f72b0837c20",
+      "bytes": 10814579
+    },
+    "defaultFactories": [
+      "FlurlClient()",
+      "RestService.CreateHttpClient(endpoint, settings)",
+      "RestService.ForGenerated<IDomainApi>(client, settings)"
+    ],
+    "signedInvocations": 20,
+    "cases": [
+      {
+        "case": "flurl-json",
+        "returned": [
+          "1:200:domain:7:café:first|λ:"
+        ],
+        "fuel": 53903735,
+        "peakGuestMemoryBytes": 58485072,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-json",
+        "returned": [
+          "1:200:domain:7:café:first|λ:"
+        ],
+        "fuel": 54689816,
+        "peakGuestMemoryBytes": 58904928,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "outside-alpha",
+        "returned": [
+          "1:200:domain:7:café:first|λ:"
+        ],
+        "fuel": 53371439,
+        "peakGuestMemoryBytes": 58839392,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "outside-delta",
+        "returned": [
+          "1:200:domain:7:café:first|λ:"
+        ],
+        "fuel": 53370491,
+        "peakGuestMemoryBytes": 58419536,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-404",
+        "returned": [
+          "1:404:error:domain-error"
+        ],
+        "fuel": 53916688,
+        "peakGuestMemoryBytes": 58904916,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-404",
+        "returned": [
+          "1:404:error:domain-error"
+        ],
+        "fuel": 53432795,
+        "peakGuestMemoryBytes": 58485060,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-500",
+        "returned": [
+          "1:500:error:domain-error"
+        ],
+        "fuel": 53916708,
+        "peakGuestMemoryBytes": 58485060,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-500",
+        "returned": [
+          "1:500:error:domain-error"
+        ],
+        "fuel": 53432513,
+        "peakGuestMemoryBytes": 58904916,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-pending-cancel",
+        "returned": [
+          "1:cancelled"
+        ],
+        "fuel": 53860898,
+        "peakGuestMemoryBytes": 58904890,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-pending-cancel",
+        "returned": [
+          "1:cancelled"
+        ],
+        "fuel": 53321408,
+        "peakGuestMemoryBytes": 58485034,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "reserved-header",
+        "returned": [
+          "1:transport-error"
+        ],
+        "fuel": 53688576,
+        "peakGuestMemoryBytes": 58904902,
+        "outboundRequests": 0,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "foreign-target",
+        "returned": [
+          "1:transport-error"
+        ],
+        "fuel": 53699453,
+        "peakGuestMemoryBytes": 58904902,
+        "outboundRequests": 0,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-post",
+        "returned": [
+          "1:200:echo:AAECAw=="
+        ],
+        "fuel": 54006609,
+        "peakGuestMemoryBytes": 58904906,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "uncertain-post",
+        "returned": [
+          "1:transport-error"
+        ],
+        "fuel": 53868223,
+        "peakGuestMemoryBytes": 58485046,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-pre-cancelled",
+        "returned": [
+          "1:cancelled"
+        ],
+        "fuel": 53545641,
+        "peakGuestMemoryBytes": 58485034,
+        "outboundRequests": 0,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-pre-cancelled",
+        "returned": [
+          "1:cancelled"
+        ],
+        "fuel": 52986134,
+        "peakGuestMemoryBytes": 58904890,
+        "outboundRequests": 0,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "early-body-dispose",
+        "returned": [
+          "1:early:4"
+        ],
+        "fuel": 53721423,
+        "peakGuestMemoryBytes": 58904886,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "guest-extension",
+        "returned": [
+          "1:200:domain:7:café:first|λ:"
+        ],
+        "fuel": 52808107,
+        "peakGuestMemoryBytes": 58419536,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "guest-extension-denied",
+        "returned": [
+          "1:transport-error"
+        ],
+        "fuel": 52525964,
+        "peakGuestMemoryBytes": 58839366,
+        "outboundRequests": 0,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "fresh-default",
+        "returned": [
+          "1:200:domain:7:café:first|λ:"
+        ],
+        "fuel": 53904639,
+        "peakGuestMemoryBytes": 58904928,
+        "outboundRequests": 1,
+        "physicalRetirementVerified": true
+      }
+    ],
+    "preEntryRefusals": [
+      {
+        "case": "runtime-missing",
+        "code": "permission-denied",
+        "fuel": 0,
+        "outboundRequests": 0
+      },
+      {
+        "case": "http-missing",
+        "code": "permission-denied",
+        "fuel": 0,
+        "outboundRequests": 0
+      }
+    ],
+    "peer": {
+      "contacts": 15,
+      "completedWrites": 11,
+      "mutations": 1,
+      "allClosed": true
+    },
+    "cleanShutdown": true,
+    "processReaped": true,
+    "originalReceipt": {
+      "bytes": 48627,
+      "sha256": "sha256:b57a9f41ce57ca54ef26f46e76f9b4ef8021d1c9db0f40683a0df69a58582623"
+    }
+  }
+}
