@@ -2,7 +2,7 @@ use crate::{
     config::{subject, text},
     EventError, NatsEndpoint, Result,
 };
-use latent_core::ResourceBudget;
+use latent_core::{InvocationPrincipal, Metadata, PrincipalKind, ResourceBudget, TenantId};
 use serde::{Deserialize, Serialize};
 mod decode;
 
@@ -54,6 +54,17 @@ pub struct TriggerBinding {
     pub transaction: Option<super::inbox::TransactionalBinding>,
 }
 impl TriggerBinding {
+    #[must_use]
+    pub fn principal(&self) -> InvocationPrincipal {
+        InvocationPrincipal {
+            subject: self.principal_subject.clone(),
+            kind: PrincipalKind::Trigger,
+            tenant: Some(TenantId(self.tenant.clone())),
+            service: None,
+            claims: Metadata::new(),
+        }
+    }
+
     #[must_use]
     pub fn activation_budget(&self) -> ResourceBudget {
         let mut budget = self.budget.budget();

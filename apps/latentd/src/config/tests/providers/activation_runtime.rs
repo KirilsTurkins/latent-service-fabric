@@ -232,7 +232,8 @@ fn cooperative_admission_requires_the_selected_c_profile_and_exact_store_owner_l
     // Neither its capability nor RootOnly accounting widens ordinary cells.
     for threads in [true, false] {
         runtime.owned_native_threads = threads;
-        let policy = crate::config::policy::admission(&original, &capacity, &runtime).unwrap();
+        let policy =
+            crate::config::policy::admission(&original, &capacity, &runtime, None).unwrap();
         assert!(policy.cell_classes.values().all(|cell| {
             cell.threading_models == vec![ThreadingModel::SingleThreaded, ThreadingModel::Reentrant]
         }));
@@ -242,7 +243,7 @@ fn cooperative_admission_requires_the_selected_c_profile_and_exact_store_owner_l
     let selected = decode(&value);
     runtime.owned_native_threads = true;
     runtime.native_thread_profile = NativeThreadProfile::CContext144SyncCooperativeV1;
-    let policy = crate::config::policy::admission(&selected, &capacity, &runtime).unwrap();
+    let policy = crate::config::policy::admission(&selected, &capacity, &runtime, None).unwrap();
     assert!(policy
         .cell_classes
         .values()
@@ -259,20 +260,20 @@ fn cooperative_admission_requires_the_selected_c_profile_and_exact_store_owner_l
             3 => wrong.activation_runtime = None,
             _ => wrong.activation_runtime.as_mut().unwrap().native_owners += 1,
         }
-        assert!(crate::config::policy::admission(&selected, &capacity, &wrong).is_err());
+        assert!(crate::config::policy::admission(&selected, &capacity, &wrong, None).is_err());
     }
     value["engine"]["threadingProfile"] = "rust-context40-sync-cooperative-v1".into();
     let selected_rust = decode(&value);
-    assert!(crate::config::policy::admission(&selected_rust, &capacity, &runtime).is_err());
+    assert!(crate::config::policy::admission(&selected_rust, &capacity, &runtime, None).is_err());
     runtime.native_thread_profile = NativeThreadProfile::RustContext40SyncCooperativeV1;
-    let rust = crate::config::policy::admission(&selected_rust, &capacity, &runtime).unwrap();
+    let rust = crate::config::policy::admission(&selected_rust, &capacity, &runtime, None).unwrap();
     assert!(rust
         .cell_classes
         .values()
         .all(|cell| cell.threading_models == vec![ThreadingModel::Cooperative]));
-    assert!(crate::config::policy::admission(&selected, &capacity, &runtime).is_err());
+    assert!(crate::config::policy::admission(&selected, &capacity, &runtime, None).is_err());
     value["providers"]["activationRuntime"]["nativeThreads"] = false.into();
-    assert!(crate::config::policy::admission(&decode(&value), &capacity, &runtime).is_err());
+    assert!(crate::config::policy::admission(&decode(&value), &capacity, &runtime, None).is_err());
 }
 
 #[test]

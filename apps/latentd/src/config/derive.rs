@@ -25,7 +25,12 @@ pub(super) fn settings(config: &NodeConfig) -> Result<NodeSettings, PlatformErro
     let transactional_triggers = super::triggers::derive(config)?;
     let capacity = validation::validate(config)?;
     let wasmtime = runtime::wasmtime(config, &capacity)?;
-    let admission = policy::admission(config, &capacity, &wasmtime)?;
+    let admission = policy::admission(
+        config,
+        &capacity,
+        &wasmtime,
+        transactional_triggers.as_ref(),
+    )?;
     let delegation_limits = config.budget_profile.limits()?;
     let invocation = runtime::invocation(config, &capacity)?;
     let management = runtime::management(config, &invocation)?;

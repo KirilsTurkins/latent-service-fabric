@@ -266,6 +266,7 @@ impl StandaloneNode {
                 .map_or_else(Vec::new, |provider| provider.descriptors().to_vec()),
             configured_http_callers: http_callers,
             configured_transport_callers: transport_callers,
+            configured_trigger_callers: state::inspection::trigger_callers(&settings)?,
             state_provider_profile: profile.into(),
             state_configuration_digest: format!(
                 "sha256:{:x}",
