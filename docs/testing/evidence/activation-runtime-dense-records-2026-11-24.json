@@ -1,0 +1,127 @@
+{
+  "observedOn": "2026-11-24",
+  "parentSource": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+  "environment": "Windows x86_64, Rust 1.97.1, release profile",
+  "samplesPerRevision": 6,
+  "order": "Alternate which binary runs first on each paired comparison.",
+  "workloads": {
+    "first-1": {
+      "arenaLimit": 1,
+      "iterations": 3000,
+      "tasksPerIteration": 1,
+      "timedOperations": "Create runtime, register, snapshot, park, wake, settle and retire",
+      "parentNanoseconds": [
+        4541500,
+        5619800,
+        5108900,
+        5204100,
+        3993300,
+        4200100
+      ],
+      "candidateNanoseconds": [
+        4312200,
+        4245800,
+        3331400,
+        5467300,
+        4017400,
+        5314300
+      ],
+      "hostBytesAfterRegistration": 416
+    },
+    "first-64": {
+      "arenaLimit": 64,
+      "iterations": 3000,
+      "tasksPerIteration": 1,
+      "timedOperations": "Create runtime, register, snapshot, park, wake, settle and retire",
+      "parentNanoseconds": [
+        4006900,
+        5586600,
+        6446400,
+        3536400,
+        3452300,
+        4391600
+      ],
+      "candidateNanoseconds": [
+        4420000,
+        3707500,
+        3053600,
+        5603300,
+        4076600,
+        3842900
+      ],
+      "hostBytesAfterRegistration": 1424
+    },
+    "first-8192": {
+      "arenaLimit": 8192,
+      "iterations": 3000,
+      "tasksPerIteration": 1,
+      "timedOperations": "Create runtime, register, snapshot, park, wake, settle and retire",
+      "parentNanoseconds": [
+        16550900,
+        17614300,
+        18849400,
+        19416600,
+        14390600,
+        16185600
+      ],
+      "candidateNanoseconds": [
+        4833900,
+        3961600,
+        3888600,
+        5479800,
+        4349000,
+        4022400
+      ],
+      "hostBytesAfterRegistration": 131472
+    },
+    "admit-512": {
+      "arenaLimit": 8192,
+      "iterations": 1,
+      "tasksPerIteration": 512,
+      "timedOperations": "Register tasks into the same runtime",
+      "parentNanoseconds": [
+        203900,
+        164000,
+        154900,
+        173300,
+        151600,
+        173400
+      ],
+      "candidateNanoseconds": [
+        170800,
+        125600,
+        152100,
+        153100,
+        147300,
+        123500
+      ],
+      "hostBytesAfterRegistration": 131472
+    },
+    "admit-8192": {
+      "arenaLimit": 8192,
+      "iterations": 1,
+      "tasksPerIteration": 8192,
+      "timedOperations": "Register tasks into the same runtime",
+      "parentNanoseconds": [
+        24017500,
+        19425400,
+        16185800,
+        18041700,
+        17393500,
+        19755700
+      ],
+      "candidateNanoseconds": [
+        2127900,
+        1902400,
+        1664700,
+        2490400,
+        2212700,
+        1855500
+      ],
+      "hostBytesAfterRegistration": 131472
+    }
+  },
+  "peakMemoryMeasurement": "Host bytes charged in the activation snapshot after registration.",
+  "cpuFuel": 1000000000,
+  "memoryBytes": 1000000
+}
