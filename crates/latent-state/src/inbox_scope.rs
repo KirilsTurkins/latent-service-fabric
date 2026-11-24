@@ -158,6 +158,7 @@ mod tests {
             tenant: "tenant".into(),
             namespace: "orders".into(),
             incarnation: 1,
+            entity: None,
             processing_scope: "incoming".into(),
             provider: "jetstream".into(),
             stream: "orders".into(),
