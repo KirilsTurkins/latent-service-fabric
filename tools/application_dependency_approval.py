@@ -9,11 +9,15 @@ from tools.build_snapshot import canonical, digest
 def request(verified, isolation, recipe_digest: str) -> dict:
     if isolation.receipt.get('profile') != 'linux-captured-compiler-namespaces-v1':
         raise DependencyError('dependency-execution-isolation-profile-unavailable')
+    return specification(verified, digest(canonical(isolation.receipt)), recipe_digest)
+
+
+def specification(verified, compiler_digest: str, recipe_digest: str) -> dict:
     return {'formatVersion': 1, 'inputIdentity': verified.identity,
             'executableInputs': [row for row in verified.lock['artifacts'] if row['role'] == 'build-tool'],
             'selection': verified.lock['selection'], 'recipeDigest': recipe_digest,
-            'isolationProfile': isolation.receipt['profile'],
-            'compilerInputsDigest': digest(canonical(isolation.receipt)),
+            'isolationProfile': 'linux-captured-compiler-namespaces-v1',
+            'compilerInputsDigest': compiler_digest,
             'network': 'denied', 'ambientHome': 'absent', 'credentials': 'not-inherited',
             'boundary': 'trusted-single-user-build-host-not-hardened-multitenant-vm', 'hermetic': False}
 

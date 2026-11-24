@@ -103,7 +103,7 @@ export async function read(url) {
 
 
 def project(directory: Path, private_name: str) -> Path:
-    require(re.fullmatch(r'outside-fetch-[a-z0-9-]{1,32}', private_name) is not None,
+    require(authoring.valid_package_name(private_name),
             'published-fetch-private-identity')
     app = fetch_project(directory)
     (app/'src/main.ts').write_bytes(MAIN)
@@ -115,7 +115,7 @@ def project(directory: Path, private_name: str) -> Path:
 
 
 def capture(app: Path, outside: Path, private_name: str, private_version: str) -> dict:
-    require(re.fullmatch(r'outside-fetch-[a-z0-9-]{1,32}', private_name) is not None
+    require(authoring.valid_package_name(private_name)
             and re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', private_version) is not None,
             'published-fetch-private-identity')
     owner = app.parent.resolve(strict=True)

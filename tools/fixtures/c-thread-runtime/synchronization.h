@@ -88,7 +88,13 @@ static void synchronized_children(int mixed) {
         require(pthread_mutexattr_destroy(&attribute) == 0);
         require(pthread_mutex_init(&sync_gate.pthread, NULL) == 0);
         require(pthread_cond_init(&sync_started.pthread, NULL) == 0 && pthread_cond_init(&sync_done.pthread, NULL) == 0);
-        require(pthread_mutex_lock(&sync_recursive.pthread) == 0 && pthread_mutex_lock(&sync_recursive.pthread) == 0);
+        /* With both mutexes available, even an expired deadline must succeed
+         * without consulting a clock or allocating a waiter. */
+        const struct timespec expired = {0, 0};
+        require(pthread_mutex_timedlock(&sync_gate.pthread, &expired) == 0);
+        require(pthread_mutex_unlock(&sync_gate.pthread) == 0);
+        require(pthread_mutex_timedlock(&sync_recursive.pthread, &expired) == 0);
+        require(pthread_mutex_timedlock(&sync_recursive.pthread, &expired) == 0);
     }
     for (unsigned slot = 0; slot < 2; ++slot) {
         struct argument *argument = &arguments[slot];

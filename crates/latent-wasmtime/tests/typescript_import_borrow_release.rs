@@ -356,6 +356,19 @@ async fn read_admitted<F>(
 ) where
     F: Future<Output = latent_node::ActivationReceipt>,
 {
+    pending_reads(f, invocation, connections, connections, staged_bytes, label).await;
+}
+async fn pending_reads<F>(
+    f: &Fixture,
+    invocation: &mut Pin<Box<F>>,
+    connections: usize,
+    reads: usize,
+    staged_bytes: usize,
+    label: &str,
+) -> Value
+where
+    F: Future<Output = latent_node::ActivationReceipt>,
+{
     let until = Instant::now() + Duration::from_millis(500);
     loop {
         if let Ok(status) = f.streams.as_ref().unwrap().lifecycle.status() {
@@ -366,12 +379,12 @@ async fn read_admitted<F>(
             // IoCall/IoTransfer are connection lifetime owners, not per-read
             // retirement witnesses. Their actual values are recorded only.
             if usage.connections == connections
-                && usage.pending_operations == connections
-                && usage.retained_chunks == connections
+                && usage.pending_operations == reads
+                && usage.retained_chunks == reads
                 && io.staged_bytes == staged_bytes
             {
                 assert_eq!(usage.owners, connections);
-                assert_eq!(io.buffers, connections * 2);
+                assert_eq!(io.buffers, reads * 2);
                 assert!(
                     io.calls >= connections,
                     "original connection IoCalls stay admitted"
@@ -392,8 +405,7 @@ async fn read_admitted<F>(
                 );
                 assert_eq!(f.backend.resource_snapshot().live_stores, 1);
                 assert_eq!(f.quotas.usage().unwrap().active_activations, 1);
-                sample(f, label);
-                return;
+                return sample(f, label);
             }
         }
         assert!(

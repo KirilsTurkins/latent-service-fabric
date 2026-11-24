@@ -51,6 +51,7 @@ def parser() -> argparse.ArgumentParser:
         location(command)
         if name == "preflight":
             command.add_argument("--candidate-version")
+            command.add_argument("--retained-state", action="store_true")
     purge = commands.add_parser("purge", help="separate destructive action after removal")
     location(purge)
     purge.add_argument("--confirm-installation", required=True)
@@ -78,7 +79,7 @@ def dispatch(arguments: argparse.Namespace) -> dict:
                                      acknowledge=arguments.acknowledge_experimental,
                                      approved_compiler=arguments.approve_compiler_sha256)
     if arguments.command == "preflight":
-        return checks.preflight(layout, arguments.candidate_version)
+        return checks.preflight(layout, arguments.candidate_version, retained_state=arguments.retained_state)
     if arguments.command == "readiness":
         return checks.readiness(layout)
     if arguments.command == "run-local":

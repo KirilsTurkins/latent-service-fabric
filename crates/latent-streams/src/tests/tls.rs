@@ -2,7 +2,7 @@
 use super::{config, fixture::Fixture};
 use crate::{StreamErrorCode, StreamTlsConfig, StreamTrustRoot};
 use latent_capabilities::broker::network::{
-    OutboundStreamInvoker, StreamConnectRequest, StreamShutdown,
+    OutboundStreamInvoker, StreamConnectRequest, StreamInterest, StreamShutdown,
 };
 use latent_policy::capability::StreamTransport;
 // Peer fixtures keep the ordinary upstream TLS type; only the provider is bounded.
@@ -119,14 +119,18 @@ async fn direct_host_tls_validates_peer_transfers_and_retires_original_charges()
     let peer = Peer::new().await;
     let fixture = Fixture::for_tls_accounting(peer.config());
     let original = fixture.provider.reference();
+    let (send_data, allow_data) = tokio::sync::oneshot::channel();
+    let (send_close, allow_close) = tokio::sync::oneshot::channel();
     let server = tokio::spawn(async move {
         let (socket, _) = peer.listener.accept().await.unwrap();
         let mut tls = peer.acceptor.accept(socket).await.unwrap();
         let mut message = [0; 4];
         tls.read_exact(&mut message).await.unwrap();
         assert_eq!(&message, b"PING");
+        allow_data.await.unwrap();
         tls.write_all(b"one").await.unwrap();
         tls.write_all(b"two").await.unwrap();
+        allow_close.await.unwrap();
         tls.shutdown().await.unwrap();
         drop(peer.directory);
     });
@@ -147,11 +151,63 @@ async fn direct_host_tls_validates_peer_transfers_and_retires_original_charges()
         stream.shutdown(StreamShutdown::Send).err().unwrap().code,
         StreamErrorCode::Unsupported
     );
+    assert_eq!(
+        stream
+            .ready(StreamInterest::Readable, Some(0))
+            .unwrap()
+            .await
+            .unwrap_err()
+            .code,
+        StreamErrorCode::Timeout
+    );
+    assert!(
+        stream
+            .ready(StreamInterest::Writable, Some(0))
+            .unwrap()
+            .await
+            .unwrap()
+            .writable
+    );
+    send_data.send(()).unwrap();
     let mut bytes = Vec::new();
-    while let Some(mut chunk) = stream.read(2, None).unwrap().await.unwrap() {
+    while bytes.len() < 6 {
+        let mut chunk = stream.read(2, None).unwrap().await.unwrap().unwrap();
         bytes.extend_from_slice(&chunk.copy_bytes().unwrap());
+        if bytes.len() == 2 {
+            // The third byte of the first TLS record is already decrypted.
+            for interest in [StreamInterest::Readable, StreamInterest::Either] {
+                assert!(
+                    stream
+                        .ready(interest, Some(0))
+                        .unwrap()
+                        .await
+                        .unwrap()
+                        .readable
+                );
+                assert_eq!(stream.inspect().delivered_read_bytes, 2);
+            }
+        }
     }
     assert_eq!(bytes, b"onetwo");
+    assert_eq!(
+        stream
+            .ready(StreamInterest::Readable, Some(0))
+            .unwrap()
+            .await
+            .unwrap_err()
+            .code,
+        StreamErrorCode::Timeout
+    );
+    send_close.send(()).unwrap();
+    assert!(stream.read(2, None).unwrap().await.unwrap().is_none());
+    assert!(
+        stream
+            .ready(StreamInterest::Readable, Some(0))
+            .unwrap()
+            .await
+            .unwrap()
+            .readable
+    );
     assert_eq!(stream.inspect().accepted_write_bytes, 4);
     assert_eq!(
         fixture.provider.reference().configuration_digest(),

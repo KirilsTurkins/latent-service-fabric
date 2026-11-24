@@ -1,0 +1,351 @@
+{
+  "schemaVersion": "latent.typescript.node-net.signed-paused-read.v1",
+  "source": "704231a7db2007daab2228219d140aee5be91fbe",
+  "environment": "local Linux, signed development-test-host, loopback TCP",
+  "client": {
+    "name": "is-port-reachable",
+    "version": "4.0.0",
+    "capturedInputs": "sha256:1f971372e023cbd54dd44e2bcdbc18415483675bb633a816d1279c7d146ebe7e"
+  },
+  "build": {
+    "compilerProducer": {
+      "source": "ac7d99a419ede0e90793bb9076505bfc9ea44342",
+      "workflowHead": "2dd6fcc7dbce7a2d2d1e7826508a2a78891262ef",
+      "workflowRun": 45245284415,
+      "engine": 14858331425,
+      "splicer": 14853849316
+    },
+    "sourceMatchedEngine": {
+      "sha256": "sha256:2840798b8968e172d49157ec4ad5b77a092067bb735e6dc4b389973108e764de",
+      "bytes": 10192602
+    },
+    "sourceMatchedSplicer": "sha256:22f40d725035889628dee5d3897a4fd1844b4d86381e7d2796d81944a56e77b7",
+    "component": {
+      "sha256": "sha256:80c0cf6006259a32ea8064db007483e7815c14a56704d060b88516a632b4b5c7",
+      "bytes": 12556366
+    },
+    "selection": {
+      "sha256": "sha256:95b835b33d30b5be899be51fc241e6afc0d1198f9125dcbb0d52ca84c356c15d",
+      "bytes": 1298
+    },
+    "readWindow": "one-window-until-resume",
+    "maximumTransferWindowBytes": 16384
+  },
+  "signedProgramme": {
+    "command": "cargo test --locked -p latent-wasmtime --features development-test-host --test typescript_import_borrow_release signed_normal_node_net_socket_uses_original_stream_owners_and_close_events -- --ignored --exact --nocapture --test-threads=1",
+    "projectedCaseRecord": {
+      "sha256": "sha256:1f631a05b35bffa6b5115d795bd74e570c531d25bf988f5cd8a2751608970063",
+      "bytes": 25241
+    },
+    "referenceProfile": {
+      "activationRuntimeProfile": "activation-owned-v1",
+      "name": "node-net-reference-t32-q32-n128-v1",
+      "preparation": {
+        "backend": "wasmtime-component-phase-1",
+        "componentDigest": "sha256:80c0cf6006259a32ea8064db007483e7815c14a56704d060b88516a632b4b5c7",
+        "cpuFeatureSet": "host-baseline",
+        "engineConfigurationDigest": "blake3:40f5a11d88572777599b2c0e52aaa35b22e1952a8b1406cf80cccca60bf958c8",
+        "engineVersion": "48.0.9",
+        "publication": "publication:sha256:b6af8e7de2c70c3e516d394466c7ac12f2fd30d55bba5018729de22cb10659b4",
+        "release": "sha256:80c0cf6006259a32ea8064db007483e7815c14a56704d060b88516a632b4b5c7",
+        "targetTriple": "x86_64-unknown-linux-gnu"
+      },
+      "runtimeLimits": {
+        "executors": 2,
+        "native": 128,
+        "queuedWork": 32,
+        "results": 8,
+        "tasks": 32,
+        "timers": 8,
+        "waits": 8
+      },
+      "runtimeLimitsConfiguration": "RuntimeLimits { tasks: 32, executors: 2, queued_work: 32, waits: 8, timers: 8, results: 8, native_owners: 128 }"
+    },
+    "budget": {
+      "grantFuel": 1000000000,
+      "grantMemoryBytes": 134217728,
+      "grantWallTimeMillis": 120000,
+      "outboundCeiling": 8
+    },
+    "cases": [
+      {
+        "case": "node-net-echo",
+        "status": "succeeded",
+        "outboundRequests": 1,
+        "cpuFuel": 600411658,
+        "peakMemoryBytes": 12045882,
+        "publicErrorCode": "none",
+        "publicTrap": null
+      },
+      {
+        "case": "node-net-sibling",
+        "status": "succeeded",
+        "outboundRequests": 2,
+        "cpuFuel": 787556532,
+        "peakMemoryBytes": 12189197,
+        "publicErrorCode": "none",
+        "publicTrap": null
+      },
+      {
+        "case": "node-net-denied",
+        "status": "succeeded",
+        "outboundRequests": 0,
+        "cpuFuel": 83718235,
+        "peakMemoryBytes": 9804325,
+        "publicErrorCode": "none",
+        "publicTrap": null
+      },
+      {
+        "case": "node-net-destroy",
+        "status": "succeeded",
+        "outboundRequests": 2,
+        "cpuFuel": 704436601,
+        "peakMemoryBytes": 12189197,
+        "publicErrorCode": "none",
+        "publicTrap": null
+      },
+      {
+        "case": "node-net-unclosed",
+        "status": "failed-with-unclosed-stream-owners",
+        "outboundRequests": 2,
+        "cpuFuel": 593409717,
+        "peakMemoryBytes": 12189203,
+        "publicErrorCode": "guest-trap",
+        "publicTrap": {
+          "code": "guest-trap",
+          "kind": "unreachable-code",
+          "message": "guest trapped: unreachable-code",
+          "phase": null
+        }
+      },
+      {
+        "case": "node-net-fresh",
+        "status": "succeeded",
+        "outboundRequests": 1,
+        "cpuFuel": 600411658,
+        "peakMemoryBytes": 12045888,
+        "publicErrorCode": "none",
+        "publicTrap": null
+      },
+      {
+        "case": "node-net-published-granted",
+        "status": "succeeded",
+        "outboundRequests": 1,
+        "cpuFuel": 463841458,
+        "peakMemoryBytes": 9962748,
+        "publicErrorCode": "none",
+        "publicTrap": null
+      },
+      {
+        "case": "node-net-published-denied",
+        "status": "succeeded",
+        "outboundRequests": 0,
+        "cpuFuel": 118995862,
+        "peakMemoryBytes": 9821557,
+        "publicErrorCode": "none",
+        "publicTrap": null
+      }
+    ],
+    "zeroPostRootOwnersInEveryCase": {
+      "buffers": 0,
+      "calls": 0,
+      "metadataBytes": 0,
+      "queued": 0,
+      "resultBytes": 0,
+      "running": 0,
+      "stagedBytes": 0,
+      "streams": 0,
+      "owners": 0,
+      "connections": 0,
+      "pendingOperations": 0,
+      "retainedChunks": 0,
+      "poolConnections": 0,
+      "poolRunningRequests": 0,
+      "liveStores": 0,
+      "liveInstances": 0,
+      "activeActivations": 0,
+      "queuedActivations": 0
+    },
+    "publishedClientAfterFinBeforePeerEOF": {
+      "activeActivations": 1,
+      "io": {
+        "buffers": 2,
+        "calls": 1,
+        "metadataBytes": 6144,
+        "queued": 0,
+        "resultBytes": 0,
+        "running": 1,
+        "stagedBytes": 32768,
+        "streams": 1
+      },
+      "kernelRetirementQualified": false,
+      "liveInstances": 1,
+      "liveStores": 1,
+      "poolConnections": 1,
+      "poolRunningRequests": 1,
+      "queuedActivations": 0,
+      "stage": "published-client-accepted-close-before-eof",
+      "stream": {
+        "acceptedWriteBytes": 0,
+        "connections": 1,
+        "deliveredReadBytes": 0,
+        "inputBudgetBytes": 0,
+        "owners": 1,
+        "pendingOperations": 1,
+        "retainedChunks": 1,
+        "retired": false
+      }
+    },
+    "heldOriginalReadsBeforePeerPermission": {
+      "node-net-sibling": 2,
+      "node-net-destroy": 2,
+      "node-net-unclosed": 2
+    },
+    "deniedEndpointAcceptedConnections": 0,
+    "kernelRetirementQualified": false,
+    "unclosedRootFailureCause": "unknown",
+    "unclosedRootGuardAttribution": "source-only"
+  },
+  "pausedPayloadRerun": {
+    "source": "3b88c25b9f7aa7b859734ad2ca45f847ea8fa18e",
+    "build": {
+      "source": "3b88c25b9f7aa7b859734ad2ca45f847ea8fa18e",
+      "compilerProducer": {
+        "source": "ac7d99a419ede0e90793bb9076505bfc9ea44342",
+        "workflowHead": "2dd6fcc7dbce7a2d2d1e7826508a2a78891262ef",
+        "workflowRun": 45245284415,
+        "engine": 14858331425,
+        "splicer": 14853849316
+      },
+      "sourceMatchedEngine": {
+        "sha256": "sha256:2840798b8968e172d49157ec4ad5b77a092067bb735e6dc4b389973108e764de",
+        "bytes": 10192602
+      },
+      "sourceMatchedSplicer": "sha256:22f40d725035889628dee5d3897a4fd1844b4d86381e7d2796d81944a56e77b7",
+      "component": {
+        "sha256": "sha256:7ad38b4c7b116132bcd789952ab352f83272e13cdafb0d4b05a88a648f20d695",
+        "bytes": 12551740
+      },
+      "selection": {
+        "sha256": "sha256:95b835b33d30b5be899be51fc241e6afc0d1198f9125dcbb0d52ca84c356c15d",
+        "bytes": 1298
+      },
+      "readWindow": "one-window-until-resume",
+      "maximumTransferWindowBytes": 16384,
+      "capturedPackage": "sha256:aed8f27726f9c1bb0903f8c81321973ce6dc5654ee0d958275a61a0e67fae71c"
+    },
+    "signedProgrammeRecord": {
+      "sha256": "sha256:b56427e56eabe106399813a39e6cb0bdff58deaa8656b382c01311445e0d4ab4",
+      "bytes": 26946
+    },
+    "originalCases": [
+      {
+        "case": "node-net-echo",
+        "status": "succeeded",
+        "outboundRequests": 1
+      },
+      {
+        "case": "node-net-sibling",
+        "status": "succeeded",
+        "outboundRequests": 2
+      },
+      {
+        "case": "node-net-denied",
+        "status": "succeeded",
+        "outboundRequests": 0
+      },
+      {
+        "case": "node-net-destroy",
+        "status": "succeeded",
+        "outboundRequests": 2
+      },
+      {
+        "case": "node-net-unclosed",
+        "status": "failed-with-unclosed-stream-owners",
+        "outboundRequests": 2
+      },
+      {
+        "case": "node-net-fresh",
+        "status": "succeeded",
+        "outboundRequests": 1
+      },
+      {
+        "case": "node-net-published-granted",
+        "status": "succeeded",
+        "outboundRequests": 1
+      },
+      {
+        "case": "node-net-published-denied",
+        "status": "succeeded",
+        "outboundRequests": 0
+      }
+    ],
+    "pausedPayload": {
+      "beforeResume": {
+        "activeActivations": 1,
+        "io": {
+          "buffers": 2,
+          "calls": 2,
+          "metadataBytes": 10240,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 2,
+          "stagedBytes": 32768,
+          "streams": 2
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 1,
+        "liveStores": 1,
+        "poolConnections": 2,
+        "poolRunningRequests": 2,
+        "queuedActivations": 0,
+        "stage": "paused-payload-before-resume",
+        "stream": {
+          "acceptedWriteBytes": 0,
+          "connections": 2,
+          "deliveredReadBytes": 1,
+          "inputBudgetBytes": 0,
+          "owners": 2,
+          "pendingOperations": 1,
+          "retainedChunks": 1,
+          "retired": false
+        }
+      },
+      "case": "node-net-paused-payload",
+      "cpuFuel": 955950071,
+      "guestResult": "node-net:paused-payload:pass",
+      "outboundRequests": 2,
+      "peakMemoryBytes": 12189239,
+      "postRoot": {
+        "activeActivations": 0,
+        "io": {
+          "buffers": 0,
+          "calls": 0,
+          "metadataBytes": 0,
+          "queued": 0,
+          "resultBytes": 0,
+          "running": 0,
+          "stagedBytes": 0,
+          "streams": 0
+        },
+        "kernelRetirementQualified": false,
+        "liveInstances": 0,
+        "liveStores": 0,
+        "poolConnections": 0,
+        "poolRunningRequests": 0,
+        "queuedActivations": 0,
+        "stage": "paused-payload-post-root",
+        "stream": {
+          "acceptedWriteBytes": 0,
+          "connections": 0,
+          "deliveredReadBytes": 0,
+          "inputBudgetBytes": 0,
+          "owners": 0,
+          "pendingOperations": 0,
+          "retainedChunks": 0,
+          "retired": false
+        }
+      }
+    }
+  }
+}

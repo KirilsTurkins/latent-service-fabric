@@ -3,6 +3,8 @@
 
 #[path = "deferred_events/campaign.rs"]
 mod campaign;
+#[path = "deferred_events/input_inspection.rs"]
+mod input_inspection;
 #[path = "deferred_events/locks.rs"]
 mod locks;
 #[path = "deferred_events/proxy.rs"]

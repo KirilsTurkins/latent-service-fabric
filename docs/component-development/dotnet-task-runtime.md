@@ -1,5 +1,32 @@
 # Ordinary managed tasks without HTTP authority
 
+The current signed Linux rerun on development `fc82effe057c99e278646010a3b7f1e0a1cfef80`
+completed 54 node invocations. Its 22 managed-task cases cover the default
+scheduler and ThreadPool, timers and cancellation, a pending manual-reset
+event with a runnable sibling, and captured and suppressed execution contexts.
+Each case retired all active cells, queued work and reserved quota. The
+[case results and per-invocation costs](../testing/evidence/dotnet-ordinary-tasks-current-2026-11-23.json)
+identify the original dependency, compiler profile and component.
+
+The root-return programme passed all 15 signed outcomes across two tenants on
+`dabc1b07103d87c4f513b01f55124504058915bb`. The node observed root closure and
+pending waits while work remained. Handled errors and cancellation finished,
+opaque work and an unhandled fault produced the expected public failures, and
+fresh calls succeeded for each tenant. The original managed causes of those
+two failures remain unknown. The same receipt records all 11 application
+outcomes, four individually missing grants and the original owner ceilings.
+
+To run the separate root-return programme on Linux, use a clean checkout and
+the .NET tools installed from its runtime sources. The local runner builds
+five default native products and a fresh NativeAOT component under the same
+22-minute deadline as the hosted qualification. Its receipt identifies the
+local origin.
+
+```sh
+python3.13 tools/qualify_dotnet_task_runtime.py --root-return-current --local \
+  --source-commit "$(git rev-parse HEAD)" --tools "$dotnet_tools" --output "$new_output"
+```
+
 The selected NativeAOT/WASI profile joins ordinary incomplete managed tasks
 through the original CoreLib ThreadPoolWorkQueue dispatcher and WASI event loop.
 It requires an authenticated canonical async export, declared monotonic CLOCK

@@ -34,6 +34,22 @@ outcomes. The compiler statement retains `packageAssembled=false`; signed-node
 use requires the normal separate controller packaging/provenance join. A local
 candidate has no publisher authentication or released-toolkit claim.
 
+On November 24 the installed Linux toolkit built two independently reviewed
+declarations for the same private price-card library and its transitive policy
+library. Each installation ran as UID 1000 with only loopback networking,
+read-only copies of the compiler archive and captured project, and no SDK
+checkout. The delivered commands created all six C templates, built the
+application offline and required a new review after declaration edits.
+
+Both builds emitted the same 128,782-byte component. Each package retained its
+own resource index and package digest. The controller packaged the installed
+compiler's output and preserved its original build statement. A separately
+signed invocation of each package fetched one price card, used its private
+16-byte resource and returned `card:7:5:57:1776131770`. Both nodes released all
+measured owners and shut down cleanly. The compiler archive was a local
+source candidate. Its digest, the two captures, package digests and invocation
+measurements are in the [six-language execution record](evidence/sdk-private-library-invocations-2026-11-23.json).
+
 The separate [delivered signed-watch programme](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/38934579272/job/117168617232)
 passed at source `6bf3d5c357fb768357522e85f61282681bddd162`, tested merge
 `b4ad3f25516e9b3a43d230928695a52756f011c6`. Initial, updated and removed library

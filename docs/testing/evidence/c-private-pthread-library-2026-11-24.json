@@ -1,0 +1,495 @@
+{
+  "schemaVersion": "latent.c.private-pthread-dependency.qualification.v1",
+  "date": "2026-11-24",
+  "scope": "Three signed executions of a C application using libfetch from a developer-owned transitive pthread dependency.",
+  "profile": "c-libfetch-clock-entropy-v1",
+  "threadingProfile": "c-context144-sync-cooperative-v1",
+  "installedLinuxToolkit": {
+    "source": "baa2c984d880c1726b78f57ef68f9e229e7c43a1",
+    "archive": {
+      "name": "latent-dev-linux-x86_64-c-tools.zip",
+      "sha256": "sha256:87c86a50cda32a37ee1370b6810eef0bba7293250e87ab4cf5544c23ca284a47",
+      "size": 83535101
+    },
+    "execution": {
+      "uid": 1000,
+      "interfaces": [
+        "lo"
+      ],
+      "checkoutMounted": false,
+      "readonlyCandidate": true,
+      "readonlyCapture": true,
+      "outerPython": "3.13.5"
+    }
+  },
+  "nodeSource": "269fe85be9e29a0e3410ead65b7e1c1bce0aa4a3",
+  "nativeBinaries": {
+    "latent": {
+      "sha256": "sha256:fe79200be22ba4c17ac67421d07de938e468dfc31527bbb047e09ca55d12c0d9",
+      "bytes": 76504192
+    },
+    "latentd": {
+      "sha256": "sha256:13e9eed77303fe07c38ad97dd6e13228dee1b3141840e26eae98b654343bd204",
+      "bytes": 212829512
+    },
+    "capsule_contracts": {
+      "sha256": "sha256:7c55c8a7a19d544d31c05611dd5ea7027dc6105d45bd948eb22d025af2cd5368",
+      "bytes": 14404648
+    },
+    "package": {
+      "sha256": "sha256:d70ef2ad0c3fd2f1d1e9fd9140e335bbb9eac2fafa5e38666cf23d8600c1334d",
+      "bytes": 19690680
+    },
+    "capsule_authoring": {
+      "sha256": "sha256:90911e308c6fc7c07d77ec2b1faf3b867abae36b087d4704570ceb5584cff510",
+      "bytes": 26143816
+    }
+  },
+  "component": {
+    "sha256": "sha256:9c489f8c57d00eb94fad7bf0148af35d6e3c76dba127fec31093f0d269801b38",
+    "bytes": 130089
+  },
+  "sampleFiles": {
+    "application/capsule-project.json": {
+      "bytes": 621,
+      "sha256": "sha256:6b32c6a7cf8bddd07030ac2b6d84c417016060e4f796485b376fecc985a531a6"
+    },
+    "application/latent.dependencies.json": {
+      "bytes": 1613,
+      "sha256": "sha256:5b6d8dff4a1d3468f840344953bcf60bc67a9b1736158c8923ece038bcb4d6b6"
+    },
+    "application/src/main.c": {
+      "bytes": 1420,
+      "sha256": "sha256:467804f4358e269afd7ce0e6dc7b158a1f8ff51cbdc3b688b15496e01be05fc0"
+    },
+    "application/wit/world.wit": {
+      "bytes": 137,
+      "sha256": "sha256:e70d9a5a34b4a703803c2eeb137cd5aa20abaefa17ca9fa50bba808faae0e79e"
+    },
+    "libraries/card/card_client.c": {
+      "bytes": 5083,
+      "sha256": "sha256:b8bca31761c051720016e1f0da035e6ba6f7bbe4951a8fda8aa762ae46d7fa87"
+    },
+    "libraries/card/card_client.h": {
+      "bytes": 705,
+      "sha256": "sha256:44b9a4229976bddaec4c5531e2347d24fc33d750b170ecbbe9a6ca9b661c8362"
+    },
+    "libraries/resource/expected-card.txt": {
+      "bytes": 16,
+      "sha256": "sha256:87e7eb9b1dc90aa65dcd1a84f2511fc515935c0dedca941cf47b2f1c45747f7a"
+    },
+    "libraries/runner/order_worker.c": {
+      "bytes": 935,
+      "sha256": "sha256:5008a45abef8888c46122d3d43f8ba4c156fb16cbd345f9c171f3fa726caea43"
+    },
+    "libraries/runner/order_worker.h": {
+      "bytes": 130,
+      "sha256": "sha256:8451cd053d1b6cebc6773a3e00e51d8e2859bb9daefbbd2a89eaf8588084e89a"
+    }
+  },
+  "guideOriginalLibraryDirectoryRemovedBeforeBuild": true,
+  "samples": [
+    {
+      "project": "original-coordinate",
+      "dependencies": [
+        {
+          "id": "shopfloor/cards",
+          "dependencies": [
+            "shopfloor/card-policy",
+            "team/picking-worker"
+          ]
+        },
+        {
+          "id": "shopfloor/card-policy",
+          "dependencies": []
+        },
+        {
+          "id": "team/picking-worker",
+          "dependencies": []
+        }
+      ],
+      "commands": [
+        {
+          "command": "create-greeting",
+          "exitCode": 0
+        },
+        {
+          "command": "create-word-count",
+          "exitCode": 0
+        },
+        {
+          "command": "create-shipping",
+          "exitCode": 0
+        },
+        {
+          "command": "create-http-status",
+          "exitCode": 0
+        },
+        {
+          "command": "create-recovery",
+          "exitCode": 0
+        },
+        {
+          "command": "create-transactional-aggregate",
+          "exitCode": 0
+        },
+        {
+          "command": "verify-capture",
+          "exitCode": 0
+        },
+        {
+          "command": "offline-build",
+          "exitCode": 0
+        },
+        {
+          "command": "update",
+          "exitCode": 0
+        },
+        {
+          "command": "update-requires-review",
+          "exitCode": 1
+        },
+        {
+          "command": "remove",
+          "exitCode": 0
+        },
+        {
+          "command": "remove-requires-review",
+          "exitCode": 1
+        },
+        {
+          "command": "add-original",
+          "exitCode": 0
+        },
+        {
+          "command": "reordered-add-requires-review",
+          "exitCode": 1
+        },
+        {
+          "command": "verify-original-reviewed-bytes",
+          "exitCode": 0
+        }
+      ],
+      "installedCommandRecord": {
+        "bytes": 7930,
+        "sha256": "sha256:cac6398e48ff940dd9334d764023451969dd4a2adcc87d0c89433d76d8d9c812"
+      },
+      "acceptedCapture": "sha256:398f422cbfe15109065f1521ae77ceb2612ac8a0ac0a8cbe94f7dfea2503ba23",
+      "lock": "sha256:cf3460e653b6703eb2411031c04b3ca9f6506b44459aaf60aadc446dbe2ce697",
+      "sourceInput": {
+        "bytes": 11121,
+        "sha256": "sha256:1de357ed76a0f959f5ae3bf47374a439069d5055ace9018dd8cca1999687856d"
+      },
+      "package": "sha256:a2b508af407341ececca2d6eb83f47cc2237e6d43b481978edb152a41f7cc333",
+      "compilerObservation": {
+        "sha256": "sha256:ec559faa43d2ca6a22b931fbdefce6789ec80ce25c39589ecc9f5f5db09f8a34",
+        "bytes": 9701
+      },
+      "controller": {
+        "sha256": "sha256:30841c53970f5c45c15a6e55da12f2c462296fff0efb4765e261759a70d768a8",
+        "bytes": 474
+      },
+      "invocation": {
+        "bytes": 1260,
+        "sha256": "sha256:18da6993da9cdbb83792cb79e152509fa634785b9b97d5714a44c6af39189c37"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:2f00fc04d2bcb5aa54849cefe42cdd55a2999daa001bfd3a46b69d0479adbd36",
+        "releaseDigest": "sha256:9c489f8c57d00eb94fad7bf0148af35d6e3c76dba127fec31093f0d269801b38",
+        "revisionId": "revision-v1:sha256:ef8245a1b202e86389af86ae455079af16e643f90ece7033cb0f6c6d55c9287d",
+        "routeGeneration": "3"
+      },
+      "result": {
+        "ok": "card:7:5:57:1776131770"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "155608",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 1,
+        "peakMemoryBytes": "8409692",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "344939"
+      },
+      "peer": {
+        "method": "GET",
+        "connections": 1,
+        "requests": 1,
+        "mutations": 0,
+        "rejected": 0
+      },
+      "retirement": {
+        "activation": "c-outside-card-normal",
+        "physicalOwnersAfter": 0,
+        "activeProviderCountersAfter": 0
+      },
+      "nodeShutdownClean": true,
+      "nodeReaped": true,
+      "peerStopped": true,
+      "fullNodeRecord": {
+        "sha256": "sha256:96b60fa07c2c64916275934e6edfd8ee5c25f7bf619b1067a8c9600aa3d54c5d",
+        "bytes": 17797
+      }
+    },
+    {
+      "project": "renamed-coordinate",
+      "dependencies": [
+        {
+          "id": "inventory/bin-labels",
+          "dependencies": [
+            "warehouse/label-configuration",
+            "backoffice/delivery-helper"
+          ]
+        },
+        {
+          "id": "warehouse/label-configuration",
+          "dependencies": []
+        },
+        {
+          "id": "backoffice/delivery-helper",
+          "dependencies": []
+        }
+      ],
+      "commands": [
+        {
+          "command": "create-greeting",
+          "exitCode": 0
+        },
+        {
+          "command": "create-word-count",
+          "exitCode": 0
+        },
+        {
+          "command": "create-shipping",
+          "exitCode": 0
+        },
+        {
+          "command": "create-http-status",
+          "exitCode": 0
+        },
+        {
+          "command": "create-recovery",
+          "exitCode": 0
+        },
+        {
+          "command": "create-transactional-aggregate",
+          "exitCode": 0
+        },
+        {
+          "command": "verify-capture",
+          "exitCode": 0
+        },
+        {
+          "command": "offline-build",
+          "exitCode": 0
+        },
+        {
+          "command": "update",
+          "exitCode": 0
+        },
+        {
+          "command": "update-requires-review",
+          "exitCode": 1
+        },
+        {
+          "command": "remove",
+          "exitCode": 0
+        },
+        {
+          "command": "remove-requires-review",
+          "exitCode": 1
+        },
+        {
+          "command": "add-original",
+          "exitCode": 0
+        },
+        {
+          "command": "reordered-add-requires-review",
+          "exitCode": 1
+        },
+        {
+          "command": "verify-original-reviewed-bytes",
+          "exitCode": 0
+        }
+      ],
+      "installedCommandRecord": {
+        "bytes": 7931,
+        "sha256": "sha256:dee8b7401f8133d2d865c465952d71b5f43c3104a593c69e3a28c452aac3de6e"
+      },
+      "acceptedCapture": "sha256:5be8eb4e149fc7811e21d971d1a5b52b4a8fee40c92e8ae4dd7cb89de17690f4",
+      "lock": "sha256:5d83e1f1c4525adadc459e5124de654f1afbf28baa280786ea94bbf5ef5d860f",
+      "sourceInput": {
+        "bytes": 11121,
+        "sha256": "sha256:2f90fe824964545282a0c93c7d910a77a4d4bdb45ddc2f610be839f190d0b41a"
+      },
+      "package": "sha256:8533ef0a34d6651b32b72202aeab20cd220c0dfcca9406b99be84262c35d028c",
+      "compilerObservation": {
+        "sha256": "sha256:b9081bb0ffd310329f7cc97e8f39d9124bc6eac62e9bd1199beb632f19c81a2a",
+        "bytes": 9701
+      },
+      "controller": {
+        "sha256": "sha256:bcf9f9623d916085bfa858977a551d5db474c912b8607a3b099c88279ba2f5d6",
+        "bytes": 474
+      },
+      "invocation": {
+        "bytes": 1260,
+        "sha256": "sha256:8dc9e54dbab096ecde9a5294d934eb200c0cb1f05ab37a9eae63b05e805f4d37"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:a22f3be398a967883d6cf5cd45bed5b363b72b5b27ee2e31d235a368b9f23a3e",
+        "releaseDigest": "sha256:9c489f8c57d00eb94fad7bf0148af35d6e3c76dba127fec31093f0d269801b38",
+        "revisionId": "revision-v1:sha256:ffe52f1b1a0ec87b2591ae99407a8d7c09a204da9fc9a1f302c9dcf31688d82c",
+        "routeGeneration": "3"
+      },
+      "result": {
+        "ok": "card:7:5:57:1776131770"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "155608",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 1,
+        "peakMemoryBytes": "7989836",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "368275"
+      },
+      "peer": {
+        "method": "GET",
+        "connections": 1,
+        "requests": 1,
+        "mutations": 0,
+        "rejected": 0
+      },
+      "retirement": {
+        "activation": "c-outside-card-normal",
+        "physicalOwnersAfter": 0,
+        "activeProviderCountersAfter": 0
+      },
+      "nodeShutdownClean": true,
+      "nodeReaped": true,
+      "peerStopped": true,
+      "fullNodeRecord": {
+        "sha256": "sha256:38cbbc351376aaa0b28348f8b347f1b228b7473895f6bf9a40270739ad91507b",
+        "bytes": 17807
+      }
+    },
+    {
+      "project": "guide-from-new-project",
+      "dependencies": [
+        {
+          "id": "shopfloor/cards",
+          "dependencies": [
+            "shopfloor/card-policy",
+            "team/picking-worker"
+          ]
+        },
+        {
+          "id": "shopfloor/card-policy",
+          "dependencies": []
+        },
+        {
+          "id": "team/picking-worker",
+          "dependencies": []
+        }
+      ],
+      "commands": [
+        {
+          "command": "new",
+          "exitCode": 0
+        },
+        {
+          "command": "resolve",
+          "exitCode": 0
+        },
+        {
+          "command": "review-lock",
+          "exitCode": 0
+        },
+        {
+          "command": "dependencies",
+          "exitCode": 0
+        },
+        {
+          "command": "offline-build",
+          "exitCode": 0
+        }
+      ],
+      "installedCommandRecord": {
+        "bytes": 4711,
+        "sha256": "sha256:c04e63d1a58df6765f64b22265904953991dd71ec0035f297fcbb7411925bfe1"
+      },
+      "acceptedCapture": "sha256:1ecca73f101641855e840303b10ff97070d783a48ce477251105fc897804cd4b",
+      "lock": "sha256:6f3cf306426e687afbdf45985e5a84f88b0560326a1a7285f528f306999e2780",
+      "sourceInput": {
+        "bytes": 11121,
+        "sha256": "sha256:7ff75e738970328d28ce9bfa3448a3857375e4d8283c9741138bfc6d5944150c"
+      },
+      "package": "sha256:b937c596a0b7d2515ef160c31913705542dd7aae7689dd75a5d365bbe28d98e3",
+      "compilerObservation": {
+        "sha256": "sha256:032b147c81c34c7fc9eb5f3751820b0eeb8697fe4cd66b2c6533005d7850bd1b",
+        "bytes": 9701
+      },
+      "controller": {
+        "sha256": "sha256:a386c3c7bc378054882784fb8084f5bb911bdfad41082ad4c9ae1fdfa970408d",
+        "bytes": 474
+      },
+      "invocation": {
+        "bytes": 1260,
+        "sha256": "sha256:a5c2361ebc88b817a405670583402c66b4c2e6d3f68e3724f1ee660d50f70de0"
+      },
+      "resolvedRevision": {
+        "publicationId": "publication:sha256:4a505d2bbd386dc42de6c49cd37a96a3bdb92f230cdd6921a078d2692a38742c",
+        "releaseDigest": "sha256:9c489f8c57d00eb94fad7bf0148af35d6e3c76dba127fec31093f0d269801b38",
+        "revisionId": "revision-v1:sha256:cf08832ec1b1f0c5d6d6c2e61d8609cf48c3d4eb77ff70b831a818bffcfbca22",
+        "routeGeneration": "3"
+      },
+      "result": {
+        "ok": "card:7:5:57:1776131770"
+      },
+      "consumption": {
+        "blobReadBytes": "0",
+        "blobWriteBytes": "0",
+        "childCalls": 0,
+        "cpuFuel": "155608",
+        "effectCount": 0,
+        "logBytes": "0",
+        "outboundRequests": 1,
+        "peakMemoryBytes": "8409692",
+        "stateReadBytes": "0",
+        "stateWriteBytes": "0",
+        "wallTimeMicros": "408141"
+      },
+      "peer": {
+        "method": "GET",
+        "connections": 1,
+        "requests": 1,
+        "mutations": 0,
+        "rejected": 0
+      },
+      "retirement": {
+        "activation": "c-outside-card-normal",
+        "physicalOwnersAfter": 0,
+        "activeProviderCountersAfter": 0
+      },
+      "nodeShutdownClean": true,
+      "nodeReaped": true,
+      "peerStopped": true,
+      "fullNodeRecord": {
+        "sha256": "sha256:602f7d7ac909a8c94b7c7eb6137d0a42612296600637a4aad02174a6728d996f",
+        "bytes": 17799
+      }
+    }
+  ],
+  "coverageLimits": [
+    "The child compared its pthread identity, ran the synchronous request, and returned the original job address to the joining caller. These calls did not measure runnable sibling progress or preemption.",
+    "All three executions used a locally assembled source toolkit and test signing. Publisher authentication and a released installation were outside these runs."
+  ]
+}

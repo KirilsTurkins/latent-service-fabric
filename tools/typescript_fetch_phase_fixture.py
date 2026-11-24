@@ -36,8 +36,8 @@ VECTORS = (
 
 
 
-def project(directory: Path) -> Path:
-    app = published.project(directory, PRIVATE_NAME)
+def project(directory: Path, private_name: str = PRIVATE_NAME) -> Path:
+    app = published.project(directory, private_name)
     source = read_file(ROOT / SOURCE)
     (app / 'src/main.ts').write_bytes(source)
     original = read_file(app / 'wit/world.wit')

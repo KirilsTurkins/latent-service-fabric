@@ -21,6 +21,8 @@
 
 struct response_stream {
     lsf_body_t body;
+    size_t range_remaining;
+    bool range_body;
     bool eof;
     bool failed;
     int saved_errno;
@@ -92,7 +94,11 @@ static ssize_t response_read(void *object, char *destination, size_t length) {
         errno = stream->saved_errno; return -1;
     }
     if (stream->eof) return 0;
-    const uint32_t maximum = length < LSF_FETCH_READ_BYTES ? (uint32_t)length : LSF_FETCH_READ_BYTES;
+    uint32_t maximum = length < LSF_FETCH_READ_BYTES ? (uint32_t)length : LSF_FETCH_READ_BYTES;
+    /* Keep valid partial bytes even if more data follows the declared range.
+     * Once the range is consumed, one real read distinguishes EOF from excess. */
+    if (stream->range_body && maximum > stream->range_remaining)
+        maximum = stream->range_remaining ? (uint32_t)stream->range_remaining : 1;
     latent_http_streaming_result_option_own_chunk_http_error_t result = {0};
     result.is_err = !latent_http_streaming_read(lsf_body_borrow(&stream->body), maximum,
                                                 &result.val.ok, &result.val.err);
@@ -100,9 +106,21 @@ static ssize_t response_read(void *object, char *destination, size_t length) {
         http_failure(result.val.err.tag);
         goto failed;
     }
-    if (!result.val.ok.is_some) { stream->eof = true; return 0; }
+    if (!result.val.ok.is_some) {
+        if (stream->range_body && stream->range_remaining) {
+            failure(FETCH_PROTO, EIO, "HTTP body ended before its content range");
+            goto failed;
+        }
+        stream->eof = true;
+        return 0;
+    }
     lsf_http_chunk_t chunk = {0};
     lsf_http_chunk_adopt(&chunk, result.val.ok.val);
+    if (stream->range_body && !stream->range_remaining) {
+        lsf_http_chunk_close(&chunk);
+        failure(FETCH_PROTO, EIO, "HTTP body exceeded its content range");
+        goto failed;
+    }
     latent_http_streaming_result_list_u8_http_error_t bytes = {0};
     bytes.is_err = !latent_http_streaming_chunk_bytes(lsf_http_chunk_borrow(&chunk),
                                                     &bytes.val.ok, &bytes.val.err);
@@ -118,6 +136,7 @@ static ssize_t response_read(void *object, char *destination, size_t length) {
         failure(FETCH_PROTO, EIO, "Invalid HTTP chunk; EOF was not observed");
         goto failed;
     }
+    if (stream->range_body) stream->range_remaining -= count;
     memcpy(destination, bytes.val.ok.ptr, count);
     probe_list_u8_free(&bytes.val.ok);
     lsf_http_chunk_close(&chunk);
@@ -392,11 +411,11 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
     bool valid_range = true;
     if (status == 206) {
         /* Subtract after ordering to avoid an overflowing range end. */
-        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && requested_offset > 0 && known_length &&
+        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && requested_offset > 0 &&
             content_range(&completed.val.ok.headers, &actual_offset, &partial_length, &representation_size) &&
             actual_offset <= requested_offset &&
             (uint64_t)requested_offset - (uint64_t)actual_offset < (uint64_t)partial_length &&
-            partial_length == length;
+            (!known_length || partial_length == length);
     }
     lsf_streaming_metadata_close(&completed.val.ok);
     if (status < 200 || status >= 300) {
@@ -415,6 +434,10 @@ static FILE *request(struct url *url, struct url_stat *stat, const char *flags,
     if (!valid_range) {
         failure(FETCH_PROTO, EIO, "Invalid or inconsistent HTTP content range");
         goto fail_file;
+    }
+    if (status == 206) {
+        stream->range_body = true;
+        stream->range_remaining = partial_length;
     }
     /* Servers may ignore Range and return 200; tell the caller its real start. */
     url->offset = actual_offset;
