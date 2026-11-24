@@ -2,13 +2,14 @@
 //! reads stay bounded; no collection of the complete store or native owner escapes.
 
 use super::{
-    codec::Decoder,
-    record::{attempt_row_key, command_row_key, result_row_key},
+    codec::{Decoder, METADATA_BYTES},
+    record::{attempt_row_key, command_row_key, inbox_row_key, result_row_key},
     retention::{ExpiredResult, MaintenanceProgress, PROGRESS_KEY},
     AtomicError, CommandRecord, DurableResult, Identity, Outcome, ReplayPolicy,
 };
 use latent_state::{
     embedded::{Family, ReadView, RowKey, StoreError},
+    inbox_scope::{require_existing, InboxScope},
     reservation::{reservation_key, LogicalReservation, KEY_PREFIX},
 };
 
@@ -157,19 +158,7 @@ fn validate_linked(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), At
             verify_result(bytes, &record)?;
         }
         Family::Inbox => {
-            let marker = inbox(bytes)?;
-            let record = CommandRecord::decode(&required(
-                view,
-                &attempt_row_key(marker.command, marker.attempt),
-            )?)?;
-            let approved = record.inbox.as_ref().ok_or(AtomicError::Corrupt)?;
-            if approved.row_key(&record.key)? != *key
-                || record.outcome != marker.outcome
-                || approved.payload_digest != marker.payload
-                || record.completed_at != marker.completed_at
-            {
-                return Err(AtomicError::Corrupt);
-            }
+            linked_inbox_attempt(view, key, bytes)?;
         }
         Family::Maintenance if key.key.starts_with(KEY_PREFIX) => {
             let id = identity(key, KEY_PREFIX)?;
@@ -209,6 +198,74 @@ fn validate_linked(view: &ReadView, key: &RowKey, bytes: &[u8]) -> Result<(), At
         _ => {}
     }
     Ok(())
+}
+
+/// Descriptive terminal metadata for one authenticated stream sequence. The
+/// caller supplies current operator authority and owns the original read view.
+/// A missing marker establishes no outcome or replay permission.
+pub fn inspect_inbox_terminal(
+    view: &ReadView,
+    source: &InboxScope,
+    operation: &str,
+    stream_sequence: u64,
+) -> Result<Option<Outcome>, StoreError> {
+    require_existing(view, source)?;
+    if stream_sequence == 0 {
+        return Err(StoreError::Invalid);
+    }
+    let binding = source.input_binding()?;
+    let key = inbox_row_key(
+        &source.tenant,
+        &source.namespace,
+        source.incarnation,
+        &source.provider,
+        &binding,
+        &stream_sequence.to_string(),
+    );
+    let Some(bytes) = view.get_bounded(&key, 86)? else {
+        return Ok(None);
+    };
+    let result = (|| {
+        let record = linked_inbox_attempt(view, &key, &bytes)?;
+        if record.key.entity != source.entity || record.key.operation != operation {
+            return Err(AtomicError::PermissionDenied);
+        }
+        let current = read_command_metadata(view, &command_row_key(record.id))?;
+        if current != record {
+            return Err(AtomicError::Corrupt);
+        }
+        Ok(Some(record.outcome))
+    })();
+    result.map_err(storage_error)
+}
+
+fn linked_inbox_attempt(
+    view: &ReadView,
+    key: &RowKey,
+    bytes: &[u8],
+) -> Result<CommandRecord, AtomicError> {
+    let marker = inbox(bytes)?;
+    let record = read_command_metadata(view, &attempt_row_key(marker.command, marker.attempt))?;
+    let approved = record.inbox.as_ref().ok_or(AtomicError::Corrupt)?;
+    if approved.row_key(&record.key)? != *key
+        || record.id != marker.command
+        || record.attempt != marker.attempt
+        || record.outcome != marker.outcome
+        || approved.payload_digest != marker.payload
+        || record.completed_at != marker.completed_at
+    {
+        return Err(AtomicError::Corrupt);
+    }
+    Ok(record)
+}
+
+fn read_command_metadata(view: &ReadView, key: &RowKey) -> Result<CommandRecord, AtomicError> {
+    let bytes = match view.get_bounded(key, METADATA_BYTES) {
+        Err(StoreError::Invalid) => view.get(key),
+        result => result,
+    }?
+    .ok_or(AtomicError::Corrupt)?;
+    CommandRecord::decode(&bytes)
 }
 
 fn validate_command(view: &ReadView, bytes: &[u8]) -> Result<(), AtomicError> {
