@@ -9,6 +9,9 @@ prepared-artifact invalidation across engine changes.
 For your first application, follow [Creating a capsule](creating-a-capsule.md).
 It has one shared workflow and selectable examples for all six languages. This
 reference explains the SDKs' capability types, ownership and runtime limits.
+To use code from another project, start with [Add a library to your capsule](application-dependencies.md#add-a-library-to-your-capsule).
+It covers the native declaration, lock review, offline build, runtime grants,
+and checks on the deployed handler for all six languages.
 The [dependency compatibility report](library-compatibility.md) distinguishes
 final import checks, missing runtime support and observations that still need
 actual execution evidence.

@@ -35,6 +35,66 @@ checkout. Keep that checkout separate from your application directory.
    fallback as `unsupported-reached` and verifies a fresh invocation after an
    uncaught call.
 
+### Exercise the library on a node
+
+Start with the language walkthrough above and put a call to your dependency in
+the handler. For a worked example with a complete application and private
+library sources, build the [C price-card project](../../examples/guides/c-private-card/README.md)
+in a directory of your own. Its worker calls the ordinary `fetchGet` API and
+compares the HTTP response with a resource from the captured library. The
+example moves the original library directory before compiling, so an offline
+build also checks that every required input was captured.
+
+For an HTTP dependency, bind the provider to the deployed service and
+publication. Grant the method, destination and paths the library actually uses.
+The price-card worker needs one `GET /conformance/json` on the configured
+peer. When the peer requires an authorization header, place the credential in
+the node's protected credential directory and bind its reference and header
+name to that destination. Keep the value on the node. The application receives
+the URL as an ordinary argument.
+[Provider installation and protected credentials](../reference/standalone-providers.md#streaming-http-installation)
+and [deployment authority](../runtime/capability-bindings.md#publication-and-live-authority).
+
+For a toolkit project with a matching HTTP test fixture, review and trust its
+recipe, build it, then prepare the stopped disposable node for the accepted
+build. `dev`, `$Workspace` and `$Project` come from
+[workspace setup](../start/development-workspace.md).
+
+```bash
+dev trust --workspace "$Workspace" --project "$Project"
+dev build --workspace "$Workspace" --project "$Project"
+dev prepare-test --workspace "$Workspace" --consent-test-fixtures --admission signed-fixture --fixtures "$Project/tests/http-fixture.json"
+```
+
+Start `dev up --workspace "$Workspace"` in a second terminal and wait for its
+`ready` event. In the project terminal, run the deployed scenarios.
+
+```bash
+dev deploy --workspace "$Workspace"
+dev test --workspace "$Workspace" --environment node
+```
+
+Check both the returned value and the peer's request count. The signed C
+example returned `card:7:5:57:1776131770` after one GET. Its empty URL path
+returns the declared `invalid-url` error before calling the library. Also
+exercise a path outside the grant and check that the peer receives no request.
+A library's handling of an HTTP 404 is a separate case in which the peer
+actually responds. For a request with an uncertain outcome, use the original
+operation's recovery record before deciding whether to send a new request.
+[Signed card results](../testing/evidence/c-private-pthread-library-2026-11-24.json)
+and [command recovery](../how-to/developer-commands.md#inspect-and-recover).
+
+Stop the disposable node and check its reported state.
+
+```bash
+dev down --workspace "$Workspace"
+dev status --workspace "$Workspace"
+```
+
+A custom transport or executor is an optional guest extension for a library
+that exposes one. It uses the same reviewed capture and runtime grants.
+The ordinary client examples below use their runtime's default transport.
+
 Each walkthrough's language has run a developer-owned dependency in a signed
 greeting capsule. All six preserved the declared error on blank input and
 succeeded on a fresh call. The installed Linux C toolkit also built two
@@ -135,6 +195,13 @@ latent-dev --state-root $StateRoot dev build --workspace $Workspace --project $P
 The same digest can be passed explicitly to `dev up --watch` or to the language
 authoring tool's `watch` command. A change to any bound input requires fresh
 review. Keep the private specification in the developer workspace.
+
+The installed TypeScript tools also built `outside-fetch-toolkit-resource@1.7.1`
+and `@ledger-coop/receipt-card@2.3.5` after their original directories were
+removed. Each package ran 27 signed guest invocations in the Fetch programme
+and four requests were refused before I/O. The scoped and unscoped projects
+both exercised Ky, Wretch and a private library with the same resource.
+[Captured modules, signed results and earlier failed observations](../testing/evidence/typescript-private-npm-coordinates-2026-11-24.json)
 
 ### Choose an HTTP client
 

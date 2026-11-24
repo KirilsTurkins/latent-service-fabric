@@ -1,0 +1,354 @@
+{
+  "observedOn": "2026-11-24",
+  "sourceRevision": "ae14e4e90fb2ed81edef9255d1a940d1fc9d09fb",
+  "platform": "Linux x86-64",
+  "runtimeQualification": "ordinary signed TypeScript Fetch and activation-local guest runtime",
+  "nativeOrigin": {
+    "qualification": {
+      "sha256": "sha256:25b7eedb5f0bd7824358e3b7245b76b8033bf504642de9739fae37d0a063320a",
+      "bytes": 25175
+    },
+    "sourceIdentityDigest": "sha256:c839ec43b877991cb8e9ab6bbd8dc229d1e5fb938e459545ad0d4be7f53bb690",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:91dca312633e7996e5dab6ee4e9eb60e76591314b9ad5b8831203e0e41bed6ea",
+        "bytes": 76442344
+      },
+      "latentd": {
+        "sha256": "sha256:9688674a173301527077b1c4221a37a06076f0b08d7c1530d3b45a46365ca492",
+        "bytes": 212359352
+      },
+      "examples/package": {
+        "sha256": "sha256:7d39ae32d5c4be19480c800eac3041e0ca6de7f9fbe2cb3b0fb442f166a7f68c",
+        "bytes": 19685760
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:064df5c939093b2a14f3db4c5cb70b01aeb7dfeed317257237f45696af0554e8",
+        "bytes": 14401464
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:79e0622d0c3e0449e545720f6b31414d8324b111c151926f3cc424c38da24042",
+        "bytes": 26132920
+      }
+    }
+  },
+  "samples": [
+    {
+      "name": "outside-fetch-toolkit-resource",
+      "version": "1.7.1",
+      "outsideFiles": {
+        "index.d.ts": {
+          "digest": "sha256:02d7329042b54cc04ea153b879fafd85251bc24530f92f622a00412afe23f9a8",
+          "size": 53
+        },
+        "index.mjs": {
+          "digest": "sha256:3f971af0a4d848ad47caeb7a8977e35b40b939a06b1c4f3560bef9dc081ee4fa",
+          "size": 457
+        },
+        "package.json": {
+          "digest": "sha256:d050c8290b94c8216d82bad7d2b18fbb2184077aaae08a7e1bc27879d21738b3",
+          "size": 240
+        },
+        "price-card.txt": {
+          "digest": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+          "size": 57
+        }
+      },
+      "reviewedInput": "sha256:7997c50334f4f9374aedfdfd5f913075bf4492cbadb1046c44fb622f69c5fe79",
+      "npmLock": {
+        "sha256": "sha256:fe1fcd2a1d78a7a05e3803ea061b0066efd0e7519591234858d881dde7a30e95",
+        "bytes": 965
+      },
+      "dependencyLock": {
+        "sha256": "sha256:85146b9c6b4e371e4125274815f24bf0e8879dd8aadd3e6fcd7f739d9f1a2eef",
+        "bytes": 48727
+      },
+      "originalSourceAbsentAtBuild": true,
+      "toolkitArchive": {
+        "sha256": "sha256:9e2735d91a800aff2d1060b37671f61c28f39d56f05e453529b783ebaf6dff4a",
+        "bytes": 193223363
+      },
+      "offlineBuild": {
+        "uid": 1000,
+        "interfaces": [
+          "lo"
+        ],
+        "checkoutMounted": false,
+        "readonlyInputs": true,
+        "capturedInputIdentity": "sha256:7997c50334f4f9374aedfdfd5f913075bf4492cbadb1046c44fb622f69c5fe79",
+        "commands": [
+          {
+            "name": "verify-capture",
+            "exitCode": 0
+          },
+          {
+            "name": "offline-build",
+            "exitCode": 0
+          }
+        ]
+      },
+      "component": {
+        "sha256": "sha256:75c5c237e33a58e9917142b9190d6f7e104a91ff242f183e6e04971d00c1e5a0",
+        "bytes": 12681660
+      },
+      "package": "sha256:fff8a32b25647d60d8cafaed7b9dd94a253169699bd069f8a2ea1e147cdbbdde",
+      "signedReceipt": {
+        "sha256": "sha256:7d89d4bd416506a5184673db6277f447c995ddf69784c316653611b50c1f1776",
+        "bytes": 117989
+      },
+      "guestExecutions": 27,
+      "preIoRefusals": 4,
+      "oneExecutionCellForTwoTenants": true,
+      "primaryCases": [
+        "ky-json",
+        "wretch-json",
+        "outside-json",
+        "ky-http404",
+        "wretch-http404",
+        "observed-empty-clone",
+        "latin1-clone",
+        "abort-headers",
+        "abort-body",
+        "uncertain-post",
+        "denied-target",
+        "public-guest-extension",
+        "public-extension-denied",
+        "root-cancel",
+        "root-deadline",
+        "fresh"
+      ],
+      "tenantCases": [
+        {
+          "tenant": "foreign",
+          "kind": "ungranted"
+        },
+        {
+          "tenant": "examples",
+          "kind": "fetch-ky-examples"
+        },
+        {
+          "tenant": "foreign",
+          "kind": "fetch-ky-foreign"
+        },
+        {
+          "tenant": "examples",
+          "kind": "fetch-outside-examples"
+        },
+        {
+          "tenant": "foreign",
+          "kind": "fetch-outside-foreign"
+        },
+        {
+          "tenant": "examples",
+          "kind": "fetch-tenant-public-abort"
+        },
+        {
+          "tenant": "foreign",
+          "kind": "fetch-foreign-after-public-abort"
+        },
+        {
+          "tenant": "examples",
+          "kind": "root-cancel"
+        },
+        {
+          "tenant": "foreign",
+          "kind": "fetch-foreign-after-root-cancel"
+        },
+        {
+          "tenant": "foreign",
+          "kind": "fetch-foreign-denied-first-origin"
+        },
+        {
+          "tenant": "foreign",
+          "kind": "fetch-foreign-extension-own-origin"
+        },
+        {
+          "tenant": "examples",
+          "kind": "fetch-first-final-fresh"
+        }
+      ],
+      "primaryPeer": {
+        "acceptedConnections": 14,
+        "startedRequests": 14,
+        "completedResponseWrites": 11,
+        "committedMutations": 1,
+        "rejectedRequests": 0
+      },
+      "peerContactsWithoutProvider": 0,
+      "allNodesReapedClean": true
+    },
+    {
+      "name": "@ledger-coop/receipt-card",
+      "version": "2.3.5",
+      "outsideFiles": {
+        "index.d.ts": {
+          "digest": "sha256:02d7329042b54cc04ea153b879fafd85251bc24530f92f622a00412afe23f9a8",
+          "size": 53
+        },
+        "index.mjs": {
+          "digest": "sha256:3f971af0a4d848ad47caeb7a8977e35b40b939a06b1c4f3560bef9dc081ee4fa",
+          "size": 457
+        },
+        "package.json": {
+          "digest": "sha256:7d51a3812b421081abd1560aae15880a3de61bb32955c19ec5029b5d797f8e76",
+          "size": 235
+        },
+        "price-card.txt": {
+          "digest": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+          "size": 57
+        }
+      },
+      "reviewedInput": "sha256:4d57c0ab91f8000f7de664aa96bf29e4439f611380be9abd33f9fbb4b58f9b9c",
+      "npmLock": {
+        "sha256": "sha256:12e0a853869fc05d9243aae72ab44dda898528594f940ab8bc76f5016305d4c4",
+        "bytes": 955
+      },
+      "dependencyLock": {
+        "sha256": "sha256:7181bb95c474efab17b63583b9c47ada6db5a86122e3d3ae395f862bf0cf02ce",
+        "bytes": 48707
+      },
+      "originalSourceAbsentAtBuild": true,
+      "toolkitArchive": {
+        "sha256": "sha256:0027cee93061d89191e1c58d27961076152d7e92ee097c8713d497a6d786fc1c",
+        "bytes": 193219083
+      },
+      "offlineBuild": {
+        "uid": 1000,
+        "interfaces": [
+          "lo"
+        ],
+        "checkoutMounted": false,
+        "readonlyInputs": true,
+        "capturedInputIdentity": "sha256:4d57c0ab91f8000f7de664aa96bf29e4439f611380be9abd33f9fbb4b58f9b9c",
+        "commands": [
+          {
+            "name": "verify-capture",
+            "exitCode": 0
+          },
+          {
+            "name": "offline-build",
+            "exitCode": 0
+          }
+        ]
+      },
+      "component": {
+        "sha256": "sha256:1b6844170002462abc671da845850f3437e9eace51bb87f498736934775b8877",
+        "bytes": 12681653
+      },
+      "package": "sha256:0737638002113da88e24efa930e27ed3c4413ac2b8e86544a9e0478c72878b92",
+      "signedReceipt": {
+        "sha256": "sha256:80676f1da9b86985151389fa4ca9ccbc993a5ec1969f2524fa67c5d80bf458b4",
+        "bytes": 72579
+      },
+      "guestExecutions": 27,
+      "preIoRefusals": 4,
+      "oneExecutionCellForTwoTenants": true,
+      "primaryCases": [
+        "ky-json",
+        "wretch-json",
+        "outside-json",
+        "ky-http404",
+        "wretch-http404",
+        "observed-empty-clone",
+        "latin1-clone",
+        "abort-headers",
+        "abort-body",
+        "uncertain-post",
+        "denied-target",
+        "public-guest-extension",
+        "public-extension-denied",
+        "root-cancel",
+        "root-deadline",
+        "fresh"
+      ],
+      "tenantCases": [
+        {
+          "tenant": "foreign",
+          "kind": "ungranted"
+        },
+        {
+          "tenant": "examples",
+          "kind": "fetch-ky-examples"
+        },
+        {
+          "tenant": "foreign",
+          "kind": "fetch-ky-foreign"
+        },
+        {
+          "tenant": "examples",
+          "kind": "fetch-outside-examples"
+        },
+        {
+          "tenant": "foreign",
+          "kind": "fetch-outside-foreign"
+        },
+        {
+          "tenant": "examples",
+          "kind": "fetch-tenant-public-abort"
+        },
+        {
+          "tenant": "foreign",
+          "kind": "fetch-foreign-after-public-abort"
+        },
+        {
+          "tenant": "examples",
+          "kind": "root-cancel"
+        },
+        {
+          "tenant": "foreign",
+          "kind": "fetch-foreign-after-root-cancel"
+        },
+        {
+          "tenant": "foreign",
+          "kind": "fetch-foreign-denied-first-origin"
+        },
+        {
+          "tenant": "foreign",
+          "kind": "fetch-foreign-extension-own-origin"
+        },
+        {
+          "tenant": "examples",
+          "kind": "fetch-first-final-fresh"
+        }
+      ],
+      "primaryPeer": {
+        "acceptedConnections": 14,
+        "startedRequests": 14,
+        "completedResponseWrites": 11,
+        "committedMutations": 1,
+        "rejectedRequests": 0
+      },
+      "peerContactsWithoutProvider": 0,
+      "allNodesReapedClean": true
+    }
+  ],
+  "priorScopedRuns": [
+    {
+      "stage": "single-cell-tenant-http-isolation",
+      "observation": "Scoped build passed. The tenant observer timed out in node get following a public abort."
+    },
+    {
+      "stage": "root-cancel",
+      "passedPrimaryCases": 13,
+      "receipt": {
+        "sha256": "sha256:ec428c4b6b366840b380bb93cb3cb8c5fecfaaebd88c2ad0c86dc6fee802fac8",
+        "bytes": 1713
+      },
+      "observation": "The original peer wait ended before a pending request was observed."
+    }
+  ],
+  "scopedReplay": {
+    "retainedOriginalBuild": {
+      "sha256": "sha256:2a7eba494817894a6d337295b06480c43ab41e8d031d3177844725189a93be2f",
+      "bytes": 9790371
+    },
+    "originalPackageDigestVerified": true,
+    "restoredSourceLayoutFromSixAuthenticatedWitLayers": true,
+    "instrumentation": "Recorded the existing wait-gate duration and peer counters. The guest, grants, source, fixture assertions and deadlines were unchanged.",
+    "unchangedParentLimits": true,
+    "fullQualificationReceipt": {
+      "sha256": "sha256:80676f1da9b86985151389fa4ca9ccbc993a5ec1969f2524fa67c5d80bf458b4",
+      "bytes": 72579
+    }
+  }
+}
