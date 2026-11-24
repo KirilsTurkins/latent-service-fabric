@@ -1254,6 +1254,15 @@ jobs:
           printf '%s  %s\n' "$checksum" "$destination/gradle.zip" | sha256sum --check --strict
           unzip -q "$destination/gradle.zip" -d "$destination"
           echo "$destination/gradle-${version}/bin" >> "$GITHUB_PATH"
+      - name: Clean Java SDK outputs before restoring its locked dependencies
+        timeout-minutes: 2
+        run: gradle --no-daemon --console=plain -p sdk/java-client clean
+      - name: Restore locked Java SDK transport dependencies
+        id: java-transport-deps
+        uses: KirilsTurkins/lsf-cache/restore@2571c499f8aa6b4db4b4b5632bea291d6be58dc8 # v6.1.0 + upstream changes + LSF security fixes
+        with:
+          path: sdk/java-client/build/deps
+          key: java-client-transport-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('sdk/java-client/dependencies.lock.json') }}
       - name: Qualify the Java 25 Gradle build
         timeout-minutes: 10
         shell: bash
@@ -1265,8 +1274,14 @@ jobs:
           python3 sdk/java-client/tools/java_toolchain.py check | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
           gradle --version | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
           python3 -m unittest tools.tests.test_check_tool_versions tools.tests.test_java_toolchain 2>&1 | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
-          timeout 540 gradle --no-daemon --console=plain -p sdk/java-client clean check 2>&1 | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
+          timeout 540 gradle --no-daemon --console=plain -p sdk/java-client check 2>&1 | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
           echo 'Gradle qualification passed' | tee -a "$RUNNER_TEMP/java-sdk/gradle.log"
+      - name: Save verified Java SDK transport dependencies from development
+        if: github.ref == 'refs/heads/development' && github.event_name != 'pull_request' && steps.java-transport-deps.outputs.cache-hit != 'true'
+        uses: KirilsTurkins/lsf-cache/save@2571c499f8aa6b4db4b4b5632bea291d6be58dc8 # v6.1.0 + upstream changes + LSF security fixes
+        with:
+          path: sdk/java-client/build/deps
+          key: ${{ steps.java-transport-deps.outputs.cache-primary-key }}
       - name: Validate SDK surfaces
         shell: bash
         env:
