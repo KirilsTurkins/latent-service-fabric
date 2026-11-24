@@ -41,7 +41,15 @@ succeeded on a fresh call. The C example fetched and parsed a price card, and a
 Java HTTP client read a resource from its transitive JAR. The Go example
 ran Sling and Requests with their default clients and a private module that
 read a `//go:embed` resource from a goroutine. Both Go module coordinates
-passed all 30 HTTP cases after capture. The
+passed all 30 HTTP cases after capture.
+
+Two independently captured TypeScript packages used Ky and Wretch through
+global Fetch. Both clients returned their ordinary HTTP errors for a 404
+when the capsule selected `latent:http/phase-timing@0.4.0`, which exposes
+the peer's status text. With `latent:http/streaming@0.3.0`, Wretch handled
+the 404 and Ky reported that status text was unavailable. The phase run also
+exercised cancellation and a fresh call from a second tenant on the same node.
+The
 [six-language execution record](../testing/evidence/sdk-private-library-invocations-2026-11-23.json)
 includes the dependency locks, tool and component identities, grants, results
 and node measurements.

@@ -699,5 +699,329 @@
     "A common current-source matrix for private resources and ordinary HTTP in all six languages",
     "Transitive scheduling, cancellation and in-flight physical measurements across the six runtime profiles",
     "Packaged clean-host authoring"
-  ]
+  ],
+  "additionalTypeScriptPublishedFetch": {
+    "sourceRevision": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+    "observedOn": "2026-11-24",
+    "executionEnvironment": "Local Linux x86_64",
+    "normalTemplates": {
+      "qualifier": "tools/qualify_typescript_capsules.py",
+      "receiptDigest": "sha256:25b7eedb5f0bd7824358e3b7245b76b8033bf504642de9739fae37d0a063320a",
+      "nodeReceiptDigest": "sha256:bbd51a1743d7b43725a61f809afd91bd9b2775c05cdda9ab4fc12f16889c53d6",
+      "templates": [
+        "greeting",
+        "word-count",
+        "shipping",
+        "http-status",
+        "recovery"
+      ],
+      "invocations": 30,
+      "nodeReaped": true
+    },
+    "sharedNativeSourceIdentity": "sha256:c839ec43b877991cb8e9ab6bbd8dc229d1e5fb938e459545ad0d4be7f53bb690",
+    "nativeProducts": {
+      "latent": {
+        "sha256": "sha256:91dca312633e7996e5dab6ee4e9eb60e76591314b9ad5b8831203e0e41bed6ea",
+        "bytes": 76442344
+      },
+      "latentd": {
+        "sha256": "sha256:9688674a173301527077b1c4221a37a06076f0b08d7c1530d3b45a46365ca492",
+        "bytes": 212359352
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:064df5c939093b2a14f3db4c5cb70b01aeb7dfeed317257237f45696af0554e8",
+        "bytes": 14401464
+      },
+      "package": {
+        "sha256": "sha256:7d39ae32d5c4be19480c800eac3041e0ca6de7f9fbe2cb3b0fb442f166a7f68c",
+        "bytes": 19685760
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:79e0622d0c3e0449e545720f6b31414d8324b111c151926f3cc424c38da24042",
+        "bytes": 26132920
+      }
+    },
+    "compilerSourceRevision": "ac7d99a419ede0e90793bb9076505bfc9ea44342",
+    "compilerProducer": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/45245284415",
+    "engine": {
+      "sha256": "sha256:2840798b8968e172d49157ec4ad5b77a092067bb735e6dc4b389973108e764de",
+      "bytes": 10192602
+    },
+    "splicerInputsDigest": "sha256:22f40d725035889628dee5d3897a4fd1844b4d86381e7d2796d81944a56e77b7",
+    "buffered": {
+      "receiptDigest": "sha256:e0ef0c9bb2a4ef450061252682b08ee4486c9756c269af577e2bbafa26d6e1e4",
+      "profile": "lsf-fetch-buffered-v1",
+      "variants": [
+        {
+          "privatePackage": {
+            "identity": "outside-fetch-alpha",
+            "version": "1.0.0",
+            "module": "sha256:c03b4a65b14bccfe79a9767547952320e3af0e1b16e2aff3b60c2d68e6525a1e",
+            "outsideOriginalRemoved": true
+          },
+          "lockedPackages": {
+            "ky": {
+              "version": "2.2.0",
+              "integrity": "sha512-4+B63kyZt+Y8snQiUGydK1vgY9xYQJZEh9K/nIAIEts+gYJzy1EiAw3BbK8xpWRuWUpN70SNCMjqRGTm75xxIA=="
+            },
+            "wretch": {
+              "version": "3.0.9",
+              "integrity": "sha512-RXJQp5aOBfHQaDCLRyFXQooWDBOHrQxVgCH/6OFaFPBKjeUiXMQ3NV1b8qqI7CR+v4meVBWYs242P8n+rWRjzA=="
+            }
+          },
+          "applicationSource": "sha256:8bf99bdf2967eec9ab384cfe7702384da909cc00bd1ac164c598fa2fd20f714b",
+          "component": {
+            "sha256": "sha256:bc0e2d7dd13bd62c10b32060da13ada361b82b8a2dd7657358815ef35ca01d02",
+            "bytes": 12668299
+          },
+          "nodeReceipt": "sha256:360c2db9ae0f925a4598f674f8de1687c4210e1517dc9eecb5658db5c17d9336",
+          "passedCases": [
+            "buffered-reader-probe",
+            "buffered-json-probe",
+            "ky-json",
+            "wretch-json",
+            "outside-json",
+            "wretch-http404-error",
+            "ky-fresh"
+          ],
+          "expectedUnsupported": [
+            "ky-http404-unsupported"
+          ],
+          "missingGrants": [
+            "runtime",
+            "http"
+          ],
+          "peer": {
+            "startedRequests": 6,
+            "completedResponseWrites": 6,
+            "committedMutations": 0,
+            "rejectedRequests": 0,
+            "openConnections": 0
+          },
+          "nodeReaped": true,
+          "shutdownUsage": {
+            "activeActivations": 0,
+            "quotaReservations": 0,
+            "reservedCpuFuel": 0,
+            "reservedMemoryBytes": 0,
+            "quarantinedCells": 0,
+            "instanceReservations": 0,
+            "liveStores": 0,
+            "liveHostStates": 0,
+            "liveInstances": 0
+          }
+        },
+        {
+          "privatePackage": {
+            "identity": "outside-fetch-delta",
+            "version": "2.4.0",
+            "module": "sha256:c03b4a65b14bccfe79a9767547952320e3af0e1b16e2aff3b60c2d68e6525a1e",
+            "outsideOriginalRemoved": true
+          },
+          "lockedPackages": {
+            "ky": {
+              "version": "2.2.0",
+              "integrity": "sha512-4+B63kyZt+Y8snQiUGydK1vgY9xYQJZEh9K/nIAIEts+gYJzy1EiAw3BbK8xpWRuWUpN70SNCMjqRGTm75xxIA=="
+            },
+            "wretch": {
+              "version": "3.0.9",
+              "integrity": "sha512-RXJQp5aOBfHQaDCLRyFXQooWDBOHrQxVgCH/6OFaFPBKjeUiXMQ3NV1b8qqI7CR+v4meVBWYs242P8n+rWRjzA=="
+            }
+          },
+          "applicationSource": "sha256:703437024c58da01564fac31c48eb2f32bbf5a1d5b3d13af03651d634a7f30ea",
+          "component": {
+            "sha256": "sha256:14abb737478fe15ad4f86e99b96b1435ab1932e618e27d413bac65e456dee045",
+            "bytes": 12668336
+          },
+          "nodeReceipt": "sha256:30113ba9d6c495c0a0e6031b910ebf89931313a32971cdcd477afa8e5467525e",
+          "passedCases": [
+            "buffered-reader-probe",
+            "buffered-json-probe",
+            "ky-json",
+            "wretch-json",
+            "outside-json",
+            "wretch-http404-error",
+            "ky-fresh"
+          ],
+          "expectedUnsupported": [
+            "ky-http404-unsupported"
+          ],
+          "missingGrants": [
+            "runtime",
+            "http"
+          ],
+          "peer": {
+            "startedRequests": 6,
+            "completedResponseWrites": 6,
+            "committedMutations": 0,
+            "rejectedRequests": 0,
+            "openConnections": 0
+          },
+          "nodeReaped": true,
+          "shutdownUsage": {
+            "activeActivations": 0,
+            "quotaReservations": 0,
+            "reservedCpuFuel": 0,
+            "reservedMemoryBytes": 0,
+            "quarantinedCells": 0,
+            "instanceReservations": 0,
+            "liveStores": 0,
+            "liveHostStates": 0,
+            "liveInstances": 0
+          }
+        }
+      ]
+    },
+    "phaseTiming": {
+      "receiptDigest": "sha256:8c9b6130679052617b59a68767fa9f7f9df14f21e695a05775b4ac27ce209f69",
+      "privatePackage": {
+        "identity": "outside-fetch-phase",
+        "version": "1.0.0",
+        "module": "sha256:c03b4a65b14bccfe79a9767547952320e3af0e1b16e2aff3b60c2d68e6525a1e",
+        "outsideOriginalRemoved": true
+      },
+      "component": {
+        "sha256": "sha256:3bef48f799b902f3e276cb9bc0d5a51a69fb249697c3b4b6c836dbc53b8336da",
+        "bytes": 12674206
+      },
+      "profile": "lsf-fetch-phase-buffered-v2",
+      "executionFuel": 2000000000,
+      "caseNames": [
+        "ky-json",
+        "wretch-json",
+        "outside-json",
+        "ky-http404",
+        "wretch-http404",
+        "observed-empty-clone",
+        "latin1-clone",
+        "abort-headers",
+        "abort-body",
+        "uncertain-post",
+        "denied-target",
+        "public-guest-extension",
+        "public-extension-denied",
+        "root-cancel",
+        "root-deadline",
+        "fresh"
+      ],
+      "outcomes": 31,
+      "guestExecutions": 27,
+      "preIoRefusals": 4,
+      "ky404": [
+        "1|ky:error:404"
+      ],
+      "wretch404": [
+        "1|wretch:error:404"
+      ],
+      "directPeer": {
+        "startedRequests": 14,
+        "completedResponseWrites": 11,
+        "committedMutations": 1,
+        "rejectedRequests": 0,
+        "openConnections": 0
+      },
+      "missingProviderContacts": 0,
+      "tenantCases": [
+        {
+          "tenant": "foreign",
+          "case": "ungranted"
+        },
+        {
+          "tenant": "examples",
+          "case": "fetch-ky-examples"
+        },
+        {
+          "tenant": "foreign",
+          "case": "fetch-ky-foreign"
+        },
+        {
+          "tenant": "examples",
+          "case": "fetch-outside-examples"
+        },
+        {
+          "tenant": "foreign",
+          "case": "fetch-outside-foreign"
+        },
+        {
+          "tenant": "examples",
+          "case": "fetch-tenant-public-abort"
+        },
+        {
+          "tenant": "foreign",
+          "case": "fetch-foreign-after-public-abort"
+        },
+        {
+          "tenant": "examples",
+          "case": "root-cancel"
+        },
+        {
+          "tenant": "foreign",
+          "case": "fetch-foreign-after-root-cancel"
+        },
+        {
+          "tenant": "foreign",
+          "case": "fetch-foreign-denied-first-origin"
+        },
+        {
+          "tenant": "foreign",
+          "case": "fetch-foreign-extension-own-origin"
+        },
+        {
+          "tenant": "examples",
+          "case": "fetch-first-final-fresh"
+        }
+      ],
+      "tenantPeers": {
+        "examples": {
+          "startedRequests": 5,
+          "completedResponseWrites": 4,
+          "committedMutations": 0,
+          "rejectedRequests": 0,
+          "openConnections": 0
+        },
+        "foreign": {
+          "startedRequests": 5,
+          "completedResponseWrites": 5,
+          "committedMutations": 0,
+          "rejectedRequests": 0,
+          "openConnections": 0
+        }
+      },
+      "shutdownUsage": {
+        "primary": {
+          "activeActivations": 0,
+          "quotaReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "quarantinedCells": 0,
+          "instanceReservations": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0
+        },
+        "missingProvider": {
+          "activeActivations": 0,
+          "quotaReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "quarantinedCells": 0,
+          "instanceReservations": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0
+        },
+        "tenantIsolation": {
+          "activeActivations": 0,
+          "quotaReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "quarantinedCells": 0,
+          "instanceReservations": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0
+        }
+      }
+    }
+  }
 }
