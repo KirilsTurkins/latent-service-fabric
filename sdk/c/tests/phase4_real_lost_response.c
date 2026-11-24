@@ -11,7 +11,7 @@ static const char *required(const char *name) { const char *v=getenv(name); if (
 static latent_string str(const char *v) { return (latent_string){v,strlen(v)}; }
 static int digit(char c) { if (c >= '0' && c <= '9') return c-'0'; if (c >= 'a' && c <= 'f') return c-'a'+10; return -1; }
 static bool equal_hex(const uint8_t *v, size_t n, const char *hex) { if (strlen(hex)!=n*2) return false; for(size_t i=0;i<n;i++) { int a=digit(hex[2*i]),b=digit(hex[2*i+1]); if(a<0 || b<0 || v[i]!=(uint8_t)(a*16+b)) return false; } return true; }
-typedef struct observed { unsigned calls; } observed;
+typedef struct observed { unsigned calls; bool failed; } observed;
 static void invoked(const latent_transaction_invoke_command_result *r, const latent_transaction_client_failure *f, void *ctx) {
     observed *o=ctx; assert(o->calls++ == 0 && r==NULL && f);
     assert(f->transport.dispatched && f->transport.outcome==LATENT_PROFILE_OUTCOME_KNOWLEDGE_UNKNOWN);
@@ -68,7 +68,15 @@ static bool payload_view_matches(latent_bytes payload, const char *hex) {
     return true;
 }
 static void queried(const latent_transaction_query_result *r, const latent_transaction_client_failure *f, void *ctx) {
-    observed *o=ctx; assert(o->calls++ == 0 && r && !f);
+    observed *o=ctx;
+    assert(o->calls++ == 0 && ((r == NULL) != (f == NULL)));
+    if (f) {
+        fprintf(stderr, "query failed with category=%d outcome=%d grpc=%d dispatched=%d\n",
+                f->transport.category, f->transport.outcome,
+                f->transport.has_grpc_status ? f->transport.grpc_status : -1, (int)f->transport.dispatched);
+        o->failed = true;
+        return;
+    }
     assert(!r->metadata.observed.has_command && !r->metadata.observed.effect && !r->metadata.observed.state);
     const latent_transaction_query_response *v=&r->value;
     assert(v->has_view && v->view.has_namespace && v->has_source && v->has_invocation && v->invocation.has_success);
@@ -104,8 +112,9 @@ int main(void) {
         for (unsigned i=0; i<3; ++i) {
             char activation[40]; int n=snprintf(activation,sizeof(activation),"c-sdk-fresh-query-%u",i); assert(n>0 && (size_t)n<sizeof(activation));
             latent_transaction_query_request req={.has_profile=true,.profile=latent_transaction_current_profile(),.has_namespace=true,.namespace=selector.namespace,.has_minimum_view_version=true,.minimum_view_version={version,len/2},
-                .has_invocation=true,.invocation={.has_activation_id=true,.activation_id=str(activation),.has_target=true,.target={.tenant=str(tenant),.service=phase4_aggregate_service(),.contract=TEXT("examples:transactional-aggregate/api@1.0.0"),.function=TEXT("query"),.has_route=true,.route=phase4_aggregate_route(true)},.payload=BYTES("[]"),.media_type=TEXT("application/vnd.latent.wit-values.v1+json"),.has_budget=true,.budget={.cpu_fuel=1000000000,.memory_bytes=67108864,.state_read_bytes=4194304,.has_wall_time_limit_millis=true,.wall_time_limit_millis=120000}}};
+                .has_invocation=true,.invocation={.has_activation_id=true,.activation_id=str(activation),.has_target=true,.target={.tenant=str(tenant),.service=phase4_aggregate_service(),.contract=TEXT("examples:transactional-aggregate/api@1.0.0"),.function=TEXT("query"),.has_route=true,.route=phase4_aggregate_route(true)},.payload=BYTES("[]"),.media_type=TEXT("application/vnd.latent.wit-values.v1+json"),.has_budget=true,.budget={.cpu_fuel=400000000,.memory_bytes=67108864,.state_read_bytes=1048576,.has_wall_time_limit_millis=true,.wall_time_limit_millis=15000}}};
             out=(observed){0}; call=api->query(latent_transport_transaction(owner),&req,NULL,queried,&out); assert(call); wait(owner,&out); api->release_call(call);
+            if (out.failed) { close_owner(owner); return 1; }
         }
         close_owner(owner); puts("FRESH_QUERY_AFTER_COMMIT"); return 0;
     }
