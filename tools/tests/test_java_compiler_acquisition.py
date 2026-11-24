@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 
 from tools import java_standard_http_library as owner
 from tools import qualify_java_dependency_suite as suite
-from tools.java_guest import compiler as production
+from tools.java_guest import compiler as production, compiler_acquisition as acquisition
 
 COORDINATE = 'org.teavm:teavm-gradle-plugin:0.15.0'
 POM = 'https://repo.maven.apache.org/maven2/org/teavm/teavm-gradle-plugin/0.15.0/teavm-gradle-plugin-0.15.0.pom'
@@ -180,11 +180,11 @@ class AcquisitionRetryTests(unittest.TestCase):
                 self.outcomes(LOG, None)
                 with ExitStack() as context:
                     if mutation == 'missing':
-                        context.enter_context(patch.object(owner.paths, 'read', side_effect=OSError('missing')))
+                        context.enter_context(patch.object(acquisition.paths, 'read', side_effect=OSError('missing')))
                     elif mutation == 'overbound':
                         self.outcomes(LOG + 'x' * (4 * 1024 * 1024), None)
                     elif mutation == 'bad-encoding':
-                        context.enter_context(patch.object(owner.paths, 'read', return_value=b'\xff'))
+                        context.enter_context(patch.object(acquisition.paths, 'read', return_value=b'\xff'))
                     with self.assertRaises(ValueError):
                         self.run_compiler()
                 self.assertEqual(self.process.call_count, 1)
@@ -234,6 +234,28 @@ class AcquisitionRetryTests(unittest.TestCase):
         self.assertIs(caught.exception, changed)
         self.assertEqual(self.process.call_count, 1)
         self.sleep.assert_not_called()
+
+    def test_developer_tool_bundle_acquires_the_maintained_greeting_through_the_shared_compiler(self):
+        from tools import dev_managed_distribution as distribution
+
+        root = self.compiler.directory
+        capture = root / 'bundle'
+        capture.mkdir()
+        source = {name: {} for name in ('jdk', 'gradle', 'wasi-sdk')}
+        project = root / 'greeting'
+        self.stack.enter_context(patch('tools.java_guest.compiler_profile.pin', return_value=None))
+        self.stack.enter_context(patch.object(distribution, 'sources', return_value=source))
+        self.stack.enter_context(patch.object(distribution, 'extract', side_effect=lambda archive, dest, name: dest))
+        creator = self.stack.enter_context(patch('tools.java_capsule_project.create', return_value=project))
+        compiler = self.stack.enter_context(patch.object(acquisition, 'AcquisitionCompiler', autospec=True))
+        compiler.return_value.compile.side_effect = ValueError('end of acquisition probe')
+        with self.assertRaisesRegex(ValueError, 'end of acquisition probe'):
+            distribution.prepare(root / 'payload', capture, 'java', Mock())
+        creator.assert_called_once_with(capture / 'managed-dependency-project', 'greeting')
+        compiler.assert_called_once_with(capture / 'managed-dependencies', capture / 'managed-source/wasi-sdk',
+                                         gradle=str(capture / 'managed-source/gradle/bin/gradle'))
+        compiler.return_value.compile.assert_called_once_with(project / 'src', project / 'wit',
+            'examples:greeting/service@1.0.0', capture / 'managed-dependency-build')
 
     def test_ordinary_application_compiler_remains_single_attempt(self):
         application = production.Compiler.__new__(production.Compiler)
