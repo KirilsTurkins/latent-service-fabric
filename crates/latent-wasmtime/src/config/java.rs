@@ -15,7 +15,6 @@ impl WasmtimeConfig {
     pub(super) fn validate_java(&self) -> Result<(), PlatformError> {
         if self.java_guest
             && (self.instance_allocator != InstanceAllocator::OnDemand
-                || self.angular_renderer
                 || self.maximum_memory_bytes <= JAVA_EXCEPTION_HEAP_BYTES as u64
                 || self.fuel_async_yield_interval.is_none())
         {
@@ -164,7 +163,6 @@ mod tests {
         for mutate in [
             (|c: &mut WasmtimeConfig| c.instance_allocator = InstanceAllocator::Pooling)
                 as fn(&mut WasmtimeConfig),
-            |c| c.angular_renderer = true,
             |c| c.maximum_memory_bytes = JAVA_EXCEPTION_HEAP_BYTES as u64,
             |c| c.fuel_async_yield_interval = None,
         ] {
@@ -172,5 +170,38 @@ mod tests {
             mutate(&mut wrong);
             assert!(wrong.validate().is_err());
         }
+    }
+
+    #[test]
+    fn java_exception_and_angular_renderer_profiles_compose_with_bounded_ownership() {
+        let mut renderer = WasmtimeConfig {
+            fuel_async_yield_interval: Some(10_000),
+            ..WasmtimeConfig::default()
+        };
+        renderer.install_angular_renderer();
+        let mut combined = renderer.clone();
+        combined.install_java_guest();
+        combined.validate().unwrap();
+
+        assert_eq!(combined.maximum_memory_bytes, renderer.maximum_memory_bytes);
+        assert_eq!(combined.maximum_fuel, renderer.maximum_fuel);
+        assert_eq!(combined.cache_limits(), renderer.cache_limits());
+        assert_ne!(
+            combined.configuration_digest(DispatchMode::Generic),
+            renderer.configuration_digest(DispatchMode::Generic),
+        );
+        let fields = combined.profile(DispatchMode::Generic).configuration;
+        assert_eq!(fields["wasm-exceptions"], "true");
+        assert_eq!(fields["wasm-function-references"], "false");
+        assert_eq!(fields["wasm-gc"], "false");
+
+        let mut config = Config::new();
+        combined.apply_engine(&mut config).unwrap();
+        let engine = Engine::new(&config).unwrap();
+        assert_eq!(
+            engine.get_gc_heap_reservation(),
+            JAVA_EXCEPTION_HEAP_BYTES as u64,
+        );
+        assert!(component::Component::new(&engine, typed_function_component()).is_err());
     }
 }

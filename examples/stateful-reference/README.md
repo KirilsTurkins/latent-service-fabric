@@ -71,6 +71,14 @@ The app budgets 1 MiB for the host's bounded value reads, 64 KiB of write and
 intent accounting, and two intents.
 The selected language keeps its existing compiler, runtime and watchdog limits.
 
+For a Java backend on the same node as Angular SSR, set `engine.javaGuest`
+to `true` alongside `rendererProfile: "angular-ssr-component-v1"` in the
+node configuration. Use the on-demand allocator. Bind
+`latent:clock/monotonic@0.1.0` (`now-nanos`) and
+`latent:clock/wall@0.1.0` (`now-unix-millis`) to the installed clock
+providers. Scope those grants to the signed Java backend publication and its
+command and query callers, including the reader used by SSR.
+
 The shared browser client uses the existing `transaction-http-v1` routes,
 `idempotency-key`, explicit abort-fence retry and minimum-view query headers.
 It makes no automatic mutation retry and retains the original request bytes
@@ -154,13 +162,10 @@ It writes private inputs and evidence outside the checkout. Its receipt describe
 the common browser boundary separately from inbox, provider recovery, schema,
 retention, dormancy and packaged-workflow qualification.
 
-Current source checks cover creation of all six captured projects, identical
-export contracts, preserved SDK bytes and runtime worlds, pinned canonical
-binding generation and nine browser-client unit transport scenarios. The Java
-guest has passed the maintained TeaVM/C/closed-runtime component compiler;
-Angular has passed its maintained source guard, compiler and bundler. These
-checks establish authored source and compiler behavior. Signed admission,
-the remaining guest builds, supported live SSR composition, real browser
-DOM hydration/recovery, transactional incoming-event handling, restart,
-schema/retention/rollout and provider/physical-owner scenarios still require
-the exact-source integrated node campaign before #402 can close.
+Local signed-node runs exercised the shared browser flow with Rust, C,
+TypeScript, Go, Java and .NET backends. Each used the Angular SSR package,
+queried committed state, rejected a stale edit and recovered original command
+outcomes after response loss. See [the application ticket](https://github.com/KirilsTurkins/latent-service-fabric/issues/402)
+for the component and compiler identities. Transactional inbox, restart,
+schema, retention, provider reconciliation, physical ownership and packaged
+workflow have their own qualification.
