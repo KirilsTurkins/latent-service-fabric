@@ -27,7 +27,12 @@ def systemctl(*arguments: str, timeout: float = 100) -> tuple[int, bytes]:
                    timeout=timeout, maximum=32768)
 
 
-def stop_service() -> None:
+def stop_service(*, stateful: bool = False) -> None:
+    started = False
+    if stateful:
+        status, pid = systemctl("show", "lsf.service", "--property=MainPID", "--value")
+        require(status == 0 and pid.strip().isdigit(), "service-main-process-observation-failed")
+        started = int(pid) != 0
     status, _output = systemctl("stop", "lsf.service")
     require(status == 0, "service-stop-failed")
     status, output = systemctl("show", "lsf.service", "--property=MainPID", "--value")
@@ -40,6 +45,19 @@ def stop_service() -> None:
         processes = Path("/sys/fs/cgroup") / group.lstrip("/") / "cgroup.procs"
         if processes.exists():
             require(not files.read(processes, 32768).strip(), "compiler-children-not-reaped")
+    if stateful:
+        status, output = systemctl("show", "lsf.service", "--property=Result", "--property=ExecMainCode",
+                                   "--property=ExecMainStatus", "--property=ExecMainStartTimestampMonotonic")
+        properties = dict(line.split(b"=", 1) for line in output.splitlines() if b"=" in line)
+        observed_start = properties.get(b"ExecMainStartTimestampMonotonic", b"")
+        # CLD_EXITED is 1. systemd can report success for SIGTERM, so also require
+        # the node's own orderly exit status once a main process has started.
+        exit_code = properties.get(b"ExecMainCode")
+        clean = status == 0 and properties.get(b"Result") == b"success" and observed_start.isdigit()
+        if clean:
+            expected = b"1" if started or int(observed_start) else b"0"
+            clean = exit_code == expected and properties.get(b"ExecMainStatus") == b"0"
+        require(clean, "stateful-service-shutdown-unconfirmed-recover-with-original-release")
 
 
 def read_state(layout: Layout) -> dict | None:
@@ -212,7 +230,7 @@ def install(layout: Layout, release: VerifiedRelease, *, profile: str, policy: P
         if layout.system and state and state["status"] == "installed" and state["currentVersion"] != selected:
             status, _output = systemctl("is-active", "--quiet", "lsf.service")
             require(status != 0 or start, "running-service-upgrade-requires-explicit-start")
-            stop_service()
+            stop_service(stateful=node.get("state") is not None)
             if profile != LOCAL:
                 time.sleep(6)
         if state and state["currentVersion"] != selected and node.get("state") is not None:
@@ -299,7 +317,7 @@ def remove(layout: Layout, *, purge: str | None = None) -> dict:
         validate_roots(layout, state, identity)
         if layout.system and state["status"] == "installed":
             require(files.digest(UNIT) == state["unitSha256"], "operator-modified-unit-not-removed")
-            stop_service()
+            stop_service(stateful=os.path.lexists(layout.data / "state"))
             status, _output = systemctl("disable", "lsf.service")
             require(status == 0, "service-disable-failed")
         if state["status"] != "removed":

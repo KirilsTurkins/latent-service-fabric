@@ -42,8 +42,11 @@ retained-state check against the stopped original store before selecting the
 candidate. It checks the engine metadata, store identity, row and quota bounds,
 and the retained records with the candidate's decoders under the original root
 lock. The check opens the database read-only. If it fails, the original release
-stays selected. Inspect the original store and resolve the failure before
-resuming the exact upgrade.
+stays selected. A stateful systemd upgrade or removal also checks the node's
+exit status after draining. If the service was force-stopped or reported a
+shutdown failure, recover with the original release and complete a clean stop
+before retrying. Pending effects and inbox records remain in the original
+store.
 
 Before executing **any downloaded installer or verifier code**, independently
 provision GitHub CLI **2.96.0 or newer**, Sigstore trusted roots, and the exact

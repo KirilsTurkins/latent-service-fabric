@@ -51,7 +51,11 @@ pub(super) fn run(path: &Path) -> Result<(), Failure> {
             PlatformErrorCode::DeadlineExceeded,
         ));
     }
-    status::stopped(&result?)
+    let report = result?;
+    if !report.clean {
+        return Err(Failure::new("shutdown", PlatformErrorCode::Unavailable));
+    }
+    status::stopped(&report)
 }
 
 async fn serve(

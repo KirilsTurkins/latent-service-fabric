@@ -74,6 +74,33 @@ def selected(root: Path, version: str = "0.1.0-test.1", previous: dict | None = 
                                      {"method": "synthetic-for-safety-test-only", "policy": policy})
 
 
+class StatefulServiceStopTests(unittest.TestCase):
+    def test_orderly_stateful_stop_and_never_started_service_are_accepted(self):
+        for pid, start, code in ((b"247", b"82901", b"1"), (b"0", b"0", b"0"),
+                                 (b"0", b"82901", b"1")):
+            with self.subTest(pid=pid, start=start), patch.object(lifecycle, "systemctl") as call:
+                call.side_effect = [
+                    (0, pid), (0, b""), (0, b"0"), (0, b""),
+                    (0, b"Result=success\nExecMainCode=" + code
+                     + b"\nExecMainStatus=0\nExecMainStartTimestampMonotonic=" + start),
+                ]
+                lifecycle.stop_service(stateful=True)
+                self.assertEqual(call.call_count, 5)
+
+    def test_forced_stop_and_lost_service_status_cannot_confirm_clean_drain(self):
+        outcomes = (
+            b"Result=timeout\nExecMainCode=2\nExecMainStatus=9\nExecMainStartTimestampMonotonic=82901",
+            b"Result=success\nExecMainCode=2\nExecMainStatus=15\nExecMainStartTimestampMonotonic=82901",
+            b"Result=exit-code\nExecMainCode=1\nExecMainStatus=1\nExecMainStartTimestampMonotonic=82901",
+            b"Result=success\nExecMainCode=0\nExecMainStatus=0\nExecMainStartTimestampMonotonic=0",
+        )
+        for outcome in outcomes:
+            with self.subTest(outcome=outcome), patch.object(lifecycle, "systemctl") as call:
+                call.side_effect = [(0, b"247"), (0, b""), (0, b"0"), (0, b""), (0, outcome)]
+                with self.assertRaisesRegex(InstallError, "stateful-service-shutdown-unconfirmed"):
+                    lifecycle.stop_service(stateful=True)
+
+
 class ManifestTests(unittest.TestCase):
     def test_native_upgrade_preserves_the_approved_retained_transaction_profile(self):
         from types import SimpleNamespace
