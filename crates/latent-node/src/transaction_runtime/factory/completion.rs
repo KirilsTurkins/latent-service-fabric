@@ -254,6 +254,15 @@ fn aborted_observation(
             ),
             consumption,
         ),
+        None if code == Some(PlatformErrorCode::ResourceExhausted.wire_code()) => {
+            failure_for_platform_error(
+                super::error(
+                    PlatformErrorCode::ResourceExhausted,
+                    "transaction-resource-exhausted",
+                ),
+                consumption,
+            )
+        }
         _ => unavailable(consumption),
     }
 }
