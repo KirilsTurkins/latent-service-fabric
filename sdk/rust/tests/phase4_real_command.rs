@@ -46,7 +46,7 @@ async fn command_commits_through_real_client_and_retires() {
                 state_read_bytes: 4_194_304,
                 state_write_bytes: 2_097_152,
                 effect_count: 1,
-                wall_time_limit_millis: Some(120_000),
+                wall_time_limit_millis: Some(phase4_aggregate::wall_limit_millis()),
                 ..Default::default()
             }),
             ..Default::default()

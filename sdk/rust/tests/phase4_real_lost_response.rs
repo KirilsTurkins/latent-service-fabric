@@ -79,7 +79,7 @@ async fn lost_committed_response_reports_unknown() {
                 state_read_bytes: 4_194_304,
                 state_write_bytes: 2_097_152,
                 effect_count: 1,
-                wall_time_limit_millis: Some(120_000),
+                wall_time_limit_millis: Some(phase4_aggregate::wall_limit_millis()),
                 ..Default::default()
             }),
             ..Default::default()
@@ -196,7 +196,7 @@ async fn fresh_query_after_commit() {
                             cpu_fuel: 1_000_000_000,
                             memory_bytes: 67_108_864,
                             state_read_bytes: 4_194_304,
-                            wall_time_limit_millis: Some(120_000),
+                            wall_time_limit_millis: Some(phase4_aggregate::wall_limit_millis()),
                             ..Default::default()
                         }),
                         ..Default::default()

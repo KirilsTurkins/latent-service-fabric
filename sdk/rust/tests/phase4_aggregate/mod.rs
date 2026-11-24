@@ -21,3 +21,14 @@ pub fn target(tenant: String, function: &str) -> InvocationTarget {
 fn setting(name: &str) -> Option<String> {
     std::env::var_os(name).map(|value| value.into_string().expect("aggregate setting is UTF-8"))
 }
+
+pub fn wall_limit_millis() -> u64 {
+    let Some(value) = setting("LSF_401_WALL_TIME_MILLIS") else {
+        return 120_000;
+    };
+    let millis: u64 = value
+        .parse()
+        .expect("fixture wall-time limit is an integer");
+    assert!((1..=120_000).contains(&millis) && millis.to_string() == value);
+    millis
+}
