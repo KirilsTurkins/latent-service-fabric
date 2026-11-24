@@ -717,6 +717,28 @@ class LifecycleTests(unittest.TestCase):
             with self.assertRaisesRegex(InstallError, "unsupported-upgrade"):
                 self.install(first, upgrade=True)
 
+    def test_retained_state_check_runs_before_upgraded_release_is_selected(self):
+        with selected(self.root) as first:
+            self.install(first)
+            original = self.layout.state.read_bytes()
+            node = document(self.layout.node.read_bytes())
+            node["state"] = {"createIfMissing": False}
+            self.layout.node.write_bytes(encode(node))
+
+            def preflight(*_, retained_state=False, **__):
+                self.assertEqual(os.readlink(self.layout.current), "releases/" + first.metadata["version"])
+                if retained_state:
+                    raise InstallError("retained-transaction-state-check-failed")
+                return {"syntheticCheck": True}
+
+            self.probe.side_effect = preflight
+            with selected(self.root, "0.1.0-test.2", first.metadata) as candidate:
+                with self.assertRaisesRegex(InstallError, "retained-transaction-state-check-failed"):
+                    self.install(candidate, upgrade=True)
+            self.assertEqual(self.layout.state.read_bytes(), original)
+            self.assertEqual(os.readlink(self.layout.current), "releases/" + first.metadata["version"])
+            self.assertTrue(self.layout.transaction.exists())
+
     def test_removal_retention_reinstallation_and_explicit_purge(self):
         with selected(self.root) as release:
             installed = self.install(release)

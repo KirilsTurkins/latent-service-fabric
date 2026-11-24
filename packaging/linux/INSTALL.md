@@ -37,6 +37,14 @@ state root requires explicit state configuration. Preparing snapshot and
 restore destinations uses the separate authenticated transaction recovery
 workflow.
 
+For a version upgrade with state enabled, the installer runs the candidate's
+retained-state check against the stopped original store before selecting the
+candidate. It checks the engine metadata, store identity, row and quota bounds,
+and the retained records with the candidate's decoders under the original root
+lock. The check opens the database read-only. If it fails, the original release
+stays selected. Inspect the original store and resolve the failure before
+resuming the exact upgrade.
+
 Before executing **any downloaded installer or verifier code**, independently
 provision GitHub CLI **2.96.0 or newer**, Sigstore trusted roots, and the exact
 approved release version/commit through your OS/release-verification provisioning

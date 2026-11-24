@@ -53,7 +53,7 @@ def require_original_storage_profile(layout: Layout, node: dict) -> None:
     require(False, "existing-transaction-storage-requires-state-configuration")
 
 
-def preflight(layout: Layout, candidate: str | None = None) -> dict:
+def preflight(layout: Layout, candidate: str | None = None, *, retained_state: bool = False) -> dict:
     identity = service_identity(layout)
     observation = host.platform_check()
     node = load(layout, identity)
@@ -79,8 +79,14 @@ def preflight(layout: Layout, candidate: str | None = None) -> dict:
         command = [str(root / "bin" / "latentd"), "check-config", "--config", str(config)]
         if node.get("state") is not None:
             command.append("--check-state-roots")
-        status, output = execute(command, timeout=40, maximum=65536, cwd=str(layout.data))
-    require(status == 0, "node-check-config-failed-no-profile-fallback")
+        if retained_state:
+            require(node.get("state") is not None, "retained-state-check-requires-state-configuration")
+            command.append("--check-retained-state")
+        status, output = execute(command, timeout=70 if retained_state else 40, maximum=65536, cwd=str(layout.data))
+    if retained_state:
+        require(status == 0, "retained-transaction-state-check-failed-use-original-release-and-recovery")
+    else:
+        require(status == 0, "node-check-config-failed-no-profile-fallback")
     report = document(output, 65536)
     require(report.get("schemaVersion") == "latent.standalone.config-check.v1"
             and report.get("profile") == node["securityProfile"]

@@ -117,14 +117,19 @@ def select_current(layout: Layout, selected: str, permitted: set[str]) -> None:
         os.fsync(parent)
 
 
-def child_check(layout: Layout, identity: tuple[int, int], command: str, candidate: str | None = None) -> dict:
+def child_check(layout: Layout, identity: tuple[int, int], command: str, candidate: str | None = None,
+                *, retained_state: bool = False) -> dict:
     root = layout.prefix / "releases" / version(candidate) if candidate is not None else current(layout)
     location = ["--system"] if layout.system else ["--directory", str(layout.prefix)]
     if candidate is not None:
         location += ["--candidate-version", candidate]
+    if retained_state:
+        location.append("--retained-state")
     status, output = execute(["/usr/bin/python3", "-I", str(root / "lsf-install.pyz"), command, *location],
                              identity=identity, timeout=75, maximum=262144, cwd=str(layout.data))
-    require(status == 0, "service-identity-" + command + "-failed-installation-unactivated")
+    reason = ("retained-transaction-state-check-failed-original-release-still-selected" if retained_state
+              else "service-identity-" + command + "-failed-installation-unactivated")
+    require(status == 0, reason)
     return document(output, 262144)
 
 
@@ -210,6 +215,8 @@ def install(layout: Layout, release: VerifiedRelease, *, profile: str, policy: P
             stop_service()
             if profile != LOCAL:
                 time.sleep(6)
+        if state and state["currentVersion"] != selected and node.get("state") is not None:
+            preflight = child_check(layout, identity, "preflight", candidate=selected, retained_state=True)
         approve_compiler(layout, identity, node, release.metadata, approved_compiler)
         select_current(layout, selected, permitted)
         unit = files.read(destination / "systemd" / "lsf.service", 16384)

@@ -10,12 +10,24 @@ fn check_config_requires_an_explicit_file_and_never_selects_serve() {
     let Command::CheckConfig {
         config,
         check_state_roots: false,
+        check_retained_state: false,
     } = parsed.command
     else {
         panic!("check-config")
     };
     assert_eq!(config, std::path::PathBuf::from("node.json"));
     assert!(CommandLine::try_parse_from(["latentd", "check-config"]).is_err());
+    let retained = [
+        "latentd",
+        "check-config",
+        "--config",
+        "node.json",
+        "--check-retained-state",
+    ];
+    assert!(CommandLine::try_parse_from(retained).is_err());
+    assert!(
+        CommandLine::try_parse_from(retained.into_iter().chain(["--check-state-roots"])).is_ok()
+    );
 }
 
 #[test]

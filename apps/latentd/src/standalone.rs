@@ -55,6 +55,8 @@ pub use rollouts::RolloutShutdownReport;
 pub use shutdown::ShutdownReport;
 pub(crate) use startup_observation::observe_startup;
 pub use startup_observation::StartupFailureReport;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(crate) use state::check_retained;
 pub use state::StateRetirementReport;
 pub use state::{ConfiguredEventEffectInspection, ConfiguredHttpEffectInspection};
 pub use state::{
