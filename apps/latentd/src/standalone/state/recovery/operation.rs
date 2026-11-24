@@ -159,14 +159,10 @@ async fn prepare(
     original: &Arc<NativeReservation>,
 ) -> Result<Arc<Codecs>, PlatformError> {
     require_installed_marker(store, state, original).await?;
-    let payloads = if matches!(&request.request, Action::InspectNamespace {}) {
-        bootstrap
-            .local_payload_selection
-            .as_deref()
-            .and_then(super::super::store::LocalPayloadSelection::inventory_payloads)
-    } else {
-        None
-    };
+    let payloads = bootstrap
+        .local_payload_selection
+        .as_deref()
+        .and_then(super::super::store::LocalPayloadSelection::inventory_payloads);
     let (checkpoint, floor) =
         inspect_checkpoint_with_payloads(store, state, original, payloads.as_ref()).await?;
     if floor.inbox_custody().is_some()
@@ -338,7 +334,7 @@ pub(in crate::standalone::state) async fn inspect_checkpoint(
     inspect_checkpoint_with_payloads(store, state, original, None).await
 }
 
-async fn inspect_checkpoint_with_payloads(
+pub(super) async fn inspect_checkpoint_with_payloads(
     store: &ProtectedStoreOwner,
     state: &StateSettings,
     original: &Arc<NativeReservation>,

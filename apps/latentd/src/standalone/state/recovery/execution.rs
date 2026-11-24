@@ -899,8 +899,13 @@ async fn seal(
     settings: &crate::config::state::StateSettings,
 ) -> Result<(), PlatformError> {
     if codecs.checkpoint.inbox_custody().is_some() {
-        let (checkpoint, current) =
-            super::operation::inspect_checkpoint(store, settings, &codecs.original).await?;
+        let (checkpoint, current) = super::operation::inspect_checkpoint_with_payloads(
+            store,
+            settings,
+            &codecs.original,
+            codecs.payloads.as_ref(),
+        )
+        .await?;
         if current != codecs.checkpoint {
             checkpoint.retire().await;
             return Err(storage(StoreError::Conflict));
