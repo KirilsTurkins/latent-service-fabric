@@ -117,6 +117,7 @@ impl Fixture {
             namespace,
             identity: settings.store_identity.clone(),
             quotas,
+            payloads: None,
             checkpoint,
             original,
             _metadata: metadata,

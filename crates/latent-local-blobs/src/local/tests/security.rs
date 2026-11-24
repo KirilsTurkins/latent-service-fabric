@@ -13,7 +13,7 @@ fn directory_walk_bounds_callbacks_and_propagates_failure() {
     let root = temporary_root();
     std::fs::write(root.path().join("first"), b"").unwrap();
     std::fs::write(root.path().join("second"), b"").unwrap();
-    let directory = super::super::fs::Directory::root(root.path()).unwrap();
+    let directory = super::super::fs::Directory::root(root.path(), false).unwrap();
     let mut visited = 0;
     assert_eq!(
         directory.visit_names(1, |_| {
@@ -84,6 +84,25 @@ fn expired_recovery_does_not_create_a_root() {
         Err(LocalBlobError::DeadlineExceeded)
     ));
     assert!(!root.exists());
+}
+
+#[test]
+fn offline_reopen_requires_every_initialized_path() {
+    let parent = temporary_root();
+    let root = parent.path().join("offline");
+    let reopen = || LocalBlobStore::reopen_with_checkpoint(&root, "private", limits(), &|| Ok(()));
+    assert!(reopen().is_err());
+    assert!(!root.exists());
+
+    let current = LocalBlobStore::open(&root, "private", limits()).unwrap();
+    assert!(matches!(reopen(), Err(LocalBlobError::Busy)));
+    drop(current);
+    assert_eq!(reopen().unwrap().snapshot().unwrap().objects, 0);
+
+    let staging = root.join("staging");
+    std::fs::rename(&staging, parent.path().join("held-staging")).unwrap();
+    assert!(reopen().is_err());
+    assert!(!staging.exists());
 }
 
 #[test]
