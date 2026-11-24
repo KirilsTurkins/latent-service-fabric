@@ -171,3 +171,42 @@ receipt does not approve a transactional restore. The operator CLI commands
 above expose inspection and effect management, not a general checkpoint/restore
 workflow; those native and packaged acceptance requirements remain separate.
 Code rollback cannot reverse an external action.
+
+## Stage and review an older-history restore
+
+Use the protected native recovery command on the stopped, supported Linux
+installation. Keep the operator credential in its protected file and prepare
+each bounded request using the
+[installed recovery action schemas](../testing/installed-transaction-recovery.md).
+This walkthrough uses the profile that binds review to the exact paused view
+and snapshot.
+
+```bash
+latentd transaction-recovery --config "$NativeConfig" \
+  --credential-file "$OperatorCredential" --tenant "$Tenant" \
+  --request-file "$RecoveryRequest"
+```
+
+1. Quiesce the original namespace and let its physical owners retire. Run
+   `snapshot` with the protected archive destination and retain the returned
+   snapshot and manifest digests.
+2. Select the exact archive, a fresh private destination store and a separate
+   checkpoint directory. Run `inspect-restore` and review the loss window.
+   Pass its original `windowDigest` as `windowAcknowledgement` to `restore`.
+3. Select the returned `destinationIdentity` in the restored configuration.
+   Install current scoped policies through the metadata-only node
+   configuration with an empty state operation list. The authorized operator
+   needs `namespace-review-recovery` on the selected publication and
+   namespace. Stop that node before opening another offline request. Keep
+   application dispatch paused.
+4. Compare retained effects with current provider records. If an original
+   pending effect was accepted after the backup, use `inspect-close-effects`
+   to select its exact identity. Submit its reviewed plan and acknowledgement
+   through `close-effects`. The resulting `closed-without-redrive` receipt
+   records the operator decision and leaves the provider's history intact.
+5. Run `inspect-namespace` and use its `view` as `expectedView` in `review`.
+   Include the original `snapshotDigest` and `windowAcknowledgement`.
+   Inspect again after approval and pass the current `view` as
+   `expectedView` in a separate `resume` request. Reopen the admitted
+   application with its current grants. Query the new recovery epoch before
+   choosing a new edit.
