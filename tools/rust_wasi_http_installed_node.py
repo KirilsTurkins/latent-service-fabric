@@ -47,10 +47,12 @@ def programme(include_guest_reader):
     if include_guest_reader:
         allowed = ('guest-reader-post', 'reader-post', '/conformance/echo',
             'reader:5:200:echo:POST:AAECAw==', 1, 'method-bytes', '')
-        denied = ('guest-reader-denied', 'reader-post', 'foreign', 'error:request-denied', 0, None, '')
+        denied = ('guest-reader-denied', 'reader-post', 'foreign', 'error:guest-reader-stream', 0, None, '')
+        default_denied = ('default-get-denied', 'json', 'foreign', 'error:request-denied', 0, None, '')
         for tenant, alias in (('examples', 'alpha'), ('foreign', 'delta')):
             yield tenant, 'golem', alias, allowed
             yield tenant, 'golem', alias, denied
+            yield tenant, 'golem', alias, default_denied
     yield 'examples', 'golem', 'delta', domain
     yield 'foreign', 'waki', 'alpha', domain
 
@@ -139,7 +141,7 @@ def run(artifact, native, output, *, deadline, include_guest_reader=False):
             stage = 'both-ordinary-parsed-clients-and-opposite-fresh'
             expected = {tenant: [] for tenant in TENANTS}
             for tenant, library, alias, spec in programme(include_guest_reader):
-                label = tenant+'-'+(library if spec[1] == 'json' else spec[0])
+                label = tenant+'-'+(library if spec[0] == 'installed-json' else spec[0])
                 stage = label
                 row = original.invoke(clients[tenant], node, targets[tenant], peers, tenant, library,
                     alias, spec, probe, output, label)

@@ -166,8 +166,8 @@ def qualify(native_directory, adapter_directory, zig_archive, python_prefix, out
         record['packaging'] = complete_installed_package(artifact,native,output/'packaging',deadline)
         stage = 'signed-installed-two-client-denial-retirement-fresh'
         observed = node.run(artifact, native, output/'node', deadline=deadline, include_guest_reader=True)
-        require(observed['status'] == 'passed' and observed['guestExecutions'] == 8
-            and observed['guestReaderExecutions'] == 4 and observed['invocationAttempts'] == 10
+        require(observed['status'] == 'passed' and observed['guestExecutions'] == 10
+            and observed['guestReaderExecutions'] == 4 and observed['invocationAttempts'] == 12
             and observed['preEntryRefusalsCount'] == 2 and observed['peerContacts'] == 6, 'installed-rust-all-finite-cases-required')
         record['node'] = file_identity(output/'node/qualification.json', 16*1024**2)
         prepared.check()
@@ -182,7 +182,7 @@ def qualify(native_directory, adapter_directory, zig_archive, python_prefix, out
             and captured == inventory(snapshot(app)) and time.monotonic() < deadline,
             'installed-rust-final-full-inventory-source-and-deadline')
         record.update(status='passed', installedRecipeQualification=True, signedQualification=True,
-            guestExecutions=8, guestReaderExecutions=4, invocationAttempts=10, preEntryRefusals=2, peerContacts=6,
+            guestExecutions=10, guestReaderExecutions=4, invocationAttempts=12, preEntryRefusals=2, peerContacts=6,
             fullTicketQualification=False)
         write_json(output/'qualification.json', record)
         return record
