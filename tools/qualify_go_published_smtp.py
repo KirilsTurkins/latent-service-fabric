@@ -23,13 +23,14 @@ from tools.go_guest.activation import STACK_PROFILE
 from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file, snapshot
 from tools.stage_runtime_wit import stage
 
+SMTP_VERSION = 'v0.25.1'
 LIBRARIES = {
-    'github.com/emersion/go-smtp': ('v0.25.0', 'smtp.Dial/DialStartTLS/Noop/SendMail/Quit'),
+    'github.com/emersion/go-smtp': (SMTP_VERSION, 'smtp.Dial/DialStartTLS/Noop/SendMail/Quit'),
     'github.com/reactivex/rxgo/v2': ('v2.5.0', 'rxgo.Defer/BackOffRetry/Observe'),
     'github.com/cenkalti/backoff/v4': ('v4.0.0', 'backoff.NewConstantBackOff/WithMaxRetries'),
 }
 LOST_REPLY_LIBRARIES = {
-    'github.com/emersion/go-smtp': ('v0.25.0', 'smtp.Dial/Mail/Rcpt/Data/Noop/Quit'),
+    'github.com/emersion/go-smtp': (SMTP_VERSION, 'smtp.Dial/Mail/Rcpt/Data/Noop/Quit'),
     'github.com/reactivex/rxgo/v2': ('v2.5.0', 'captured but not exercised by the lost-reply fixture'),
     'github.com/cenkalti/backoff/v4': ('v4.0.0', 'captured but not exercised by the lost-reply fixture'),
 }
@@ -45,7 +46,7 @@ def graph_evidence(declaration: dict, native: dict, artifacts: list[dict], *, lo
     nodes = {row['path']: row for row in native['nodes']}
     edges = []
     for owner, dependency, path in (
-        ('github.com/emersion/go-smtp@v0.25.0', SASL + '@' + SASL_VERSION, SASL),
+        ('github.com/emersion/go-smtp@' + SMTP_VERSION, SASL + '@' + SASL_VERSION, SASL),
         ('github.com/reactivex/rxgo/v2@v2.5.0', 'github.com/cenkalti/backoff/v4@v4.0.0',
          'github.com/cenkalti/backoff/v4'),
     ):
@@ -56,7 +57,7 @@ def graph_evidence(declaration: dict, native: dict, artifacts: list[dict], *, lo
         edges.append(rows[0])
     sources = []
     for module, version, name in (
-        ('github.com/emersion/go-smtp', 'v0.25.0', 'client.go'),
+        ('github.com/emersion/go-smtp', SMTP_VERSION, 'client.go'),
         (SASL, SASL_VERSION, 'sasl.go'),
         ('github.com/reactivex/rxgo/v2', 'v2.5.0', 'observable_operator.go'),
         ('github.com/cenkalti/backoff/v4', 'v4.0.0', 'timer.go'),
