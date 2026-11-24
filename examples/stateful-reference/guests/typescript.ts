@@ -5,14 +5,19 @@ import {Intent} from '../vendor/lsf/sdk/typescript-guest/capabilities/intents.js
 import type {Result} from '../vendor/lsf/sdk/typescript-guest/capabilities/result.js';
 
 const media = 'application/vnd.lsf.order-draft-v1';
-const encoder = new TextEncoder();
+
+// Wire prefixes and validated draft IDs are ASCII in every guest.
+function encodeAscii(value: string): Uint8Array {
+  return Uint8Array.from(value, character => character.charCodeAt(0));
+}
+
 function host<T, E>(result: Result<T, E>): T {
   if (result.tag === 'err') throw new Error('transaction host failure: ' + String(result.val));
   return result.val;
 }
 function keys(id: string): [Uint8Array, Uint8Array] {
   if (!/^[a-z0-9][a-z0-9-]{0,31}$/.test(id)) throw 'invalid-draft' satisfies Contract.BusinessError;
-  return [encoder.encode('drafts/' + id + '/draft'), encoder.encode('drafts/' + id + '/summary')];
+  return [encodeAscii('drafts/' + id + '/draft'), encodeAscii('drafts/' + id + '/summary')];
 }
 function decode(primary?: VersionedValue, summary?: VersionedValue): {revision: bigint; units: number} {
   if (primary === undefined && summary === undefined) return {revision: 0n, units: 0};
@@ -50,7 +55,7 @@ export const api: typeof Contract = {
       const value = {bytes, mediaType: media, metadata: [] as [string, string][]};
       host(command.put(primaryKey, value));
       host(command.put(summaryKey, value));
-      const event = encoder.encode('draft-change-v1:' + request.draftId);
+      const event = encodeAscii('draft-change-v1:' + request.draftId);
       const payload = {bytes: event, mediaType: 'application/octet-stream', metadata: [] as [string, string][]};
       host(new Intent('draft-change', 'event', payload).stage(command));
       host(new Intent('draft-http', 'http', payload).stage(command));
