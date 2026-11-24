@@ -161,14 +161,24 @@ insufficient grounds for another edit. [Transaction HTTP](../development/transac
 
 ## Inspect unresolved effects before retiring a publication
 
-With the node stopped, use the protected **state-recovery** operation and the
-original signed publication's current namespace-inspect grant. Set the outer
+With the node stopped, use the protected **transaction-recovery** command and
+the original signed publication's current namespace-inspect grant. Set the outer
 request's `publication` to that installed publication. The first request uses
 this action.
 
 ```json
 {"action":"inspect-publication-effects"}
 ```
+
+Save the complete request to `Request` with your publication and use the
+credential file provisioned for this offline operator.
+
+```bash
+latentd transaction-recovery --config "$NodeConfig" \
+  --credential-file "$OfflineCredential" --tenant "$Tenant" \
+  --request-file "$Request"
+```
+
 
 Each result lists at most 16 unresolved effects with their original command,
 attempt, commit, binding, disposition and decoder profile. When `nextCursor`
