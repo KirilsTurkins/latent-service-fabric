@@ -53,7 +53,7 @@ impl JetStreamQualification {
     }
 }
 
-fn created_at(value: &str) -> bool {
+pub(crate) fn created_at(value: &str) -> bool {
     let bytes = value.as_bytes();
     if !(20..=30).contains(&bytes.len())
         || bytes[4] != b'-'

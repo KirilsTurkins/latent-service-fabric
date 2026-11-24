@@ -52,6 +52,29 @@ class DeferredClient(Client):
             print(json.dumps(self.qualification(), separators=(",", ":")))
         elif operation == "qualification":
             print(json.dumps(self.qualification(), separators=(",", ":")))
+        elif operation == "input-inspection-setup":
+            self.request("$JS.API.STREAM.DELETE.INBOX", {})
+            stream = self.request("$JS.API.STREAM.CREATE.INBOX", {
+                "name": "INBOX", "subjects": ["lsf.trigger.a"],
+                "storage": "file", "num_replicas": 1, "retention": "limits",
+                "discard": "new", "max_msgs": 64, "max_bytes": 1048576,
+                "max_msg_size": 65536, "max_age": 0, "duplicate_window": 30000000000,
+                "deny_delete": True, "deny_purge": True,
+            })
+            consumer = self.request("$JS.API.CONSUMER.DURABLE.CREATE.INBOX.INPUT", {
+                "stream_name": "INBOX", "config": {
+                    "name": "INPUT", "durable_name": "INPUT", "filter_subject": "lsf.trigger.a",
+                    "ack_policy": "explicit", "replay_policy": "instant", "deliver_policy": "all",
+                    "ack_wait": 6000000000, "max_deliver": 3, "max_waiting": 1,
+                    "max_ack_pending": 1, "max_batch": 1, "max_bytes": 10240, "max_expires": 100000000,
+                },
+            })
+            published = self.request("lsf.trigger.a", ["unclaimed"])
+            if any("error" in value for value in (stream, consumer, published)):
+                raise RuntimeError("bounded broker inspection fixture setup failed")
+            print(json.dumps({**self.qualification(), "streamCreated": stream["created"]}))
+        elif operation == "input-inspection-state":
+            print(json.dumps(self.request("$JS.API.CONSUMER.INFO.INBOX.INPUT", {})))
         elif operation == "info":
             print(json.dumps(self.request("$JS.API.STREAM.INFO.DURABLE", {})))
         elif operation == "message":

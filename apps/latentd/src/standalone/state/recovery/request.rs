@@ -37,6 +37,9 @@ pub(super) enum Action {
     InspectInboxSource {
         binding: String,
     },
+    InspectInboxBroker {
+        binding: String,
+    },
     EnrollInboxSource {
         binding: String,
         expected_scope: String,
@@ -175,9 +178,9 @@ mod restore_target_tests;
 impl Action {
     pub(super) fn inbox_binding(&self) -> Option<&str> {
         match self {
-            Self::InspectInboxSource { binding } | Self::EnrollInboxSource { binding, .. } => {
-                Some(binding)
-            }
+            Self::InspectInboxSource { binding }
+            | Self::InspectInboxBroker { binding }
+            | Self::EnrollInboxSource { binding, .. } => Some(binding),
             _ => None,
         }
     }
@@ -204,7 +207,9 @@ impl Action {
     pub const fn purposes(&self) -> &'static [&'static str] {
         match self {
             Self::Snapshot { .. } => &["namespace-snapshot"],
-            Self::InspectNamespace {} | Self::InspectInboxSource { .. } => &["namespace-inspect"],
+            Self::InspectNamespace {}
+            | Self::InspectInboxSource { .. }
+            | Self::InspectInboxBroker { .. } => &["namespace-inspect"],
             Self::EnrollInboxSource { .. } => &["namespace-enroll-inbox-source"],
             Self::InspectRestore { .. } => &["namespace-inspect-restore"],
             Self::Restore { .. } => &["namespace-inspect-restore", "namespace-restore"],
@@ -282,7 +287,9 @@ impl Action {
                 super::assets::digest_bytes(window_acknowledgement)?;
                 Ok(())
             }
-            Self::InspectInboxSource { binding } => identity(binding),
+            Self::InspectInboxSource { binding } | Self::InspectInboxBroker { binding } => {
+                identity(binding)
+            }
             Self::EnrollInboxSource {
                 binding,
                 expected_scope,
