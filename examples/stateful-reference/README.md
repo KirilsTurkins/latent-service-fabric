@@ -53,6 +53,11 @@ companion. The node's strict edit operation installs `deferredHttp` and
 `deferredEvent` with their own current staging and dispatch policies. Fresh
 query operations need neither provider setting.
 
+For a disposable node with separate Alice and Bob publications, sign both
+completed builds together with
+`capsule_authoring demo-sign-transaction <private-output> <alice-build> <bob-build>`.
+This creates one short-lived fixture policy for the two exact packages.
+
 The captured SDK and original template lock remain unchanged. The ordinary
 language build captures the edited application source and binding inputs.
 `order-draft-source.json` identifies the selected source/WIT/schema; the

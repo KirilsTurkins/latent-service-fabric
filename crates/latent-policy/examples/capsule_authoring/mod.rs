@@ -88,17 +88,13 @@ pub(super) fn sign_rust_transaction(output: &Path, input: &Path) -> Result<()> {
     sign_checked(output, vec![build], false, None)
 }
 
-/// Explicit demo trust for one completed maintained transaction build.
-pub(super) fn sign_transaction(output: &Path, input: &Path) -> Result<()> {
-    if !output.is_absolute() || output.exists() {
-        return Err("choose a fresh absolute transaction demo output".into());
-    }
-    let build = inputs::load_transaction(input)?;
-    sign_checked(output, vec![build], false, None)
+/// One short-lived local trust policy for a set of maintained transaction builds.
+pub(super) fn sign_transaction(output: &Path, paths: &[OsString]) -> Result<()> {
+    sign(output, paths, false, inputs::load_transaction)
 }
 
 pub(super) fn sign_demo(output: &Path, paths: &[OsString]) -> Result<()> {
-    sign(output, paths, false)
+    sign(output, paths, false, inputs::load)
 }
 
 pub(super) fn sign_shared_server(output: &Path, input: &Path) -> Result<()> {
@@ -112,17 +108,22 @@ pub(super) fn sign_neutral_resources(output: &Path, input: &Path) -> Result<()> 
 }
 
 pub(super) fn sign_demo_separated(output: &Path, paths: &[OsString]) -> Result<()> {
-    sign(output, paths, true)
+    sign(output, paths, true, inputs::load)
 }
 
-fn sign(output: &Path, paths: &[OsString], separate_builders: bool) -> Result<()> {
+fn sign(
+    output: &Path,
+    paths: &[OsString],
+    separate_builders: bool,
+    load: fn(&Path) -> Result<inputs::Build>,
+) -> Result<()> {
     if !output.is_absolute() || output.exists() || !(1..=16).contains(&paths.len()) {
         return Err("choose a fresh absolute output and one to sixteen completed builds".into());
     }
     let mut builds = Vec::new();
     let mut names = BTreeSet::new();
     for path in paths {
-        let build = inputs::load(Path::new(path))?;
+        let build = load(Path::new(path))?;
         if !names.insert(build.bundle.layout().config().name.clone()) {
             return Err("duplicate demo package name".into());
         }
