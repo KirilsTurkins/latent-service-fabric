@@ -337,7 +337,8 @@ def execute(artifact, native, output):
         raise
 
 
-def qualify(acquired: Path, native_input: Path, tools: Path, output: Path):
+def qualify(acquired: Path, native_input: Path, tools: Path, output: Path, *,
+            private_name: str = fixture.PRIVATE_NAME, private_version: str = '1.0.0'):
     from tools.http_tenant_native_products import native_products, verify_prepared
     acquired, native_input, tools, output = (path.resolve() for path in (acquired, native_input, tools, output))
     require(ROOT != output and ROOT not in output.parents
@@ -349,8 +350,8 @@ def qualify(acquired: Path, native_input: Path, tools: Path, output: Path):
     before_native = {name: file_identity(path, 512*1024**2) for name, path in native.items()}
     source_before = {name: file_identity(ROOT/name, 2*1024**2) for name in SOURCES}
     write_json(output/'qualification-source-inputs.json', source_before)
-    app = fixture.project(output/'application')
-    captured = dependencies.capture(app, output/'outside', fixture.PRIVATE_NAME, '1.0.0')
+    app = fixture.project(output/'application', private_name)
+    captured = dependencies.capture(app, output/'outside', private_name, private_version)
     write_json(output/'dependency-capture.json', captured)
     before = inventory(snapshot(app))
     artifact = build(app, output/'build', native['capsule_contracts'], native['package'],
@@ -379,5 +380,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('acquired', 'native', 'tools', 'output'):
         parser.add_argument('--'+name, type=Path, required=True)
+    parser.add_argument('--private-name', default=fixture.PRIVATE_NAME)
+    parser.add_argument('--private-version', default='1.0.0')
     args = parser.parse_args()
-    print(json.dumps(qualify(args.acquired, args.native, args.tools, args.output)))
+    print(json.dumps(qualify(args.acquired, args.native, args.tools, args.output,
+                             private_name=args.private_name, private_version=args.private_version)))
