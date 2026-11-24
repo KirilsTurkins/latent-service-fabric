@@ -22,6 +22,15 @@ one delivered byte and a single pending read across both connections. The
 guest received the buffered byte once, followed by end and close. Its original
 budget covered 955,950,071 fuel and 12,189,239 peak guest bytes.
 
+When both socket slots are occupied or root return has started, `connect`
+leaves the existing idle timer and listeners untouched. An admitted socket holds its
+slot through timer and listener setup. If setup fails, another socket can use
+that slot. The 32 pinned Node controls exercise these cases, including a
+second socket opened during listener setup. Nine signed loopback invocations
+on the rebuilt component covered the published client, paused delivery,
+cancellation and post-root cleanup.
+[Socket results and per-invocation resource use](../testing/evidence/typescript-socket-connect-admission-2026-11-24.json)
+
 The source implementation supports `Socket`, `connect`/`createConnection`,
 connection and data events, copied Buffer chunks, pause/resume, serialized
 writes, backpressure, writable readiness after zero progress, timeout events,
