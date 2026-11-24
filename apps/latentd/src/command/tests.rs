@@ -30,8 +30,41 @@ fn serve_requires_configuration_and_help_advertises_only_product_surfaces() {
     let text = help.to_string();
     assert!(text.contains("check-config"));
     assert!(text.contains("serve"));
+    assert!(text.contains("transaction-recovery"));
     assert!(!text.contains("migrate-catalog"));
     assert!(!text.contains("phase0-spike"));
+}
+
+#[test]
+fn transaction_recovery_uses_a_protected_credential_path_and_one_mode() {
+    let common = [
+        "latentd",
+        "transaction-recovery",
+        "--config",
+        "node.json",
+        "--credential-file",
+        "operator.credential",
+        "--tenant",
+        "tenant",
+    ];
+    assert!(CommandLine::try_parse_from(common).is_err());
+    let parsed =
+        CommandLine::try_parse_from(common.into_iter().chain(["--request-file", "request.json"]))
+            .unwrap();
+    assert!(matches!(parsed.command, Command::TransactionRecovery(_)));
+    assert!(CommandLine::try_parse_from(common.into_iter().chain([
+        "--request-file",
+        "request.json",
+        "--diagnose-startup",
+    ]))
+    .is_err());
+    assert!(CommandLine::try_parse_from(common.into_iter().chain([
+        "--request-file",
+        "request.json",
+        "--credential",
+        "direct-value",
+    ]))
+    .is_err());
 }
 
 #[test]

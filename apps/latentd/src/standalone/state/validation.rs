@@ -75,7 +75,7 @@ pub(super) fn validate_inventory(
 
 /// Describes a single addition only after the same complete producer and quota
 /// validation. The caller must separately establish approval and exclusion.
-#[cfg_attr(not(test), allow(dead_code))]
+#[cfg(any(test, all(target_os = "linux", target_arch = "x86_64")))]
 pub(super) fn validate_inventory_addition(
     view: &ReadView,
     identity: &StoreIdentity,
@@ -168,6 +168,30 @@ pub(super) fn validate_with_local_payloads(
     payloads: &LocalPayloadVerifier<'_>,
 ) -> Result<(), StoreError> {
     validate_inventory_with_local_payloads(view, identity, quotas, original, payloads).map(|_| ())
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(super) fn validate_offline_inventory(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+    payloads: Option<&super::store::InventoryPayloads>,
+) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
+    match payloads {
+        Some((store, provider)) => validate_inventory_with_local_payloads(
+            view,
+            identity,
+            quotas,
+            original,
+            &LocalPayloadVerifier {
+                store,
+                provider,
+                original,
+            },
+        ),
+        None => validate_inventory(view, identity, quotas, original),
+    }
 }
 
 trait PayloadVerifier {
@@ -287,7 +311,7 @@ fn finish_validation(view: &ReadView, original: &NativeReservation) -> Result<()
 
 // Without an admitted same-root physical provider, logical closure alone
 // cannot prove that required payload bytes exist.
-fn reject_unverified_payload(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
+pub(super) fn reject_unverified_payload(key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
     if latent_state::payload_references::owns_row(key)
         && latent_state::payload_references::owner_reference(key, bytes)?.is_some()
     {

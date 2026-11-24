@@ -5,6 +5,7 @@ use super::{
     StoreIoRetirementWitness, PLAN_RESPONSE_BYTES,
 };
 use crate::{
+    protected_store::checkpoint::InventoryObservation,
     recovery::{RecoveryGuard, RecoveryStatus},
     store_identity::StoreIdentity,
 };
@@ -100,7 +101,12 @@ fn prepare(
     let dispatch = Some(plan.stage.owners.dispatch_checkpoint(&view)?);
     if destination
         .checkpoint
-        .inspect(&view, dispatch)?
+        .inspect_with_inventory(
+            &view,
+            dispatch,
+            InventoryObservation::Observed(plan.stage.input.inbox_custody()),
+            &original,
+        )?
         .checkpoint
         .as_ref()
         != Some(&plan.stage.checkpoint)
@@ -120,6 +126,7 @@ fn prepare(
 
 pub(super) fn verify_view(plan: &RestoreAdoptionPlan, view: &ReadView) -> Result<(), StoreError> {
     current(plan)?;
+    plan.stage.input.verify_inbox_custody(view)?;
     if StoreIdentity::inspect(view)?.as_ref() != Some(&plan.config.identity) {
         return Err(StoreError::Corrupt);
     }

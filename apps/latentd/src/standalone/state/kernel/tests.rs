@@ -5,7 +5,10 @@ use latent_core::{ActivationClock, ClockSample};
 use latent_effects::{dispatch_store::DispatchCatalog, runtime::EffectTimeSource};
 use latent_policy::supply_chain::{SupplyChainClock, SupplyChainPolicy};
 use latent_signing::{BuilderPolicy, ProvenanceLimits, PublisherPolicy, SignatureLimits};
-use latent_state::{embedded::EmbeddedStore, store_identity::ExternalCheckpoint};
+use latent_state::{
+    embedded::{EmbeddedStore, StoreError},
+    store_identity::ExternalCheckpoint,
+};
 use serde_json::json;
 use std::{os::unix::fs::PermissionsExt, sync::Mutex, time::Duration};
 
@@ -400,6 +403,7 @@ async fn checkpoint_with_matching_source_inventory_survives_restart() {
         tenant: "a".into(),
         namespace: "orders".into(),
         incarnation: 1,
+        entity: None,
         processing_scope: "primary".into(),
         provider: "private-nats".into(),
         stream: "orders".into(),
@@ -426,6 +430,7 @@ async fn checkpoint_with_matching_source_inventory_survives_restart() {
     // silently adopted by an older checkpoint on the ordinary startup path.
     let legacy = std::fs::read(fixture.checkpoint()).unwrap();
     let dispatch = fixture.persisted_dispatch();
+    assert!(inspect_offline_checkpoint(&fixture).await.is_err());
     let native = bootstrap.native.clone();
     assert!(StateKernel::start(
         bootstrap,
@@ -450,6 +455,42 @@ async fn checkpoint_with_matching_source_inventory_survives_restart() {
         .advance_inbox_custody(custody)
         .unwrap();
     std::fs::write(fixture.checkpoint(), checkpoint.encode()).unwrap();
+    assert_eq!(
+        inspect_offline_checkpoint(&fixture).await.unwrap(),
+        checkpoint
+    );
+    assert_eq!(
+        std::fs::read(fixture.checkpoint()).unwrap(),
+        checkpoint.encode()
+    );
+    assert_eq!(fixture.persisted_dispatch(), dispatch);
+    let extra_source = InboxScope {
+        processing_scope: "approved-replay".into(),
+        ..source.clone()
+    };
+    let refused =
+        enroll_offline_source(&fixture, extra_source.clone(), Err(StoreError::Unavailable)).await;
+    assert_eq!(
+        refused,
+        Err(latent_state::protected_store::ProtectedStoreError::Store(
+            StoreError::Unavailable
+        ))
+    );
+    assert_eq!(
+        inspect_offline_checkpoint(&fixture).await.unwrap(),
+        checkpoint
+    );
+    let enrolled = enroll_offline_source(&fixture, extra_source, Ok(()))
+        .await
+        .unwrap();
+    assert_eq!(enrolled.generation(), checkpoint.generation() + 1);
+    let custody = enrolled.inbox_custody().unwrap();
+    assert_eq!(custody.generation, 2);
+    assert_eq!(
+        inspect_offline_checkpoint(&fixture).await.unwrap(),
+        enrolled
+    );
+    assert_eq!(fixture.persisted_dispatch(), dispatch);
     let (kernel, mut effects) = StateKernel::start(
         bootstrap,
         &fixture.settings,
@@ -500,6 +541,134 @@ async fn checkpoint_with_matching_source_inventory_survives_restart() {
     assert!(effects.shutdown(deadline).await.unwrap().clean);
     drop(effects);
     assert!(kernel.shutdown(deadline).await.unwrap().clean);
+}
+
+async fn enroll_offline_source(
+    fixture: &Fixture,
+    source: latent_state::inbox_scope::InboxScope,
+    approval: Result<(), StoreError>,
+) -> Result<ExternalCheckpoint, latent_state::protected_store::ProtectedStoreError> {
+    use latent_core::native_capacity::{NativeAdmissionClass, NativeReservationRequest};
+
+    let mut bootstrap = fixture.bootstrap();
+    let original = Arc::new(
+        bootstrap
+            .native
+            .reserve(
+                NativeAdmissionClass::Recovery,
+                NativeReservationRequest {
+                    work_bytes: 9 * 1024 * 1024,
+                    ..NativeReservationRequest::default()
+                },
+                bootstrap.deadline,
+            )
+            .unwrap(),
+    );
+    let store = bootstrap
+        .open_store_offline(&fixture.settings)
+        .await
+        .unwrap();
+    let (checkpoint, expected) =
+        super::super::recovery::inspect_checkpoint(&store, &fixture.settings, &original)
+            .await
+            .unwrap();
+    let identity = fixture.settings.store_identity.clone();
+    let quotas = super::super::validation::quotas(&fixture.settings);
+    let (before_identity, before_quotas, before_original) =
+        (identity.clone(), quotas.clone(), Arc::clone(&original));
+    let after_source = source.clone();
+    let after_original = Arc::clone(&original);
+    let (checkpoint, result) = store
+        .enroll_inbox_source(
+            checkpoint,
+            expected,
+            source,
+            original,
+            crate::config::state::STARTUP_VALIDATOR_BYTES,
+            DispatchCatalog::checkpoint,
+            move |view| {
+                super::super::validation::validate_inventory(
+                    view,
+                    &before_identity,
+                    &before_quotas,
+                    &before_original,
+                )
+            },
+            move |view, before| {
+                super::super::validation::validate_inventory_addition(
+                    view,
+                    &identity,
+                    &quotas,
+                    &after_original,
+                    &after_source,
+                    before,
+                )
+            },
+            move || approval,
+        )
+        .unwrap()
+        .await
+        .unwrap();
+    checkpoint.retire().await;
+    store.close();
+    let cutoff = Instant::now() + Duration::from_secs(5);
+    let report = store
+        .drain_async(cutoff, tokio::time::sleep_until(cutoff.into()))
+        .unwrap()
+        .await;
+    assert!(report.snapshot.physically_retired(), "{report:?}");
+    assert_eq!(report.clean, approval.is_ok(), "{report:?}");
+    assert!(super::super::store::join_retired_workers(&store, cutoff)
+        .await
+        .unwrap()
+        .is_some());
+    result
+}
+
+async fn inspect_offline_checkpoint(
+    fixture: &Fixture,
+) -> Result<ExternalCheckpoint, PlatformError> {
+    use latent_core::native_capacity::{NativeAdmissionClass, NativeReservationRequest};
+
+    let mut bootstrap = fixture.bootstrap();
+    let original = Arc::new(
+        bootstrap
+            .native
+            .reserve(
+                NativeAdmissionClass::Recovery,
+                NativeReservationRequest {
+                    work_bytes: 9 * 1024 * 1024,
+                    ..NativeReservationRequest::default()
+                },
+                bootstrap.deadline,
+            )
+            .unwrap(),
+    );
+    let store = bootstrap
+        .open_store_offline(&fixture.settings)
+        .await
+        .unwrap();
+    let inspected =
+        super::super::recovery::inspect_checkpoint(&store, &fixture.settings, &original).await;
+    let result = match inspected {
+        Ok((checkpoint, floor)) => {
+            checkpoint.retire().await;
+            Ok(floor)
+        }
+        Err(error) => Err(error),
+    };
+    store.close();
+    let cutoff = bootstrap.deadline;
+    let drained = store
+        .drain_async(cutoff, tokio::time::sleep_until(cutoff.into()))
+        .unwrap()
+        .await;
+    assert!(drained.snapshot.physically_retired());
+    assert!(super::super::store::join_retired_workers(&store, cutoff)
+        .await
+        .unwrap()
+        .is_some());
+    result
 }
 
 #[tokio::test]

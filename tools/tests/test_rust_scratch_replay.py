@@ -156,7 +156,7 @@ class RustScratchReplay(unittest.TestCase):
                 from tools.tests.qualification_selection import unwrap_tooling_gate
                 unwrap_tooling_gate(self, job)
             self.assertEqual(job.pop('if'), "${{ github.event_name != 'workflow_dispatch' || !inputs.replay-scratch-refusals }}")
-            if name in ('standard-stdio', 'standard-entropy'):
+            if name in ('standard-stdio', 'standard-entropy', 'scratch-refusals'):
                 # Preserve the historical job digest after removing only the
                 # reviewed job-wide pinned toolchain selection.
                 self.assertEqual(job.pop('env'), {'RUSTUP_TOOLCHAIN': '1.97.1'})

@@ -15,6 +15,34 @@ use std::fs::OpenOptions;
 mod resident;
 
 #[test]
+fn publishing_requires_original_namespace_or_absence_at_the_visibility_boundary() {
+    let fixture = Fixture::new();
+    let existing = fixture.create("existing");
+    let new = Fixture::record("new");
+    let registry = fixture.catalog.lifecycle();
+    let expected = BTreeMap::from([
+        (
+            (
+                existing.record().tenant.clone(),
+                existing.record().id.clone(),
+            ),
+            Some(existing),
+        ),
+        ((new.tenant.clone(), new.id.clone()), None),
+    ]);
+    assert_eq!(
+        registry.with_current_deployment_schemas(&expected, || 1),
+        Ok(1)
+    );
+
+    let _pending = registry.begin_create(&new).unwrap();
+    assert_eq!(
+        registry.with_current_deployment_schemas(&expected, || panic!("premature publication")),
+        Err::<(), _>(NamespaceError::Conflict)
+    );
+}
+
+#[test]
 fn concurrent_existing_namespace_checks_share_metadata_without_denial_and_writers_stay_exclusive() {
     let fixture = Fixture::new();
     let read = fixture.create("orders");

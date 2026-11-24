@@ -9,6 +9,7 @@ fn config() -> TriggerConfig {
         processing_scope: "order-processing".into(),
         namespace: "orders".into(),
         incarnation: 1,
+        entity: None,
         qualification: JetStreamQualification {
             format_version: 1,
             server_version: "2.14.6".into(),
@@ -303,6 +304,23 @@ fn ordinary_activation_success_never_acknowledges_a_transactional_input() {
         super::super::execution::transaction_outcome(None, &input).0,
         super::super::TriggerTerminal::RecoveryRequired
     );
+}
+
+#[test]
+fn durable_business_rejection_selects_terminal_broker_acknowledgement() {
+    use super::super::{consumer::Ack, execution::terminal_broker_disposition, TriggerTerminal};
+    use latent_commit::atomic::Outcome;
+
+    assert_eq!(
+        terminal_broker_disposition(Outcome::Committed),
+        Some((TriggerTerminal::Succeeded, Ack::Success))
+    );
+    assert_eq!(
+        terminal_broker_disposition(Outcome::Rejected),
+        Some((TriggerTerminal::DeclaredFailure, Ack::Terminate))
+    );
+    assert_eq!(terminal_broker_disposition(Outcome::Pending), None);
+    assert_eq!(terminal_broker_disposition(Outcome::Aborted), None);
 }
 
 #[test]

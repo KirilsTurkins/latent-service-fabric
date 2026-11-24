@@ -136,7 +136,20 @@ impl LocalBlobStore {
     ) -> Result<Arc<Self>> {
         limits.validate()?;
         model::text(namespace)?;
-        recovery::open(root, namespace, limits, checkpoint)
+        recovery::open(root, namespace, limits, checkpoint, true)
+    }
+
+    /// Reopen a completely installed owner during protected offline recovery.
+    /// Missing directory entries are errors and no new inventory is installed.
+    pub fn reopen_with_checkpoint(
+        root: &Path,
+        namespace: &str,
+        limits: LocalBlobLimits,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<Arc<Self>> {
+        limits.validate()?;
+        model::text(namespace)?;
+        recovery::open(root, namespace, limits, checkpoint, false)
     }
     #[must_use]
     pub fn limits(&self) -> LocalBlobLimits {

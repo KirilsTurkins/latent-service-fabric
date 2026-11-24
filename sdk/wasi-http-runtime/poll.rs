@@ -65,7 +65,7 @@ impl Pollable {
 }
 impl io::poll::GuestPollable for Pollable {
     fn ready(&self) -> bool {
-        pump::Pump::current().step();
+        pump::Pump::signal_driver();
         self.source.ready()
     }
     async fn block(&self) {

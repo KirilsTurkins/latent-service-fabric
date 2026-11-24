@@ -2,7 +2,7 @@
 //! This connects ordinary WASI polls to retained original LSF calls. It owns
 //! no OS thread, executor, Store, replacement budget, or ambient descriptor.
 use std::{
-    cell::{Cell, RefCell},
+    cell::{Cell, OnceCell, RefCell},
     collections::BTreeMap,
     ffi::c_void,
     ptr,
@@ -51,7 +51,7 @@ pub struct Pump {
     retiring: Cell<usize>,
 }
 thread_local! {
-    static CURRENT: Rc<Pump> = Rc::new(Pump::new());
+    static CURRENT: OnceCell<Rc<Pump>> = const { OnceCell::new() };
     // Monotone for this activation. Set only after an unpolled timer's
     // original owner has been transferred into an already initialized Pump.
     static UNPOLLED_TIMER_SEEN: Cell<bool> = const { Cell::new(false) };
@@ -73,7 +73,7 @@ impl Pump {
     }
 
     pub fn current() -> Rc<Self> {
-        CURRENT.with(Rc::clone)
+        CURRENT.with(|slot| Rc::clone(slot.get_or_init(|| Rc::new(Self::new()))))
     }
 
     pub fn track(operation: &Rc<dyn Progress>) {
@@ -148,6 +148,13 @@ impl Pump {
                 break;
             };
             self.run_retirement(action);
+        }
+    }
+
+    pub fn drain_current() {
+        // A root that never used this adapter owns no canonical set to drain.
+        if let Some(pump) = CURRENT.with(|slot| slot.get().cloned()) {
+            pump.drain_retired();
         }
     }
 

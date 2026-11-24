@@ -1205,21 +1205,64 @@ closeAck.resolve();await owner.promise;assert.equal(complete,true);assert.equal(
 f.transport.endRootReturn(owner);
 """)
 
-    def test_paused_end_actual_data_retains_chunk_and_refuses_instead_of_fabricating_eof(self):
+    def test_paused_end_buffers_one_window_until_consumer_and_actual_eof(self):
         self.javascript(r"""
-const logical=deferred(),ack=deferred(),started=deferred();let copied=0,reported;
-const f=fixture({read(){started.resolve();return {promise:logical.promise,borrowReleased:ack.promise,cancel(){return ack.promise}}},
- chunkBytes(){++copied;assert.fail('paused end cannot discard data through an implicit copy')}});
-const socket=f.net.connect(12345,'127.0.0.1');socket.on('error',()=>assert.fail('original callback fault must not become EIO'));
+// The ordinary Node client keeps the reply until a later data listener.
+const {createServer,createConnection}=await import('node:net');
+const peerSent=deferred(),nativeClosed=deferred(),nativeEvents=[];
+const server=createServer(peer=>peer.once('data',()=>{peer.end('AB');peerSent.resolve()}));
+await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
+const native=createConnection(server.address().port,'127.0.0.1');
+native.on('error',nativeClosed.reject).on('end',()=>nativeEvents.push('end')).on('close',()=>{nativeEvents.push('close');nativeClosed.resolve()});
+native.once('connect',()=>native.end('x'));await peerSent.promise;await turn();
+assert.deepEqual(nativeEvents,[]);native.on('data',bytes=>nativeEvents.push('data:'+bytes.toString()));
+await nativeClosed.promise;await new Promise((resolve,reject)=>server.close(error=>error?reject(error):resolve()));
+assert.deepEqual(nativeEvents,['data:AB','end','close']);
+
+const logical=deferred(),readAck=deferred(),started=deferred(),copyAck=deferred(),copyStarted=deferred();
+let reads=0,copied=0,joined=false;const events=[];
+const f=fixture({read(){++reads;if(reads===1){started.resolve();return {promise:logical.promise,borrowReleased:readAck.promise,cancel(){return readAck.promise}}}
+ return settled(undefined)},
+ chunkBytes(){++copied;copyStarted.resolve();return {promise:Promise.resolve(new Uint8Array([65,66])),
+ borrowReleased:copyAck.promise,cancel(){return copyAck.promise}}}});
+const socket=f.net.connect(12345,'127.0.0.1');
+socket.on('error',error=>{throw error}).on('end',()=>events.push('end')).on('close',()=>events.push('close'));
 socket.once('connect',()=>socket.end('x'));await started.promise;
-const owner=f.transport.beginAcceptedClose();const refused=owner.promise.then(()=>assert.fail('data cannot become EOF'),error=>{reported=error});
-const unhandled=[];const observe=error=>unhandled.push(error);process.on('unhandledRejection',observe);
-logical.resolve(f.chunk);await turn();assert.equal(reported,undefined);assert.equal(f.drops,0);assert.equal(copied,0);
-ack.resolve();await refused;await turn();process.removeListener('unhandledRejection',observe);
-assert.equal(reported.code,'ERR_LSF_UNSUPPORTED_OPERATION');assert.equal(reported.syscall,'paused-end-unread-data');
-assert.equal(socket.bytesWritten,1);assert.equal(reported.mayHaveApplied,true);assert.equal(reported.acceptedPrefixBytes,0);
-assert(unhandled.includes(reported));assert.equal(socket.readableEnded,false);assert.equal(copied,0);assert.equal(f.drops,0);
-assert.equal(f.calls.includes('close'),false);assert.throws(f.transport.assertEmpty,/unclosed/);f.transport.endRootReturn(owner);
+const owner=f.transport.beginAcceptedClose();owner.promise.then(()=>{joined=true});
+logical.resolve(f.chunk);await turn();assert.equal(copied,0);assert.equal(f.drops,0);
+readAck.resolve();await copyStarted.promise;await turn();assert.equal(f.drops,0);assert.equal(joined,false);
+copyAck.resolve();await turn();
+assert.equal(copied,1);assert.equal(f.drops,1);assert.equal(socket.bytesWritten,1);assert.equal(socket.bytesRead,2);
+assert.equal(socket.readableEnded,false);assert.deepEqual(events,[]);assert.equal(reads,1);
+assert.equal(joined,false);assert.equal(f.calls.includes('close'),false);assert.throws(f.transport.assertEmpty,/unclosed/);
+ socket.on('ready',()=>{}).on('data',bytes=>events.push('data:'+bytes.toString()));
+// A separate synchronous tail can progress before resume's queued delivery.
+// It must not start the EOF read ahead of the buffered data.
+socket.emit('ready');assert.equal(reads,1);
+await owner.promise;assert.deepEqual(events,['data:AB','end','close']);assert.equal(reads,2);
+f.transport.assertEmpty();f.transport.endRootReturn(owner);
+
+// Resuming after the paused read started but before its acknowledgement must
+// deliver that same result and cannot turn it into an unsupported-operation fault.
+const pending=deferred(),pendingAck=deferred(),pendingStarted=deferred();let pendingReads=0;const resumed=[];
+const g=fixture({read(){if(++pendingReads===1){pendingStarted.resolve();return {promise:pending.promise,
+ borrowReleased:pendingAck.promise,cancel(){return pendingAck.promise}}}return settled(undefined)}});
+const s=g.net.connect(12345,'127.0.0.1');s.on('error',error=>{throw error}).on('end',()=>resumed.push('end'));
+s.once('connect',()=>s.end());await pendingStarted.promise;const joinedOwner=g.transport.beginAcceptedClose();
+pending.resolve(g.chunk);await turn();s.on('data',bytes=>resumed.push('data:'+bytes.toString()));
+assert.deepEqual(resumed,[]);pendingAck.resolve();await joinedOwner.promise;
+assert.deepEqual(resumed,['data:AB','end']);assert.equal(g.drops,1);assert.equal(pendingReads,2);
+g.transport.assertEmpty();g.transport.endRootReturn(joinedOwner);
+
+// Explicit destroy may discard unread guest data, but must still retire the
+// already acknowledged native chunk and connection before completing close.
+const received=deferred();let discardReads=0;
+const h=fixture({read(){++discardReads;received.resolve();return settled(h.chunk)}});
+const discarded=h.net.connect(12345,'127.0.0.1');discarded.on('error',error=>{throw error});
+discarded.once('connect',()=>discarded.end());await received.promise;await turn();
+assert.equal(h.drops,1);assert.equal(discardReads,1);assert.equal(discarded.readableEnded,false);
+const destroyedOwner=h.transport.beginAcceptedClose();discarded.destroy();await destroyedOwner.promise;
+assert.equal(discarded.readableEnded,false);h.transport.assertEmpty();h.transport.endRootReturn(destroyedOwner);
 """)
 
     def test_actual_generated_handoff_captures_resolver_before_application_mutation(self):
@@ -1285,7 +1328,7 @@ for(const make of [()=>new NativeSocket(),()=>new (fixture().net.Socket)()]) {
         self.assertTrue(selected['automaticCloseDrain'])
         self.assertEqual(selected['closeDrain'], 'accepted-terminal-intent-only-v1')
         self.assertEqual(selected['maximumRootCloseWaiters'], 1)
-        self.assertEqual(selected['pausedEndRead'], 'eof-only-unread-data-refuses')
+        self.assertEqual(selected['pausedEndRead'], 'one-window-until-resume')
         with tempfile.TemporaryDirectory() as temporary:
             path = Path(temporary)
             self.assertEqual(net_profile.retain_selection(path, path, identities), ((), []))

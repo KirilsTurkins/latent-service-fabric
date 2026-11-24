@@ -222,9 +222,9 @@ impl NatsTriggers {
         if terminal == TriggerTerminal::Exhausted {
             tick(&self.monitor.0.exhausted);
         }
-        if delivery.is_some() && ack == Ack::Success {
-            // A committed old input must never acknowledge a visibly recreated
-            // stream after guest execution. Preserve the disposition and hold.
+        if delivery.is_some() && matches!(ack, Ack::Success | Ack::Terminate) {
+            // Check the original stream again before settling a durable outcome.
+            // A visibly recreated stream leaves the original disposition held.
             if interruptible(
                 stop,
                 super::inbox::qualify(connection.resource(), &request, binding, &inbox),

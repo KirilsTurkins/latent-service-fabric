@@ -139,7 +139,7 @@ impl types::GuestFutureTrailers for Trailers {
         Pollable::new(Rc::new(TrailerReady(self.exchange.clone())))
     }
     fn get(&self) -> Option<Result<Result<Option<types::Trailers>, types::ErrorCode>, ()>> {
-        pump::Pump::current().step();
+        pump::Pump::signal_driver();
         if self.consumed.get() {
             return Some(Err(()));
         }
@@ -462,7 +462,7 @@ impl types::GuestFutureIncomingResponse for FutureResponse {
         Pollable::response(self.exchange.clone())
     }
     fn get(&self) -> Option<Result<Result<types::IncomingResponse, types::ErrorCode>, ()>> {
-        pump::Pump::current().step();
+        pump::Pump::signal_driver();
         if self.consumed.get() {
             return Some(Err(()));
         }

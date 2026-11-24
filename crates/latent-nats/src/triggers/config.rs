@@ -163,8 +163,8 @@ impl TriggerConfig {
             }
             let profile = if let Some(transaction) = &binding.transaction {
                 transaction.validate(binding, self)?;
-                // One logical processing scope cannot concurrently claim different
-                // stream origins. Durable custody across restarts is a separate gate.
+                // Each logical processing scope has one stream origin and entity.
+                // Durable custody also checks this across restarts.
                 if self.bindings[..i].iter().any(|old| {
                     old.tenant == binding.tenant
                         && old.transaction.as_ref().is_some_and(|prior| {
@@ -172,6 +172,7 @@ impl TriggerConfig {
                                 && prior.incarnation == transaction.incarnation
                                 && prior.processing_scope == transaction.processing_scope
                                 && (old.stream != binding.stream
+                                    || prior.entity != transaction.entity
                                     || prior.qualification.stream_created
                                         != transaction.qualification.stream_created)
                         })

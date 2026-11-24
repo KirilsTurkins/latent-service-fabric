@@ -16,6 +16,8 @@ development-local-service-fixture = []
 development-test-host = ["latent-artifacts/development-test-host", "latent-policy/development-test-host", "development-clock-fixture"]
 # Test-only allocator observation of the original native stack context.
 development-stack-custody-witness = []
+# Fixed positive first-owner observation for the local Go accounting comparison.
+development-go-lazy-owner-observer = []
 # Bounded activation-owned witness for the explicit signed Go overlap fixture.
 development-go-timer-overlap = ["dep:tokio"]
 # Selected only by the signed Go TCP read-order owner.
@@ -30,8 +32,8 @@ development-rust-http-combined = ["latent-component-threading/rust-http-combined
 java-checkpoint-gc-trap-diagnostic = []
 
 [lints.rust]
-# Private authenticated native loading, guarded original-owner stacks and exact canonical result delegation
-# may locally allow unsafe; other runtime code retains this deny boundary.
+# Private authenticated native loading, guarded original-owner stacks, exact canonical result delegation
+# and the prepaid exact-layout owner backing may locally allow unsafe; other runtime code retains this deny boundary.
 unsafe_code = "deny"
 
 [lints.clippy]
@@ -49,6 +51,12 @@ harness = false
 [[test]]
 name = "aot_sandbox"
 path = "tests/aot_sandbox.rs"
+harness = false
+
+# Observe allocator layout in an isolated process without libtest allocations.
+[[test]]
+name = "runtime_owner_storage_witness"
+path = "../../tools/runtime_owner_storage_witness.rs"
 harness = false
 
 [dependencies]

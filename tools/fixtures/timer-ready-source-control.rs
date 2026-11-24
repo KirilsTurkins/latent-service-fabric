@@ -303,6 +303,7 @@ fn ready_poll_without_a_retired_timer_does_not_create_a_pump() {
                 closed.get::<poll::Pollable>()));
             assert!(matches!(block.as_mut().poll(&mut Context::from_waker(Waker::noop())), Poll::Ready(())));
         }
+        pump::Pump::drain_current();
         assert_eq!(SET_CREATIONS.get(), 0);
         assert!(TASK.get().is_null());
         drop(closed);
@@ -324,7 +325,7 @@ fn ready_poll_retires_the_original_unpolled_timer() {
     let drops = runtime::DROP_OBSERVATIONS.with(|v| v.borrow().clone());
     let wrappers = DROP_INPUT_WRAPPERS.with(|v| v.borrow().clone());
     drop(closed);
-    pump::Pump::current().drain_retired();
+    pump::Pump::drain_current();
     runtime::settle(parent).unwrap();
     assert_eq!(observed, (0, 1, 1, 0, 0));
     assert_eq!(drops, vec![(1, 0, 2)]);
@@ -346,7 +347,7 @@ fn ready_block_retires_the_original_unpolled_timer() {
     let observed = (runtime::count(runtime::OwnerKind::Wait), SLOTS.get(),
         runtime::WAIT_SETTLES.get(), runtime::WAIT_SETTLES_OUTSIDE_TASK.get());
     drop(closed);
-    pump::Pump::current().drain_retired();
+    pump::Pump::drain_current();
     runtime::settle(parent).unwrap();
     assert_eq!(observed, (0, 1, 1, 0));
     assert!(runtime::empty());
@@ -364,7 +365,7 @@ fn ready_poll_leaves_the_started_wait_for_the_original_drain() {
     let observed = (runtime::count(runtime::OwnerKind::Wait), runtime::count(runtime::OwnerKind::Timer),
         SLOTS.get(), runtime::WAIT_SETTLES.get(), runtime::WAIT_SETTLES_OUTSIDE_TASK.get());
     drop(closed);
-    pump::Pump::current().drain_retired();
+    pump::Pump::drain_current();
     runtime::settle(parent).unwrap();
     assert_eq!(observed, (1, 1, 2, 1, 0));
     assert!(runtime::empty());
@@ -387,7 +388,7 @@ fn ready_poll_reentry_keeps_the_in_flight_original_owner() {
         runtime::WAIT_SETTLES_OUTSIDE_TASK.get());
     let nested_waits = REENTRY_WAITS.get();
     drop(closed);
-    pump::Pump::current().drain_retired();
+    pump::Pump::drain_current();
     runtime::settle(parent).unwrap();
     assert_eq!(observed, (0, 1, 0));
     assert_eq!(nested_waits, 1);
@@ -421,7 +422,7 @@ fn ready_poll_keeps_the_input_timer_alias_live_while_reaping_another() {
     assert_eq!(poll::Pollable::poll(vec![closed.borrow()]), vec![0]);
     let after_last_alias = runtime::count(runtime::OwnerKind::Wait);
     drop(closed);
-    pump::Pump::current().drain_retired();
+    pump::Pump::drain_current();
     runtime::settle(parent).unwrap();
     assert!(same_identity && !was_ready);
     assert_eq!(observed, (1, 3, 1, 0, 0));
@@ -446,7 +447,7 @@ fn repeated_ready_polls_after_reap_create_no_canonical_work() {
     let after = (SET_CREATIONS.get(), TASK_SWITCHES.get(), runtime::WAIT_SETTLES.get(),
         runtime::WAIT_POLLS.get(), runtime::count(runtime::OwnerKind::Wait), SLOTS.get());
     drop(closed);
-    pump::Pump::current().drain_retired();
+    pump::Pump::drain_current();
     runtime::settle(parent).unwrap();
     assert_eq!(before, (1, 2, 1, 0, 0, 1));
     assert_eq!(after, before);
@@ -467,7 +468,7 @@ fn ready_poll_rechecks_readiness_after_reentrant_retirement() {
     let result = poll::Pollable::poll(vec![closed.borrow(), input.borrow()]);
     let was_ready = changing.ready();
     drop(input); drop(closed);
-    pump::Pump::current().drain_retired();
+    pump::Pump::drain_current();
     runtime::settle(parent).unwrap();
     assert_eq!(result, vec![0]);
     assert!(!was_ready);
@@ -491,7 +492,7 @@ fn interrupted_ready_reap_does_not_retry_and_fences_final_drain() {
     let no_wrapper = INPUT_WRAPPERS.get();
     assert_eq!(poll::Pollable::poll(vec![closed.borrow()]), vec![0]);
     let drain = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-        pump::Pump::current().drain_retired();
+        pump::Pump::drain_current();
     }));
     let after = runtime::WAIT_SETTLES.get();
     drop(closed);

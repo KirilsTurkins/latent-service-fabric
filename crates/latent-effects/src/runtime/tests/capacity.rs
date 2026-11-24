@@ -17,6 +17,32 @@ async fn observed_pending(owner: &DispatcherOwner, pending: u64) {
 }
 
 #[tokio::test]
+async fn backlog_age_requires_a_continuous_clock_at_the_counts_observation() {
+    let fixture = Fixture::new().await;
+    let effect = fixture
+        .seed(1, "tenant-a", "publication", profile("test.v1"))
+        .await;
+    let mut paused = config();
+    paused.start_paused = true;
+    let mut owner = fixture.start(paused, vec![], None).await.unwrap();
+
+    fixture.clock.millis.store(150, Ordering::SeqCst);
+    let snapshot = owner.refresh_counts().await.unwrap();
+    assert_eq!(snapshot.counts_observed_at_millis, 150);
+    assert_eq!(snapshot.durable.pending, 1);
+    assert_eq!(snapshot.durable.payload_bytes, effect.payload_bytes());
+    assert_eq!(snapshot.oldest_unresolved_age_millis, Some(50));
+
+    fixture.clock.continuous.store(false, Ordering::SeqCst);
+    let snapshot = owner.refresh_counts().await.unwrap();
+    assert_eq!(snapshot.durable.pending, 1);
+    assert_eq!(snapshot.oldest_unresolved_age_millis, None);
+
+    owner.shutdown(Instant::now() + WATCHDOG).await.unwrap();
+    fixture.finish().await;
+}
+
+#[tokio::test]
 async fn ordinary_byte_pressure_rejects_before_claim_even_with_a_spare_shared_slot() {
     let bound = super::super::capacity::ATTEMPT_NATIVE_BYTES + NATIVE_RESERVATION_METADATA_BYTES;
     let mut limits = NativeCapacityLimits::default();

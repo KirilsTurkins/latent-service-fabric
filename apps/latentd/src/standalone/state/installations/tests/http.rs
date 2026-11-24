@@ -340,6 +340,53 @@ fn install_route(setup: &Setup, operation: &OperationSettings) {
         .unwrap();
 }
 
+#[tokio::test]
+async fn withdrawn_signed_http_route_invalidates_an_already_accepted_transaction_request() {
+    use latent_core::TriggerId;
+    use latent_ingress::http::{CanonicalTarget, Method, Scheme};
+
+    let mut setup = Setup::configured(None, true).await;
+    setup.fixture.settings.operations[0].route = Some("deployment".into());
+    let operation = &setup.fixture.settings.operations[0];
+    install_route(&setup, operation);
+    let repository = &setup.services.deployments;
+    let target = CanonicalTarget::parse(Scheme::Http, "web.example.test", "/query").unwrap();
+    let accepted = repository.select_http(&target, Method::Get).unwrap();
+    let fence = Arc::clone(accepted.transaction_fence().unwrap());
+    drop(accepted);
+    assert!(fence.with_current(|| ()).is_ok());
+
+    let id = TriggerId("http-query".into());
+    let snapshot = repository.get_trigger(&operation.tenant, &id).unwrap();
+    let removal = repository
+        .prepare_trigger_operation(TriggerOperationRequest::Delete {
+            context: TriggerOperationContext {
+                tenant: operation.tenant.clone(),
+                actor: latent_artifacts::ReleaseActor {
+                    subject: "operator".into(),
+                    kind: latent_artifacts::ReleaseActorKind::Host,
+                },
+                operation_id: "withdraw-http-query".into(),
+                expected_state_version: snapshot.value().state_version,
+            },
+            id,
+            expected_generation: snapshot.value().trigger.as_ref().unwrap().generation,
+        })
+        .unwrap();
+    let deleted = repository.commit_trigger_operation(removal).unwrap();
+    assert!(deleted.value().durability.is_ok());
+    let refused: Result<(), _> =
+        fence.with_current(|| panic!("the withdrawn route accepted pending work"));
+    assert_eq!(
+        refused.unwrap_err().code,
+        latent_core::PlatformErrorCode::PermissionDenied
+    );
+    drop(deleted);
+    drop(snapshot);
+    drop(fence);
+    setup.finish().await;
+}
+
 fn manager(
     setup: &Setup,
     backend: Arc<latent_wasmtime::WasmtimeBackend>,

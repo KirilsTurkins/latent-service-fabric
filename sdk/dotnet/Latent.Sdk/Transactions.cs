@@ -466,6 +466,9 @@ public sealed record ControlDispatcherResponse(
 /// <param name="DeadLetterEffects">The exact dead_letter_effects value with preserved presence.</param>
 /// <param name="CountsObservedAtUnixMillis">The exact counts_observed_at_unix_millis value with preserved presence.</param>
 /// <param name="ClockContinuityProven">The exact clock_continuity_proven value with preserved presence.</param>
+/// <param name="DispatchingEffects">The exact dispatching_effects value with preserved presence.</param>
+/// <param name="UnresolvedPayloadBytes">The exact unresolved_payload_bytes value with preserved presence.</param>
+/// <param name="OldestUnresolvedAgeMillis">The exact oldest_unresolved_age_millis value with preserved presence.</param>
 public sealed record DispatcherSnapshot(
     DispatcherGeneration? Generation,
     bool Paused,
@@ -488,7 +491,10 @@ public sealed record DispatcherSnapshot(
     ulong BlockedEffects,
     ulong DeadLetterEffects,
     ulong CountsObservedAtUnixMillis,
-    bool ClockContinuityProven);
+    bool ClockContinuityProven,
+    ulong? DispatchingEffects,
+    ulong? UnresolvedPayloadBytes,
+    ulong? OldestUnresolvedAgeMillis);
 
 /// <summary>Transport-neutral GetEffectRequest; see the shared client profile for authority and lifetime rules.</summary>
 /// <param name="Profile">The exact profile value with preserved presence.</param>

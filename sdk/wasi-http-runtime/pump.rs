@@ -4,7 +4,7 @@
 //! inspect state and signal work; they neither block a callback nor manufacture
 //! completion. The pinned bindgen executor supplies real inter-task wakeups.
 use std::{
-    cell::{Cell, RefCell},
+    cell::{Cell, OnceCell, RefCell},
     future::{poll_fn, Future},
     pin::Pin,
     rc::{Rc, Weak},
@@ -58,7 +58,7 @@ pub struct Pump {
     driver: RefCell<Option<wit_bindgen::JoinHandle<()>>>,
 }
 thread_local! {
-    static CURRENT: Rc<Pump> = Rc::new(Pump::new());
+    static CURRENT: OnceCell<Rc<Pump>> = const { OnceCell::new() };
 }
 
 impl Pump {
@@ -75,7 +75,7 @@ impl Pump {
     }
 
     pub fn current() -> Rc<Self> {
-        CURRENT.with(Rc::clone)
+        CURRENT.with(|slot| Rc::clone(slot.get_or_init(|| Rc::new(Self::new()))))
     }
 
     pub fn track(operation: &Rc<dyn Progress>) {
@@ -105,7 +105,15 @@ impl Pump {
 
     /// Only schedule the original driver. In particular, ready/get/read cannot
     /// enter an async host import under an unrelated synchronous WIT task.
-    pub fn step(&self) {
+    pub fn signal_driver() {
+        CURRENT.with(|slot| {
+            if let Some(pump) = slot.get() {
+                pump.step();
+            }
+        });
+    }
+
+    fn step(&self) {
         let waker = self.driver_waker.borrow().clone();
         if let Some(waker) = waker {
             waker.wake();
@@ -154,17 +162,21 @@ impl Pump {
         panic!("canonical HTTP driver requires wasm32");
     }
 
-    pub async fn drain_retired(self: &Rc<Self>) {
-        self.require_no_waiters();
-        assert!(!self.draining.replace(true), "duplicate HTTP drain");
-        self.start();
-        self.step();
+    pub async fn drain_retired() {
+        // Only track, retire or a pending poll can create this activation's pump.
+        let Some(pump) = CURRENT.with(|slot| slot.get().cloned()) else {
+            return;
+        };
+        pump.require_no_waiters();
+        assert!(!pump.draining.replace(true), "duplicate HTTP drain");
+        pump.start();
+        pump.step();
         #[cfg(target_arch = "wasm32")]
         {
-            let driver = self.driver.borrow_mut().take().expect("HTTP driver owner");
+            let driver = pump.driver.borrow_mut().take().expect("HTTP driver owner");
             assert!(driver.await.is_some(), "HTTP driver did not retire");
         }
-        self.draining.set(false);
+        pump.draining.set(false);
     }
 
     fn require_no_waiters(&self) {

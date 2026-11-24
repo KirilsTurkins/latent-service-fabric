@@ -1,10 +1,11 @@
 //! Reverse comparison reads historical source integrity without reviving its grant.
-use super::{bundle, descriptors, incompatible, web, MAX_PACKAGE};
+use super::{bundle, descriptors, incompatible, state, web, MAX_PACKAGE};
 use crate::rollouts::{error, Result, RolloutRelease};
 use latent_artifacts::{
     AdmissionAuthority, ArtifactRepository, HistoricalExecutionState, LifecycleAuthorityHandle,
 };
 use latent_core::{PlatformErrorCode, TenantId};
+use latent_manifest::ManifestValidationProfile;
 use latent_packaging::{compare_packages, PackageComparisonLimits};
 use std::sync::Arc;
 
@@ -15,6 +16,7 @@ pub(in crate::deployments::rollouts) async fn compare(
     tenant: &TenantId,
     served: &RolloutRelease,
     target: &RolloutRelease,
+    manifest_profile: ManifestValidationProfile,
 ) -> Result<()> {
     // The snapshot's metadata and permission state have one sealed constructor.
     // A negative state is used solely for source identity, never route authority.
@@ -125,8 +127,14 @@ pub(in crate::deployments::rollouts) async fn compare(
     }
     match (old_source, new_source) {
         (Some(old), Some(new)) => {
-            let previous = bundle(old, tenant, &served.component)?;
-            let next = bundle(new, tenant, &target.component)?;
+            let previous = bundle(old, tenant, &served.component, manifest_profile)?;
+            let next = bundle(new, tenant, &target.component, manifest_profile)?;
+            state::require_compatible(
+                &previous,
+                &served.deployment_id,
+                &next,
+                &target.deployment_id,
+            )?;
             if !compare_packages(&previous, &next, PackageComparisonLimits::default())?
                 .allows_replacement(None)
             {

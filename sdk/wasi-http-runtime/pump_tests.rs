@@ -108,6 +108,26 @@ fn completed_sibling_wakes_its_caller_while_original_gate_remains_held() {
 }
 
 #[test]
+fn idle_observation_and_empty_root_drain_leave_the_pump_unallocated() {
+    assert!(CURRENT.with(|slot| slot.get().is_none()));
+    Pump::signal_driver();
+    assert!(std::pin::pin!(Pump::drain_retired())
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_ready());
+    assert!(CURRENT.with(|slot| slot.get().is_none()));
+
+    let gate = Rc::new(Gate::default());
+    let original: Rc<dyn Progress> = gate.clone();
+    Pump::track(&original);
+    let (wakes, waker) = signal();
+    Pump::current().driver_waker.borrow_mut().replace(waker);
+    Pump::signal_driver();
+    assert_eq!(wakes.0.load(Ordering::SeqCst), 1);
+    assert_eq!(gate.polls.get(), 0);
+}
+
+#[test]
 fn synchronous_observation_only_schedules_and_cannot_poll_or_complete_an_import() {
     let pump = Pump::new();
     let gate = Rc::new(Gate::default());

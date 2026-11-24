@@ -62,7 +62,17 @@ impl RestoreWindow {
         current: &ReadView,
         snapshot: &SnapshotReceipt,
         deadline: Instant,
+        check_current: impl FnMut() -> Result<(), StoreError>,
+    ) -> Result<Self, SnapshotError> {
+        Self::capture_observed(current, snapshot, deadline, check_current, |_, _| {})
+    }
+
+    pub(crate) fn capture_observed(
+        current: &ReadView,
+        snapshot: &SnapshotReceipt,
+        deadline: Instant,
         mut check_current: impl FnMut() -> Result<(), StoreError>,
+        mut observe: impl FnMut(&crate::embedded::RowKey, &[u8]),
     ) -> Result<Self, SnapshotError> {
         super::snapshot::validate_deadline(deadline).map_err(SnapshotError::source)?;
         check(deadline, &mut check_current)?;
@@ -102,11 +112,13 @@ impl RestoreWindow {
             .map(|(before, now)| pair(before, now))
             .collect::<Result<Vec<_>, _>>()?;
         let mut refusal = None;
-        let observed = visit_view(current, deadline, |_, _, _| {
+        let observed = visit_view(current, deadline, |_, key, bytes| {
             check(deadline, &mut check_current).map_err(|error| {
                 refusal = Some(error);
                 StoreError::Invalid
-            })
+            })?;
+            observe(key, bytes);
+            Ok(())
         });
         if let Some(error) = refusal {
             return Err(error);
