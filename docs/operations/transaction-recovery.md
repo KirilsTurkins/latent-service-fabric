@@ -159,6 +159,25 @@ the effect ID, disposition and dispatch attempt under current `inspect-effect`
 permission. An unavailable result or a query that failed to return a view is
 insufficient grounds for another edit. [Transaction HTTP](../development/transaction-http-v1.md#original-request-facts)
 
+## Inspect unresolved effects before retiring a publication
+
+With the node stopped, use the protected **state-recovery** operation and the
+original signed publication's current namespace-inspect grant. Set the outer
+request's `publication` to that installed publication. The first request uses
+this action.
+
+```json
+{"action":"inspect-publication-effects"}
+```
+
+Each result lists at most 16 unresolved effects with their original command,
+attempt, commit, binding, disposition and decoder profile. When `nextCursor`
+is present, send it as `cursor` in the next request for the same publication.
+A changed view, checkpoint generation or reviewed selection returns a
+conflict. Start again at the current view before drawing a retirement decision.
+Use each original effect's current status and separately authorized recovery
+plan for any disposition change.
+
 ## Choose operator actions deliberately
 
 `state plan-effect` prepares a checked redrive, reconcile or terminate plan with

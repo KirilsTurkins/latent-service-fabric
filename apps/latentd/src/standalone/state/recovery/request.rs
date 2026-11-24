@@ -1,7 +1,7 @@
 //! Bounded operation data. Neither an operation ID nor a digest is authority.
 use latent_core::{PlatformError, PublicationId};
 use latent_state::store_identity::StoreIdentity;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
 #[derive(Deserialize)]
@@ -34,6 +34,10 @@ pub(super) enum Action {
         file: File,
     },
     InspectNamespace {},
+    InspectPublicationEffects {
+        #[serde(default)]
+        cursor: Option<PublicationEffectCursor>,
+    },
     InspectInboxSource {
         binding: String,
     },
@@ -173,6 +177,30 @@ impl NativeRecoveryRequest {
     }
 }
 
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(super) struct PublicationEffectCursor {
+    pub after_effect: String,
+    pub publication: String,
+    pub view: Vec<u8>,
+    pub checkpoint_generation: u64,
+    pub review_digest: String,
+}
+
+impl PublicationEffectCursor {
+    fn validate(&self) -> Result<(), PlatformError> {
+        self.publication
+            .parse::<PublicationId>()
+            .map_err(|_| super::denied())?;
+        if self.after_effect.len() != 64 || self.checkpoint_generation == 0 {
+            return Err(super::denied());
+        }
+        super::assets::digest_bytes(&format!("sha256:{}", self.after_effect))?;
+        super::assets::digest_bytes(&self.review_digest)?;
+        view(&self.view)
+    }
+}
+
 #[cfg(test)]
 mod restore_target_tests;
 impl Action {
@@ -208,6 +236,7 @@ impl Action {
         match self {
             Self::Snapshot { .. } => &["namespace-snapshot"],
             Self::InspectNamespace {}
+            | Self::InspectPublicationEffects { .. }
             | Self::InspectInboxSource { .. }
             | Self::InspectInboxBroker { .. } => &["namespace-inspect"],
             Self::EnrollInboxSource { .. } => &["namespace-enroll-inbox-source"],
@@ -277,6 +306,9 @@ impl Action {
                 Ok(())
             }
             Self::InspectNamespace {} => Ok(()),
+            Self::InspectPublicationEffects { cursor } => cursor
+                .as_ref()
+                .map_or(Ok(()), PublicationEffectCursor::validate),
             Self::Review {
                 expected_view,
                 snapshot_digest,

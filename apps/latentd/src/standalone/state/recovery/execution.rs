@@ -27,6 +27,7 @@ use std::{sync::Arc, time::Instant};
 
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod migration_package_tests;
+mod publication_page;
 mod restore_review;
 
 #[derive(Serialize)]
@@ -144,6 +145,7 @@ pub(super) async fn execute(
     settings: &crate::config::state::StateSettings,
 ) -> Result<serde_json::Value, PlatformError> {
     match &codecs.action {
+        Action::InspectPublicationEffects { .. } => publication_page::inspect(store, codecs).await,
         Action::Snapshot { operation_id, file } => {
             snapshot(store, Arc::clone(&codecs), operation_id, file).await
         }

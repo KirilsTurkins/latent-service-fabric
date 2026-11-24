@@ -181,3 +181,65 @@ async fn pause_and_current_revocation_prevent_claim_without_refunding_unrelated_
     );
     fixture.finish().await;
 }
+
+#[tokio::test]
+async fn publication_inventory_continues_only_from_an_authorized_original_effect() {
+    use latent_state::embedded::StoreError;
+
+    let fixture = Fixture::new().await;
+    for index in 1..=40 {
+        let (tenant, publication) = match index % 4 {
+            1 => ("tenant-a", "other-publication"),
+            3 => ("tenant-b", "retiring-publication"),
+            _ => ("tenant-a", "retiring-publication"),
+        };
+        fixture
+            .seed(index, tenant, publication, profile("test.v1"))
+            .await;
+    }
+    fixture
+        .store
+        .with_store(StoreIoKind::RecoveryRead, 1024 * 1024, move |store| {
+            let view = store.snapshot()?;
+            let page = |after: Option<&str>| {
+                DispatchCatalog::publication_effect_page(
+                    &view,
+                    "tenant-a",
+                    "orders",
+                    7,
+                    "retiring-publication",
+                    after,
+                    &mut || Ok(()),
+                )
+            };
+            let first = page(None)?;
+            assert_eq!(first.effects.len(), 16);
+            for (index, effect) in (2..=32).step_by(2).zip(&first.effects) {
+                assert_eq!(effect.effect_id, format!("{index:064x}"));
+                assert_eq!(effect.disposition, Disposition::Pending);
+                assert_eq!(effect.command_id, format!("command-{index}"));
+            }
+            assert_eq!(
+                first.after_effect.as_deref(),
+                Some(first.effects[15].effect_id.as_str())
+            );
+            let second = page(first.after_effect.as_deref())?;
+            assert_eq!(second.effects.len(), 4);
+            assert_eq!(second.effects[0].effect_id, format!("{:064x}", 34));
+            assert!(second.after_effect.is_none());
+            assert!(matches!(
+                page(Some(&format!("{:064x}", 3))),
+                Err(StoreError::Conflict)
+            ));
+            assert!(matches!(
+                page(Some(&format!("{:064x}", 1))),
+                Err(StoreError::Conflict)
+            ));
+            Ok(())
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    fixture.finish().await;
+}

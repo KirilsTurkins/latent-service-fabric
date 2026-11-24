@@ -18,7 +18,7 @@ mod inspection;
 #[cfg(test)]
 mod tests;
 mod validation;
-pub use inspection::EffectInspection;
+pub use inspection::{EffectInspection, PublicationEffect, PublicationEffectPage};
 mod write;
 
 /// Captured process fence, distinct from business namespace incarnation.
