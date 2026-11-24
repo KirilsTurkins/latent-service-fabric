@@ -77,6 +77,13 @@ The
 includes the dependency locks, tool and component identities, grants, results
 and node measurements.
 
+All six languages also ran on the same Linux node build from development
+commit `269fe85b`. Across the private application and published client cases,
+105 signed cases and eight additional pre-entry refusals passed. Each group
+shut down cleanly. The guest toolkits and components came from the revisions
+recorded for each language.
+[Common runtime and per-language results](../testing/evidence/sdk-private-libraries-common-native-2026-11-24.json)
+
 ### Review a compiler execution request
 
 A captured Cargo build tool, Java annotation processor or NuGet source generator
