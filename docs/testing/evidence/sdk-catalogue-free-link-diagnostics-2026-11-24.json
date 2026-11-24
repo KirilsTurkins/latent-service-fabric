@@ -1,0 +1,872 @@
+{
+  "schemaVersion": "latent.sdk.catalogue-free-link-diagnostics.v1",
+  "issue": 694,
+  "sourceRevision": "77550255168ff7a3beb3b85cb58c1d3985bcdbb2",
+  "observedOn": "2026-11-24",
+  "platform": "linux-x86_64",
+  "status": "passed",
+  "scope": "Six normal distribution recipes inspected previously compiled and independently signed components. Each isolated process received its staged recipe, validator, component and declared capsule surface. The C process also received the original private core, its historical proof and the exact C transformer.",
+  "currentRun": {
+    "languages": 6,
+    "inspections": 36,
+    "accepted": 12,
+    "refused": 24,
+    "applicationSourcesRecompiled": 0,
+    "newSignedInvocations": 0,
+    "catalogueVisible": false,
+    "checkoutVisible": false,
+    "networkNamespaceIsolated": true,
+    "wasmTools": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+    "rawQualification": {
+      "sha256": "sha256:bbbe36b866f497b7b9d3a1ff4b2610e129e245af0f2562222fe09be1728683d0",
+      "bytes": 30987
+    }
+  },
+  "installedCompilerInputs": {
+    "c": {
+      "manifest": {
+        "sha256": "sha256:6a888792ca754a01bc30b55d731c24f2cbb4b8c1c3e2c7d2d9c710492d6ee136",
+        "bytes": 219259
+      },
+      "archive": {
+        "sha256": "sha256:87c86a50cda32a37ee1370b6810eef0bba7293250e87ab4cf5544c23ca284a47",
+        "bytes": 83535101
+      },
+      "files": 1206,
+      "sourceRevision": "baa2c984d880c1726b78f57ef68f9e229e7c43a1",
+      "compatibilityCatalogueFiles": 0,
+      "priorBuildObservation": "sdk-private-library-invocations-2026-11-23.json#installedCPrivateDependencies",
+      "observedPackageCoordinates": [
+        [
+          "shop-floor/price-card",
+          "shop-floor/card-policy"
+        ],
+        [
+          "warehouse/bin-label-reader",
+          "warehouse/label-policy"
+        ]
+      ],
+      "coordinateCoverage": "Separate capture, build and signed invocation for each coordinate variant."
+    },
+    "java": {
+      "manifest": {
+        "sha256": "sha256:633c651d23806a4b10ca23187a895aaba059cf84d559135976fa2362782e90e7",
+        "bytes": 510739
+      },
+      "archive": {
+        "sha256": "sha256:367553268ccb923f6e46435129322cbb4485c50978d0ecaa1e19c02334d3a461",
+        "bytes": 586424161
+      },
+      "files": 2403,
+      "sourceRevision": "baa2c984d880c1726b78f57ef68f9e229e7c43a1",
+      "compatibilityCatalogueFiles": 0,
+      "priorBuildObservation": "sdk-private-library-invocations-2026-11-23.json#installedJavaPrivateDependencies",
+      "observedPackageCoordinates": [
+        [
+          "outside.http.primary/1.0.7",
+          "outside.http.child/1.0.7"
+        ],
+        [
+          "tenant.example.unlisted-client/2026.10.19",
+          "different.owner.helper/4.2.1"
+        ]
+      ],
+      "coordinateCoverage": "Separate capture, build and signed invocation for each coordinate variant."
+    },
+    "rust": {
+      "manifest": {
+        "sha256": "sha256:47bc83b53e08de9f15d069efd58d84b00abe6dd2fb1da57e1f9054d51b70d4ac",
+        "bytes": 350728
+      },
+      "archive": {
+        "sha256": "sha256:1cba9a5c5d8d963dee1351d23eb90519baea77739b2bc1ff706413e57c5a8c27",
+        "bytes": 378884511
+      },
+      "files": 1844,
+      "sourceRevision": "9f75d2d8a5e0c19243da1f97f19b089cfd8043e5",
+      "compatibilityCatalogueFiles": 0,
+      "priorBuildObservation": "sdk-private-library-invocations-2026-11-23.json#installedRustPrivateDependencies",
+      "observedPackageCoordinates": [
+        "outside-wasi-http-alpha-a2a9169dc8a9deaf@1.41642.5790",
+        "outside-wasi-http-delta-a2a9169dc8a9deaf@2.41642.5790"
+      ],
+      "coordinateCoverage": "Two distinct independently named private dependencies captured, linked and exercised in one application."
+    },
+    "go": {
+      "manifest": {
+        "sha256": "sha256:34b2a588578321eb5e1fd7afcb273a787cc196d2dcb28ad2ff873b6cae674b71",
+        "bytes": 313806
+      },
+      "archive": {
+        "sha256": "sha256:ac50cd704972aefe79a1ccb2b3dd17b7c4833bf07afdfb1e80468aa754c14c3e",
+        "bytes": 96186731
+      },
+      "files": 1603,
+      "sourceRevision": "bc4320049800976505730bbe64e8060c7df2967a",
+      "compatibilityCatalogueFiles": 0,
+      "priorBuildObservation": "sdk-private-library-invocations-2026-11-23.json#installedGoPrivateDependencies",
+      "observedPackageCoordinates": [
+        "outside.example.test/http-library/original-coordinate",
+        "outside.example.test/http-library/renamed-coordinate"
+      ],
+      "coordinateCoverage": "Separate capture, build and signed invocation for each coordinate variant."
+    },
+    "typescript": {
+      "manifest": {
+        "sha256": "sha256:71b21f2d8dd71a66b7a016258af8eba7368847fd97d46144af25f4823d3396e0",
+        "bytes": 218001
+      },
+      "archive": {
+        "sha256": "sha256:8dc6465c7b3b463a4fd66c36bf14b73ca7ed83df14ec8311cbecd84e003a66fd",
+        "bytes": 193239443
+      },
+      "files": 1181,
+      "sourceRevision": "1b2f7ac3d27603f7b5310f3bad2f09d3c6b19b5b",
+      "compatibilityCatalogueFiles": 0,
+      "priorBuildObservation": "sdk-private-library-invocations-2026-11-23.json#installedTypeScriptPrivateDependencies",
+      "observedPackageCoordinates": [
+        "outside-fetch-toolkit-resource@1.7.1",
+        "@ledger-coop/receipt-card@2.3.5"
+      ],
+      "coordinateCoverage": "Separately captured, offline-built and executed scoped and unscoped npm variants.",
+      "coordinateSource": "typescript-private-npm-coordinates-2026-11-24.json",
+      "coordinateToolkits": [
+        {
+          "manifest": {
+            "sha256": "sha256:e2962d53aadfbc63ea0ad113e16cfc7a4a3323f97c5672eaf707e5439f0f92e0",
+            "bytes": 217796
+          },
+          "archive": {
+            "sha256": "sha256:9e2735d91a800aff2d1060b37671f61c28f39d56f05e453529b783ebaf6dff4a",
+            "bytes": 193223363
+          },
+          "files": 1180,
+          "sourceRevision": "ae14e4e90fb2ed81edef9255d1a940d1fc9d09fb",
+          "compatibilityCatalogueFiles": 0
+        },
+        {
+          "manifest": {
+            "sha256": "sha256:1e85f0361605a198d35efa3db959acfbc1409d7ed60500555a631965995d02b1",
+            "bytes": 217796
+          },
+          "archive": {
+            "sha256": "sha256:0027cee93061d89191e1c58d27961076152d7e92ee097c8713d497a6d786fc1c",
+            "bytes": 193219083
+          },
+          "files": 1180,
+          "sourceRevision": "ae14e4e90fb2ed81edef9255d1a940d1fc9d09fb",
+          "compatibilityCatalogueFiles": 0
+        }
+      ]
+    },
+    "dotnet": {
+      "manifest": {
+        "sha256": "sha256:30682e3d09d3bf7d1ba1b41e0100de90204c947121c130b48645e32f5cb647db",
+        "bytes": 263618
+      },
+      "archive": {
+        "sha256": "sha256:8dd398300186c9ec79f6c47f4e8b52abaf64350608d3fbcab74274491d44e5e8",
+        "bytes": 871611117
+      },
+      "files": 1383,
+      "sourceRevision": "410648ba301a9c47a1fb7fa38d413ac20f45d642",
+      "compatibilityCatalogueFiles": 0,
+      "priorBuildObservation": "sdk-private-library-invocations-2026-11-23.json#installedDotnetPrivateDependencies",
+      "observedPackageCoordinates": [
+        "Outside.Http.bad80257feff00271cb2.Alpha@1.0.0",
+        "Outside.Http.bad80257feff00271cb2.Delta@1.0.0"
+      ],
+      "coordinateCoverage": "Two distinct independently named private dependencies captured, linked and exercised in one application."
+    }
+  },
+  "linkObservations": {
+    "c": {
+      "cases": {
+        "original": {
+          "status": "accepted",
+          "profile": "lsf-host-abi-phase3-v5",
+          "inspectionDigest": "sha256:bcd917f09e9732874556d9c3e69eece7e8d49c1927e84e45c79051f035aada18",
+          "callableImports": [
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+            "latent:http/streaming@0.3.0",
+            "latent:random/random@0.1.0",
+            "latent:runtime-native/threads@0.1.0",
+            "latent:runtime/activation@0.1.0"
+          ]
+        },
+        "developer-declared-import": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v5",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v5",
+            "kind": "missing-declared-import",
+            "interface": "outside:station-4906868f0973/reading@1.0.0"
+          },
+          "message": "lsf-host-abi-phase3-v5 cannot link the component (missing declared import outside:station-4906868f0973/reading@1.0.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "missing-declared-import": [
+              "outside:station-4906868f0973/reading@1.0.0"
+            ]
+          },
+          "inspectionDigest": "sha256:2f793e7ef492f63135b72e6785af3d93f588e20e3507cc95929289e4c8448925"
+        },
+        "developer-declared-export": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v5",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v5",
+            "kind": "missing-declared-export",
+            "interface": "outside:station-4906868f0973/forecast@2.0.0"
+          },
+          "message": "lsf-host-abi-phase3-v5 cannot link the component (missing declared export outside:station-4906868f0973/forecast@2.0.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "missing-declared-export": [
+              "outside:station-4906868f0973/forecast@2.0.0"
+            ],
+            "undeclared-export": [
+              "examples:libfetch/api@0.1.0"
+            ]
+          },
+          "inspectionDigest": "sha256:6770ed6be117fd8245fb14022d7ee4ae23c4e85757dc05ec303e13872a2b1543"
+        },
+        "omitted-import": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v5",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v5",
+            "kind": "undeclared-import",
+            "interface": "latent:clock/monotonic@0.1.0"
+          },
+          "message": "lsf-host-abi-phase3-v5 cannot link the component (undeclared import latent:clock/monotonic@0.1.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "undeclared-import": [
+              "latent:clock/monotonic@0.1.0"
+            ]
+          },
+          "inspectionDigest": "sha256:5ea46e852c4ac11f0c465664f1386beb08956cae7550c8e294326abaea8920c5"
+        },
+        "incompatible-profile": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v4",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v4",
+            "kind": "unsupported-import",
+            "interface": "latent:runtime-native/threads@0.1.0"
+          },
+          "message": "lsf-host-abi-phase3-v4 cannot link the component (unsupported import latent:runtime-native/threads@0.1.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {},
+          "inspectionDigest": "sha256:da564ef75cce16ff0e95c86ae6069d6be7683dcb74bc89ad922fbac1bc5325d8"
+        },
+        "restored": {
+          "status": "accepted",
+          "profile": "lsf-host-abi-phase3-v5",
+          "inspectionDigest": "sha256:bcd917f09e9732874556d9c3e69eece7e8d49c1927e84e45c79051f035aada18",
+          "callableImports": [
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+            "latent:http/streaming@0.3.0",
+            "latent:random/random@0.1.0",
+            "latent:runtime-native/threads@0.1.0",
+            "latent:runtime/activation@0.1.0"
+          ]
+        }
+      },
+      "priorSignedObservation": "docs/testing/evidence/sdk-private-libraries-common-native-2026-11-24.json#groups.c",
+      "component": {
+        "sha256": "sha256:8fb889eb4dd01bf3e12121387daaa3b82b7ca1467b06d54ed92c9d5b72ba716a",
+        "bytes": 128782
+      },
+      "originalCapsuleDigest": "sha256:b936276c3520ca18f015129bac2baf73bec488b5f14484c6502e950f1cea9fbd",
+      "selectedProfile": "lsf-host-abi-phase3-v5",
+      "cProof": {
+        "transformer": "sha256:57594706bb57d0147cb4e7095bdf11f5eef0137e368df6147280227e9dd070f6",
+        "originalCore": "sha256:53da9d204b77916e7f63285cd1b0c9131612973c1e2d48103820f64b0ae8ff50",
+        "derivedCore": "sha256:bd32abe1775e047d9f3a9a814bb92f88ff0941a8f25c188fe304618c0460f553",
+        "unboundComponent": "sha256:c83b0d031e2e98d30ffafb249c3b9cff6fd095283e681752c739cc332c5d1ccc",
+        "derivation": "sha256:7f93057af0ad974af900d43ae54bad505f9f979862d3b54a7eab787df69e256d",
+        "supplementalThreadPort": "latent:runtime-native/threads@0.1.0"
+      },
+      "recipeMaterial": {
+        "tools/guest_compatibility_build.py": "sha256:febee804b22115b2ddc7f0749f2a3044995e1939629b7a834d97a986eb7ae72d",
+        "tools/dev_guest_recipe.py": "sha256:b346046bf65b74554f26c47106dc435517f4aae690c9a6b2d523d42a6338db7b",
+        "tools/dev_workflow/common.py": "sha256:031d1b0ac7c72ba037368e3cc47a83817a7c4621a31699e351e05e572df33ff6"
+      },
+      "validatorCommands": 11,
+      "stagedRecipeFiles": 152,
+      "outsideCoordinate": "4906868f0973",
+      "networkIsolated": true,
+      "catalogueMounted": false,
+      "sourceCheckoutMounted": false,
+      "effectiveUid": 1000
+    },
+    "java": {
+      "cases": {
+        "original": {
+          "status": "accepted",
+          "profile": "lsf-host-abi-phase3-v4",
+          "inspectionDigest": "sha256:36732470193e856377ac64ecdad14cec00dfc07320ff26af31d222edbc5590a9",
+          "callableImports": [
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+            "latent:http/streaming@0.3.0"
+          ]
+        },
+        "developer-declared-import": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v4",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v4",
+            "kind": "missing-declared-import",
+            "interface": "outside:station-e47f7586d12b/reading@1.0.0"
+          },
+          "message": "lsf-host-abi-phase3-v4 cannot link the component (missing declared import outside:station-e47f7586d12b/reading@1.0.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "missing-declared-import": [
+              "outside:station-e47f7586d12b/reading@1.0.0"
+            ]
+          },
+          "inspectionDigest": "sha256:e043a3ff68cb1ba8c2fd27690a37e89fe0dd2bc39c777f2e8bfcaba6bfd706a7"
+        },
+        "developer-declared-export": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v4",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v4",
+            "kind": "missing-declared-export",
+            "interface": "outside:station-e47f7586d12b/forecast@2.0.0"
+          },
+          "message": "lsf-host-abi-phase3-v4 cannot link the component (missing declared export outside:station-e47f7586d12b/forecast@2.0.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "missing-declared-export": [
+              "outside:station-e47f7586d12b/forecast@2.0.0"
+            ],
+            "undeclared-export": [
+              "examples:java-standard-http/api@1.0.0"
+            ]
+          },
+          "inspectionDigest": "sha256:421ad8fbb4afd97d2347d95c64708d03f6ddf27822daf510eae8fa28abc5c3f6"
+        },
+        "omitted-import": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v4",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v4",
+            "kind": "undeclared-import",
+            "interface": "latent:clock/monotonic@0.1.0"
+          },
+          "message": "lsf-host-abi-phase3-v4 cannot link the component (undeclared import latent:clock/monotonic@0.1.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "undeclared-import": [
+              "latent:clock/monotonic@0.1.0"
+            ]
+          },
+          "inspectionDigest": "sha256:048898b03d482e13d5e8142fd88320496f2d47cf9b4c4006c7150c1c2a9eb2c4"
+        },
+        "incompatible-profile": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase4-v1",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase4-v1",
+            "kind": "unsupported-import",
+            "interface": "latent:http/streaming@0.3.0"
+          },
+          "message": "lsf-host-abi-phase4-v1 cannot link the component (unsupported import latent:http/streaming@0.3.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {},
+          "inspectionDigest": "sha256:715f43c9115d68cf54111b79f6a7de684dcced5e78c1da7e00bb19ed5dcba6b7"
+        },
+        "restored": {
+          "status": "accepted",
+          "profile": "lsf-host-abi-phase3-v4",
+          "inspectionDigest": "sha256:36732470193e856377ac64ecdad14cec00dfc07320ff26af31d222edbc5590a9",
+          "callableImports": [
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+            "latent:http/streaming@0.3.0"
+          ]
+        }
+      },
+      "priorSignedObservation": "docs/testing/evidence/sdk-private-libraries-common-native-2026-11-24.json#groups.java",
+      "component": {
+        "sha256": "sha256:39919fd1d2c7d93835c4f1fd522e970569eb732d520343d40e13398a704816b8",
+        "bytes": 1174774
+      },
+      "originalCapsuleDigest": "sha256:e4978ec9741dd9d80e3ed5d44d757834b1ee36db6f3ee50206cbef6da9de37e1",
+      "selectedProfile": "lsf-host-abi-phase3-v4",
+      "cProof": {},
+      "recipeMaterial": {
+        "tools/guest_compatibility_build.py": "sha256:febee804b22115b2ddc7f0749f2a3044995e1939629b7a834d97a986eb7ae72d",
+        "tools/dev_guest_recipe.py": "sha256:b346046bf65b74554f26c47106dc435517f4aae690c9a6b2d523d42a6338db7b",
+        "tools/dev_workflow/common.py": "sha256:031d1b0ac7c72ba037368e3cc47a83817a7c4621a31699e351e05e572df33ff6"
+      },
+      "validatorCommands": 7,
+      "stagedRecipeFiles": 460,
+      "outsideCoordinate": "e47f7586d12b",
+      "networkIsolated": true,
+      "catalogueMounted": false,
+      "sourceCheckoutMounted": false,
+      "effectiveUid": 1000
+    },
+    "go": {
+      "cases": {
+        "original": {
+          "status": "accepted",
+          "profile": "lsf-host-abi-phase3-v5",
+          "inspectionDigest": "sha256:90ad23ff9fa0567aa0bc5eb7ef216e79ee9cc9280ce71b1627758597726b4da1",
+          "callableImports": [
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+            "latent:http/streaming@0.3.0",
+            "latent:random/random@0.1.0",
+            "latent:runtime/activation@0.1.0"
+          ]
+        },
+        "developer-declared-import": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v5",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v5",
+            "kind": "missing-declared-import",
+            "interface": "outside:station-26b7e898adf9/reading@1.0.0"
+          },
+          "message": "lsf-host-abi-phase3-v5 cannot link the component (missing declared import outside:station-26b7e898adf9/reading@1.0.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "missing-declared-import": [
+              "outside:station-26b7e898adf9/reading@1.0.0"
+            ]
+          },
+          "inspectionDigest": "sha256:c57e6bccb47b3042f215e416c13c3316f01f869ed1604c8b82bf87d7e111e1b2"
+        },
+        "developer-declared-export": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v5",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v5",
+            "kind": "missing-declared-export",
+            "interface": "outside:station-26b7e898adf9/forecast@2.0.0"
+          },
+          "message": "lsf-host-abi-phase3-v5 cannot link the component (missing declared export outside:station-26b7e898adf9/forecast@2.0.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "missing-declared-export": [
+              "outside:station-26b7e898adf9/forecast@2.0.0"
+            ],
+            "undeclared-export": [
+              "examples:go-standard-http/api@1.0.0"
+            ]
+          },
+          "inspectionDigest": "sha256:72b06a48a91f35349dcd16117682f829660170f7a6868fa16068cd10c62a98d1"
+        },
+        "omitted-import": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v5",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v5",
+            "kind": "undeclared-import",
+            "interface": "latent:clock/monotonic@0.1.0"
+          },
+          "message": "lsf-host-abi-phase3-v5 cannot link the component (undeclared import latent:clock/monotonic@0.1.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "undeclared-import": [
+              "latent:clock/monotonic@0.1.0"
+            ]
+          },
+          "inspectionDigest": "sha256:814ea34c6147097949cedd31a9725e0e8745cc99d029c15bb9b759ff734f49c3"
+        },
+        "incompatible-profile": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v4",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v4",
+            "kind": "unsupported-import",
+            "interface": "latent:runtime/activation@0.1.0"
+          },
+          "message": "lsf-host-abi-phase3-v4 cannot link the component (unsupported import latent:runtime/activation@0.1.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {},
+          "inspectionDigest": "sha256:ea1cda9bd5d51fca0e1e91365f14ab3798b6c8d7a0b8f5d938c2fbf513944819"
+        },
+        "restored": {
+          "status": "accepted",
+          "profile": "lsf-host-abi-phase3-v5",
+          "inspectionDigest": "sha256:90ad23ff9fa0567aa0bc5eb7ef216e79ee9cc9280ce71b1627758597726b4da1",
+          "callableImports": [
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+            "latent:http/streaming@0.3.0",
+            "latent:random/random@0.1.0",
+            "latent:runtime/activation@0.1.0"
+          ]
+        }
+      },
+      "priorSignedObservation": "docs/testing/evidence/sdk-private-libraries-common-native-2026-11-24.json#groups.go",
+      "component": {
+        "sha256": "sha256:78ef8a3cec6d8c35b9c76e701f069007b1a9bd1e129c563b1ffe20d0a20518f2",
+        "bytes": 10521268
+      },
+      "originalCapsuleDigest": "sha256:7250cca95543e3fd5c60edee1a4dce296de5d13f89413dc829510cb2fc86d0fd",
+      "selectedProfile": "lsf-host-abi-phase3-v5",
+      "cProof": {},
+      "recipeMaterial": {
+        "tools/guest_compatibility_build.py": "sha256:febee804b22115b2ddc7f0749f2a3044995e1939629b7a834d97a986eb7ae72d",
+        "tools/dev_guest_recipe.py": "sha256:b346046bf65b74554f26c47106dc435517f4aae690c9a6b2d523d42a6338db7b",
+        "tools/dev_workflow/common.py": "sha256:031d1b0ac7c72ba037368e3cc47a83817a7c4621a31699e351e05e572df33ff6"
+      },
+      "validatorCommands": 7,
+      "stagedRecipeFiles": 71,
+      "outsideCoordinate": "26b7e898adf9",
+      "networkIsolated": true,
+      "catalogueMounted": false,
+      "sourceCheckoutMounted": false,
+      "effectiveUid": 1000
+    },
+    "rust": {
+      "cases": {
+        "original": {
+          "status": "accepted",
+          "profile": "lsf-host-abi-phase3-v5",
+          "inspectionDigest": "sha256:eb77be0ecc10037940ea000ab119a90ead02fe3f1b8c6e9f6fa70cd82bcff444",
+          "callableImports": [
+            "latent:clock/monotonic@0.1.0",
+            "latent:http/streaming@0.3.0",
+            "latent:runtime/activation@0.1.0"
+          ]
+        },
+        "developer-declared-import": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v5",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v5",
+            "kind": "missing-declared-import",
+            "interface": "outside:station-e1805bced025/reading@1.0.0"
+          },
+          "message": "lsf-host-abi-phase3-v5 cannot link the component (missing declared import outside:station-e1805bced025/reading@1.0.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "missing-declared-import": [
+              "outside:station-e1805bced025/reading@1.0.0"
+            ]
+          },
+          "inspectionDigest": "sha256:4ee1ea434c433fc49bdcb6205e982a5f30b05d37225bd086aa68fdb0bc4dc9ad"
+        },
+        "developer-declared-export": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v5",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v5",
+            "kind": "missing-declared-export",
+            "interface": "outside:station-e1805bced025/forecast@2.0.0"
+          },
+          "message": "lsf-host-abi-phase3-v5 cannot link the component (missing declared export outside:station-e1805bced025/forecast@2.0.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "missing-declared-export": [
+              "outside:station-e1805bced025/forecast@2.0.0"
+            ],
+            "undeclared-export": [
+              "examples:greeting/api@1.0.0"
+            ]
+          },
+          "inspectionDigest": "sha256:17bcb1055a570c75d6d77e23a6c7283acfc66953122eb8723ee0fdebe8e63f9a"
+        },
+        "omitted-import": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v5",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v5",
+            "kind": "undeclared-import",
+            "interface": "latent:clock/monotonic@0.1.0"
+          },
+          "message": "lsf-host-abi-phase3-v5 cannot link the component (undeclared import latent:clock/monotonic@0.1.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "undeclared-import": [
+              "latent:clock/monotonic@0.1.0"
+            ]
+          },
+          "inspectionDigest": "sha256:362cfba9a813045740161442f6c372faedc6737ebe82f08c135efe0247650084"
+        },
+        "incompatible-profile": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v4",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v4",
+            "kind": "unsupported-import",
+            "interface": "latent:runtime/activation@0.1.0"
+          },
+          "message": "lsf-host-abi-phase3-v4 cannot link the component (unsupported import latent:runtime/activation@0.1.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {},
+          "inspectionDigest": "sha256:d6d70b912bdee8598de852b6a97f9f358b3b6713ffe2f60da3b4c5aa473ca63f"
+        },
+        "restored": {
+          "status": "accepted",
+          "profile": "lsf-host-abi-phase3-v5",
+          "inspectionDigest": "sha256:eb77be0ecc10037940ea000ab119a90ead02fe3f1b8c6e9f6fa70cd82bcff444",
+          "callableImports": [
+            "latent:clock/monotonic@0.1.0",
+            "latent:http/streaming@0.3.0",
+            "latent:runtime/activation@0.1.0"
+          ]
+        }
+      },
+      "priorSignedObservation": "docs/testing/evidence/sdk-private-library-invocations-2026-11-23.json#installedRustPrivateDependencies",
+      "component": {
+        "sha256": "sha256:ead72f1b0f2c5b9b1f75ec81f2b42ef568b74402757b534536f133cb73b912b4",
+        "bytes": 966033
+      },
+      "originalCapsuleDigest": "sha256:b5272dccf03e033d004ef2025eeff607c190ff7052cf2213b4e4d01dfc559873",
+      "selectedProfile": "lsf-host-abi-phase3-v5",
+      "cProof": {},
+      "recipeMaterial": {
+        "tools/guest_compatibility_build.py": "sha256:febee804b22115b2ddc7f0749f2a3044995e1939629b7a834d97a986eb7ae72d",
+        "tools/dev_guest_recipe.py": "sha256:b346046bf65b74554f26c47106dc435517f4aae690c9a6b2d523d42a6338db7b",
+        "tools/dev_workflow/common.py": "sha256:031d1b0ac7c72ba037368e3cc47a83817a7c4621a31699e351e05e572df33ff6"
+      },
+      "validatorCommands": 7,
+      "stagedRecipeFiles": 127,
+      "outsideCoordinate": "e1805bced025",
+      "networkIsolated": true,
+      "catalogueMounted": false,
+      "sourceCheckoutMounted": false,
+      "effectiveUid": 1000
+    },
+    "dotnet": {
+      "cases": {
+        "original": {
+          "status": "accepted",
+          "profile": "lsf-host-abi-phase3-v5",
+          "inspectionDigest": "sha256:a516c6f24dee7d0a6c6e0e6e7216912afc5b611caa6498e45ee0342f3a04197b",
+          "callableImports": [
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+            "latent:http/streaming@0.3.0",
+            "latent:random/random@0.1.0",
+            "latent:runtime/activation@0.1.0"
+          ]
+        },
+        "developer-declared-import": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v5",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v5",
+            "kind": "missing-declared-import",
+            "interface": "outside:station-4ac33b19b0d7/reading@1.0.0"
+          },
+          "message": "lsf-host-abi-phase3-v5 cannot link the component (missing declared import outside:station-4ac33b19b0d7/reading@1.0.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "missing-declared-import": [
+              "outside:station-4ac33b19b0d7/reading@1.0.0"
+            ]
+          },
+          "inspectionDigest": "sha256:cad7c63224dafe6e84cdcc8ea95a13d44813dac4aa05b7ea446744d74f22b1fe"
+        },
+        "developer-declared-export": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v5",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v5",
+            "kind": "missing-declared-export",
+            "interface": "outside:station-4ac33b19b0d7/forecast@2.0.0"
+          },
+          "message": "lsf-host-abi-phase3-v5 cannot link the component (missing declared export outside:station-4ac33b19b0d7/forecast@2.0.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "missing-declared-export": [
+              "outside:station-4ac33b19b0d7/forecast@2.0.0"
+            ],
+            "undeclared-export": [
+              "examples:dotnet-standard-http/api@1.0.0"
+            ]
+          },
+          "inspectionDigest": "sha256:f45bcb7de074f7a8c601870adf61ea4d5dd243901fbeeb2a197ccba5538d4b83"
+        },
+        "omitted-import": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v5",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v5",
+            "kind": "undeclared-import",
+            "interface": "latent:clock/monotonic@0.1.0"
+          },
+          "message": "lsf-host-abi-phase3-v5 cannot link the component (undeclared import latent:clock/monotonic@0.1.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "undeclared-import": [
+              "latent:clock/monotonic@0.1.0"
+            ]
+          },
+          "inspectionDigest": "sha256:b90853c3ef3134b8ff4520d71ac3bf442294883b865de621771b1bf31b19e766"
+        },
+        "incompatible-profile": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v4",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v4",
+            "kind": "unsupported-import",
+            "interface": "latent:runtime/activation@0.1.0"
+          },
+          "message": "lsf-host-abi-phase3-v4 cannot link the component (unsupported import latent:runtime/activation@0.1.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {},
+          "inspectionDigest": "sha256:ca7dc2c729612a2d270c3596e6598c0bd75146e273819ccc7c0c25e8ce9c50ae"
+        },
+        "restored": {
+          "status": "accepted",
+          "profile": "lsf-host-abi-phase3-v5",
+          "inspectionDigest": "sha256:a516c6f24dee7d0a6c6e0e6e7216912afc5b611caa6498e45ee0342f3a04197b",
+          "callableImports": [
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+            "latent:http/streaming@0.3.0",
+            "latent:random/random@0.1.0",
+            "latent:runtime/activation@0.1.0"
+          ]
+        }
+      },
+      "priorSignedObservation": "docs/testing/evidence/sdk-private-libraries-common-native-2026-11-24.json#groups.dotnet",
+      "component": {
+        "sha256": "sha256:6e50e566d95708590f65b3dd6b8e5f671f38e5de8ebfb99d40e3ee75125ecb74",
+        "bytes": 10813979
+      },
+      "originalCapsuleDigest": "sha256:1d5217dc316b1c787e200fd23932a27c9d63c5644101b57ca1f2e76c7a2bec43",
+      "selectedProfile": "lsf-host-abi-phase3-v5",
+      "cProof": {},
+      "recipeMaterial": {
+        "tools/guest_compatibility_build.py": "sha256:febee804b22115b2ddc7f0749f2a3044995e1939629b7a834d97a986eb7ae72d",
+        "tools/dev_guest_recipe.py": "sha256:b346046bf65b74554f26c47106dc435517f4aae690c9a6b2d523d42a6338db7b",
+        "tools/dev_workflow/common.py": "sha256:031d1b0ac7c72ba037368e3cc47a83817a7c4621a31699e351e05e572df33ff6"
+      },
+      "validatorCommands": 7,
+      "stagedRecipeFiles": 76,
+      "outsideCoordinate": "4ac33b19b0d7",
+      "networkIsolated": true,
+      "catalogueMounted": false,
+      "sourceCheckoutMounted": false,
+      "effectiveUid": 1000
+    },
+    "typescript": {
+      "cases": {
+        "original": {
+          "status": "accepted",
+          "profile": "lsf-host-abi-phase3-v7",
+          "inspectionDigest": "sha256:462c6b7ac8b3a2dd7914308deb3b01338cf9135614dff3736f8e75da5375eb38",
+          "callableImports": [
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+            "latent:http/phase-timing@0.4.0",
+            "latent:http/streaming@0.3.0",
+            "latent:runtime/activation@0.1.0"
+          ]
+        },
+        "developer-declared-import": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v7",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v7",
+            "kind": "missing-declared-import",
+            "interface": "outside:station-f59d40a81b34/reading@1.0.0"
+          },
+          "message": "lsf-host-abi-phase3-v7 cannot link the component (missing declared import outside:station-f59d40a81b34/reading@1.0.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "missing-declared-import": [
+              "outside:station-f59d40a81b34/reading@1.0.0"
+            ]
+          },
+          "inspectionDigest": "sha256:a2443095afbdc734ff9191bd3ffd39ba9edae0bac6cd32492f23fbc8aba87e56"
+        },
+        "developer-declared-export": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v7",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v7",
+            "kind": "missing-declared-export",
+            "interface": "outside:station-f59d40a81b34/forecast@2.0.0"
+          },
+          "message": "lsf-host-abi-phase3-v7 cannot link the component (missing declared export outside:station-f59d40a81b34/forecast@2.0.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "missing-declared-export": [
+              "outside:station-f59d40a81b34/forecast@2.0.0"
+            ],
+            "undeclared-export": [
+              "examples:typescript-fetch/api@1.0.0"
+            ]
+          },
+          "inspectionDigest": "sha256:f4a2eb446102d7d52d23ba5459cd61b03b6e05a91e03ceaf1404c5ff5420a96f"
+        },
+        "omitted-import": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v7",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v7",
+            "kind": "undeclared-import",
+            "interface": "latent:clock/monotonic@0.1.0"
+          },
+          "message": "lsf-host-abi-phase3-v7 cannot link the component (undeclared import latent:clock/monotonic@0.1.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {
+            "undeclared-import": [
+              "latent:clock/monotonic@0.1.0"
+            ]
+          },
+          "inspectionDigest": "sha256:9c2b40df2188b57b0dcfe4673e9628d66881b32cced0e9accc58b9576ac45244"
+        },
+        "incompatible-profile": {
+          "status": "refused",
+          "profile": "lsf-host-abi-phase3-v4",
+          "diagnostic": {
+            "hostAbiProfile": "lsf-host-abi-phase3-v4",
+            "kind": "unsupported-import",
+            "interface": "latent:http/phase-timing@0.4.0"
+          },
+          "message": "lsf-host-abi-phase3-v4 cannot link the component (unsupported import latent:http/phase-timing@0.4.0). See compatibility-inspection.json.",
+          "surfaceDifferences": {},
+          "inspectionDigest": "sha256:2e3ad76ada839bfcd139d1e64769665f6942c267c82ec7f2fa1a76e9bd9618ac"
+        },
+        "restored": {
+          "status": "accepted",
+          "profile": "lsf-host-abi-phase3-v7",
+          "inspectionDigest": "sha256:462c6b7ac8b3a2dd7914308deb3b01338cf9135614dff3736f8e75da5375eb38",
+          "callableImports": [
+            "latent:clock/monotonic@0.1.0",
+            "latent:clock/wall@0.1.0",
+            "latent:http/phase-timing@0.4.0",
+            "latent:http/streaming@0.3.0",
+            "latent:runtime/activation@0.1.0"
+          ]
+        }
+      },
+      "priorSignedObservation": "docs/testing/evidence/sdk-private-libraries-common-native-2026-11-24.json#groups.typescript",
+      "component": {
+        "sha256": "sha256:1f826d5dd5924a684ee409880ef1c4603e7f31f505282a2fd73ab0f354509d01",
+        "bytes": 12671284
+      },
+      "originalCapsuleDigest": "sha256:3b25ec458ae71edeb5117015c2841c6b85bee0bb946cfa3ea96e576d384720be",
+      "selectedProfile": "lsf-host-abi-phase3-v7",
+      "cProof": {},
+      "recipeMaterial": {
+        "tools/guest_compatibility_build.py": "sha256:febee804b22115b2ddc7f0749f2a3044995e1939629b7a834d97a986eb7ae72d",
+        "tools/dev_guest_recipe.py": "sha256:b346046bf65b74554f26c47106dc435517f4aae690c9a6b2d523d42a6338db7b",
+        "tools/dev_workflow/common.py": "sha256:031d1b0ac7c72ba037368e3cc47a83817a7c4621a31699e351e05e572df33ff6"
+      },
+      "validatorCommands": 7,
+      "stagedRecipeFiles": 147,
+      "outsideCoordinate": "f59d40a81b34",
+      "networkIsolated": true,
+      "catalogueMounted": false,
+      "sourceCheckoutMounted": false,
+      "effectiveUid": 1000
+    }
+  },
+  "previousObservation": {
+    "sourceRevision": "5dea63959f161ed32254c58bf626aac5dd2ac3ac",
+    "language": "c",
+    "outcome": "The base ABI inspection identified the one C thread port. This component requires the separately authenticated C profile proof. The corrected programme recomputed the actual derived core, unbound component and C binding and preserved a separate declaration or ABI mismatch."
+  },
+  "linuxSourceControls": {
+    "testsRun": 220,
+    "passed": 219,
+    "skipped": 1,
+    "failed": 0,
+    "logDigest": "sha256:9fa05672cee8311e9ddc82c2366948c7fe818c5d27679f4bb64f636366e42106"
+  },
+  "windowsSourceControls": {
+    "testsRun": 220,
+    "passed": 205,
+    "skipped": 14,
+    "errors": 1,
+    "errorTest": "tools.tests.test_dev_tools.CompilerDownloadBounds.test_existing_file_and_symlink_are_not_replaced",
+    "errorReason": "The Windows process lacked permission to create a symlink in the fixture (WinError 1314). The same test passed on Linux.",
+    "logDigest": "sha256:b0e49cdf99e118dd78a250e3d1fdcc52e70ed4eb72590cabfc8b4a9676937bd6"
+  }
+}

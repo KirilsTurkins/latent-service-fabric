@@ -6,6 +6,21 @@ surface or an import outside the recognized host ABI stops packaging. The
 retained `compatibility-inspection.json` identifies the component and ABI inputs.
 The existing package validator additionally checks the complete WIT types.
 
+A failed `latent-dev dev build` or watch edit can report `linkDiagnostic` in its
+error result. It gives the selected host ABI, the affected WIT interface and
+the reason. For example, `missing-declared-export` means the declaration
+names an export absent from the linked component. `unsupported-import` means
+the linked component requires an interface outside the selected ABI. The
+retained `compatibility-inspection.json` lists all missing and undeclared
+imports and exports under `surfaceDifferences` when the two surfaces differ.
+
+Six catalogue-free Linux recipes each accepted the original component, refused
+four newly supplied ABI or declaration mismatches and accepted the restored
+declaration. The C recipe independently regenerated its native thread-port
+proof. The observed package coordinates and earlier signed runs are recorded
+with the specific SDK and component identities.
+[Six-language link diagnostics](../testing/evidence/sdk-catalogue-free-link-diagnostics-2026-11-24.json)
+
 Recipes select from four frozen manifest identities using the authoritative
 declared WIT surface. `latent:http/phase-timing@0.4.0` selects V7.
 `latent:state/key-value@0.2.0` or `latent:intents/staging@0.1.0` selects Phase 4;

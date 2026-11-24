@@ -69,7 +69,7 @@ def response(request_value: dict, result: dict, *, code: str = "success", uncert
 
 
 def result(value: dict, sent: dict) -> dict:
-    from .common import DevError
+    from .common import DevError, validate_link_diagnostic
     members(value, {"protocol", "requestId", "workspace", "code", "uncertain", "result"})
     require(value["protocol"] == PROTOCOL and value["requestId"] == sent["requestId"]
             and value["workspace"] == sent["workspace"], "backend-response-identity")
@@ -80,5 +80,10 @@ def result(value: dict, sent: dict) -> dict:
         require(isinstance(code, str) and _ERROR_CODE.fullmatch(code), "backend-response-code")
         from .diagnostics import validate
         diagnostics = validate(value["result"].get("diagnostics", []))
-        raise DevError(code, uncertain=value["uncertain"], diagnostics=diagnostics)
+        link_diagnostic = None
+        if "linkDiagnostic" in value["result"]:
+            require(sent["operation"] == "build" and code == "guest-build-failed-last-deployment-retained"
+                    and not value["uncertain"], "backend-link-diagnostic-outcome")
+            link_diagnostic = validate_link_diagnostic(value["result"]["linkDiagnostic"])
+        raise DevError(code, uncertain=value["uncertain"], diagnostics=diagnostics, link_diagnostic=link_diagnostic)
     return value["result"]

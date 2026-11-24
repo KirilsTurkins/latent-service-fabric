@@ -361,7 +361,10 @@ def main() -> int:
     try:
         result = protocol.response(request, dispatch(request))
     except DevError as error:
-        result = protocol.response(request, {"diagnostics": error.diagnostics} if error.diagnostics else {},
+        details = error.link_fields()
+        if error.diagnostics:
+            details["diagnostics"] = error.diagnostics
+        result = protocol.response(request, details,
                                    code=error.code, uncertain=error.uncertain)
     except InstallError as error:
         result = protocol.response(request, {}, code=protocol.installer_error_code(str(error)),

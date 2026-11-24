@@ -19,6 +19,26 @@ class Documents(unittest.TestCase):
         with self.assertRaisesRegex(common.DevError, "unknown"):
             common.members({"a": 1, "execute": "bad"}, {"a"})
 
+    def test_link_diagnostic_survives_a_known_build_failure(self):
+        request = protocol.request("build", "workspace", {})
+        code = "guest-build-failed-last-deployment-retained"
+        detail = {"hostAbiProfile": "lsf-host-abi-phase3-v5", "kind": "missing-declared-export",
+                  "interface": "outside:weather/reading@1.2.3"}
+        for fields in ({}, {"linkDiagnostic": detail}):
+            with self.subTest(fields=fields), self.assertRaises(common.DevError) as result:
+                protocol.result(protocol.response(request, fields, code=code), request)
+            self.assertEqual(result.exception.code, code)
+            self.assertFalse(result.exception.uncertain)
+            self.assertEqual(result.exception.link_fields(), fields)
+        for invalid in ({**detail, "interface": "/tmp/unrelated"}, {**detail, "kind": "unknown"},
+                        {**detail, "hostAbiProfile": "../profile"}, {**detail, "log": "extra"}):
+            with self.subTest(invalid=invalid), self.assertRaises(common.DevError) as result:
+                protocol.result(protocol.response(request, {"linkDiagnostic": invalid}, code=code), request)
+            self.assertNotEqual(result.exception.code, code)
+            self.assertEqual(result.exception.link_fields(), {})
+        with self.assertRaisesRegex(common.DevError, "backend-link-diagnostic-outcome"):
+            protocol.result(protocol.response(request, {"linkDiagnostic": detail}, code=code, uncertain=True), request)
+
     def test_protocol_target_abi_and_response_association(self):
         hello = {**protocol.hello(), "os": "linux", "architecture": "x86_64"}
         protocol.negotiate(hello)

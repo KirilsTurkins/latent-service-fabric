@@ -26,9 +26,7 @@ def inspect(commands, wasm, output, surface, *, profile, proof, transformer):
         for name in ('originalCore', 'derivedCore', 'unboundComponent', 'derivation', 'finalComponent')),
         'c-compatibility-owned-proof-paths')
     require(type(proof['publicExport']) is str and 0 < len(proof['publicExport'].encode()) <= 512
-        and '#' in proof['publicExport']
-        and surface['exports'] == [proof['publicExport'].rsplit('#', 1)[0]]
-        and set(threading.IMPORTS) <= set(surface['imports']), 'c-compatibility-selected-surface')
+        and '#' in proof['publicExport'], 'c-compatibility-selected-surface')
     component = read_file(output / 'component.wasm', 8 * 1024 * 1024)
     require(read_file(proof['finalComponent'], 8 * 1024 * 1024) == component,
         'c-compatibility-exact-final-component')
@@ -50,11 +48,19 @@ def inspect(commands, wasm, output, surface, *, profile, proof, transformer):
     require(host_profile == 'lsf-host-abi-phase3-v5', 'c-compatibility-fixed-base-profile')
     try:
         base.inspect(commands, wasm, output, surface, host_abi_profile=host_profile)
+    except base.FinalComponentIncompatible as failure:
+        # Only the thread port has a C-specific proof below. Preserve any other link refusal.
+        others = [item for item in failure.findings
+                  if item["classification"] == "unknown-import" and item["operation"] != PORT]
+        if failure.differences or others:
+            raise base.FinalComponentIncompatible(host_profile, failure.differences, others) from failure
     except ValueError as failure:
         if str(failure) != 'final-component-compatibility-failed; inspect compatibility-inspection.json':
             raise
     else:
         raise ValueError('c-compatibility-original-base-unknown-port-required')
+    require(surface['exports'] == [proof['publicExport'].rsplit('#', 1)[0]]
+            and set(threading.IMPORTS) <= set(surface['imports']), 'c-compatibility-selected-surface')
     inspection = read_json(output / 'compatibility-inspection.json', 65536)
     host = base.host_manifest(host_profile)
     require(inspection['componentDigest'] == digest(component)

@@ -390,7 +390,7 @@ def main(argv: list[str] | None = None) -> int:
         emit({"code": "success", "result": result})
         return 0
     except DevError as error:
-        emit({"code": error.code, "uncertain": error.uncertain, "diagnostics": error.diagnostics})
+        emit({"code": error.code, "uncertain": error.uncertain, "diagnostics": error.diagnostics, **error.link_fields()})
         return 5 if error.uncertain else 2
     except KeyboardInterrupt:
         emit({"code": "interrupted-inspect-workspace-status", "uncertain": True})

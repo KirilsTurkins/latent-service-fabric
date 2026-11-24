@@ -80,7 +80,7 @@ def run(workspace: Path, connection, source: Path, tool_root: str, *, build, emi
             except DevError as error:
                 event("build-superseded" if error.code == "guest-build-superseded" else "edit-failed",
                       phase=phase, source=selected[1], code=error.code, uncertain=error.uncertain,
-                      diagnostics=error.diagnostics, rollbackPerformed=False)
+                      diagnostics=error.diagnostics, rollbackPerformed=False, **error.link_fields())
                 if error.uncertain:
                     raise
             time.sleep(0.25)

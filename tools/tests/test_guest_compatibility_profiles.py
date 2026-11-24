@@ -108,6 +108,47 @@ class FrozenHostProfiles(unittest.TestCase):
             self.assertIn("surface-mismatch", [row["classification"] for row in retained["findings"]])
             self.assertFalse((path / "compatibility-report.json").exists())
 
+    def test_installed_adapter_preserves_legacy_result_and_negotiates_typed_refusal(self):
+        import io
+        import os
+        import sys
+        from types import SimpleNamespace
+        from unittest.mock import patch
+        from tools import dev_guest_recipe as adapter
+
+        for negotiated in ("0", "1"):
+            with self.subTest(negotiated=negotiated), tempfile.TemporaryDirectory() as temporary:
+                path = output(temporary)
+                name = "outside:weather/forecast@1.0.0"
+                def compile_guest(*_args):
+                    inspect(path, (name,))
+                stdout = SimpleNamespace(buffer=io.BytesIO())
+                stderr = io.StringIO()
+                args = ["recipe", "--language", "c", "--project", str(path), "--output", str(path)]
+                with patch.object(adapter, "compile_c", compile_guest), patch.object(sys, "argv", args), \
+                        patch.object(sys, "stdout", stdout), patch.object(sys, "stderr", stderr), \
+                        patch.dict(os.environ, {"LSF_DEV_LINK_DIAGNOSTIC": negotiated}):
+                    self.assertEqual(adapter.main(), 1)
+                result = json.loads(stdout.buffer.getvalue())
+                self.assertIn(f"unsupported import {name}", stderr.getvalue())
+                self.assertEqual(result["code"], "compiler-input-or-build-failed")
+                self.assertEqual(result["cleanup"], "reaped")
+                detail = {"kind": "unsupported-import", "interface": name, "hostAbiProfile": V5}
+                self.assertEqual(result.get("linkDiagnostic"), detail if negotiated == "1" else None)
+
+    def test_declared_abi_mismatch_names_each_missing_and_undeclared_interface(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = output(temporary)
+            missing = "outside:weather/forecast@1.0.0"
+            replacement = "outside:weather/reading@2.0.0"
+            declared = {"imports": [HTTP, missing], "exports": [replacement]}
+            with self.assertRaises(build.FinalComponentIncompatible) as caught:
+                build.inspect(EmittedGraph((HTTP, STREAMS)), Path("wasm-tools"), path, declared, host_abi_profile=V5)
+            self.assertIn(f"{V5} cannot link the component (missing declared import {missing})", caught.exception.detail)
+            retained = json.loads((path / "compatibility-inspection.json").read_bytes())
+            self.assertEqual(retained["surfaceDifferences"], {"missing-declared-import": [missing],
+                "undeclared-import": [STREAMS], "missing-declared-export": [replacement], "undeclared-export": [EXPORT]})
+
     def test_v5_recognition_cannot_turn_http_grants_into_runtime_or_socket_grants(self):
         host = build.host_manifest(V5)
         findings = compatibility.import_findings([HTTP, RUNTIME, STREAMS], [HTTP, RUNTIME, STREAMS], host,
@@ -119,9 +160,11 @@ class FrozenHostProfiles(unittest.TestCase):
         for name in ("latent:runtime/activation@0.2.0", "latent:network/streams@0.2.0", "wasi:sockets/tcp@0.2.0"):
             with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
                 path = output(temporary)
-                with self.assertRaisesRegex(ValueError, "compatibility-failed"):
+                with self.assertRaises(build.FinalComponentIncompatible) as caught:
                     inspect(path, (name,))
+                self.assertIn(f"{V5} cannot link the component (unsupported import {name})", caught.exception.detail)
                 retained = json.loads((path / "compatibility-inspection.json").read_bytes())
+                self.assertNotIn("surfaceDifferences", retained)
                 self.assertIn("unknown-import", [row["classification"] for row in retained["findings"]])
 
     def test_unknown_profile_is_rejected_before_tool_dispatch(self):
