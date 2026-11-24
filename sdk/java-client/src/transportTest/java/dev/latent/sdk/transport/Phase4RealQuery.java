@@ -36,7 +36,7 @@ public final class Phase4RealQuery {
         try {
             for (int i = 0; i < 3; ++i) {
                 var target = Phase4Aggregate.target(tenant, "query");
-                var budget = new Management.ResourceBudget(1000000000L, 67108864L, 0, 0, 4194304L, 0, 0, 0, 0, 0, Optional.of(120000L));
+                var budget = new Management.ResourceBudget(1000000000L, 67108864L, 0, 0, 4194304L, 0, 0, 0, 0, 0, Optional.of(Phase4Aggregate.wallTimeLimitMillis()));
                 var invoke = new Management.InvokeRequest(Optional.of("java-sdk-fresh-query-" + i), Optional.empty(), Optional.empty(), Optional.of(target), ByteBuffer.wrap("[]".getBytes(StandardCharsets.UTF_8)), "application/vnd.latent.wit-values.v1+json", Optional.empty(), 0, Optional.empty(), Optional.of(budget), Map.of());
                 var request = new Transactions.QueryRequest(Optional.of(Transactions.currentProfile()), Optional.of(invoke), Optional.of(namespace), Optional.empty(), Optional.of(ByteBuffer.wrap(minimum)));
                 var value = client.query(request, options).get(20, TimeUnit.SECONDS).value();

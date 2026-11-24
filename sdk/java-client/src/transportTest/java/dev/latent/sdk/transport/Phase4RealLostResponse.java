@@ -46,7 +46,7 @@ public final class Phase4RealLostResponse {
                 check(required("LSF_401_MODE").equals("invoke"), "mode");
                 byte[] version = HexFormat.of().parseHex(required("LSF_401_EXPECTED_VERSION_HEX")); check(version.length > 0, "current key version");
                 var target = Phase4Aggregate.target(tenant, "update");
-                var budget = new Management.ResourceBudget(1_000_000_000L, 67_108_864L, 0, 0, 4_194_304L, 2_097_152L, 0, 0, 0, 1, Optional.of(120_000L));
+                var budget = new Management.ResourceBudget(1_000_000_000L, 67_108_864L, 0, 0, 4_194_304L, 2_097_152L, 0, 0, 0, 1, Optional.of(Phase4Aggregate.wallTimeLimitMillis()));
                 var invocation = new Management.InvokeRequest(Optional.of(key), Optional.empty(), Optional.empty(), Optional.of(target),
                         ByteBuffer.wrap("[{\"delta\":1,\"reject\":false}]".getBytes(StandardCharsets.UTF_8)), "application/vnd.latent.wit-values.v1+json", Optional.empty(), 0, Optional.empty(), Optional.of(budget), Map.of());
                 var expected = new Transactions.ExpectedVersion(ByteBuffer.wrap("aggregate/count".getBytes(StandardCharsets.UTF_8)), Optional.empty(), Optional.of(ByteBuffer.wrap(version)));

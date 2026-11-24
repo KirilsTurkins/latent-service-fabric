@@ -7,6 +7,16 @@ import java.util.Optional;
 final class Phase4Aggregate {
     private Phase4Aggregate() { }
 
+    static long wallTimeLimitMillis() {
+        String value = System.getenv("LSF_401_WALL_TIME_MILLIS");
+        if (value == null) return 120_000L;
+        long millis = Long.parseLong(value);
+        if (millis <= 0 || millis > 120_000L || !Long.toString(millis).equals(value)) {
+            throw new IllegalArgumentException("invalid fixture wall-time limit");
+        }
+        return millis;
+    }
+
     static Management.InvocationTarget target(String tenant, String function) {
         var environment = System.getenv();
         String service = environment.getOrDefault("LSF_401_AGGREGATE_SERVICE", "examples/transaction-java-aggregate");

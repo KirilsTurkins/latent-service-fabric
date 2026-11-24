@@ -23,7 +23,7 @@ public final class Phase4RealStaleQuery {
         var ns=new Transactions.NamespaceSelector(tenant,required("LSF_401_NAMESPACE"),required("LSF_401_INCARNATION"));
         var selector=new Transactions.CommandSelector(Optional.of(ns),"update",Optional.empty(),key,Optional.empty());
         var target=Phase4Aggregate.target(tenant, "update");
-        var budget=new Management.ResourceBudget(1000000000L,67108864L,0,0,4194304L,2097152L,0,0,0,1,Optional.of(120000L));
+        var budget=new Management.ResourceBudget(1000000000L,67108864L,0,0,4194304L,2097152L,0,0,0,1,Optional.of(Phase4Aggregate.wallTimeLimitMillis()));
         var invocation=new Management.InvokeRequest(Optional.of(key),Optional.empty(),Optional.empty(),Optional.of(target),ByteBuffer.wrap("[{\"delta\":1,\"reject\":false}]".getBytes(StandardCharsets.UTF_8)),"application/vnd.latent.wit-values.v1+json",Optional.empty(),0,Optional.empty(),Optional.of(budget),Map.of());
         var expected=new Transactions.ExpectedVersion(ByteBuffer.wrap("aggregate/count".getBytes(StandardCharsets.UTF_8)),Optional.empty(),Optional.of(ByteBuffer.wrap(version)));
         var request=new Transactions.InvokeCommandRequest(Optional.of(Transactions.currentProfile()),Optional.of(invocation),Optional.of(selector),"lsf-wit-values-v1",List.of(expected),Optional.empty());
