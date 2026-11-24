@@ -16,7 +16,7 @@ from .checks import current
 from .common import document, encode, execute, require
 from .configuration import LOCAL, approve_compiler, provision
 from .layout import Layout, node_identity
-from .verify import VerifiedRelease, development_publisher, manifest, publisher_id, publisher_policy, version
+from .verify import VerifiedRelease, development_publisher, manifest, publisher_id, publisher_policy, transaction_engine, version
 
 UNIT = Path("/etc/systemd/system/lsf.service")
 MAX_STATE = 4_194_304
@@ -87,6 +87,10 @@ def compatible(state: dict, selected: VerifiedRelease, upgrade: bool, profile: s
             and all(new["engine"][name] == old["engine"][name]
                     for name in ("wasmtimeVersion", "hostAbiProfile", "dynamicDependencies")),
             "unsupported-upgrade-or-downgrade-no-files-changed")
+    retained = transaction_engine(old["engine"])
+    if retained is not None:
+        require(transaction_engine(new["engine"]) == retained,
+                "retained-transaction-format-change-requires-qualified-upgrade")
     require(len(state["releases"]) < 4 or new["version"] in state["releases"], "retained-release-limit")
 
 
@@ -113,14 +117,19 @@ def select_current(layout: Layout, selected: str, permitted: set[str]) -> None:
         os.fsync(parent)
 
 
-def child_check(layout: Layout, identity: tuple[int, int], command: str, candidate: str | None = None) -> dict:
+def child_check(layout: Layout, identity: tuple[int, int], command: str, candidate: str | None = None,
+                *, retained_state: bool = False) -> dict:
     root = layout.prefix / "releases" / version(candidate) if candidate is not None else current(layout)
     location = ["--system"] if layout.system else ["--directory", str(layout.prefix)]
     if candidate is not None:
         location += ["--candidate-version", candidate]
+    if retained_state:
+        location.append("--retained-state")
     status, output = execute(["/usr/bin/python3", "-I", str(root / "lsf-install.pyz"), command, *location],
                              identity=identity, timeout=75, maximum=262144, cwd=str(layout.data))
-    require(status == 0, "service-identity-" + command + "-failed-installation-unactivated")
+    reason = ("retained-transaction-state-check-failed-original-release-still-selected" if retained_state
+              else "service-identity-" + command + "-failed-installation-unactivated")
+    require(status == 0, reason)
     return document(output, 262144)
 
 
@@ -199,8 +208,6 @@ def install(layout: Layout, release: VerifiedRelease, *, profile: str, policy: P
         permitted = {"releases/" + selected}
         if state:
             permitted.add("releases/" + state["currentVersion"])
-        if not state or state["status"] == "removed":
-            select_current(layout, selected, permitted)
         preflight = child_check(layout, identity, "preflight", candidate=selected)
         if layout.system and state and state["status"] == "installed" and state["currentVersion"] != selected:
             status, _output = systemctl("is-active", "--quiet", "lsf.service")
@@ -208,6 +215,8 @@ def install(layout: Layout, release: VerifiedRelease, *, profile: str, policy: P
             stop_service()
             if profile != LOCAL:
                 time.sleep(6)
+        if state and state["currentVersion"] != selected and node.get("state") is not None:
+            preflight = child_check(layout, identity, "preflight", candidate=selected, retained_state=True)
         approve_compiler(layout, identity, node, release.metadata, approved_compiler)
         select_current(layout, selected, permitted)
         unit = files.read(destination / "systemd" / "lsf.service", 16384)

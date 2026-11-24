@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import os
 import math
 from pathlib import Path
@@ -12,7 +13,7 @@ from .common import InstallError, document, encode, execute, require
 from .configuration import EXTERNAL, client_document, load, validate_layout
 from . import files, host
 from .layout import Layout, service_identity
-from .verify import version
+from .verify import TRANSACTION_ABI_PATH, transaction_engine, version
 
 
 def current(layout: Layout) -> Path:
@@ -27,11 +28,37 @@ def current(layout: Layout) -> Path:
     return result
 
 
-def preflight(layout: Layout, candidate: str | None = None) -> dict:
+def abi_profile(root: Path, node: dict, engine: dict) -> str:
+    if node.get("state") is None:
+        return engine["hostAbiProfile"]
+    profile = transaction_engine(engine)
+    require(profile is not None, "selected-release-does-not-admit-transaction-state")
+    abi_bytes = files.read(root / TRANSACTION_ABI_PATH, 65536)
+    require(hashlib.sha256(abi_bytes).hexdigest() == profile["abiFileSha256"],
+            "transaction-runtime-abi-file-mismatch")
+    abi = document(abi_bytes, 65536)
+    require(abi.get("id") == profile["hostAbiProfile"] and abi.get("digest") == profile["hostAbiDigest"]
+            and abi.get("wasmtimeVersion") == engine["wasmtimeVersion"], "transaction-runtime-abi-mismatch")
+    return profile["hostAbiProfile"]
+
+
+def require_original_storage_profile(layout: Layout, node: dict) -> None:
+    if node.get("state") is not None:
+        return
+    with files.directory(layout.data, {0, os.geteuid()}) as data:
+        try:
+            os.stat("state", dir_fd=data, follow_symlinks=False)
+        except FileNotFoundError:
+            return
+    require(False, "existing-transaction-storage-requires-state-configuration")
+
+
+def preflight(layout: Layout, candidate: str | None = None, *, retained_state: bool = False) -> dict:
     identity = service_identity(layout)
     observation = host.platform_check()
     node = load(layout, identity)
     validate_layout(layout, node, node.get("securityProfile"))
+    require_original_storage_profile(layout, node)
     for path in (layout.data, layout.cache):
         host.filesystem_probe(path)
     root = layout.prefix / "releases" / version(candidate) if candidate is not None else current(layout)
@@ -40,6 +67,8 @@ def preflight(layout: Layout, candidate: str | None = None) -> dict:
     for name in ("latent", "latentd", "latent-aot-compiler"):
         host.dynamic_probe(root / "bin" / name)
     source = document(files.read(root / "release-source.json", 65536), 65536)
+    engine = source["engine"]
+    selected_abi = abi_profile(root, node, engine)
     with tempfile.TemporaryDirectory(prefix=".lsf-preflight-", dir=layout.cache) as temporary:
         config = layout.node
         if candidate is not None and node["securityProfile"] == EXTERNAL:
@@ -47,15 +76,23 @@ def preflight(layout: Layout, candidate: str | None = None) -> dict:
                                    "compilerDigest": "sha256:" + source["engine"]["compilerSha256"]}
             config = Path(temporary) / "node.json"
             files.create(config, encode(node))
-        status, output = execute([str(root / "bin" / "latentd"), "check-config", "--config", str(config)],
-                                 timeout=40, maximum=65536, cwd=str(layout.data))
-    require(status == 0, "node-check-config-failed-no-profile-fallback")
+        command = [str(root / "bin" / "latentd"), "check-config", "--config", str(config)]
+        if node.get("state") is not None:
+            command.append("--check-state-roots")
+        if retained_state:
+            require(node.get("state") is not None, "retained-state-check-requires-state-configuration")
+            command.append("--check-retained-state")
+        status, output = execute(command, timeout=70 if retained_state else 40, maximum=65536, cwd=str(layout.data))
+    if retained_state:
+        require(status == 0, "retained-transaction-state-check-failed-use-original-release-and-recovery")
+    else:
+        require(status == 0, "node-check-config-failed-no-profile-fallback")
     report = document(output, 65536)
     require(report.get("schemaVersion") == "latent.standalone.config-check.v1"
             and report.get("profile") == node["securityProfile"]
             and report.get("protectedCredentialFile") is True, "node-profile-check-incomplete")
-    require(report.get("wasmtimeVersion") == source["engine"]["wasmtimeVersion"]
-            and report.get("hostAbiProfile") == source["engine"]["hostAbiProfile"], "node-engine-identity-mismatch")
+    require(report.get("wasmtimeVersion") == engine["wasmtimeVersion"]
+            and report.get("hostAbiProfile") == selected_abi, "node-engine-identity-mismatch")
     if node["securityProfile"] == EXTERNAL:
         require(report.get("admission") == "enforced" and report.get("authenticatedNativeLoading") is True
                 and report.get("compilerSandbox") == "lsf-linux-x86_64-landlock3-seccomp-v1",
