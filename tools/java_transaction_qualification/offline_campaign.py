@@ -284,8 +284,8 @@ class OfflineCampaign:
             "creationNarrowed": True, "currentAuthorityInferred": False})
         if self.current_v2:
             self.refresh_authority(settings)
-        reviewed = self.action({"action": "review"})
         observed = self.inspect()
+        reviewed = self.action(recovery.review_request(observed["view"], restored["snapshotDigest"], acknowledgement))
         requested = recovery.original_view(observed["view"])
         epoch_advanced(list(http.view_token(current["state-view"])), requested, "recovery")
         resume_request = restored_resume_request(requested, file, snapshot, acknowledgement,

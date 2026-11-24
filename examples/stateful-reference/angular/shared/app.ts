@@ -72,8 +72,7 @@ export class App {
   constructor() {
     inject(TransferState).set(PAGE_KEY, this.page);
     if (isPlatformBrowser(inject(PLATFORM_ID))) {
-      this.client = new DraftClient(this.page.routes);
-      this.client.view = this.page.draft;
+      this.client = new DraftClient(this.page.routes, {initialView: this.page.draft});
     }
   }
   terminal() { return this.client?.canFinishOriginal() ?? false; }
@@ -121,7 +120,17 @@ export class App {
       if (result.disposition === 'committed') this.update(await client.query(current.draftId));
     });
   }
-  async recover() { await this.run(async client => this.update(await client.recover())); }
+  async recover() {
+    await this.run(async client => {
+      const result = await client.recover();
+      if (result.disposition !== 'committed') {
+        this.update(result);
+        return;
+      }
+      this.update({disposition: result.disposition, effectIds: result.effectIds});
+      if (client.pending) this.update(await client.query(client.pending.draftId));
+    });
+  }
   async refresh() {
     const id = this.draft()?.draftId ?? this.page.draftId;
     if (!id) return;

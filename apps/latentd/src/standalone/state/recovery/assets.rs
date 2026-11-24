@@ -1,4 +1,6 @@
 //! Exact admitted package layers retained before any fixed-worker review.
+pub(super) mod order_draft;
+
 use super::profile::{CurrentHttpInput, Profile, V1, V2};
 use super::selection::RecoverySource;
 use latent_artifacts::{
@@ -10,16 +12,28 @@ use latent_artifacts::{
 };
 use latent_core::PlatformError;
 use latent_state::{
-    namespace::compatibility::{ReviewedSchema, SchemaId},
+    namespace::compatibility::{ReviewedSchema, SchemaDeclaration, SchemaId},
     recovery::snapshot::RequiredArtifact,
 };
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 
+const AGGREGATE_DEFINITION: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../examples/rust-capsules/transactional-aggregate/state-schema.json"
+));
+const AGGREGATE_MEDIA: &str = "application/vnd.lsf.aggregate-v1";
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum RecoveryCodec {
+    Aggregate(Profile),
+    OrderDraft,
+}
+
 pub(super) struct SchemaEvidence {
     pub operation: Arc<RecoverySource>,
     pub schema: ReviewedSchema,
-    pub profile: Profile,
+    pub codec: RecoveryCodec,
     pub artifacts: Vec<RequiredArtifact>,
 }
 
@@ -33,7 +47,9 @@ pub(super) fn capture(
 ) -> Result<SchemaEvidence, PlatformError> {
     let publication = operation.publication();
     publication.check_current()?;
-    let profile = Profile::installed(&publication.release().0)?;
+    let Ok(profile) = Profile::installed(&publication.release().0) else {
+        return capture_shared(repository, operation);
+    };
     profile.require_companion(&operation.asset.get().declaration().state_schema)?;
     let mut names = vec![
         "application-schema-inputs.json",
@@ -154,12 +170,120 @@ pub(super) fn capture(
     Ok(SchemaEvidence {
         operation,
         schema,
-        profile,
+        codec: RecoveryCodec::Aggregate(profile),
         artifacts,
     })
 }
 
+fn capture_shared(
+    repository: &Arc<DirectoryArtifactRepository>,
+    operation: Arc<RecoverySource>,
+) -> Result<SchemaEvidence, PlatformError> {
+    let publication = operation.publication();
+    let selected = operation.asset.get();
+    let (codec, schema_bytes) = match selected.declaration().namespace.as_str() {
+        "transactional-aggregate" => (
+            RecoveryCodec::Aggregate(Profile::Legacy),
+            AGGREGATE_DEFINITION,
+        ),
+        namespace if order_draft::draft_id(namespace).is_some() => {
+            (RecoveryCodec::OrderDraft, order_draft::DEFINITION)
+        }
+        _ => return Err(super::denied()),
+    };
+    let definition = SchemaId::from_definition(schema_bytes).map_err(|_| super::denied())?;
+    if selected.declaration().state_schema != definition.as_str() {
+        return Err(super::denied());
+    }
+    let captured = repository.capture_selected_transaction_layers(
+        selected,
+        &["state-schema.json"],
+        &operation.native,
+        Arc::clone(&operation.original),
+    )?;
+    let (manifest, configuration, layers) = captured.get().parts();
+    let package = package_digest(manifest);
+    if Some(&package) != publication.package() {
+        return Err(super::denied());
+    }
+    let config = decode_config(configuration, PackageLimits::default())?;
+    let exact_schema = asset(&config, layers, "state-schema.json", "application/json")?;
+    if exact_schema != schema_bytes {
+        return Err(super::denied());
+    }
+    let proof = match codec {
+        RecoveryCodec::Aggregate(decoder) => aggregate_proof(decoder, exact_schema)?,
+        RecoveryCodec::OrderDraft => order_draft::proof()?,
+    };
+    let package_digest = digest_bytes(package.as_str())?;
+    let schema = ReviewedSchema::accept_with(
+        SchemaDeclaration {
+            package_digest,
+            readers: vec![definition.clone()],
+            writers: vec![definition],
+        },
+        package_digest,
+        proof,
+        |_, _, _| Ok(()),
+    )
+    .map_err(|_| super::denied())?;
+    let mut artifacts = required_sources(&operation, &schema)?;
+    artifacts.push(artifact(
+        selected.declaration().state_schema.clone(),
+        exact_schema,
+    ));
+    publication.check_current()?;
+    Ok(SchemaEvidence {
+        operation,
+        schema,
+        codec,
+        artifacts,
+    })
+}
+
+fn aggregate_proof(decoder: Profile, schema: &[u8]) -> Result<[u8; 32], PlatformError> {
+    let mut proof = Sha256::new();
+    proof.update(b"latent.shared-aggregate-recovery.v1\0");
+    proof.update(schema);
+    for expected in [0_u64, 1, u64::MAX] {
+        let bytes = expected.to_le_bytes();
+        if decoder.decode(AGGREGATE_MEDIA, &bytes) != Some(expected) {
+            return Err(super::denied());
+        }
+        proof.update(bytes);
+    }
+    Ok(proof.finalize().into())
+}
+
 fn required(
+    operation: &RecoverySource,
+    schema: &ReviewedSchema,
+) -> Result<Vec<RequiredArtifact>, PlatformError> {
+    let mut artifacts = required_sources(operation, schema)?;
+    artifacts.extend([
+        artifact(
+            SchemaId::from_definition(V1)
+                .map_err(|_| super::denied())?
+                .as_str()
+                .into(),
+            V1,
+        ),
+        artifact(
+            SchemaId::from_definition(V2)
+                .map_err(|_| super::denied())?
+                .as_str()
+                .into(),
+            V2,
+        ),
+        artifact(
+            super::profile::RECIPE_IDENTITY.into(),
+            super::profile::RECIPE,
+        ),
+    ]);
+    Ok(artifacts)
+}
+
+fn required_sources(
     operation: &RecoverySource,
     schema: &ReviewedSchema,
 ) -> Result<Vec<RequiredArtifact>, PlatformError> {
@@ -184,24 +308,6 @@ fn required(
             identity: operation.contract_digest.clone(),
             digest: digest_bytes(&operation.contract_digest)?,
         },
-        artifact(
-            SchemaId::from_definition(V1)
-                .map_err(|_| super::denied())?
-                .as_str()
-                .into(),
-            V1,
-        ),
-        artifact(
-            SchemaId::from_definition(V2)
-                .map_err(|_| super::denied())?
-                .as_str()
-                .into(),
-            V2,
-        ),
-        artifact(
-            super::profile::RECIPE_IDENTITY.into(),
-            super::profile::RECIPE,
-        ),
     ])
 }
 

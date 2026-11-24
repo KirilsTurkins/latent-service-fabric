@@ -16,6 +16,13 @@ namespace incarnation and result-read policy. The companion's formats are
 selected deployment and preserves its operation narrowing. Additional grant
 constraints refuse until their adapter is implemented.
 
+The maintained guest builders include the exact captured `state-schema.json`
+and `transaction-profile.json` in the signed package. When a package carries a
+schema asset, standalone selection verifies that the retained asset matches
+the companion's `stateSchema` digest. A signed schema describes the
+application's format. Migration still needs its own approved decoder,
+authorization and checkpoint.
+
 The state provider binding must describe the actual protected engine profile,
 configuration digest and configured epoch. `ProtectedStoreConfig::inspection_profile`
 computes that descriptive identity from the selected engine limits; the
@@ -70,6 +77,47 @@ derives declarations from its exact signed companion; installing those
 declarations does not grant namespace or effect access. Issues #409 and #718
 retain wider runtime/application qualification requirements.
 
+## Submit a command and read a fresh view
+
+Use the same authenticated CLI configuration as namespace inspection. Select
+the installed namespace, exact service, contract, function and any configured
+route. Supply canonical WIT JSON values in the input file and the approved
+Phase 4 ceilings in a budget JSON file. The read budget must leave
+`stateWriteBytes` and `effectCount` at zero.
+
+```bash
+latent --phase4 --output json transaction invoke \
+  --namespace "$Namespace" --incarnation "$Incarnation" \
+  --service "$Service" --contract "$Contract" --function "$CommandOperation" \
+  --route "$CommandRoute" --client-key "$OriginalClientKey" \
+  --input command-input.json --budget command-budget.json
+
+latent --phase4 --output json transaction query \
+  --namespace "$Namespace" --incarnation "$Incarnation" \
+  --service "$Service" --contract "$Contract" --function "$QueryOperation" \
+  --route "$QueryRoute" --input query-input.json --budget query-budget.json \
+  --minimum-view-version "$CommittedView"
+```
+
+Omit the route flag when the selected operation has no explicit route. Set
+`$CommittedView` to `data.command.commit.committedVersion.data` from the
+command response.
+Omit the minimum view for a fresh read with no prior version expectation.
+Preserve the original entity and requested shared scope on the command and any
+subsequent command lookup.
+
+A stale-edit command can supply `--expected-versions` with a JSON array of original state-key
+expectations. Each row uses a padded base64 key and either a padded base64
+version or `"absent": true`. The query's minimum view and a key's expected version serve
+different purposes. If the command response is lost, keep the original input
+and expectation files and look up the result using the original key.
+
+`--retry-attempt` supplies a previously observed durable abort fence for an explicitly
+chosen retry. The file contains `requestId` and `expectedAbort`, with `commandId`, `attemptId`,
+`transactionId` and the exact padded base64 `ownerFence`. Keep the same original command ID,
+input and expectations and use a new request ID for the expressly approved
+retry. An ambiguous timeout or an unconfirmed cancellation supplies no fence.
+
 For the operational lookup sequence, use [transaction recovery](../operations/transaction-recovery.md).
 The [installed native recovery helper](../testing/installed-transaction-recovery.md)
 now composes authenticated snapshot, restore, migration and effect-close actions
@@ -79,6 +127,6 @@ are separate from the read/control lookup sequence. Complete terminal/pending
 native and packaged qualification remains outstanding. Preserved Java compiler
 captures and failed receipts qualify only their recorded sources.
 
-`transaction_recovery --diagnose-startup` runs ordinary startup and shutdown
+`latentd transaction-recovery --diagnose-startup` runs ordinary startup and shutdown
 and may advance the durable node epoch. Its result is a startup observation,
 not restore approval or a successful recovery programme.

@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 from tools.rust_capsule_project import AUTHORING_TEMPLATES, TEMPLATES, ROOT, snapshot
-from tools.transaction_guest_project import TEMPLATE, package_companion
+from tools.transaction_guest_project import TEMPLATE, package_companion, package_schema_assets
 
 
 class TransactionGuestAuthoringTests(unittest.TestCase):
@@ -425,6 +425,12 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
                     layer = package_companion(output, project, files)
                     self.assertEqual(layer[0], "transaction-binding.json")
                     self.assertEqual((output / layer[0]).read_bytes(), files["transaction-binding.json"])
+                    self.assertEqual(package_schema_assets(output, files), [
+                        ("state-schema.json", "asset", "application/json"),
+                        ("transaction-profile.json", "asset", "application/json"),
+                    ])
+                    for asset in ("state-schema.json", "transaction-profile.json"):
+                        self.assertEqual((output / asset).read_bytes(), files[asset])
 
     def test_packaging_rejects_mismatched_duplicate_and_unbounded_companions(self):
         from tools.rust_capsule_project import create
@@ -442,3 +448,7 @@ class TransactionGuestAuthoringTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     package_companion(Path(temporary), project, {**files, "transaction-binding.json": raw})
             self.assertIsNone(package_companion(Path(temporary), project, {}))
+            changed = {**files, "state-schema.json": b'{"different":"schema"}'}
+            with self.assertRaisesRegex(ValueError, "transaction-schema-drift"):
+                package_schema_assets(Path(temporary), changed)
+            self.assertFalse((Path(temporary) / "state-schema.json").exists())

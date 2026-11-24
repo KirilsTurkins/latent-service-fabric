@@ -74,6 +74,11 @@ def original_digest(value):
     return value
 
 
+def review_request(view, snapshot, window):
+    return {"action": "review", "expectedView": original_view(view),
+            "snapshotDigest": original_digest(snapshot), "windowAcknowledgement": original_digest(window)}
+
+
 def report(raw):
     value = decode(raw, 1048576)
     require(isinstance(value, dict) and set(value) == REPORT_FIELDS

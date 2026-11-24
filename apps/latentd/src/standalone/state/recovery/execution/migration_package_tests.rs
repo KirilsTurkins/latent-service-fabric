@@ -184,8 +184,10 @@ async fn actual_installed_current_snapshot_stages_migration_under_original_owner
     let mut fixture = Box::pin(Fixture::new(1)).await;
     assert_eq!(fixture.codecs.catalog.schemas.len(), 1);
     assert_eq!(
-        fixture.codecs.catalog.primary().profile,
-        super::super::profile::Profile::CurrentWriter
+        fixture.codecs.catalog.primary().codec,
+        super::super::assets::RecoveryCodec::Aggregate(
+            super::super::profile::Profile::CurrentWriter
+        )
     );
     let original_owner = fixture.codecs.original.is_from_owner(&fixture.native)
         && fixture.store.uses_native_capacity(&fixture.native)

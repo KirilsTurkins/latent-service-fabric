@@ -132,7 +132,7 @@ class PendingCampaign(OfflineCampaign):
         epoch_advanced(list(http.view_token(original['state-view'])), observed['view'], 'recovery')
         return observed, acknowledgement, restored
 
-    def close_original(self, original, observed, acknowledgement):
+    def close_original(self, original, observed, acknowledgement, snapshot):
         effect_id = original['effect-ids'][0]
         inspected = self.action({'action': 'inspect-close-effects', 'operationId': CLOSE_OPERATION,
             'effectIds': [effect_id], 'reason': 'remote-acceptance-observed-explicit-no-redrive'})
@@ -144,7 +144,7 @@ class PendingCampaign(OfflineCampaign):
         replay = self.action(request)
         require(controls.close_receipt(replay, plan, plan_ack, replay=True) == receipt,
                 'original-pending-close-replay-is-immutable')
-        reviewed = self.action({'action': 'review'})
+        reviewed = self.action(recovery.review_request(observed['view'], snapshot, acknowledgement))
         recovery.original_digest(reviewed['reviewDigest'])
         after = self.inspect()
         resumed = self.resume(after['view'], 'java-pending-restored-resume')
@@ -179,7 +179,7 @@ class PendingCampaign(OfflineCampaign):
         controls.control_dispatcher(self.client, 'resume', 'java-pending-original-dispatch-resume')
         recipient, remote_record = self.remote_acceptance(original)
         restored, window, stage = self.restored(file, snapshot, original, recipient)
-        closed = self.close_original(original, restored, window)
+        closed = self.close_original(original, restored, window, stage['snapshotDigest'])
         require(self.observation() == recipient, 'explicit-pending-close-does-not-send-or-acknowledge')
         self.node.start(self.configuration, current_session='pending-restored-runtime')
         self.campaign.full_path = self.configuration

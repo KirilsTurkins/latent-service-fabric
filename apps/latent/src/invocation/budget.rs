@@ -7,6 +7,7 @@ use crate::{
     error::Failure,
     input,
 };
+use std::path::Path;
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(default, rename_all = "camelCase", deny_unknown_fields)]
@@ -66,11 +67,8 @@ pub(super) fn resolve(args: &InvokeArgs) -> Result<proto::ResourceBudget, Failur
         inline.clone()
     } else {
         args.budget
-            .as_ref()
-            .map(|path| {
-                let bytes = input::read(path, 16 * 1024, "budget")?;
-                serde_json::from_slice::<Budget>(&bytes).map_err(|_| invalid())
-            })
+            .as_deref()
+            .map(read)
             .transpose()?
             .unwrap_or_default()
     };
@@ -86,6 +84,26 @@ pub(super) fn resolve(args: &InvokeArgs) -> Result<proto::ResourceBudget, Failur
     if let Some(value) = args.log_bytes {
         budget.log_bytes = value;
     }
+    let profile = match args.budget_profile {
+        InvokeBudgetProfile::Phase1 => latent_core::BudgetProfile::Phase1,
+        InvokeBudgetProfile::Phase3 => latent_core::BudgetProfile::Phase3,
+    };
+    checked(&budget, profile)
+}
+
+fn read(path: &Path) -> Result<Budget, Failure> {
+    let bytes = input::read(path, 16 * 1024, "budget")?;
+    serde_json::from_slice(&bytes).map_err(|_| invalid())
+}
+
+pub(crate) fn transaction(path: &Path) -> Result<proto::ResourceBudget, Failure> {
+    checked(&read(path)?, latent_core::BudgetProfile::Phase4)
+}
+
+fn checked(
+    budget: &Budget,
+    profile: latent_core::BudgetProfile,
+) -> Result<proto::ResourceBudget, Failure> {
     let result = proto::ResourceBudget {
         cpu_fuel: budget.cpu_fuel,
         memory_bytes: budget.memory_bytes,
@@ -98,10 +116,6 @@ pub(super) fn resolve(args: &InvokeArgs) -> Result<proto::ResourceBudget, Failur
         blob_write_bytes: budget.blob_write_bytes,
         log_bytes: budget.log_bytes,
         effect_count: budget.effect_count,
-    };
-    let profile = match args.budget_profile {
-        InvokeBudgetProfile::Phase1 => latent_core::BudgetProfile::Phase1,
-        InvokeBudgetProfile::Phase3 => latent_core::BudgetProfile::Phase3,
     };
     profile
         .validate_request(&latent_wire::invocation::budget_from_proto(result))

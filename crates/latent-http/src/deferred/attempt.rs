@@ -19,6 +19,7 @@ use std::sync::Arc;
 /// original provider reservation. No protocol task or driver is detached.
 pub(super) struct AcceptedOperation {
     pub provider: HttpProvider,
+    pub credential: usize,
     pub transport: ProtocolTransport,
     pub endpoint: Arc<QualifiedHttpEndpoint>,
     pub time: Arc<dyn EffectTimeSource>,

@@ -44,7 +44,7 @@ Current action fields are:
 | `restore` | the inspect fields plus exact `windowAcknowledgement` |
 | `inspect-close-effects` | `operationId`, `effectIds`, `reason` |
 | `close-effects` | `operationId`, exact inspected `plan`, `acknowledgement` |
-| `review` | none |
+| `review` | exact `expectedView`, `snapshotDigest` and `windowAcknowledgement` |
 | `resume` | `operationId`, exact `expectedView` byte array |
 | `stage-migration`, `complete-migration` | `operationId`, `file`, `expectedView`, `checkpointDigest`, `checkpointManifestDigest` |
 | `resume-migration` | `operationId`, `migrationOperationId`, `file`, `expectedView`, `migrationExpectedView`, `checkpointDigest`, `checkpointManifestDigest` |
@@ -53,7 +53,10 @@ Current action fields are:
 Digests use `sha256:` and 64 lowercase hexadecimal digits. Restore inspection
 returns `windowDigest`; restore requires that exact acknowledgement. Namespace
 inspection returns encoded `namespace`, `history`, current `view`, optional
-`guard`, `reviewDigest` and `publicationEffects`. Review the selected publication's
+`guard`, `restoreStatus`, `reviewDigest` and `publicationEffects`. When a
+restore guard is present, `restoreStatus` reports its current status and the
+original operation, snapshot and loss-window digests. An accepted review also
+includes the original review digest. Review the selected publication's
 pending, dispatching, uncertain, blocked and retry counts before retiring it.
 These counts describe the authorized namespace view and leave retained work
 available for drain or explicit reconciliation. Run the check while the
@@ -92,6 +95,13 @@ retention deadline has passed. The receipt reports reclaimed response bytes
 and the new maintenance generation. The shared sweep cursor stays in place;
 related effects and inbox records retain their original identities.
 
+To review a staged restore, use the restored namespace's inspected `view` as
+`expectedView`, the original snapshot digest and the restore's acknowledged
+window digest. Review requires the same paused namespace and current authority
+after all required work is reconciled. Resending the identical review after a
+lost response recovers its original approval while that exact view remains
+current. Start a separate explicit resume after reviewing the receipt.
+
 Migration resume returns action `resume-migration`,
 encoded current `receipt`, current `view`, and `resourcePhysicallyRetired`.
 Generic resume refuses a retained current migration and cannot replace its
@@ -126,16 +136,20 @@ does not approve restoration or replace the reviewed window acknowledgement.
 
 The requested publication must match a configured current operation and its
 actual current deployment. Each extra source independently captures eligible
-signed package bytes and the reviewed component, companion, contract, schema,
-Java source and current HTTP marker. It must match the current tenant, capsule,
-logical deployment, binding, namespace and incarnation. These sources install
+signed package bytes and the reviewed component, companion, contract and schema.
+The installed Java migration profiles also check their captured source and
+effect marker. Each source must match the current tenant, capsule, logical
+deployment, binding, namespace and incarnation. These sources install
 no operation, grant or dispatch rule. Only the requested current source supplies
 purpose-specific policy decisions. Every selected publication remains subject
 to the final currentness fences; unknown or incomplete retained sources refuse.
 The review digest includes all selected signed source identities and proofs.
-Retained command source schemas must equal their exact signed companion schema;
-a compatible reader cannot relabel its original execution source, and the
-distinct generic aggregate schema remains unsupported by this reviewed closure.
+Retained command records keep the exact schema of their original signed
+companion. The shared transactional aggregate supports same-schema backup and
+restore when its admitted package contains the exact maintained
+`state-schema.json`. The recovery decoder checks the original key, media,
+eight-byte unsigned value, metadata and linked retained records. Use the
+separate reviewed Java recipe for an application schema transformation.
 
 Ordinary runtime configuration selects one publication's three operations.
 Historical decoder sources cannot bypass the runtime's current deployment and

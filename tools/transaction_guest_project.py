@@ -99,8 +99,7 @@ def current_rust_event_requirements(project: dict, companion: bytes, profile: st
 REFERENCE_WORLD = "examples:order-draft/service@1.0.0"
 
 
-def reference_http_requirements(project: dict, companion: bytes, profile: str) -> dict:
-    """Pin the configured adapter profile; this document supplies no authority."""
+def reference_binding(project: dict, companion: bytes) -> dict:
     from tools.dev_workflow.transaction_binding import validate
     binding = validate(companion, capsule=project["service"], deployment=project["name"], binding=project["name"])
     draft = binding["namespace"].removeprefix("order-drafts-")
@@ -110,6 +109,11 @@ def reference_http_requirements(project: dict, companion: bytes, profile: str) -
                 {"operation": name, "mode": mode, "inputFormat": INPUT_FORMAT, "resultFormat": RESULT_FORMAT}
                 for name, mode in (("edit", "strict-command"), ("query", "fresh-query"))]):
         raise ValueError("order-draft notification binding is invalid")
+    return binding
+
+
+def reference_http_requirements(project: dict, companion: bytes, profile: str) -> dict:
+    binding = reference_binding(project, companion)
     if not isinstance(profile, str) or re.fullmatch(r"qualified-http-v1:[0-9a-f]{64}", profile) is None:
         raise ValueError("configured qualified HTTP idempotency profile is required")
     return {"formatVersion": 1, "protocol": "lsf-atomic-idempotent-http-v1",
@@ -117,8 +121,48 @@ def reference_http_requirements(project: dict, companion: bytes, profile: str) -
             "namespace": binding["namespace"], "companionDigest": "sha256:" + hashlib.sha256(companion).hexdigest(),
             "binding": "draft-http", "operation": "http", "adapter": "qualified-http-effect-v1",
             "payloadFormat": "http-body-value-v1", "idempotencyProfile": profile,
-            "ceiling": {"maximum_payload_bytes": 1024, "maximum_response_bytes": 22528,
+            "ceiling": {"maximum_payload_bytes": 48, "maximum_response_bytes": 22528,
                         "maximum_attempts": 3, "maximum_age_millis": 600000, "attempt_timeout_millis": 2000}}
+
+
+def reference_event_requirements(project: dict, companion: bytes, profile: str) -> dict:
+    binding = reference_binding(project, companion)
+    if not isinstance(profile, str) or re.fullmatch(r"js-window-v1:[0-9a-f]{64}", profile) is None:
+        raise ValueError("configured JetStream idempotency profile is required")
+    return {"formatVersion": 1, "protocol": "lsf-jetstream-event-v1",
+            "capsule": project["service"], "deployment": project["name"], "stateBinding": binding["binding"],
+            "namespace": binding["namespace"], "companionDigest": "sha256:" + hashlib.sha256(companion).hexdigest(),
+            "binding": "draft-change", "operation": "event", "adapter": "nats-jetstream-effect-v1",
+            "payloadFormat": "nats-event-value-v1", "idempotencyProfile": profile,
+            "ceiling": {"maximum_payload_bytes": 48, "maximum_response_bytes": 16384,
+                        "maximum_attempts": 3, "maximum_age_millis": 60000, "attempt_timeout_millis": 5000}}
+
+
+def package_effect_assets(output: Path, project: dict, files: dict[str, bytes]) -> list[tuple[str, str, str]]:
+    """Carry independently captured signed provider requirements for this package."""
+    if project.get("world") != REFERENCE_WORLD:
+        single = package_effect_requirements(output, project, files)
+        return [] if single is None else [single]
+
+    from tools.dev_workflow.common import decode, encode, require
+    source = decode(files.get("order-draft-source.json", b"{}"), 8192)
+    require(isinstance(source, dict), "order-draft-provider-source-required")
+    raw_event = files.get(EVENT_REQUIREMENTS)
+    event_profile = source.get("eventProfile")
+    require((raw_event is None) == (event_profile is None), "deferred-event-requirements-and-profile-required")
+    if raw_event is not None:
+        companion = files.get("transaction-binding.json")
+        require(companion is not None, "deferred-event-companion-required")
+        expected = reference_event_requirements(project, companion, event_profile)
+        require(encode(decode(raw_event, 8192)) == encode(expected), "deferred-event-requirements-drift")
+    http_files = {name: value for name, value in files.items() if name != EVENT_REQUIREMENTS}
+    http = package_effect_requirements(output, project, http_files)
+    assets = [] if http is None else [http]
+    if raw_event is not None:
+        with (output / EVENT_REQUIREMENTS).open("xb") as stream:
+            stream.write(raw_event)
+        assets.append((EVENT_REQUIREMENTS, "asset", "application/json"))
+    return assets
 
 
 def augment(files: dict[str, bytes], project: dict) -> None:
@@ -159,6 +203,20 @@ def package_companion(output: Path, project: dict, files: dict[str, bytes]) -> t
     with (output / "transaction-binding.json").open("xb") as stream:
         stream.write(raw)
     return ("transaction-binding.json", "asset", "application/vnd.latent.transaction-binding.v1+json")
+
+
+def package_schema_assets(output: Path, files: dict[str, bytes]) -> list[tuple[str, str, str]]:
+    """Carry the schema and ABI requirements already selected by the author."""
+    from tools.guest_compatibility_build import host_abi
+    host_abi(files)
+    names = ("state-schema.json", "transaction-profile.json")
+    for name in names:
+        if not 0 < len(files[name]) <= 64 * 1024:
+            raise ValueError("transaction schema asset exceeds its native read limit")
+    for name in names:
+        with (output / name).open("xb") as asset:
+            asset.write(files[name])
+    return [(name, "asset", "application/json") for name in names]
 
 
 def packaging_arguments(files: dict[str, bytes]) -> tuple[str, ...]:
