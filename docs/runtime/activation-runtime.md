@@ -33,6 +33,11 @@ memory and delegated children. Failed preparation rolls back. Completed work
 settles its owner once; an abandoned waiter cannot release a physical provider
 owner's reservation.
 
+The first admitted owner prepays the full configured record capacity. The
+arena initializes one record per live owner. Settlement removes that record
+under the state lock. A surviving task keeps its generation, owner ID and
+pending wake even if its record moves. The backing stays charged until retirement.
+
 The four closed, resource-free runtime result shapes retain the accepted broker
 call inside the actual Wasmtime return value until canonical lowering completes.
 Completed scalar, token and observation results then release their original call,

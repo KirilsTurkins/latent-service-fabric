@@ -348,13 +348,7 @@ fn same_ledger_cancellation_before_owner_write_refuses_publication() {
     assert_eq!(runtime.snapshot().owners[0], 0);
     let state = runtime.inner.state.lock().unwrap();
     assert_eq!(state.next_id, 1);
-    assert!(state
-        .slab
-        .as_ref()
-        .unwrap()
-        .records
-        .iter()
-        .all(Option::is_none));
+    assert!(state.slab.as_ref().unwrap().records.is_empty());
     drop(state);
     assert!(budget.host_memory_bytes() > original);
     runtime.retire().unwrap();
@@ -422,17 +416,7 @@ fn same_ledger_cancellation_rolls_back_hidden_owner_write() {
     assert_eq!(after.host_memory_bytes, before.host_memory_bytes);
     let state = runtime.inner.state.lock().unwrap();
     assert_eq!(state.next_id, next_id);
-    assert_eq!(
-        state
-            .slab
-            .as_ref()
-            .unwrap()
-            .records
-            .iter()
-            .flatten()
-            .count(),
-        1
-    );
+    assert_eq!(state.slab.as_ref().unwrap().records.len(), 1);
     assert!(runtime.record(&state, task.token()).unwrap().parked);
     drop(state);
     drop(wake);
@@ -1094,12 +1078,27 @@ fn lazy_path_allocates_no_records_and_accepted_owners_share_finite_limits() {
     let second = runtime
         .register(OwnerKind::ManagedIdleWorker, None)
         .unwrap();
+    let record_count = || {
+        let state = runtime.inner.state.lock().unwrap();
+        state.slab.as_ref().unwrap().records.len()
+    };
+    assert_eq!(record_count(), 2);
+    let first_token = first.token();
+    let second_wake = runtime.park(second.token()).unwrap();
     assert!(runtime.register(OwnerKind::Task, None).is_err());
     let memory = runtime.snapshot().host_memory_bytes;
     assert!(memory > 0);
     drop(first);
+    assert_eq!(record_count(), 1);
+    let replacement = runtime.register(OwnerKind::Task, None).unwrap();
+    assert_eq!(record_count(), 2);
+    assert!(!runtime.wake(first_token));
+    assert!(second_wake.wake());
+    assert_eq!(runtime.snapshot().parked_tasks, 0);
+    drop((replacement, second_wake));
     assert_eq!(runtime.snapshot().host_memory_bytes, memory);
     drop(second);
+    assert_eq!(record_count(), 0);
     runtime.retire().unwrap();
     assert_eq!(runtime.snapshot().host_memory_bytes, metadata);
     let budget = runtime.inner.budget.clone();
@@ -1113,9 +1112,7 @@ fn record_backing_and_bookkeeping_are_reserved_before_owner_admission() {
     let budget = runtime.inner.budget.clone();
     let original = budget.host_memory_bytes();
     let count = runtime.inner.limits.total();
-    let bytes = (std::alloc::Layout::array::<Option<Record>>(count)
-        .unwrap()
-        .size()
+    let bytes = (std::alloc::Layout::array::<Record>(count).unwrap().size()
         + SLAB_ALLOCATION_BOOKKEEPING) as u64;
     let remaining = budget.remaining_at(Instant::now()).memory_bytes;
     // Leave enough for the record layout alone, but one byte less than the
