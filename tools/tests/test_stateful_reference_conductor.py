@@ -104,6 +104,41 @@ class StatefulReferenceConductor(unittest.TestCase):
                 conductor.regular(root, "input", 4)
             self.assertEqual(conductor.regular(root, "input", 5), b"12345")
 
+    def test_cold_preparation_uses_the_original_admitted_generation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            backend = conductor.Backend.read("java", "alice", fixture(Path(temporary)), PUBLICATION)
+            identity = {"id": PUBLICATION, "tenant": "examples"}
+            lifecycle = {"status": {"eligibility": "RELEASE_LIVE_ELIGIBILITY_ELIGIBLE", "record": {
+                "publication": identity, "componentDigest": backend.component_digest,
+                "state": "RELEASE_LIFECYCLE_STATE_ADMITTED", "generation": str(2**64 - 1),
+            }}}
+            prepared = {"publication": identity, "componentDigest": backend.component_digest,
+                        "lifecycleGeneration": str(2**64 - 1), "prepared": True, "executionAuthorized": False}
+
+            class Client:
+                def __init__(self):
+                    self.calls = []
+
+                def call(self, *args, **kwargs):
+                    self.calls.append((args, kwargs))
+                    return {"outcomeKnown": True, "data": lifecycle if len(self.calls) == 1 else prepared}
+
+            client = Client()
+            conductor.prepare_backend(client, backend)
+            self.assertEqual(client.calls, [
+                (("release", "lifecycle", "--publication", PUBLICATION), {}),
+                (("--rpc-timeout-ms", "120000", "release", "prepare", "--publication", PUBLICATION,
+                  "--lifecycle-generation", str(2**64 - 1), "--maximum-wait-ms", "120000"), {"timeout": 130}),
+            ])
+            prepared["executionAuthorized"] = True
+            with self.assertRaisesRegex(RuntimeError, "prepared-app-publication-identity"):
+                conductor.prepare_backend(Client(), backend)
+            lifecycle["status"]["record"]["generation"] = str(2**64)
+            client = Client()
+            with self.assertRaisesRegex(RuntimeError, "bounded-app-publication-generation"):
+                conductor.prepare_backend(client, backend)
+            self.assertEqual(len(client.calls), 1)
+
     def test_unknown_deployment_result_stops_without_trigger_or_mutation_retry(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

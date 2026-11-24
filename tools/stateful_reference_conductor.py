@@ -111,6 +111,33 @@ class Backend:
                 "companionDigest": digest(self.companion)}
 
 
+def prepare_backend(client, backend: Backend) -> None:
+    """Prepare an admitted component before the browser's request deadline starts."""
+    identity = {"id": backend.publication, "tenant": "examples"}
+    lifecycle = client.call("release", "lifecycle", "--publication", backend.publication)
+    status = lifecycle["data"].get("status")
+    require(lifecycle["outcomeKnown"] is True and isinstance(status, dict),
+            "known-app-publication-lifecycle")
+    record = status.get("record")
+    require(isinstance(record, dict) and record.get("publication") == identity
+            and record.get("componentDigest") == backend.component_digest
+            and record.get("state") == "RELEASE_LIFECYCLE_STATE_ADMITTED"
+            and status.get("eligibility") == "RELEASE_LIVE_ELIGIBILITY_ELIGIBLE",
+            "current-app-publication-lifecycle")
+    generation = record.get("generation")
+    require(isinstance(generation, str) and re.fullmatch(r"[1-9][0-9]{0,19}", generation)
+            and int(generation) < 2**64, "bounded-app-publication-generation")
+    prepared = client.call("--rpc-timeout-ms", "120000", "release", "prepare",
+                           "--publication", backend.publication, "--lifecycle-generation", generation,
+                           "--maximum-wait-ms", "120000", timeout=130)
+    data = prepared["data"]
+    require(prepared["outcomeKnown"] is True and isinstance(data, dict)
+            and data.get("prepared") is True and data.get("executionAuthorized") is False and data == {
+        "publication": identity, "lifecycleGeneration": generation,
+        "componentDigest": backend.component_digest, "prepared": True, "executionAuthorized": False,
+    }, "prepared-app-publication-identity")
+
+
 def select(client, backend: Backend, *, result_policy: str, state_policies: list[str], grants: list[dict],
            install_triggers: bool = True) -> dict:
     """One explicit deployment mutation and bounded trigger CAS, without retry."""
@@ -132,6 +159,8 @@ def select(client, backend: Backend, *, result_policy: str, state_policies: list
             and {"latent:state/key-value@0.2.0", "latent:intents/staging@0.1.0"}
                 <= {row["capability"] for row in grants}, "explicit-app-state-and-intent-policy-grants")
     manifest["spec"]["grants"] = [dict(row) for row in grants]
+    if not install_triggers:
+        prepare_backend(client, backend)
     name = manifest["metadata"]["name"]
     prior = client.call("deployment", "get", name, "--operation-snapshot", codes=(0, 6))["data"]
     path = client.directory / f"app-deployment-{client.calls}.json"
