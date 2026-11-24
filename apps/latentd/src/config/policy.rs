@@ -17,23 +17,25 @@ pub(super) fn admission(
     config: &NodeConfig,
     capacity: &Capacity,
     wasmtime: &latent_wasmtime::WasmtimeConfig,
+    transactional_triggers: Option<&super::triggers::TriggerSettings>,
 ) -> Result<NodeAdmissionPolicy, PlatformError> {
     let limits = quota(config, capacity)?;
     let threading_models = threading_models(config, wasmtime)?;
     let classes: BTreeSet<_> = config.cells.iter().map(|cell| cell.class.clone()).collect();
     let mut tenants: BTreeMap<TenantId, TenantAdmissionPolicy> = BTreeMap::new();
+    let new_tenant = || TenantAdmissionPolicy {
+        limits,
+        maximum_payload_bytes: config.limits.maximum_payload_bytes as u64,
+        maximum_priority: u8::MAX,
+        allowed_subjects: BTreeSet::new(),
+        allowed_principal_kinds: Vec::new(),
+        allowed_trust_classes: BTreeSet::from([TRUST_CLASS.to_owned()]),
+        allowed_cell_classes: classes.clone(),
+    };
     for credential in &config.credentials {
         let policy = tenants
             .entry(TenantId(credential.tenant.clone()))
-            .or_insert_with(|| TenantAdmissionPolicy {
-                limits,
-                maximum_payload_bytes: config.limits.maximum_payload_bytes as u64,
-                maximum_priority: u8::MAX,
-                allowed_subjects: BTreeSet::new(),
-                allowed_principal_kinds: Vec::new(),
-                allowed_trust_classes: BTreeSet::from([TRUST_CLASS.to_owned()]),
-                allowed_cell_classes: classes.clone(),
-            });
+            .or_insert_with(&new_tenant);
         policy.allowed_subjects.insert(credential.subject.clone());
         let kind = principal_kind(credential.role);
         if !policy.allowed_principal_kinds.contains(&kind) {
@@ -49,16 +51,18 @@ pub(super) fn admission(
             let tenant = tenants
                 .get_mut(&TenantId(origin.tenant.clone()))
                 .ok_or_else(|| invalid("httpIngress.publicOriginTenant"))?;
-            tenant.allowed_subjects.insert(origin.subject.clone());
-            if !tenant
-                .allowed_principal_kinds
-                .contains(&PrincipalKind::Trigger)
-            {
-                tenant.allowed_principal_kinds.push(PrincipalKind::Trigger);
-            }
+            add_trigger_principal(tenant, &origin.subject);
         }
     }
     local_service_principals(config, &mut tenants)?;
+    if let Some(triggers) = transactional_triggers {
+        for binding in &triggers.configuration.bindings {
+            let tenant = tenants
+                .entry(TenantId(binding.tenant.clone()))
+                .or_insert_with(&new_tenant);
+            add_trigger_principal(tenant, &binding.principal_subject);
+        }
+    }
     let policy = NodeAdmissionPolicy {
         budget_ceiling: budget(config, capacity.maximum_memory),
         limits,
@@ -118,6 +122,16 @@ pub(super) fn admission(
         .validate_profile(config.budget_profile.profile())
         .map_err(|_| invalid("admission"))?;
     Ok(policy)
+}
+
+fn add_trigger_principal(tenant: &mut TenantAdmissionPolicy, subject: &str) {
+    tenant.allowed_subjects.insert(subject.to_owned());
+    if !tenant
+        .allowed_principal_kinds
+        .contains(&PrincipalKind::Trigger)
+    {
+        tenant.allowed_principal_kinds.push(PrincipalKind::Trigger);
+    }
 }
 
 fn threading_models(

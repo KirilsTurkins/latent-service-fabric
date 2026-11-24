@@ -41,8 +41,22 @@ fn incoming_configuration_requires_private_leaf_before_runtime_custody_check() {
         }],
     });
     assert!(super::super::triggers::derive(&config).unwrap().is_some());
-    // Deriving settings does not open the store or admit the input owner.
-    assert!(config.derive().unwrap().transactional_triggers.is_some());
+    let settings = config.derive().unwrap();
+    assert!(settings.transactional_triggers.is_some());
+    let incoming = &settings.admission.tenants[&latent_core::TenantId("a".into())];
+    assert_eq!(
+        incoming.allowed_subjects,
+        std::collections::BTreeSet::from(["input".to_owned()])
+    );
+    assert_eq!(
+        incoming.allowed_principal_kinds,
+        [latent_core::PrincipalKind::Trigger]
+    );
+    let other = &settings.admission.tenants[&latent_core::TenantId("examples".into())];
+    assert!(!other.allowed_subjects.contains("input"));
+    assert!(!other
+        .allowed_principal_kinds
+        .contains(&latent_core::PrincipalKind::Trigger));
     std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
     assert!(failure(config.derive())
         .message
