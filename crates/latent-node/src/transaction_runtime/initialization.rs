@@ -121,6 +121,11 @@ pub(super) fn initialize(
             .view_identity()
             .require_minimum(session.scope(), minimum)
         {
+            if matches!(error, StateError::RecoveryRequired) {
+                // The store and current view opened successfully. This view
+                // cannot satisfy a token from a different history.
+                return Ok(Err(StateFailure::Conflict));
+            }
             return Ok(Err(state_error(error, false)));
         }
     }

@@ -81,13 +81,17 @@ async fn real_query_refuses_old_schema_or_recovery_history_without_business_chan
                 .err()
                 .unwrap()
                 .code,
-            PlatformErrorCode::Unavailable
+            PlatformErrorCode::StateConflict
         );
         assert!(admission.take_result().unwrap().is_none());
         assert_eq!(fixture.rows(Family::State).await, 0);
         assert_eq!(fixture.rows(Family::Command).await, 0);
         drop(admission);
         assert!(fixture.native.snapshot().unwrap().physically_retired());
+        let (current, scope) = original_query(&fixture).await;
+        let identity =
+            latent_state::session::version::ViewIdentity::from_token(&scope, &current).unwrap();
+        assert_eq!(identity.epochs, epochs);
         fixture.shutdown().await;
     }
 }
