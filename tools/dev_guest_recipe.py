@@ -109,7 +109,7 @@ def compile_managed(payload: Path, project: Path, output: Path, check, language:
                     *, executable_approval: str | None = None) -> None:
     from tools.dev_managed_tools import unpack
     if executable_approval is not None:
-        require(language == "java", "selected-frontend-adapter-has-no-executable-approval-consumer")
+        require(language in {"java", "dotnet"}, "selected-frontend-adapter-has-no-executable-approval-consumer")
         sha(executable_approval)
     require(sys.platform == "linux" and platform.machine() == "x86_64", "managed-adapter-requires-linux-x86-64")
     cache = project.parent / "build-cache"
@@ -130,7 +130,8 @@ def compile_managed(payload: Path, project: Path, output: Path, check, language:
         # The upstream installation receipt names its original absolute path.
         # Only this private copy is relocated; the captured bundle is immutable.
         (staged / "tools/wasi-sdk.json").write_bytes(encode({"path": str(staged / "wasi-sdk")}))
-        build(project, output, sdk / "bin/capsule-contracts", None, repository, tools=staged / "tools", offline=True)
+        build(project, output, sdk / "bin/capsule-contracts", None, repository,
+              tools=staged / "tools", offline=True, executable_approval=executable_approval)
     elif language == "go":
         from tools import application_dependencies, guest_dependency_inputs
         from tools.go_capsule_build import build
@@ -168,7 +169,7 @@ def main() -> int:
     try:
         with owned_cancellation() as cancellation:
             if args.executable_approval is not None:
-                require(args.language in {"rust", "java"}, "selected-frontend-adapter-has-no-executable-approval-consumer")
+                require(args.language in {"rust", "java", "dotnet"}, "selected-frontend-adapter-has-no-executable-approval-consumer")
                 sha(args.executable_approval)
                 if args.language == "rust":
                     compile_rust(payload, project, output, cancellation.check, executable_approval=args.executable_approval)

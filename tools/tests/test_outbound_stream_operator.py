@@ -763,6 +763,22 @@ class StreamOperator(unittest.TestCase):
         self.assertEqual(result["revision"]["publicationId"], self.options["publication"])
         self.assertFalse(result["executionPermission"])
 
+    def test_tenant_only_inspection_requires_explicit_scoped_usage(self):
+        operator = self.operator()
+        operator.grant()
+        scoped = {**self.client.inspection, "nodeUsage": None}
+        responses = {
+            "node-wide": {**scoped, "nodeUsage": {"scope": "node"}},
+            "absent tenant": {**scoped, "tenantUsage": None},
+            "wrong tenant scope": {**scoped, "tenantUsage": {"scope": "node"}},
+            "missing node field": {key: value for key, value in scoped.items() if key != "nodeUsage"},
+        }
+        for label, response in responses.items():
+            with self.subTest(label=label):
+                self.client.inspection = response
+                with self.assertRaisesRegex(DevError, "inspection-scope-changed"):
+                    operator.inspect("mail-deployment", tenant_only=True)
+
     def test_inspection_rejects_reused_deployment_with_missing_or_foreign_publication(self):
         operator = self.operator()
         self.client.inspection["revision"]["deploymentId"] = "foreign-deployment"

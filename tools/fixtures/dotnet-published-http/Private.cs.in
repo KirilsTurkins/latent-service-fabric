@@ -10,12 +10,18 @@ public static class Worker {
     private static int calls;
     public static async Task<string> Get(string endpoint, CancellationToken token) {
         if (++calls != 1) throw new InvalidOperationException("private library state survived activation");
+        using var card = typeof(Worker).Assembly.GetManifestResourceStream("outside.price-card")
+            ?? throw new InvalidOperationException("private price card missing");
+        using var expected = JsonDocument.Parse(card);
+        await Task.Delay(10, token);
         using var client = new HttpClient();
         using var response = await client.GetAsync(endpoint, HttpCompletionOption.ResponseHeadersRead, token);
         using var input = await response.Content.ReadAsStreamAsync(token);
         using var document = await JsonDocument.ParseAsync(input, cancellationToken: token);
         var body = document.RootElement;
         if (!response.IsSuccessStatusCode) return (int)response.StatusCode + ":error:" + body.GetProperty("message").GetString();
+        if (!JsonElement.DeepEquals(expected.RootElement, body))
+            throw new InvalidOperationException("HTTP response differs from private price card");
         var items = body.GetProperty("items");
         if (items.GetArrayLength() != 2) throw new InvalidOperationException("actual private HTTP parsing changed");
         return (int)response.StatusCode + ":domain:" + body.GetProperty("id").GetInt32() + ":"

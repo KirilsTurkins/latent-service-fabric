@@ -44,7 +44,10 @@ def download_locked(url, artifact):
                     or not retry_after.isascii() or not retry_after.isdigit()
                     or len(retry_after) > 2 or int(retry_after) > 10):
                 raise
-            time.sleep(max(1 << attempt, int(retry_after)))
+            # Central can throttle a shared runner without giving a retry time.
+            # Space the two remaining GETs apart even when the header is zero.
+            delay = 15 << attempt if error.code == 429 and int(retry_after) == 0 else 1 << attempt
+            time.sleep(max(delay, int(retry_after)))
         except (urllib.error.URLError, ConnectionResetError, TimeoutError) as error:
             reason = error.reason if isinstance(error, urllib.error.URLError) else error
             if attempt == 2 or not isinstance(reason, (ConnectionResetError, TimeoutError)):

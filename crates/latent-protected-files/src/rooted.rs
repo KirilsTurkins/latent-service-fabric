@@ -125,6 +125,21 @@ impl ProtectedRoot {
         Ok(separate)
     }
 
+    /// Verify the installed node owns a private writable directory. Uses the
+    /// already opened inode without creating a file or changing permissions.
+    pub fn require_private_owner(&self) -> Result<(), PlatformError> {
+        self.check()?;
+        let root = self.chain.last().expect("root anchor");
+        let metadata = root.file.metadata().map_err(|_| failure())?;
+        if metadata.uid() != self.uid
+            || metadata.gid() != self.gid
+            || metadata.mode() & 0o7777 != 0o700
+        {
+            return Err(failure());
+        }
+        self.check()
+    }
+
     /// Query the filesystem of the retained descriptor, not a replacement path.
     pub fn filesystem_type(&self) -> Result<u64, PlatformError> {
         self.check()?;

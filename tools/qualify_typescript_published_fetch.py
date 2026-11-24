@@ -221,7 +221,7 @@ def qualify(acquired, tools, output, *, diagnose_owner_profile=False):
             variant = fresh(output/f'variant-{index}')
             app = fixture.project(variant/'application', name)
             stage = f'capture-{index}'
-            capture = fixture.capture(app, variant/name, name, version)
+            capture = fixture.capture(app, variant/'private-library', name, version)
             write_json(variant/'capture.json', capture)
             before = inventory(snapshot(app))
             stage = f'normal-build-{index}'

@@ -50,6 +50,7 @@ pub(in crate::standalone) async fn recover(
     let state = settings.state.as_ref().ok_or_else(super::denied)?;
     if !settings.credentials_from_protected_file
         || principal.kind != PrincipalKind::Administrator
+        || !bootstrap.matches_local_payload(settings)
         || (request.request.inbox_binding().is_none()
             && (state.tenant_quotas.len() != 1
                 || principal.tenant.as_ref()
@@ -158,7 +159,16 @@ async fn prepare(
     original: &Arc<NativeReservation>,
 ) -> Result<Arc<Codecs>, PlatformError> {
     require_installed_marker(store, state, original).await?;
-    let (checkpoint, floor) = inspect_checkpoint(store, state, original).await?;
+    let payloads = if matches!(&request.request, Action::InspectNamespace {}) {
+        bootstrap
+            .local_payload_selection
+            .as_deref()
+            .and_then(super::super::store::LocalPayloadSelection::inventory_payloads)
+    } else {
+        None
+    };
+    let (checkpoint, floor) =
+        inspect_checkpoint_with_payloads(store, state, original, payloads.as_ref()).await?;
     if floor.inbox_custody().is_some()
         && !matches!(
             &request.request,
@@ -306,6 +316,7 @@ async fn prepare(
                         namespace,
                         identity: configuration.store_identity.clone(),
                         quotas: super::super::validation::quotas(&configuration),
+                        payloads,
                         checkpoint: floor,
                         original,
                         _metadata: metadata,
@@ -327,6 +338,15 @@ pub(in crate::standalone::state) async fn inspect_checkpoint(
     state: &StateSettings,
     original: &Arc<NativeReservation>,
 ) -> Result<(ProtectedCheckpoint, ExternalCheckpoint), PlatformError> {
+    inspect_checkpoint_with_payloads(store, state, original, None).await
+}
+
+async fn inspect_checkpoint_with_payloads(
+    store: &ProtectedStoreOwner,
+    state: &StateSettings,
+    original: &Arc<NativeReservation>,
+    payloads: Option<&super::super::store::InventoryPayloads>,
+) -> Result<(ProtectedCheckpoint, ExternalCheckpoint), PlatformError> {
     use crate::config::state::STARTUP_VALIDATOR_BYTES;
 
     let config = ProtectedCheckpointConfig {
@@ -336,8 +356,15 @@ pub(in crate::standalone::state) async fn inspect_checkpoint(
         let identity = state.store_identity.clone();
         let quotas = super::super::validation::quotas(state);
         let original = Arc::clone(original);
+        let payloads = payloads.cloned();
         move |view: &ReadView| {
-            super::super::validation::validate_inventory(view, &identity, &quotas, &original)
+            super::super::validation::validate_offline_inventory(
+                view,
+                &identity,
+                &quotas,
+                &original,
+                payloads.as_ref(),
+            )
         }
     };
     let (checkpoint, opened) = store

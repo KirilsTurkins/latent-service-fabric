@@ -192,6 +192,36 @@ class PrivateProxy(unittest.TestCase):
                         gate.qualify(root/'prepared', root/'output')
                 self.assertIs(raised.exception, original)
 
+    def test_same_run_tool_transfer_checks_both_binaries_before_restoring_execution(self):
+        from tools import qualify_go_entropy_retained as retained
+        from tools.phase3_resource_identity import file_identity
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / 'go.tar.gz'
+            archive.write_bytes(b'captured Go archive')
+            expected = file_identity(archive)
+            pins = {'go': {'version': 'test', 'linuxAmd64': {'url': 'fixture', 'sha256': expected['sha256'][7:]}}}
+            files = [root / 'componentize-go', root / 'wasm-tools']
+            lines = []
+            for binary in files:
+                binary.write_bytes(binary.name.encode('ascii'))
+                lines.append(file_identity(binary)['sha256'][7:] + '  /original-runner/' + binary.name)
+            (root / 'tools.sha256').write_text('\n'.join(lines) + '\n', encoding='ascii')
+            with patch.object(retained, 'read_json', return_value=pins), patch.object(Path, 'chmod', autospec=True) as chmod:
+                checked = retained.reproduction_tools(root)
+                self.assertEqual(checked['goArchive'], expected)
+                self.assertEqual(checked['tools'], {binary.name: file_identity(binary) for binary in files})
+                self.assertEqual([call.args for call in chmod.call_args_list], [(binary, 0o700) for binary in files])
+                self.assertNotIn('runId', checked)
+                self.assertNotIn('artifactId', checked)
+                self.assertEqual(retained.compiler_inputs(root), {'artifactId': 12215479048, 'runId': 39310234677, **checked})
+                chmod.reset_mock()
+                files[-1].write_bytes(b'incomplete transfer')
+                with self.assertRaisesRegex(WorkflowError, 'tool-bytes'):
+                    retained.reproduction_tools(root)
+                chmod.assert_not_called()
+
     def test_campaign_rejects_stale_baseline_before_native_acquisition(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

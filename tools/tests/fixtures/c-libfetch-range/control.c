@@ -85,8 +85,25 @@ static void succeeds(off_t requested, off_t actual, size_t partial, off_t size) 
         char bytes[64] = {0}; size_t n = strlen(payload);
         assert(n < sizeof(bytes) && fread(bytes, 1, n, f) == n);
         assert(!memcmp(bytes, payload, n));
+        assert(fgetc(f) == EOF && feof(f) && !ferror(f));
     }
     assert(opens == 1 && fclose(f) == 0 && aborts == 1);
+    fetchFreeURL(u);
+}
+static void range_body_error(const char *actual, const char *expected, const char *message) {
+    reset(); expected_range = "bytes=10-"; status = 206;
+    content_range = "bytes 10-13/14"; payload = actual;
+    struct url *u = url(10); struct url_stat st;
+    FILE *f = fetchXGet(u, &st, "A");
+    assert(f && u->length == 4 && st.size == 14);
+    char bytes[8] = {0};
+    assert(fread(bytes, 1, sizeof(bytes), f) == strlen(expected));
+    assert(!memcmp(bytes, expected, strlen(expected)) && ferror(f) && !feof(f));
+    assert(fetchLastErrCode == FETCH_PROTO && errno == EIO && !strcmp(fetchLastErrString, message));
+    int previous_reads = reads;
+    clearerr(f);
+    assert(fgetc(f) == EOF && ferror(f) && reads == previous_reads);
+    assert(fclose(f) == 0 && aborts == 1 && opens == 1);
     fetchFreeURL(u);
 }
 static void refuses(off_t requested) {
@@ -126,7 +143,9 @@ int main(void) {
     reset(); expected_range="bytes=10-"; status=206;
     content_range="bytes 10-99/100"; content_length="90"; duplicate_range=true; refuses(10);
     reset(); expected_range="bytes=10-"; status=206;
-    content_range="bytes 10-99/100"; refuses(10);
+    content_range="bytes 10-13/14"; payload="klmn"; succeeds(10,10,4,14);
+    range_body_error("klm", "klm", "HTTP body ended before its content range");
+    range_body_error("klmno", "klmn", "HTTP body exceeded its content range");
     reset(); status=206; content_range="bytes 10-99/100"; content_length="90"; refuses(0);
     /* A server cannot turn an ordinary full GET into a partial success. */
     reset(); status=206; content_range="bytes 0-3/*"; content_length="4"; payload="abcd"; refuses(0);

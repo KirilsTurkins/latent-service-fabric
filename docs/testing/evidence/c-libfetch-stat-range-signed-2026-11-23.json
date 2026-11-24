@@ -1,0 +1,201 @@
+{
+  "schemaVersion": "latent.c.http-stat.signed-summary.v1",
+  "issue": 690,
+  "status": "passed",
+  "observedOn": "2026-11-23",
+  "source": {
+    "head": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "tree": "de917cce329f0c8c9029040bfcf9c9388672fd9a",
+    "native": {
+      "sha256": "sha256:1bd2897f8aa294d99f02eeaa6327cd32abc610e4188854c66bc66ebbea784de0",
+      "files": 4022,
+      "bytes": 48222620,
+      "scope": "explicit-apps-crates-rust-sdk-workloads-and-workspace-inputs",
+      "hermetic": false,
+      "implicitCompilerInputs": "not-attested"
+    }
+  },
+  "entry": "tools/c_http_stat_qualification.py",
+  "nativeTuple": {
+    "receipt": {
+      "sha256": "sha256:c49bee2f43e9e4112300ecdba33ec4c6d8a69005ed27d70a6d0e5cd6dc631b54",
+      "bytes": 1495
+    },
+    "sourceHead": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "sourceTree": "de917cce329f0c8c9029040bfcf9c9388672fd9a",
+    "tupleRole": "ordinary-defaults",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.9",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:5669d9660bb550f0347cdafc1a03a2a99547928e864eb87082f5c6c157760293",
+        "bytes": 78851920,
+        "actualFeatures": []
+      },
+      "latentd": {
+        "sha256": "sha256:b4bc0349c72b7fcce3a9aed476f989f4346d7e1ca157ba6e9203638ce1b858e9",
+        "bytes": 214257848,
+        "actualFeatures": []
+      },
+      "package": {
+        "sha256": "sha256:78ed627079f74622d6b07eb42f1e49ec264c6d2136d2bff56bb4a788cf36b695",
+        "bytes": 22183904,
+        "actualFeatures": []
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:556f9b3e47eb8270683d942580dccfead4c717b39080b0f87c2ec9594f7913dc",
+        "bytes": 15217168,
+        "actualFeatures": []
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:8d616dac1aee230330838bdb1048791c28ed8e08a9bfecb4698e9199ece88504",
+        "bytes": 28448736,
+        "actualFeatures": []
+      }
+    }
+  },
+  "component": {
+    "sha256": "sha256:e8f8c2851add315dd3b3054180eaf76eaa4fa5b040e16be1e19416d00b4fdca4",
+    "bytes": 124952
+  },
+  "retainedOriginals": {
+    "programme.json": {
+      "bytes": 115691,
+      "sha256": "sha256:9bf8188709d98a2ecdb8687ff975fc187345ad391a0fb7c08e42b26e3a6246eb"
+    },
+    "node.json": {
+      "bytes": 82812,
+      "sha256": "sha256:8948876daa146bf4fb9320025ec90fe246adf091db473d1e73f1098e53fe2e1f"
+    },
+    "missing-provider.json": {
+      "bytes": 24326,
+      "sha256": "sha256:921fae760023793b2a51ed9b1dce33a580d46e5b68cee739f76a749a0f87d6a8"
+    },
+    "build.json": {
+      "bytes": 3033,
+      "sha256": "sha256:9e39beebad4f0659babfaa9fbac558d7bfd84e601406dea2810c5f444fa208b2"
+    }
+  },
+  "providerBackedCases": [
+    {
+      "case": "missing-grant",
+      "exitCode": 4,
+      "requests": 0,
+      "mutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "normal",
+      "exitCode": 0,
+      "requests": 1,
+      "mutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "denied",
+      "exitCode": 3,
+      "requests": 0,
+      "mutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "not-found",
+      "exitCode": 3,
+      "requests": 1,
+      "mutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "redirect",
+      "exitCode": 3,
+      "requests": 1,
+      "mutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "oversized",
+      "exitCode": 3,
+      "requests": 1,
+      "mutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "fresh",
+      "exitCode": 0,
+      "requests": 1,
+      "mutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "range",
+      "exitCode": 0,
+      "requests": 1,
+      "mutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "range-ignored",
+      "exitCode": 0,
+      "requests": 1,
+      "mutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "range-denied",
+      "exitCode": 3,
+      "requests": 0,
+      "mutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "range-unsolicited",
+      "exitCode": 3,
+      "requests": 1,
+      "mutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "range-before",
+      "exitCode": 3,
+      "requests": 1,
+      "mutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    }
+  ],
+  "separateMissingProvider": {
+    "installed": false,
+    "exitCode": 4,
+    "outboundRequests": 0,
+    "unavailableCountersCountedAsZero": false,
+    "nodeReaped": true
+  },
+  "rangeRequests": 3,
+  "unsolicitedRequests": 1,
+  "earlyRangeRequests": 1,
+  "oversizedRequests": 1,
+  "wideErrorResponses": 1,
+  "head404DeclaredLength": "9223372036854775808",
+  "peer": {
+    "startedRequests": 9,
+    "completedResponseWrites": 8,
+    "committedMutations": 0,
+    "rejectedRequests": 0,
+    "openConnections": 0
+  },
+  "nodeReaped": true,
+  "cleanShutdown": true,
+  "fullTicketQualification": false,
+  "publisherAuthenticated": false
+}

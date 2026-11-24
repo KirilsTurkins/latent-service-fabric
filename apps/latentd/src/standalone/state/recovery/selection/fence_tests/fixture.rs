@@ -363,6 +363,7 @@ impl Fixture {
             namespace,
             identity,
             quotas: Vec::new(),
+            payloads: None,
             checkpoint,
             original,
             _metadata: metadata,

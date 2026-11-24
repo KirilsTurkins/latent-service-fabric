@@ -11,26 +11,27 @@ from tools.rust_capsule_project import ROOT, write_json
 from tools.tests import test_dotnet_task_wait as controls
 
 
+def current_port():
+    from tools.dotnet_guest import aggregate_task_wait, managed_work
+    port = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-v2-controlled.json').read_bytes())
+    port.update(profile=task_wait.PROFILE,
+        managedAcceptedWork=copy.deepcopy(managed_work.INLINE_PRIMARY_REWRITE_RECEIPT),
+        aggregateTaskWait=copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED),
+        generatedHelperCount=113, unchangedOriginalMethods=44706,
+        finiteWaitObservation=task_wait.FINITE_OBSERVATION,
+        selection={'requiredDeclarations': sorted((runtime.CLOCK, runtime.ACTIVATION, runtime.WALL, runtime.RANDOM))},
+        nativeAotReferenceBinding={'responseFiles': [{'controlled': 'no-native-execution'}]})
+    return port
+
+
 class TaskRuntimeFinalBindingTests(unittest.TestCase):
     """Receipt and orchestration controls, not NativeAOT or signed execution."""
-
-    def current_port(self):
-        from tools.dotnet_guest import aggregate_task_wait, managed_work
-        port = json.loads((ROOT / 'sdk/dotnet-guest/tests/fixtures/aggregate-task-wait-v2-controlled.json').read_bytes())
-        port.update(profile=task_wait.PROFILE,
-            managedAcceptedWork=copy.deepcopy(managed_work.INLINE_PRIMARY_REWRITE_RECEIPT),
-            aggregateTaskWait=copy.deepcopy(aggregate_task_wait.PREFETCH_POLL_EXPECTED),
-            generatedHelperCount=113, unchangedOriginalMethods=44706,
-            finiteWaitObservation=task_wait.FINITE_OBSERVATION,
-            selection={'requiredDeclarations': sorted((runtime.CLOCK, runtime.ACTIVATION, runtime.WALL, runtime.RANDOM))},
-            nativeAotReferenceBinding={'responseFiles': [{'controlled': 'no-native-execution'}]})
-        return port
 
     def test_current_final_binding_uses_the_shared_receipt_and_rejects_downgrades(self):
         from tools.dotnet_guest import aggregate_task_wait
         from tools.phase2_operator_process import WorkflowError
         from tools.qualify_dotnet_task_runtime import require_current_task_wait_binding
-        current = self.current_port()
+        current = current_port()
         before = copy.deepcopy(current)
         require_current_task_wait_binding(current)
         for mutation in ('v6', 'body', 'helpers', 'profile', 'authority', 'selection-type',
@@ -77,7 +78,7 @@ class TaskRuntimeFinalBindingTests(unittest.TestCase):
                 application = parent / 'application'; application.mkdir()
                 (application / 'source.txt').write_text('captured source double')
                 output = parent / 'output'
-                port = self.current_port()
+                port = current_port()
                 if not accepted: port['nativeAotReferenceBinding']['responseFiles'] = []
                 def built(app, target, *args, **kwargs):
                     target.mkdir()

@@ -6,7 +6,6 @@ import copy
 import os
 from pathlib import Path
 import pwd
-import re
 import sys
 
 from . import build, dependencies, effects, paths, project, protocol, resource_inputs, snapshot, state
@@ -356,12 +355,8 @@ def main() -> int:
         result = protocol.response(request, {"diagnostics": error.diagnostics} if error.diagnostics else {},
                                    code=error.code, uncertain=error.uncertain)
     except InstallError as error:
-        code = str(error)
-        # The installer owns fixed diagnostics. Never render arbitrary stderr or
-        # dynamic file contents as an error, and preserve interrupted mutation state.
-        if not re.fullmatch(r"[a-z][a-z0-9-]{0,100}", code):
-            code = "native-installer-input-or-host-check-failed"
-        result = protocol.response(request, {}, code=code, uncertain=request["operation"] in {"install", "purge"})
+        result = protocol.response(request, {}, code=protocol.installer_error_code(str(error)),
+                                   uncertain=request["operation"] in {"install", "purge"})
     except Exception:
         result = protocol.response(request, {}, code="helper-operation-failed", uncertain=request["operation"] not in
                                    {"hello", "doctor", "status", "logs", "executable-approval-request"})

@@ -161,13 +161,17 @@ def positive_audit_coverage(pages):
         'completeFrozenCursor': True, 'losslessCaptureClaimed': False, 'negativeEvidenceClaimed': False}
 
 
-def child_entry(inventory, pages, activation, *, expected_revision, positive_only=False):
-    require(type(positive_only) is bool, 'c-thread-closed-audit-evidence-mode')
+def child_owners_live(inventory):
     topology = inventory['topology']
     require(topology['available'] is True and topology['complete'] is True, 'c-thread-live-topology')
     rows = {row['name']: row for row in topology['entries']}
     require(len(rows) == len(topology['entries']) and set(LIVE) <= rows.keys(), 'c-thread-five-live-rows')
-    if any(integer(rows[name]['activeCount']) != 1 for name in LIVE):
+    return all(integer(rows[name]['activeCount']) == 1 for name in LIVE)
+
+
+def child_entry(inventory, pages, activation, *, expected_revision, positive_only=False):
+    require(type(positive_only) is bool, 'c-thread-closed-audit-evidence-mode')
+    if not child_owners_live(inventory):
         return None
     require(type(pages) is list and 0 < len(pages) <= 4, 'c-thread-audit-page-bound')
     require(pages[-1]['data']['page']['nextPageToken'] is None, 'c-thread-audit-complete')
@@ -280,22 +284,27 @@ def retire(client, probe, target, output, activation):
     return {'activation': activation, 'physicalOwnersAfter': 0, 'activeProviderCountersAfter': 0}
 
 
+def child_audit_pages(client, process, output, attempt):
+    pages, token = [], None
+    for _ in range(4):
+        command = ('audit', 'query', '--scope', 'tenant', '--page-size', '64',
+            '--from-unix-millis', str(max(0, process.authoring_started_unix_millis - 1)))
+        if token is not None:
+            command += ('--page-token', token)
+        page = client.call(*command)
+        pages.append(page)
+        write_json(output / f'child-audit-{process.authoring_activation}-{attempt}-{len(pages)}.json', page)
+        token = page['data']['page']['nextPageToken']
+        if token is None:
+            break
+    return pages
+
+
 def wait_child(client, process, probe, target, output):
     revision = selected_revision(client, target)
     for attempt in range(8):
         require(time.monotonic() < client.deadline and not process.owner.exited(), 'c-thread-child-before-terminal')
-        pages, token = [], None
-        for _ in range(4):
-            command = ('audit', 'query', '--scope', 'tenant', '--page-size', '64',
-                '--from-unix-millis', str(max(0, process.authoring_started_unix_millis - 1)))
-            if token is not None:
-                command += ('--page-token', token)
-            page = client.call(*command)
-            pages.append(page)
-            write_json(output / f'child-audit-{process.authoring_activation}-{attempt}-{len(pages)}.json', page)
-            token = page['data']['page']['nextPageToken']
-            if token is None:
-                break
+        pages = child_audit_pages(client, process, output, attempt)
         inventory = client.call('node', 'get', 'operator-workflow-test')['data']['inventory']
         write_json(output / f'child-inventory-{process.authoring_activation}-{attempt}.json', inventory)
         witness = child_entry(inventory, pages, process.authoring_activation,
@@ -309,6 +318,47 @@ def wait_child(client, process, probe, target, output):
             return witness
         process.drain()
     raise ValueError('c-thread-child-entry-not-observed')
+
+
+def deadline_child(client, process, probe, target, output, revision):
+    # A durable audit query can finish after the 250 ms request has expired.
+    # Sample the live node first. The retained provider outcome supplies its
+    # own occurrence timestamp and activation/revision independently of query time.
+    activation = process.authoring_activation
+    latest = None
+    for attempt in range(8):
+        require(time.monotonic() < client.deadline, 'c-thread-deadline-sample-cutoff')
+        if process.owner.exited():
+            break
+        began = time.time_ns() // 1_000_000
+        inventory = client.call('node', 'get', 'operator-workflow-test')['data']['inventory']
+        if not child_owners_live(inventory):
+            continue
+        physical = sample(client, probe, 'entered-' + activation, 1, active=True, first_inventory=inventory)
+        provider = usage(client, target, idle=False)
+        ending = client.call('node', 'get', 'operator-workflow-test')['data']['inventory']
+        ended = time.time_ns() // 1_000_000
+        if process.owner.exited() or not child_owners_live(ending):
+            break
+        require(process.authoring_started_unix_millis <= began <= ended, 'c-thread-live-sample-clock')
+        latest = {'sampleStartedUnixMillis': began, 'sampleEndedUnixMillis': ended,
+                  'inventory': inventory, 'endingInventory': ending,
+                  'physical': physical, 'providerUsage': provider}
+        write_json(output / f'child-live-{activation}-{attempt}.json', latest)
+    require(latest is not None, 'c-thread-no-live-deadline-sample')
+    pages = child_audit_pages(client, process, output, 'deadline')
+    witness = child_entry(latest['inventory'], pages, activation, expected_revision=revision, positive_only=True)
+    require(witness is not None, 'c-thread-deadline-child-not-observed')
+    record = next(row for page in pages for row in page['data']['records']
+                  if integer(row['sequence']) == witness['childObserveCompletedSequence'])
+    occurred = integer(record['data']['observation']['occurredAtUnixMillis'])
+    accepted = integer(record['acceptedAtUnixMillis'])
+    require(process.authoring_started_unix_millis <= occurred < latest['sampleStartedUnixMillis']
+            and occurred <= accepted, 'c-thread-deadline-child-must-precede-live-physical-sample')
+    latest.update(witness=witness, auditPages=pages, childOccurredUnixMillis=occurred,
+                  auditAcceptedUnixMillis=accepted)
+    write_json(output / ('child-' + activation + '.json'), latest)
+    return witness
 
 
 def wait_audit_idle(client, target, output, activation):
@@ -342,7 +392,9 @@ def invoke(client, probe, target, output, mode, activation, *, cancel=False):
     primary = False
     try:
         witness = None
-        if mode in ('cancel', 'deadline'):
+        if mode == 'deadline':
+            witness = deadline_child(client, process, probe, target, output, revision)
+        elif mode == 'cancel':
             witness = wait_child(client, process, probe, target, output)
             if cancel:
                 acknowledgement = client.call('activation', 'cancel', activation, '--reason', 'C child lifecycle control')

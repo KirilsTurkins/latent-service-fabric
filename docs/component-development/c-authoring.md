@@ -136,18 +136,32 @@ local-node result is not a release-publication or complete C runtime qualificati
 For an ordinary GET with a positive `url->offset`, the backend sends a single
 open-ended byte `Range`; the HTTP destination must explicitly allow the `range`
 request header as well as the GET path. A valid 206 must include a single
-well-formed `Content-Range` and matching `Content-Length`. Its actual start and
-body length are reported in the URL, and a known complete size in `url_stat`.
+well-formed `Content-Range`. A supplied `Content-Length` must agree with it.
+For a chunked response the stream checks the decoded bytes against the range.
+Truncated or excess data sets `ferror` and preserves the valid prefix for the
+caller. The URL reports the actual start and range length, and `url_stat`
+reports the complete representation size when known.
 The start may be earlier than requested; a known complete size must end at the
 last returned byte.
 If the server ignores the request and returns 200, the actual offset is zero.
 Malformed or inconsistent partial responses and 416 are errors, with no retry.
-The HEAD receipt above does not qualify signed Range execution. The maintained
-[Stat/Range owner](../../.github/workflows/c-http-stat-qualification.yml) now
-requires seven signed cells: the four HEAD cases plus actual 206, ignored-Range
-200 and a denied alternate path with zero peer contact. Its exact peer-header,
-offset/length/size/checksum assertions must pass before claiming signed Range
-support; adding the owner is not that result. Conditional requests remain unsupported.
+The signed Stat/Range run exercised a valid 206, an ignored Range returning
+200, a denied alternate path, an unsolicited 206 and a response that ended
+before the requested offset. It also exercised HEAD 404 with a declared length
+of 2^63 bytes and preserved the HTTP error. The peer observed nine requests
+and no mutations across the twelve cases. The node retired all measured
+physical owners after each case. A separate node refused entry with its HTTP
+provider absent. Conditional requests remain unsupported.
+[Signed results](../testing/evidence/c-libfetch-stat-range-signed-2026-11-23.json)
+
+The signed chunked-response run read the 51 bytes declared by a valid
+Content-Range and checked their checksum. A response one byte short and a
+response one byte long each exposed the expected prefix and set the C stream
+error. The peer saw one request for each case. Across all fifteen
+provider-backed cases it saw twelve requests and zero mutations, and the
+node retired every measured physical and provider owner. A separate node
+refused the call before entry with its HTTP provider absent.
+[Signed chunked-range results](../testing/evidence/c-libfetch-chunked-ranges-signed-2026-11-24.json)
 
 `fetchReqHTTP` supports bounded string request bodies for its declared HTTP
 methods. Only the empty flags string or `A` is supported. HTTP/HTTPS transport
@@ -199,6 +213,13 @@ the full upstream FreeBSD socket/TLS implementation. Ten signed cases passed:
 libfetch normal/404/denied/early-close/sibling and libucl normal/404/denied/file/glob.
 All ten retirements were idle and both nodes shut down cleanly and were reaped.
 The sibling result is source/peer-bound; native poll-Pending was not observed.
+
+The libucl caller registered a context macro around its ordinary URL include.
+The first callback used caller-owned state. The second inspected the parsed HTTP
+response, then created and disposed a nested parser while the outer callback
+was running. The missing URL, denied URL, file and glob cases each returned
+after the first callback. Both rebuilt clients passed all ten signed cases.
+[Callback and sibling results](../testing/evidence/c-libucl-callbacks-signed-2026-11-24.json)
 
 The [catalogue-free signed programme](../testing/evidence/c-outside-capture-signed-2026-10-31.json)
 adds two identity variants of one developer-owned library, not two additional

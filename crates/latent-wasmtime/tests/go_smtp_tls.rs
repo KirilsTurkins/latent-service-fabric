@@ -90,12 +90,20 @@ async fn command<S: AsyncRead + AsyncWrite + Unpin>(wire: &mut BufReader<S>, exp
     panic!("ordinary SMTP fixture command exceeded its fixed bound");
 }
 
-async fn finish<S: AsyncRead + AsyncWrite + Unpin>(wire: &mut BufReader<S>) {
+async fn finish<S: AsyncRead + AsyncWrite + Unpin>(wire: &mut BufReader<S>, deliver: bool) -> u32 {
     command(wire, "NOOP\r\n").await;
     wire.get_mut().write_all(b"250 OK\r\n").await.unwrap();
+    if deliver {
+        receive_message(wire).await;
+        wire.get_mut()
+            .write_all(b"250 message accepted\r\n")
+            .await
+            .unwrap();
+    }
     command(wire, "QUIT\r\n").await;
     wire.get_mut().write_all(b"221 Bye\r\n").await.unwrap();
     wire.get_mut().shutdown().await.unwrap();
+    u32::from(deliver)
 }
 
 async fn smtp_plain_greeting(listener: &TcpListener) -> BufReader<tokio::net::TcpStream> {
@@ -113,33 +121,37 @@ async fn smtp_plain_greeting(listener: &TcpListener) -> BufReader<tokio::net::Tc
     wire
 }
 
-async fn smtp_accept_then_lose_reply(listener: &TcpListener) {
-    let mut wire = smtp_plain_greeting(listener).await;
-    command(&mut wire, "MAIL FROM:<sender@example.invalid>\r\n").await;
+async fn receive_message<S: AsyncRead + AsyncWrite + Unpin>(wire: &mut BufReader<S>) {
+    command(wire, "MAIL FROM:<sender@example.invalid>\r\n").await;
     wire.get_mut()
         .write_all(b"250 sender accepted\r\n")
         .await
         .unwrap();
-    command(&mut wire, "RCPT TO:<recipient@example.invalid>\r\n").await;
+    command(wire, "RCPT TO:<recipient@example.invalid>\r\n").await;
     wire.get_mut()
         .write_all(b"250 recipient accepted\r\n")
         .await
         .unwrap();
-    command(&mut wire, "DATA\r\n").await;
+    command(wire, "DATA\r\n").await;
     wire.get_mut()
         .write_all(b"354 send controlled message\r\n")
         .await
         .unwrap();
-    command(&mut wire, "Subject: controlled fixture\r\n").await;
-    command(&mut wire, "\r\n").await;
-    command(&mut wire, "One controlled message.\r\n").await;
-    command(&mut wire, ".\r\n").await;
+    command(wire, "Subject: controlled fixture\r\n").await;
+    command(wire, "\r\n").await;
+    command(wire, "One controlled message.\r\n").await;
+    command(wire, ".\r\n").await;
     assert!(wire.buffer().is_empty());
+}
+
+async fn smtp_accept_then_lose_reply(listener: &TcpListener) {
+    let mut wire = smtp_plain_greeting(listener).await;
+    receive_message(&mut wire).await;
     // The complete message has been accepted by this peer. Drop the socket
     // without a 250 reply; the guest cannot know whether submission succeeded.
 }
 
-async fn exchange(listener: &TcpListener, acceptor: &TlsAcceptor, mode: u32) {
+async fn exchange(listener: &TcpListener, acceptor: &TlsAcceptor, mode: u32) -> u32 {
     let (socket, _) = listener.accept().await.unwrap();
     let mut wire = BufReader::new(socket);
     wire.get_mut()
@@ -152,8 +164,7 @@ async fn exchange(listener: &TcpListener, acceptor: &TlsAcceptor, mode: u32) {
         .await
         .unwrap();
     if mode == 0 {
-        finish(&mut wire).await;
-        return;
+        return finish(&mut wire, false).await;
     }
     command(&mut wire, "STARTTLS\r\n").await;
     wire.get_mut()
@@ -167,7 +178,7 @@ async fn exchange(listener: &TcpListener, acceptor: &TlsAcceptor, mode: u32) {
             secure.is_err(),
             "guest verification refusal must abort the TLS upgrade"
         );
-        return;
+        return 0;
     }
     let mut wire = BufReader::new(secure.unwrap());
     command(&mut wire, "EHLO localhost\r\n").await;
@@ -175,7 +186,7 @@ async fn exchange(listener: &TcpListener, acceptor: &TlsAcceptor, mode: u32) {
         .write_all(b"250 mail.stream.test\r\n")
         .await
         .unwrap();
-    finish(&mut wire).await;
+    finish(&mut wire, mode == 6).await
 }
 
 #[tokio::test]
@@ -235,14 +246,16 @@ async fn signed_published_go_smtp_and_separate_worker_timer_preserve_original_ow
     let (acceptor, root_pem) = identity();
     let mut fixture = setup::configured_published(root.path(), port).await;
     let peer = tokio::spawn(async move {
-        for mode in 0..6 {
-            tokio::time::timeout(
+        let mut acknowledged = 0;
+        for mode in 0..7 {
+            acknowledged += tokio::time::timeout(
                 Duration::from_secs(60),
                 exchange(&listener, &acceptor, mode),
             )
             .await
             .unwrap();
         }
+        acknowledged
     });
     for (mode, label, expected) in [
         (0, "published-smtp-plain", "published-smtp-plain"),
@@ -259,6 +272,11 @@ async fn signed_published_go_smtp_and_separate_worker_timer_preserve_original_ow
         ),
         (4, "published-starttls12", "published-smtp-tls12"),
         (5, "published-fresh-starttls13", "published-smtp-tls13"),
+        (
+            6,
+            "published-starttls-delivery",
+            "published-smtp-delivery-acknowledged",
+        ),
     ] {
         let receipt = fixture
             .manager
@@ -269,12 +287,13 @@ async fn signed_published_go_smtp_and_separate_worker_timer_preserve_original_ow
         setup::idle(&fixture, label).await;
         setup::observed(label, mode, expected, 1);
     }
-    peer.await.unwrap();
-    assert_eq!(fixture.backend.resource_snapshot().stores_created, 6);
+    let acknowledged = peer.await.unwrap();
+    assert_eq!(acknowledged, 1);
+    assert_eq!(fixture.backend.resource_snapshot().stores_created, 7);
     fixture.streams.take().unwrap().shutdown().await;
     println!(
         "GO_SMTP_COMPLETE {}",
-        json!({"cases":6,"contacts":6,
+        json!({"cases":7,"contacts":7,"peerMutations":acknowledged,
         "cleanLogicalProviderStop":true,"normalProviderInstalled":false,
         "kernelRetirementQualified":false,"hostTlsQualified":false})
     );
@@ -332,7 +351,7 @@ async fn signed_published_go_smtp_lost_reply_does_not_replay_and_fresh_succeeds(
     let peer = tokio::spawn(async move {
         tokio::time::timeout(Duration::from_secs(60), async {
             let mut wire = smtp_plain_greeting(&fresh_listener).await;
-            finish(&mut wire).await;
+            finish(&mut wire, false).await;
         })
         .await
         .unwrap();

@@ -14,6 +14,71 @@ python tools/typescript_capsule.py dependencies ./my-typescript
 python tools/typescript_capsule.py build ./my-typescript --tools ./reviewed-typescript-tools --output ./my-typescript/target/build-1 --repository https://github.com/example/application
 ```
 
+## Call a local JavaScript library from TypeScript
+
+Create a library outside the capsule project with these three files. The
+`types` entry lets the strict TypeScript compiler check the exported function
+when the capsule imports it.
+
+| File | Contents |
+| --- | --- |
+| `package.json` | `{"name":"outside-sdk-milestone-demo","version":"1.0.1","main":"index.js","types":"index.d.ts"}` |
+| `index.js` | `exports.calculate = value => value + 17;` |
+| `index.d.ts` | `export function calculate(value: number): number;` |
+
+Set `$privatePackage` to the absolute path of the library and add it.
+
+```powershell
+python tools/typescript_capsule.py add ./my-typescript outside-sdk-milestone-demo --path $privatePackage
+```
+
+Run `lock`, `resolve`, `review-lock` and `dependencies` as above. Add this import
+to the greeting capsule's `src/main.ts`.
+
+```ts
+import { calculate } from 'outside-sdk-milestone-demo';
+```
+
+Keep the handler's input checks and change its success expression to
+`return String(calculate(25));`. Build from the reviewed capture, sign the
+package and deploy it. Calling `greet` with `Ada` returns `42` as a string.
+A blank name returns `Please enter a name.`. If the compiler reports TS7016,
+check that the package exposes its declaration and that the reviewed lock
+includes that file.
+
+### Read a packaged resource in a library that uses Fetch
+
+The signed `outside-fetch-toolkit-resource@1.7.1` example declares
+`wretch@3.0.9` in its own dependencies. Its package contains `price-card.txt`
+with the expected JSON response, an ES module and its TypeScript declaration.
+The library reads its immutable data, waits for a standard timer, and calls
+Wretch through global Fetch.
+
+```js
+import wretch from 'wretch';
+import expectedCard from './price-card.txt';
+
+export async function read(url) {
+  const expected = JSON.parse(expectedCard);
+  await new Promise(resolve => setTimeout(resolve, 1));
+  const result = await wretch(url).get().json();
+  if (JSON.stringify(result) !== JSON.stringify(expected)) {
+    throw new Error('unexpected price card');
+  }
+  return result;
+}
+```
+
+The capsule declares `latent:http/phase-timing@0.4.0` and its activation
+and clock requirements. Each tenant grants its own HTTP destination.
+The normal add, lock, resolve and review steps captured the private package
+before the build. Its original directory was moved away before compilation.
+Both tenants then called the private library on the same node. The evidence
+includes the resource and component digests, tenant outcomes and peer counts.
+[Signed private library execution](../testing/evidence/sdk-private-library-invocations-2026-11-23.json)
+
+## What capture and build verify
+
 `add`, `update` and `remove` edit only application declarations and preserve the accepted lock and SDK. Versions are exact; `--section` selects dependencies, development, optional or peer declarations. `lock` explicitly regenerates the native lock in a private fetch attempt with ignored lifecycle scripts, executable links disabled and strict peer resolution. It observes direct and transitive local inputs, mirrors their relative layout, rejects SDK/project overlap and unobserved local selections, and rechecks source, tools and registry policy before atomic native-lock replacement. Native failure leaves the previous lock intact. This step does not accept a captured closure: run `resolve`, inspect its fresh candidate and explicitly `review-lock` afterward.
 
 The project-owned explicit runtime profile is inherited by direct resolution as well as the CLI. An explicit conflicting capture profile fails before a native command. Candidate profile selection retains its current qualification state; it does not establish Promise, timer or networking support.

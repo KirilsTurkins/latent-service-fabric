@@ -250,6 +250,13 @@ CONTROLS = (('original-host-memory',
   'host::streaming_http::table::tests::cancelled_opening_upload_reaps_actual_transport_then_reuses_reserved_slot',
   'host::streaming_http::table::tests::cancelled_pending_read_reaps_actual_transport_then_reuses_unreturned_chunk_slot',
   'host::streaming_http::table::tests::native_streaming_http_pending_reservation_outlives_table_without_cross_budget_credit',
+  'host::streaming_http::table::tests::abort_upload_busy_and_missing_rows_keep_original_semantics',
+  'host::streaming_http::table::tests::abort_upload_drops_original_after_store_access',
+  'host::streaming_http::table::tests::finish_completion_refusals_drop_body_after_store_access',
+  'host::streaming_http::table::tests::open_completion_checkpoint_refusal_drops_upload_after_store_access',
+  'host::streaming_http::table::tests::upload_take_clock_panic_drops_original_after_store_access',
+  'host::streaming_http::table::tests::write_completion_checkpoint_refusal_drops_upload_after_store_access',
+  'host::streaming_http::table::tests::write_completion_stale_row_drops_upload_after_store_access',
   'host::streaming_http::table::shared::tests::native_streaming_shared_arc_clones_hold_original_backing_and_phase1_stays_unbound',
   'host::streaming_http::table::shared::tests::native_streaming_shared_arc_refusal_preserves_exact_budget_and_fresh_same_grant',
   'host::streaming_http::table::shared::tests::native_streaming_shared_arc_concurrent_last_clones_drop_payload_once_before_refund',
@@ -318,6 +325,7 @@ CONTROLS = (('original-host-memory',
   'activation_runtime::tests::same_ledger_finalization_before_owner_commit_refuses_publication',
   'activation_runtime::tests::same_ledger_finalization_waits_for_owner_publication',
   'activation_runtime::tests::same_ledger_finalization_waits_for_tentative_park_and_wake',
+  'activation_runtime::tests::snapshots_count_distinct_parked_tasks_and_managed_workers_through_settlement',
   'activation_runtime::tests::stale_continuation_keeps_its_error_when_original_budget_is_cancelled_after_check',
   'activation_runtime::tests::stale_wake_is_still_counted_when_owner_settles_before_cancellation',
   'activation_runtime::tests::timer_next_refusal_then_cancellation_preserves_original_wait_custody',
@@ -494,7 +502,7 @@ def qualify(output: Path, revision: str) -> dict:
     require(sys.platform == 'linux', 'host-codec-linux-owner-required')
     names = [name for _,_,_,cases in CONTROLS for name in cases]
     require(len(CONTROLS) == 44 and len({row[0] for row in CONTROLS}) == 44
-            and len(names) == len(set(names)) == 254, 'host-codec-control-inventory')
+            and len(names) == len(set(names)) == 262, 'host-codec-control-inventory')
     output = fresh(output)
     codec_wasmtime.verify(ROOT)
     result_bytes.verify(ROOT)
@@ -533,7 +541,7 @@ def qualify(output: Path, revision: str) -> dict:
             products[name] = identity
         record = {'schemaVersion':'latent.host-codec.native-products.v1','status':'passed',
             'sourceRevision':revision,'source':before,'materials':inputs,'compiler':compiler,
-            'products':products,'commands':stages.records,'controlCount':254,'nativeCohort':NATIVE_COHORT,
+            'products':products,'commands':stages.records,'controlCount':len(names),'nativeCohort':NATIVE_COHORT,
             'wasmtimeAllocationCohort':codec_wasmtime.COHORT,
             'controls':{stage:list(names) for stage,_,_,names in CONTROLS},
             'profile':'normal-managed-guest-default-features','signedQualification':False,

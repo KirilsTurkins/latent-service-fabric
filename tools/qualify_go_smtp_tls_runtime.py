@@ -64,6 +64,7 @@ PUBLISHED_EXPECTED = (
     ('published-trust-refused', 3, 'published-starttls-trust-refused', 1),
     ('published-starttls12', 4, 'published-smtp-tls12', 1),
     ('published-fresh-starttls13', 5, 'published-smtp-tls13', 1),
+    ('published-starttls-delivery', 6, 'published-smtp-delivery-acknowledged', 1),
 )
 LOST_REPLY_EXPECTED = (
     ('published-lost-reply', 0, 'published-smtp-delivery-unknown', 1),
@@ -203,6 +204,8 @@ def outcomes(raw: bytes, filtered: int = 0, program: str = 'standard') -> dict:
         expected.append((b'GO_SMTP_CASE', {'case': label, 'mode': mode, 'result': result, 'contacts': contacts}))
     complete = {'cases': 6, 'contacts': 6, 'cleanLogicalProviderStop': True,
         'kernelRetirementQualified': False, 'normalProviderInstalled': False, 'hostTlsQualified': False}
+    if program == 'published':
+        complete.update(cases=7, contacts=7, peerMutations=1)
     if program == 'published-lost-reply':
         complete = {'cases': 2, 'contacts': 2, 'peerMutations': 1, 'postCompletionReplayWindowMillis': 250,
             'cleanLogicalProviderStop': True, 'kernelRetirementQualified': False,
@@ -313,7 +316,7 @@ def qualify(root: Path, output: Path, revision: str, reference_go: Path, profile
     inputs = encoded(before)
     (output / 'native-inputs.json').write_bytes(inputs)
     schema = ('latent.go.published-smtp.lost-reply.v1' if program == 'published-lost-reply' else
-              'latent.go.published-smtp.runtime.v1' if program == 'published' else
+              'latent.go.published-smtp.runtime.v2' if program == 'published' else
               'latent.go.smtp-tls.runtime.v1' if profile == MANAGED_PROFILE else 'latent.go.smtp-tls.runtime.v7.v1')
     record = {'schemaVersion': schema, 'sourceRevision': revision,
               'status': 'in-progress', 'sourceDigest': digest(inputs), 'normalProviderInstalled': False,
