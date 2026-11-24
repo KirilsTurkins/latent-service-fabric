@@ -21,9 +21,13 @@ operations per case. The cases cover durable commits, stale conflicts, fresh
 point reads, bounded prefix scans and clean reopen with verification of the
 last committed value. The JSON reports p50, p95 and p99
 latencies, completed operation rates, logical value bytes and the file size
-before and after the run. Record the source, redb build, operating system, filesystem and machine
-with any retained result. The full campaign adds signed guests, dispatcher
-faults, cache variants and execution-owner observations.
+before and after the run. The pinned-view case times another 30 commits while
+the original snapshot remains readable. It checks that compaction refuses the
+live view, then records bounded compaction I/O, file growth and scratch limits
+after that view retires. Reopen checks the latest committed value after
+compaction. Record the source, redb build, operating system, filesystem and
+machine with any retained result. The full campaign adds signed guests,
+dispatcher faults, cache variants and execution-owner observations.
 
 [Userfault-pager research](../../research/userfault-pager/evaluation-plan.md)
 defines a separate comparison against these existing selective operations,
