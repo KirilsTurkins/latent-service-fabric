@@ -120,13 +120,16 @@ def configuration(app: Path) -> dict:
     return value
 
 
+def valid_package_name(identity: object) -> bool:
+    return (isinstance(identity, str) and len(identity) <= 214
+            and re.fullmatch(r'(?:@[A-Za-z0-9][A-Za-z0-9._-]*/)?[A-Za-z0-9][A-Za-z0-9._-]*', identity) is not None)
+
+
 def edit(project: Path, operation: str, *, identity: str, version: str | None = None,
          local: Path | None = None, section: str = 'dependencies') -> dict:
     from tools.typescript_application_dependencies import FIELDS
     import copy
-    if (not isinstance(identity, str) or len(identity) > 214
-            or not re.fullmatch(r'(?:@[A-Za-z0-9][A-Za-z0-9._-]*/)?[A-Za-z0-9][A-Za-z0-9._-]*', identity)
-            or section not in FIELDS):
+    if not valid_package_name(identity) or section not in FIELDS:
         raise DependencyError('npm-authoring-package-or-section-invalid')
     if operation in {'add', 'update'}:
         if (version is None) == (local is None):

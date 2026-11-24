@@ -102,7 +102,7 @@ class AttemptInventoryRetention(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root, source, tools, value, cli, _ = self.prepared(Path(temporary))
             with patch.object(build, 'compile_recipe') as compile_recipe:
-                with self.assertRaisesRegex(common.DevError, 'executable-approval-requires-maintained-rust-adapter'):
+                with self.assertRaisesRegex(common.DevError, 'executable-approval-requires-maintained-compiler-adapter'):
                     build.execute(root, source, value, tools, trusted=project.trust_identity(value), cli=cli,
                                   executable_approval='sha256:' + 'a' * 64)
             compile_recipe.assert_not_called()

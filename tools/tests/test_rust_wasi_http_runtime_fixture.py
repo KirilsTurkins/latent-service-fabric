@@ -27,7 +27,9 @@ class OrdinaryCapturedClients(unittest.TestCase):
             self.assertEqual(manifest['package']['version'],spec['version'])
             self.assertEqual(manifest['dependencies']['waki'],{'version':'=0.5.1','features':['json']})
             self.assertEqual(manifest['dependencies']['golem-wasi-http'],{'version':'=0.2.0','features':['json']})
+            self.assertEqual(manifest['dependencies']['ahash'],{'version':'=0.8.12','default-features':False})
             self.assertEqual(read_file(source/'src/lib.rs'),fixture.LIBRARY.encode())
+            self.assertEqual(read_json(source/'src/price-card.json'),{'id':7,'name':'café','items':['first','λ'],'empty':''})
         for text in ('waki::Client::new()', 'golem_wasi_http::Client::new()',
             'response.json::<serde_json::Value>()','response.error_for_status_ref()',
             'response.chunk(4)', 'response.read(&mut bytes)', 'response.bytes()', 'response.body()'):
@@ -141,6 +143,9 @@ class OrdinaryCapturedClients(unittest.TestCase):
         self.assertFalse(result['applicationTransportInjected'])
         self.assertFalse(result['libraryCodePatched'])
         self.assertEqual(len(result['executableInputs']),16)
+        self.assertEqual([entry['package'] for entry in result['privatePriceCards']],
+                         [spec['package'] for spec in self.specs])
+        self.assertTrue(all(entry['bytes']==len(fixture.PRICE_CARD) for entry in result['privatePriceCards']))
         self.assertEqual(result['developerCrates'],self.specs)
         self.assertEqual(read_json(self.app/fixture.LOCK),lock)
         self.assertFalse(any(p.exists() for p in self.outside))

@@ -123,7 +123,11 @@ class PublishedFetchTests(unittest.TestCase):
 
     def test_outside_identity_cannot_escape_its_owned_directory(self):
         with tempfile.TemporaryDirectory() as temporary:
-            for name in ('../escape', '@scope/name', 'outside-fetch-../escape', 'outside-fetch-'):
+            root = Path(temporary)
+            for index, name in enumerate(('merchant-price-card', '@ledger-coop/receipt-card')):
+                app = fixture.project(root/f'project-{index}', name)
+                self.assertIn(f"from '{name}'", (app/'src/default-client.ts').read_text())
+            for name in ('../escape', 'outside-fetch-../escape', 'unscoped/child', '@scope/..', 'x'*215):
                 with self.subTest(name=name), self.assertRaises(WorkflowError):
                     fixture.project(Path(temporary)/'never-created', name)
 

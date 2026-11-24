@@ -246,8 +246,13 @@ def helper(output: Path, resource_snapshot=None) -> str:
                  "guest_compatibility_context_build", "guest_emitted_code",
                  "guest_api_analysis", "guest_compiler_capture", "guest_compiler_edges",
                  "application_dependencies", "application_dependency_store", "application_dependency_tools",
+                 "application_dependency_approval", "guest_dependency_inputs", "rust_compiler_environment",
                  "build_snapshot", "rust_capsule_project", "guest_resources", "outbound_stream_operator"):
         entries[f"tools/{name}.py"] = (ROOT / f"tools/{name}.py").read_bytes()
+    # The helper only inspects Rust builds. Freeze the matching producer's
+    # recipe names here so an installed viewer never needs a source checkout.
+    from tools.rust_capsule_build import selected_recipe
+    entries["tools/dev_workflow/rust-approval-recipe.json"] = encode(sorted(selected_recipe(ROOT)))
     entries["tools/typescript_guest/__init__.py"] = b""
     entries["tools/typescript_guest/buffer_profile.py"] = (ROOT / "tools/typescript_guest/buffer_profile.py").read_bytes()
     for name in ("net_profile", "runtime_profile"):

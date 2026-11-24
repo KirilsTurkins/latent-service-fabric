@@ -41,3 +41,17 @@ and failure recovery are recorded separately in [PR #1006](https://github.com/Ki
 and authenticated private-feed ingestion in [PR #1001](https://github.com/KirilsTurkins/latent-service-fabric/pull/1001).
 Authenticated frontend watch and deployment of a newly reviewed version remain
 separate acceptance work for #682.
+
+## Installed private HTTP applications
+
+On November 24 the Linux source-candidate toolkit verified two captured Java
+applications and built each offline. Each build ran as an ordinary user, with
+read-only inputs, only loopback available and no source checkout. The direct
+and transitive JAR coordinates differed between applications. Both builds
+emitted the same 1,077,424-byte component and produced distinct package
+digests. Each package was signed and admitted to a node. All 13 HTTP cases
+passed for each application, including errors and a fresh invocation. Each
+peer observed 11 requests and one committed mutation. Both peers and nodes
+were reaped. The record identifies the local compiler archive, both classpaths,
+compiler components and the separate node revision.
+[Installed package and execution record](evidence/sdk-private-library-invocations-2026-11-23.json)

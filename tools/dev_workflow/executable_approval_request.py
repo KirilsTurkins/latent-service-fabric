@@ -1,4 +1,4 @@
-"""Explicit private observation of the last owned, failed Rust approval request.
+"""Explicit private observation of the last owned, failed compiler approval request.
 
 The caller holds the workspace and build-control locks. This operation never
 approves execution, selects an arbitrary attempt, or writes project/state data.
@@ -6,12 +6,30 @@ approves execution, selects an arbitrary attempt, or writes project/state data.
 from pathlib import Path
 
 from . import build, build_cache, build_control, paths, project, snapshot, state, tool_inventory
-from .common import decode, digest, integer, members, require, sha
+from .common import decode, digest, encode, integer, members, require, sha
 from .executable_approval import maintained
 
 MAX_REQUEST = 1024 * 1024
 MAX_METADATA = 4 * 1024 * 1024
 PROFILE = 'linux-captured-compiler-namespaces-v1'
+MANAGED_REFUSAL = 'managed-compiler-refusal.json'
+
+
+def retain_managed_refusal(working: Path, descriptor: dict) -> None:
+    language = descriptor['language']
+    if language not in {'java', 'dotnet'} or not maintained(descriptor):
+        return
+    output = working / descriptor['build']['outputRoot']
+    if not (output / 'executable-input-approval-request.json').is_file() or not (output / 'BUILD-FAILED.json').is_file():
+        return
+    failure = decode(paths.read(output, 'BUILD-FAILED.json', MAX_METADATA), MAX_METADATA)
+    if not isinstance(failure, dict) or failure.get('stage') != 'executable-input-approval':
+        return
+    # The trusted adapter has just refused execution and its children are reaped.
+    # Keep the identity outside the working tree so later changes to compiler
+    # output cannot alter what the operator reviews.
+    request_digest, _ = paths.digest_file(output, 'executable-input-approval-request.json', MAX_REQUEST)
+    paths.write_new(working.parent / MANAGED_REFUSAL, encode({'language': language, 'requestDigest': request_digest}))
 
 
 def _file(value, name=None, maximum=512 * 1024 * 1024):
@@ -63,7 +81,7 @@ def _compiler(value):
             require(row['distribution'] in value['distributions'], 'executable-request-loader-owner')
             paths.relative(row['path'])
     if 'declaredEnvironment' in value:
-        from tools.rust_capsule_build import validate_environment_material
+        from tools.rust_compiler_environment import validate_environment_material
         try:
             validate_environment_material(value['declaredEnvironment'])
         except (ValueError, TypeError):
@@ -71,15 +89,27 @@ def _compiler(value):
     return value
 
 
+def _rust_recipe():
+    from importlib import resources
+    packaged = resources.files(__package__).joinpath('rust-approval-recipe.json')
+    if packaged.is_file():
+        with packaged.open('rb') as selected:
+            names = decode(selected.read(MAX_METADATA + 1), MAX_METADATA)
+        require(isinstance(names, list) and 0 < len(names) <= 4096, 'executable-request-recipe-inputs')
+        return {paths.relative(name) for name in names}
+    from tools.rust_capsule_build import selected_recipe
+    return set(selected_recipe())
+
+
 def _producer(working, attempt, descriptor):
     from tools.build_snapshot import canonical
     from tools.guest_dependency_inputs import capture_source
-    from tools.rust_capsule_build import selected_recipe
     from tools.rust_capsule_project import inventory
 
+    language = descriptor['language']
     raw = paths.read(attempt, 'tool-inventory.json', tool_inventory.MAX_DOCUMENT)
     require(digest(raw) == descriptor['build']['inventory']['sha256'], 'guest-tool-inventory-digest')
-    selected = tool_inventory.validate(decode(raw, tool_inventory.MAX_DOCUMENT), 'rust', 544, 'linux-x86_64',
+    selected = tool_inventory.validate(decode(raw, tool_inventory.MAX_DOCUMENT), language, project.LANGUAGES[language], 'linux-x86_64',
                                        host_abi=descriptor['hostAbi'])
     require(selected['sourceCommit'] == descriptor['template']['revision'], 'guest-tool-template-revision-mismatch')
     files = {row['path']: row for row in selected['files']}
@@ -89,8 +119,13 @@ def _producer(working, attempt, descriptor):
     output = descriptor['build']['outputRoot'] + '/'
     recipe_raw = paths.read(working, output + 'recipe-inputs.json', MAX_METADATA)
     recipe = decode(recipe_raw, MAX_METADATA)
-    names = set(selected_recipe()) | {'examples/echo-contract/capsule.json', 'examples/echo-contract/deployment.json'}
-    members(recipe, names)
+    if language == 'rust':
+        names = _rust_recipe() | {'examples/echo-contract/capsule.json', 'examples/echo-contract/deployment.json'}
+        members(recipe, names)
+    else:
+        # The controller's fresh refusal binds the managed producer's exact
+        # recipe selection. Verify each selected file against the trusted SDK.
+        require(isinstance(recipe, dict) and 0 < len(recipe) <= len(files), 'executable-request-recipe-inputs')
     for name, row in recipe.items():
         paths.relative(name)
         _file(row)
@@ -99,22 +134,25 @@ def _producer(working, attempt, descriptor):
                 'executable-request-recipe-input-mismatch')
     require(recipe_raw == canonical(recipe), 'executable-request-recipe-input-format')
     source_raw = paths.read(working, output + 'source-inputs.json', MAX_METADATA)
-    # Recompute the actual Rust producer projection, including the unchanged
+    # Recompute the actual producer projection, including the unchanged
     # outer descriptor and SDK lock. Detached selection never enters it.
-    observed = capture_source(working / descriptor['build']['workingDirectory'], 'rust')
+    observed = capture_source(working / descriptor['build']['workingDirectory'], language)
     require(source_raw == inventory(observed.files), 'executable-request-source-input-mismatch')
+    recipe_digest = digest(canonical({'recipe': digest(recipe_raw), 'sourceSnapshot': digest(source_raw)}))
+    if language != 'rust':
+        return recipe_digest, None
     compiler_raw = paths.read(working, output + 'rust-compiler-inputs.json', MAX_METADATA)
     compiler = _compiler(decode(compiler_raw, MAX_METADATA, maximum_items=300000))
     for tool in descriptor['build']['tools']:
         if tool['name'] in compiler['tools']:
             require(compiler['tools'][tool['name']]['digest'] == tool['sha256'],
                     'executable-request-compiler-tool-mismatch')
-    return digest(canonical({'recipe': digest(recipe_raw), 'sourceSnapshot': digest(source_raw)})), compiler
+    return recipe_digest, compiler
 
 
 def read(root: Path) -> dict:
     from tools import application_dependencies
-    from tools.application_dependency_approval import request
+    from tools.application_dependency_approval import request, specification
     from tools.build_snapshot import canonical
     from types import SimpleNamespace
 
@@ -140,7 +178,8 @@ def read(root: Path) -> dict:
         build.unchanged(source, descriptor, record)
         build.unchanged(working, descriptor, record)
         recipe, compiler = _producer(working, attempt, descriptor)
-        verified = application_dependencies.verify_inputs(working, 'rust')
+        language = descriptor['language']
+        verified = application_dependencies.verify_inputs(working, language)
         require(verified is not None and verified.lock['executableInputs'], 'executable-request-no-executable-inputs')
         raw = paths.read(working, descriptor['build']['outputRoot'] + '/executable-input-approval-request.json', MAX_REQUEST)
         value = members(decode(raw, MAX_REQUEST), {'formatVersion', 'identity', 'specification'})
@@ -149,7 +188,15 @@ def read(root: Path) -> dict:
         sha(value['identity'])
         # Reuse the actual producer's complete schema and input selection. A
         # canonical hash by itself is never proof of an executable closure.
-        expected = request(verified, SimpleNamespace(receipt=compiler), recipe)
+        if language == 'rust':
+            expected = request(verified, SimpleNamespace(receipt=compiler), recipe)
+        else:
+            recorded = decode(paths.read(attempt, MANAGED_REFUSAL, 1024), 1024)
+            require(recorded == {'language': language, 'requestDigest': digest(raw)},
+                    'executable-request-managed-refusal-mismatch')
+            require(isinstance(value['specification'], dict), 'executable-request-producer-mismatch')
+            compiler_digest = sha(value['specification'].get('compilerInputsDigest'))
+            expected = specification(verified, compiler_digest, recipe)
         require(canonical(value['specification']) == canonical(expected) and value['identity'] == digest(canonical(expected)),
                 'executable-request-producer-mismatch')
         build.unchanged(source, descriptor, record)

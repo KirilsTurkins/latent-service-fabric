@@ -17,6 +17,7 @@ from tools import dotnet_published_http_node as node
 from tools.build_observation import build_environment
 from tools.build_process import run_bounded_result
 from tools.dotnet_dependency_authoring import source_files
+from tools.qualify_dotnet_standard_console import inherited
 from tools.wait_runtime_native_products import native_products, verify_prepared
 from tools.phase2_operator_process import require
 from tools.phase3_resource_identity import file_identity
@@ -28,16 +29,24 @@ MATERIALS = ('tools/qualify_dotnet_published_http.py','tools/dotnet_published_ht
     '.github/workflows/dotnet-published-http.yml')
 
 
-def qualify(native_input, tools, output):
+def native_inputs(directory, *, template_qualification):
+    if template_qualification:
+        binaries, _, evidence = inherited(directory)
+        return binaries, evidence
+    evidence = verify_prepared(directory)
+    return native_products(directory), evidence
+
+
+def qualify(native_input, tools, output, *, template_qualification=False):
     native_input,tools,output=map(lambda p:p.resolve(),(native_input,tools,output))
     require(ROOT!=output and ROOT not in output.parents
         and all(output!=p and output not in p.parents and p not in output.parents for p in (native_input,tools)),
         'published-dotnet-separated-build-inputs')
     output=fresh(output)
     deadline=time.monotonic()+1800
-    materials={n:file_identity(ROOT/n) for n in MATERIALS}
-    original_native=verify_prepared(native_input)
-    native=native_products(native_input)
+    material_names = MATERIALS + (('tools/qualify_dotnet_standard_console.py',) if template_qualification else ())
+    materials={n:file_identity(ROOT/n) for n in material_names}
+    native, original_native = native_inputs(native_input, template_qualification=template_qualification)
     before={n:file_identity(p,512*1024**2) for n,p in native.items()}
     record={'schemaVersion':'latent.dotnet.published-http.qualification.v1','status':'incomplete',
         'qualificationSources':materials,'nativeProducer':original_native,'fullTicketQualification':False}
@@ -99,8 +108,8 @@ def qualify(native_input, tools, output):
         require(execution['status']=='passed' and len(execution['cases'])==20
             and len(execution['preEntryRefusals'])==2,'published-dotnet-complete-owning-programme')
         record['node']=file_identity(output/'node/qualification.json')
-        require(time.monotonic()<deadline and materials=={n:file_identity(ROOT/n) for n in MATERIALS}
-            and original_native==verify_prepared(native_input)
+        require(time.monotonic()<deadline and materials=={n:file_identity(ROOT/n) for n in material_names}
+            and original_native==native_inputs(native_input, template_qualification=template_qualification)[1]
             and before=={n:file_identity(p,512*1024**2) for n,p in native.items()}
             and inventory(source_files(app))==captured and staging.verify(staged)==selected,
             'published-dotnet-final-source-native-and-deadline')
@@ -117,6 +126,10 @@ def qualify(native_input, tools, output):
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
-    for name in ('native','tools','output'):parser.add_argument('--'+name,type=Path,required=True)
+    native = parser.add_mutually_exclusive_group(required=True)
+    native.add_argument('--native', type=Path, help='Prepared wait-runtime native producer')
+    native.add_argument('--native-qualification', type=Path, help='Passed same-source .NET template qualification')
+    for name in ('tools','output'):parser.add_argument('--'+name,type=Path,required=True)
     args=parser.parse_args()
-    print(qualify(args.native,args.tools,args.output)['status'])
+    print(qualify(args.native or args.native_qualification, args.tools, args.output,
+                  template_qualification=args.native_qualification is not None)['status'])
