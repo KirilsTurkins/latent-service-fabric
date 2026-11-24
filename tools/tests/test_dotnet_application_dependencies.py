@@ -850,6 +850,32 @@ class CapturedCompilerSelection(unittest.TestCase):
             self.assertTrue((self.evidence / 'nuget-asset-selection-drift.json').is_file())
 
 
+class CompilerPackageCache(unittest.TestCase):
+    def test_private_sdk_package_remains_bound_as_the_application_cache_grows(self):
+        from tools.dotnet_compiler_isolation import DotnetIsolation, stage_sdk_packages
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'original'
+            source.mkdir()
+            (source / 'library.dll').write_bytes(b'compiler-owned')
+            cache = root / 'attempt' / 'nuget-packages'
+            cache.parent.mkdir()
+            name = 'nuget/sdk.compiler/1.0.0'
+            selected = stage_sdk_packages({name: source, 'sdk': root / 'unselected'}, cache)
+            sdk = cache / 'sdk.compiler' / '1.0.0'
+            self.assertEqual(selected, {name: sdk})
+            self.assertEqual(list(cache.parent.rglob('library.dll')), [sdk / 'library.dll'])
+            before = DotnetIsolation.observe_distribution(sdk)
+            app = cache / 'user.library/2.0.0'
+            app.mkdir(parents=True)
+            (app / 'user.dll').write_bytes(b'reviewed application')
+            self.assertEqual(DotnetIsolation.observe_distribution(sdk), before)
+            (sdk / 'library.dll').write_bytes(b'changed')
+            self.assertNotEqual(DotnetIsolation.observe_distribution(sdk), before)
+            self.assertEqual((source / 'library.dll').read_bytes(), b'compiler-owned')
+
+
 class RelocatedCompilerPython(unittest.TestCase):
     def setUp(self):
         from contextlib import ExitStack
