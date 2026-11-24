@@ -42,6 +42,14 @@ test('failed query cannot install an application body from an error response', a
   assert.equal(app.view, undefined);
 });
 
+test('the native query revision remains exact when the WIT codec sends a decimal string', async () => {
+  const revision = '18446744073709551615';
+  const app = client(async () => response('query', {revision: JSON.stringify(revision)}));
+  const result = await app.query('demo');
+  assert.equal(result.value.revision, revision);
+  assert.equal(result.value.namespaceView, view);
+});
+
 test('fragmented query bodies remain bounded and decode correctly', async () => {
   const payload = new TextEncoder().encode(await response('query').text());
   const app = client(async () => new Response(new ReadableStream({

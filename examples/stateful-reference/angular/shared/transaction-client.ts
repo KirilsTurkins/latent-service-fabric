@@ -88,9 +88,12 @@ function lossless(text: string): unknown {
     if (key !== 'revision' || text[next] !== ':') continue;
     next++;
     while (/\s/.test(text[next] ?? '') && next < text.length) next++;
+    if (++revisions !== 1) throw new Error('duplicate-business-revision');
+    // The native wire codec already emits u64 values as decimal strings.
+    // Only normalize a numeric spelling before the JSON parser can round it.
+    if (text[next] === '"') continue;
     let end = next;
     while (/[0-9.eE+-]/.test(text[end] ?? '') && end < text.length) end++;
-    if (++revisions !== 1) throw new Error('duplicate-business-revision');
     const exact = revision(text.slice(next, end));
     parts.push(text.slice(copied, next), JSON.stringify(exact));
     copied = end; cursor = end;
