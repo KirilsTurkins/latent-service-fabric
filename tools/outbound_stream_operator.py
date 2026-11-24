@@ -376,7 +376,7 @@ class StreamOperator:
 
     def __init__(self, root: Path, client, *, node: str, tenant: str, provider: dict,
                  consumer: str, publication: str, principal: dict, destination: dict,
-                 binding_id: str, policy_id: str):
+                 binding_id: str, policy_id: str, operations: list[str] | tuple[str, ...] = tuple(OPERATIONS)):
         paths.private_root(root)
         members(principal, {"kind", "subject"})
         require(principal["kind"] in {"user", "service", "node", "trigger", "administrator"},
@@ -385,6 +385,10 @@ class StreamOperator:
         for value in (node, tenant, consumer, publication, binding_id, policy_id):
             _token(value)
         require(binding_id != policy_id, "stream-operator-distinct-record-identities")
+        require(isinstance(operations, (list, tuple)) and 1 <= len(operations) <= len(OPERATIONS)
+                and all(type(operation) is str and operation in OPERATIONS for operation in operations)
+                and len(set(operations)) == len(operations), "stream-operator-invalid-operations")
+        selected = [operation for operation in OPERATIONS if operation in operations]
         config = Path(client.config).absolute()
         config_digest = digest(_private_read(config))
         self.root, self.client = root, client
@@ -394,6 +398,10 @@ class StreamOperator:
             "principal": dict(principal), "endpoint": endpoint(destination),
             "bindingId": binding_id, "policyId": policy_id, "clientConfigurationDigest": config_digest,
         }
+        # Full-surface owners predate operation selection. Preserve their exact
+        # identity so a pending mutation is still recoverable after an upgrade.
+        if selected != OPERATIONS:
+            self.owner["operations"] = selected
         with state.lock(root, "stream-operator.lock"):
             existing = (root / "stream-operator-owner.json").exists()
             if existing:
@@ -480,7 +488,7 @@ class StreamOperator:
         return {"formatVersion": 1, "tenant": self.owner["tenant"], "rules": [{
             "id": "stream", "effect": effect, "principals": [copy.deepcopy(self.owner["principal"])],
             "services": [self.owner["consumer"]], "publications": [self.owner["publication"]],
-            "capability": CAPABILITY, "operations": list(OPERATIONS),
+            "capability": CAPABILITY, "operations": list(self.owner.get("operations", OPERATIONS)),
             "resources": {"kind": "stream", "endpoints": [copy.deepcopy(self.owner["endpoint"])]},
             "requireAudit": True, "ceiling": dict(CEILING)}]}
 
@@ -489,7 +497,7 @@ class StreamOperator:
         return {"formatVersion": 1, "tenant": self.owner["tenant"], "capability": CAPABILITY,
                 "providerProfile": PROFILE, "configurationDigest": provider["configurationDigest"],
                 "configurationEpoch": int(provider["configurationEpoch"]),
-                "restriction": {"operations": list(OPERATIONS)}}
+                "restriction": {"operations": list(self.owner.get("operations", OPERATIONS))}}
 
     def grant(self):
         with state.lock(self.root, "stream-operator.lock"):
@@ -821,7 +829,7 @@ def main(argv=None):
         source = args.specification.absolute()
         specification = decode(_private_read(source), 65536)
         members(specification, {"node", "tenant", "provider", "consumer", "publication", "principal",
-                                "destination", "bindingId", "policyId"})
+                                "destination", "bindingId", "policyId"}, {"operations"})
         root = args.state_dir.absolute()
         paths.private_root(root)
         require((args.command == "inspect") == (args.deployment is not None),
