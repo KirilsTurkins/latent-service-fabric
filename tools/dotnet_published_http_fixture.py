@@ -20,6 +20,7 @@ from tools.rust_capsule_project import ROOT, digest, inventory, read_file
 ROOT_SOURCE = 'tools/fixtures/dotnet-published-http/Main.cs'
 PRIVATE_SOURCE = 'tools/fixtures/dotnet-published-http/Private.cs.in'
 PACKAGES = {'Flurl.Http': '4.0.2', 'Refit': '16.4.0'}
+PRICE_CARD = '{"id":7,"name":"café","items":["first","λ"],"empty":""}\n'.encode('utf-8')
 
 
 def project(directory):
@@ -65,13 +66,16 @@ def install(app: Path, outside: Path, tools: Path):
         source = read_file(ROOT/PRIVATE_SOURCE).replace(b'@NAMESPACE@', namespace.encode('ascii'))
         require(b'@NAMESPACE@' not in source, 'published-dotnet-private-namespace')
         (library/'Worker.cs').write_bytes(source)
+        (library/'price-card.json').write_bytes(PRICE_CARD)
         (library/'Worker.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>'
             '<TargetFramework>net10.0</TargetFramework><OutputType>Library</OutputType>'
             '<Nullable>enable</Nullable><AssemblyName>'+identity+'</AssemblyName>'
             '<UseSharedCompilation>false</UseSharedCompilation>'
             '<ImportDirectoryBuildProps>false</ImportDirectoryBuildProps>'
             '<ImportDirectoryBuildTargets>false</ImportDirectoryBuildTargets>'
-            '</PropertyGroup></Project>', encoding='utf8')
+            '</PropertyGroup><ItemGroup>'
+            '<EmbeddedResource Include="price-card.json" LogicalName="outside.price-card" />'
+            '</ItemGroup></Project>', encoding='utf8')
         (library/'global.json').write_bytes(read_file(app/'global.json'))
         configuration = library/'nuget.config'
         configuration.write_text('<configuration><packageSources><clear/></packageSources></configuration>', encoding='utf8')
@@ -86,6 +90,7 @@ def install(app: Path, outside: Path, tools: Path):
         (feed/(identity.lower()+'.1.0.0.nupkg')).write_bytes(raw)
         private.append({'identity':identity, 'version':'1.0.0', 'namespace':namespace,
             'source':digest(source), 'assembly':digest(assembly), 'archive':digest(raw),
+            'embeddedResource':{'name':'outside.price-card', 'sha256':digest(PRICE_CARD), 'bytes':len(PRICE_CARD)},
             'preparationCommands':commands.records})
         authoring.edit(app, 'add', identity=identity, version='1.0.0')
     for name, version in PACKAGES.items():
