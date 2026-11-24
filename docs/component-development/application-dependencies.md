@@ -100,8 +100,12 @@ For example, the private Java project's transitive JAR supplies a
 `URLStreamHandler` for one connection. The handler delegates to the platform
 connection. Each of two signed packages received the expected JSON from its
 permitted peer, received a permission error on the second origin, and then
-completed a fresh request through the default handler. The Go, C, TypeScript
-and .NET examples exercise their own extension points under publication grants.
+completed a fresh request through the default handler. The Rust project passes its own four-byte reader to the
+published Golem HTTP client. In each tenant the permitted POST returned the exact
+bytes. The denied POST returned a request-body stream error and made zero
+connections. A default GET to that same destination returned
+`ErrorCode::HttpRequestDenied`. Both tenants then completed a fresh GET.
+Go, C, TypeScript and .NET also exercise guest extensions under publication grants.
 [Optional guest extension cases and source receipts](../testing/evidence/sdk-private-guest-extensions-2026-11-24.json)
 
 Each walkthrough's language has run a developer-owned dependency in a signed
