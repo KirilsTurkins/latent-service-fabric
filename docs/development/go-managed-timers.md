@@ -140,3 +140,14 @@ original Task16, Wait4 and Timer2 limits remain.
 This specifies a bounded, instrumented qualification, not a claim that it has
 executed, that every cancellation interleaving is covered, or that process RSS
 and kernel final-free have been measured.
+
+## Go 1.27.4 and the v7 profile
+
+The managed v7 programme completed 43 signed invocations with its original
+limit of two timers and four waits. Five further invocations exercised
+a five-nanosecond timer at monotonic zero, coalesced ticker periods, wall-clock
+jumps and root cancellation before a sleep elapsed. Those clock cases used a
+controlled provider. A separate six-call programme used the instrumented guest
+to observe stop and reset after the original host wait returned. All three
+components were compiled from the same source revision.
+[Components, limits and signed outcomes](../testing/evidence/go-v7-managed-timers-current-2026-11-24.json)
