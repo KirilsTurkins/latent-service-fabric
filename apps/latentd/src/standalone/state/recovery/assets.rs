@@ -1,4 +1,6 @@
 //! Exact admitted package layers retained before any fixed-worker review.
+pub(super) mod order_draft;
+
 use super::profile::{CurrentHttpInput, Profile, V1, V2};
 use super::selection::RecoverySource;
 use latent_artifacts::{
@@ -22,10 +24,16 @@ const AGGREGATE_DEFINITION: &[u8] = include_bytes!(concat!(
 ));
 const AGGREGATE_MEDIA: &str = "application/vnd.lsf.aggregate-v1";
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum RecoveryCodec {
+    Aggregate(Profile),
+    OrderDraft,
+}
+
 pub(super) struct SchemaEvidence {
     pub operation: Arc<RecoverySource>,
     pub schema: ReviewedSchema,
-    pub profile: Profile,
+    pub codec: RecoveryCodec,
     pub artifacts: Vec<RequiredArtifact>,
 }
 
@@ -40,7 +48,7 @@ pub(super) fn capture(
     let publication = operation.publication();
     publication.check_current()?;
     let Ok(profile) = Profile::installed(&publication.release().0) else {
-        return capture_shared_aggregate(repository, operation);
+        return capture_shared(repository, operation);
     };
     profile.require_companion(&operation.asset.get().declaration().state_schema)?;
     let mut names = vec![
@@ -162,22 +170,29 @@ pub(super) fn capture(
     Ok(SchemaEvidence {
         operation,
         schema,
-        profile,
+        codec: RecoveryCodec::Aggregate(profile),
         artifacts,
     })
 }
 
-fn capture_shared_aggregate(
+fn capture_shared(
     repository: &Arc<DirectoryArtifactRepository>,
     operation: Arc<RecoverySource>,
 ) -> Result<SchemaEvidence, PlatformError> {
     let publication = operation.publication();
     let selected = operation.asset.get();
-    let definition =
-        SchemaId::from_definition(AGGREGATE_DEFINITION).map_err(|_| super::denied())?;
-    if selected.declaration().state_schema != definition.as_str()
-        || selected.declaration().namespace != "transactional-aggregate"
-    {
+    let (codec, schema_bytes) = match selected.declaration().namespace.as_str() {
+        "transactional-aggregate" => (
+            RecoveryCodec::Aggregate(Profile::Legacy),
+            AGGREGATE_DEFINITION,
+        ),
+        namespace if order_draft::draft_id(namespace).is_some() => {
+            (RecoveryCodec::OrderDraft, order_draft::DEFINITION)
+        }
+        _ => return Err(super::denied()),
+    };
+    let definition = SchemaId::from_definition(schema_bytes).map_err(|_| super::denied())?;
+    if selected.declaration().state_schema != definition.as_str() {
         return Err(super::denied());
     }
     let captured = repository.capture_selected_transaction_layers(
@@ -193,23 +208,13 @@ fn capture_shared_aggregate(
     }
     let config = decode_config(configuration, PackageLimits::default())?;
     let exact_schema = asset(&config, layers, "state-schema.json", "application/json")?;
-    if exact_schema != AGGREGATE_DEFINITION {
+    if exact_schema != schema_bytes {
         return Err(super::denied());
     }
-
-    // The legacy value decoder and the maintained shared schema both use an
-    // untagged eight-byte little-endian unsigned count under this media type.
-    let decoder = Profile::Legacy;
-    let mut proof = Sha256::new();
-    proof.update(b"latent.shared-aggregate-recovery.v1\0");
-    proof.update(exact_schema);
-    for expected in [0_u64, 1, u64::MAX] {
-        let bytes = expected.to_le_bytes();
-        if decoder.decode(AGGREGATE_MEDIA, &bytes) != Some(expected) {
-            return Err(super::denied());
-        }
-        proof.update(bytes);
-    }
+    let proof = match codec {
+        RecoveryCodec::Aggregate(decoder) => aggregate_proof(decoder, exact_schema)?,
+        RecoveryCodec::OrderDraft => order_draft::proof()?,
+    };
     let package_digest = digest_bytes(package.as_str())?;
     let schema = ReviewedSchema::accept_with(
         SchemaDeclaration {
@@ -218,7 +223,7 @@ fn capture_shared_aggregate(
             writers: vec![definition],
         },
         package_digest,
-        proof.finalize().into(),
+        proof,
         |_, _, _| Ok(()),
     )
     .map_err(|_| super::denied())?;
@@ -231,9 +236,23 @@ fn capture_shared_aggregate(
     Ok(SchemaEvidence {
         operation,
         schema,
-        profile: decoder,
+        codec,
         artifacts,
     })
+}
+
+fn aggregate_proof(decoder: Profile, schema: &[u8]) -> Result<[u8; 32], PlatformError> {
+    let mut proof = Sha256::new();
+    proof.update(b"latent.shared-aggregate-recovery.v1\0");
+    proof.update(schema);
+    for expected in [0_u64, 1, u64::MAX] {
+        let bytes = expected.to_le_bytes();
+        if decoder.decode(AGGREGATE_MEDIA, &bytes) != Some(expected) {
+            return Err(super::denied());
+        }
+        proof.update(bytes);
+    }
+    Ok(proof.finalize().into())
 }
 
 fn required(

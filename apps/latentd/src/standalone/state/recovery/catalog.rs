@@ -1,7 +1,7 @@
 //! Bounded native decoder closure over actual retained signed package sources.
 use super::selection::{RecoveryProfile, RecoverySource};
 use super::{
-    assets::{self, SchemaEvidence},
+    assets::{self, order_draft, RecoveryCodec, SchemaEvidence},
     scope::Scope,
 };
 use latent_artifacts::DirectoryArtifactRepository;
@@ -415,14 +415,15 @@ impl Catalog {
         {
             return Err(StoreError::UnsupportedFormat);
         }
+        if self.primary().codec == RecoveryCodec::OrderDraft {
+            return order_draft::validate_cell(view, &observed);
+        }
         if let Some(value) = observed.value {
             if observed.key != b"aggregate/count"
                 || !value.metadata.is_empty()
                 || !self.schemas.iter().any(|schema| {
-                    schema
-                        .profile
-                        .decode(&value.media_type, &value.bytes)
-                        .is_some()
+                    matches!(schema.codec, RecoveryCodec::Aggregate(codec)
+                        if codec.decode(&value.media_type, &value.bytes).is_some())
                 })
             {
                 return Err(StoreError::UnsupportedFormat);
