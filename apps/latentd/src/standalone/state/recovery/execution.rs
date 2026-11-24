@@ -655,7 +655,8 @@ async fn metadata_action(
                     "view":observed.view_token()?,
                     "guard":observed.guard.as_ref().map(RecoveryGuard::encode).transpose()?,
                     "reviewDigest":digest(worker.review),
-                    "publicationEffects":publication_effects(&worker, &view)?
+                    "publicationEffects":publication_effects(&worker, &view)?,
+                    "retainedPayloads": retained_payloads(&worker, &view)?
                 }),
                 Action::InspectCloseEffects { operation_id, effect_ids, reason } => {
                     let plan = inspect(&view, close_scope(&worker), worker.authority.actor.clone(), operation_id.clone(), effect_ids.clone(), reason.clone())?;
@@ -702,6 +703,57 @@ async fn metadata_action(
         seal(store, &codecs, settings).await?;
     }
     Ok(result)
+}
+
+fn retained_payloads(
+    codecs: &Codecs,
+    view: &latent_state::embedded::ReadView,
+) -> Result<serde_json::Value, StoreError> {
+    use latent_state::payload_references::{
+        required_owner_page, PayloadOwnerKind, MAX_REFERENCE_BYTES, MAX_REFERENCE_UPDATES,
+    };
+
+    let operation = &codecs.catalog.primary().operation;
+    let mut after = None;
+    let (mut state, mut results, mut effects, mut snapshots, mut bytes) =
+        (0_u64, 0_u64, 0_u64, 0_u64, 0_u64);
+    loop {
+        codecs.check()?;
+        let page = required_owner_page(
+            view,
+            after.as_deref(),
+            MAX_REFERENCE_UPDATES,
+            MAX_REFERENCE_UPDATES * MAX_REFERENCE_BYTES,
+        )?;
+        for reference in page.references {
+            let owner = reference.owner;
+            if owner.tenant != operation.target().tenant.0
+                || owner.namespace != operation.namespace()
+                || owner.incarnation != operation.incarnation()
+            {
+                continue;
+            }
+            let count = match owner.kind {
+                PayloadOwnerKind::State => &mut state,
+                PayloadOwnerKind::Result => &mut results,
+                PayloadOwnerKind::Effect => &mut effects,
+                PayloadOwnerKind::Snapshot => &mut snapshots,
+            };
+            *count = count.checked_add(1).ok_or(StoreError::Capacity)?;
+            bytes = bytes
+                .checked_add(reference.payload.size)
+                .ok_or(StoreError::Capacity)?;
+        }
+        let Some(resume) = page.resume else { break };
+        after = Some(resume);
+    }
+    Ok(serde_json::json!({
+        "stateOwners": state.to_string(),
+        "resultOwners": results.to_string(),
+        "effectOwners": effects.to_string(),
+        "snapshotOwners": snapshots.to_string(),
+        "referencedBytes": bytes.to_string(),
+    }))
 }
 
 fn publication_effects(

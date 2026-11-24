@@ -54,6 +54,11 @@ These counts describe the authorized namespace view and leave retained work
 available for drain or explicit reconciliation. Run the check while the
 publication still has inspection authority.
 
+The same response includes the namespace incarnation's retained local payload
+owners by state, result, effect and snapshot. The decimal bytes field sums the
+size for each independent owner. When owners share a payload, every owner still
+needs that content through its own retention window.
+
 Migration resume returns action `resume-migration`,
 encoded current `receipt`, current `view`, and `resourcePhysicallyRetired`.
 Generic resume refuses a retained current migration and cannot replace its
