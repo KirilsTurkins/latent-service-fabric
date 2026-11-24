@@ -29,35 +29,49 @@ _MISSING_COMPILER = re.compile(r"(?m)^[ \t]*> Could not find (org\.teavm:[A-Za-z
 _METADATA_URL = re.compile(r"(?m)^[ \t]+- ([^\s]+)$")
 
 
-def missing_compiler_metadata(log: str, lock: bytes) -> bool:
-    """Recognize only locked TeaVM POM absence before Gradle task execution."""
+_RATE_LIMITED_POM = re.compile(
+    r"(?m)^[ \t]*> Could not resolve (?P<coordinate>org\.teavm:[A-Za-z0-9_.-]+:[A-Za-z0-9_.+-]+)\.\n"
+    r"[ \t]+Required by:\n[ \t]+buildscript of root project 'lsf-java-guest-feasibility'\n"
+    r"[ \t]+> Could not resolve (?P=coordinate)\.\n"
+    r"[ \t]+> Could not get resource '(?P<url>https://[^'\s]+)'\.\n"
+    r"[ \t]+> Could not GET '(?P=url)'\. Received status code 429 from server: Too Many Requests$"
+)
+
+
+def compiler_metadata_retry_delay(log: str, lock: bytes) -> int:
+    """Return the initial backoff for a known locked metadata acquisition failure."""
     if (log.count('FAILURE: Build failed with an exception.') != 1
             or log.count("A problem occurred configuring root project 'lsf-java-guest-feasibility'.") != 1
             or log.count("Could not resolve all artifacts for configuration 'classpath'.") != 1
             or log.count('BUILD FAILED') != 1 or '> Task ' in log
             or 'verification' in log.lower() or 'Execution failed for task' in log):
-        return False
+        return 0
     missing = _MISSING_COMPILER.findall(log)
-    if not missing or log.count('Could not ') != len(missing) + 1:
-        return False
-    allowed = set()
+    throttled = _RATE_LIMITED_POM.findall(log)
+    if not (missing or throttled) or log.count('Could not ') != 1 + len(missing) + 4 * len(throttled):
+        return 0
+    locked = {}
     for item in json.loads(lock)['artifacts']:
         parts = item['path'].split('/')
         if (len(parts) == 5 and parts[:2] == ['org', 'teavm']
                 and parts[-1] == parts[2] + '-' + parts[3] + '.jar'):
-            allowed.add('org.teavm:' + parts[2] + ':' + parts[3])
-    expected = set()
-    for coordinate in missing:
-        if coordinate not in allowed:
-            return False
-        group, name, version = coordinate.split(':')
-        expected.add('https://repo.maven.apache.org/maven2/' + group.replace('.', '/')
-                     + '/' + name + '/' + version + '/' + name + '-' + version + '.pom')
-    return set(_METADATA_URL.findall(log)) == expected
+            coordinate = 'org.teavm:' + parts[2] + ':' + parts[3]
+            locked[coordinate] = 'https://repo.maven.apache.org/maven2/' + item['path'][:-4] + '.pom'
+    if any(name not in locked for name in missing):
+        return 0
+    if set(_METADATA_URL.findall(log)) != {locked[name] for name in missing}:
+        return 0
+    if any(locked.get(name) != url for name, url in throttled):
+        return 0
+    return 15 if throttled else 2
+
+
+def missing_compiler_metadata(log: str, lock: bytes) -> bool:
+    return compiler_metadata_retry_delay(log, lock) == 2
 
 
 class AcquisitionCompiler(Compiler):
-    """Only the maintained greeting's online acquisition may retry POM absence.
+    """Retry bounded metadata failures during the maintained greeting's online acquisition.
 
     Ordinary application compilers are unchanged. Every attempt still uses the
     pinned build, dependency verification, original deadline and retention cap.
@@ -79,18 +93,19 @@ class AcquisitionCompiler(Compiler):
                     ordinal = len(self.records) - 1
                     record = self.records[ordinal]
                     log = paths.read(self.directory, str(ordinal) + '-java-to-c.log', 4 * 1024 * 1024).decode('utf-8')
-                    retryable = (record['stage'] == stage and type(record['exitCode']) is int
-                        and record['exitCode'] == 1 and 'processFailure' not in record
-                        and missing_compiler_metadata(log, self.original_sdk['feasibility/dependencies.lock.json']))
+                    delay = 0
+                    if (record['stage'] == stage and type(record['exitCode']) is int
+                            and record['exitCode'] == 1 and 'processFailure' not in record):
+                        delay = compiler_metadata_retry_delay(log, self.original_sdk['feasibility/dependencies.lock.json'])
                 except Exception:
-                    retryable = False
-                if not retryable:
+                    delay = 0
+                if not delay:
                     raise
                 self.check_unchanged()
                 deadline = self.deadline
                 if getattr(self, '_parent_deadline', None) is not None:
                     deadline = min(deadline, self._parent_deadline - 5)
-                delay = 2 * (attempt + 1)
+                delay *= attempt + 1
                 if time.monotonic() + delay >= deadline:
                     raise
                 time.sleep(delay)
