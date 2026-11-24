@@ -142,7 +142,11 @@ static probe_callback_code_t pump(struct frame *f, lsf_async_result_t state) {
     }
 }
 static struct frame *start(bool edit, probe_string_t id) {
-    struct frame *f = calloc(1, sizeof(*f)); lsf_require(f != NULL); f->edit = edit; lsf_frame_enter(f);
+    struct frame *f = calloc(1, sizeof(*f));
+    lsf_require(f != NULL);
+    lsf_scope_init(&f->scope, 65536);
+    f->edit = edit;
+    lsf_frame_enter(f);
     if (id.len == 0 || id.len > 32) return f;
     for (size_t i = 0; i < id.len; i++) {
         uint8_t c = id.ptr[i];
@@ -155,6 +159,7 @@ static struct frame *start(bool edit, probe_string_t id) {
 }
 probe_callback_code_t exports_examples_order_draft_api_edit(exports_examples_order_draft_api_edit_request_t *request) {
     struct frame *f = start(true, request->draft_id);
+    exports_examples_order_draft_api_edit_request_free(request);
     if (!f->id.len) return finish(f, true, EXPORTS_EXAMPLES_ORDER_DRAFT_API_BUSINESS_ERROR_INVALID_DRAFT);
     if (request->units > 10000) return finish(f, true, EXPORTS_EXAMPLES_ORDER_DRAFT_API_BUSINESS_ERROR_INVALID_UNITS);
     f->expected = request->expected_revision; f->units = request->units; f->reject = request->reject;
@@ -162,7 +167,7 @@ probe_callback_code_t exports_examples_order_draft_api_edit(exports_examples_ord
     lsf_require(lsf_state_acquire_command(&f->scope, &f->command, &denied));
     latent_state_key_value_command_info_t info = {0};
     lsf_require(lsf_state_command_info(&f->command, &info, &denied));
-    bool permitted = namespace_matches(info.view.namespace, f);
+    bool permitted = namespace_matches(info.view.namespace_, f);
     latent_state_key_value_command_info_free(&info);
     if (!permitted) return finish(f, true, EXPORTS_EXAMPLES_ORDER_DRAFT_API_BUSINESS_ERROR_INVALID_DRAFT);
     f->phase = READ_PRIMARY;
@@ -170,19 +175,22 @@ probe_callback_code_t exports_examples_order_draft_api_edit(exports_examples_ord
 }
 probe_callback_code_t exports_examples_order_draft_api_query(probe_string_t *id) {
     struct frame *f = start(false, *id);
+    probe_string_free(id);
     if (!f->id.len) return finish(f, true, EXPORTS_EXAMPLES_ORDER_DRAFT_API_BUSINESS_ERROR_INVALID_DRAFT);
     latent_state_key_value_state_error_t denied;
     lsf_require(lsf_state_acquire_query(&f->scope, &f->query, &denied));
     latent_state_key_value_view_identity_t info = {0};
     lsf_require(lsf_state_query_info(&f->query, &info, &denied));
-    bool permitted = namespace_matches(info.namespace, f);
+    bool permitted = namespace_matches(info.namespace_, f);
     latent_state_key_value_view_identity_free(&info);
     if (!permitted) return finish(f, true, EXPORTS_EXAMPLES_ORDER_DRAFT_API_BUSINESS_ERROR_INVALID_DRAFT);
     f->phase = READ_PRIMARY;
     return pump(f, lsf_async_submit(&f->async, lsf_state_get_query(&f->call, &f->query, primary_key(f), &f->primary)));
 }
 static probe_callback_code_t callback(probe_event_t *event) {
-    struct frame *f = lsf_frame_current(); lsf_require(f != NULL); return pump(f, lsf_async_event(&f->async, event));
+    struct frame *f = probe_context_get_0();
+    lsf_require(f != NULL);
+    return pump(f, lsf_async_event(&f->async, event));
 }
 probe_callback_code_t exports_examples_order_draft_api_edit_callback(probe_event_t *event) { return callback(event); }
 probe_callback_code_t exports_examples_order_draft_api_query_callback(probe_event_t *event) { return callback(event); }
