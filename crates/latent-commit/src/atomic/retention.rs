@@ -17,6 +17,7 @@ pub use review::{
     RetentionRequest, RetiredCommand,
 };
 pub(super) use review::{RetryIndex, RETRY_INDEX_PREFIX};
+pub use step::ScopedResultBody;
 pub(super) const EFFECT_GROWTH_RESERVED_BYTES: u64 = 8 * 1024;
 pub(super) const AUDIT_RESERVED_BYTES: u64 = 16 * 1024 + EFFECT_GROWTH_RESERVED_BYTES;
 

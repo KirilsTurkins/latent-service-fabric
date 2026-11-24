@@ -35,6 +35,8 @@ Current action fields are:
 | `inspect-namespace` | none |
 | `compact-namespace` | exact `expectedView` byte array from `inspect-namespace` |
 | `sweep-result-bodies` | exact `expectedView` and `expectedGeneration` from `inspect-namespace` |
+| `inspect-result-maintenance` | none |
+| `expire-result-body` | `commandId`, exact `expectedView` and `expectedGeneration` from `inspect-result-maintenance` |
 | `inspect-inbox-source` | `binding` |
 | `inspect-inbox-broker` | `binding` |
 | `enroll-inbox-source` | `binding`, `expectedScope`, `expectedView`, `expectedCheckpointGeneration` |
@@ -80,6 +82,15 @@ generation resumes that same pass. Check `passComplete` to stop, and inspect
 again after an uncertain return. Only eligible expired response bodies and
 their own payload references are released. Command identities, inbox history
 and unresolved effect references remain protective.
+
+For a known command in a stopped multi-namespace installation, use
+`inspect-result-maintenance` under the selected publication and copy its
+`view` and `generation` into `expire-result-body`. Supply the original
+64-character lowercase hexadecimal command ID. The worker checks that the
+current command belongs to the selected namespace and that its response
+retention deadline has passed. The receipt reports reclaimed response bytes
+and the new maintenance generation. The shared sweep cursor stays in place;
+related effects and inbox records retain their original identities.
 
 Migration resume returns action `resume-migration`,
 encoded current `receipt`, current `view`, and `resourcePhysicallyRetired`.

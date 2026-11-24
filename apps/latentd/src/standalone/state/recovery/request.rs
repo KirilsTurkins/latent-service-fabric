@@ -42,6 +42,13 @@ pub(super) enum Action {
         #[serde(default, deserialize_with = "maintenance_generation")]
         expected_generation: Option<u64>,
     },
+    InspectResultMaintenance {},
+    ExpireResultBody {
+        command_id: String,
+        expected_view: Vec<u8>,
+        #[serde(default, deserialize_with = "maintenance_generation")]
+        expected_generation: Option<u64>,
+    },
     InspectInboxSource {
         binding: String,
     },
@@ -231,7 +238,9 @@ impl Action {
             | Self::InspectInboxBroker { .. } => &["namespace-inspect"],
             Self::EnrollInboxSource { .. } => &["namespace-enroll-inbox-source"],
             Self::CompactNamespace { .. } => &["state-checkpoint"],
-            Self::SweepResultBodies { .. } => &["purge-expired-payload"],
+            Self::InspectResultMaintenance {}
+            | Self::SweepResultBodies { .. }
+            | Self::ExpireResultBody { .. } => &["purge-expired-payload"],
             Self::InspectRestore { .. } => &["namespace-inspect-restore"],
             Self::Restore { .. } => &["namespace-inspect-restore", "namespace-restore"],
             Self::StageMigration { .. } | Self::CompleteMigration { .. } => {
@@ -297,7 +306,19 @@ impl Action {
                 super::assets::digest_bytes(checkpoint_manifest_digest)?;
                 Ok(())
             }
-            Self::InspectNamespace {} | Self::Review {} => Ok(()),
+            Self::InspectNamespace {} | Self::InspectResultMaintenance {} | Self::Review {} => {
+                Ok(())
+            }
+            Self::ExpireResultBody {
+                command_id,
+                expected_view,
+                ..
+            } => {
+                view(expected_view)?;
+                latent_commit::atomic::Identity::parse_hex(command_id)
+                    .map(drop)
+                    .map_err(|_| super::denied())
+            }
             Self::CompactNamespace { expected_view }
             | Self::SweepResultBodies { expected_view, .. } => view(expected_view),
             Self::InspectInboxSource { binding } | Self::InspectInboxBroker { binding } => {

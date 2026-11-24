@@ -49,6 +49,87 @@ fn reviewed_result_pass_resumes_after_reopen_and_refuses_stale_generation() {
 }
 
 #[test]
+fn reviewed_point_expiry_is_namespace_scoped_and_does_not_advance_the_sweep_cursor() {
+    use crate::atomic::retention::ScopedResultBody;
+    use latent_state::recovery::namespace_resume::NamespaceRecoveryView;
+
+    let (_directory, store, effects) = setup();
+    let first = completed(&store, &effects, "point-expiry-first");
+    let second = completed(&store, &effects, "point-expiry-second");
+    let (swept, targeted) = if first.id.hex() < second.id.hex() {
+        (first, second)
+    } else {
+        (second, first)
+    };
+    let view = store.snapshot().unwrap();
+    let selected = NamespaceRecoveryView::capture(
+        &view,
+        &TenantId("tenant".into()),
+        &StateNamespaceId("aggregate".into()),
+    )
+    .unwrap();
+    let mut foreign = selected.namespace.clone();
+    foreign.id = StateNamespaceId("other-namespace".into());
+    drop(view);
+    store
+        .apply(AtomicBatch {
+            expectations: vec![],
+            mutations: vec![RowMutation {
+                key: RowKey {
+                    family: Family::Namespace,
+                    key: namespace_record_key(&foreign.tenant, &foreign.id).unwrap(),
+                },
+                value: Some(foreign.encode().unwrap()),
+            }],
+        })
+        .unwrap();
+    let view = store.snapshot().unwrap();
+    let other = NamespaceRecoveryView::capture(&view, &foreign.tenant, &foreign.id).unwrap();
+    let effect_key =
+        latent_effects::dispatch_store::effect_row_key(&targeted.effects[0].hex()).unwrap();
+    let linked_effect = view.get(&effect_key).unwrap().unwrap();
+    drop(view);
+    let owner = ResultMaintenanceOwner::default();
+    let due = targeted.result_expires().max(swept.result_expires()) + 1;
+    let first_page = owner
+        .reviewed_step(&store, observation(due, 0), None, maintenance)
+        .unwrap();
+    assert!(result_bytes(&store, &swept).starts_with(b"LCE\0\x01"));
+    let original = result_bytes(&store, &targeted);
+    let select = |scope: &NamespaceRecoveryView, expected_generation| {
+        let expected_view = scope.view_token().unwrap();
+        owner.expire_reviewed_body(
+            &store,
+            observation(due + 1, 1),
+            ScopedResultBody {
+                command: targeted.id,
+                namespace: &scope.namespace,
+                expected_view: &expected_view,
+                expected_generation,
+            },
+            maintenance,
+        )
+    };
+    assert_eq!(
+        select(&other, Some(first_page.generation)),
+        Err(AtomicError::NotFound)
+    );
+    assert_eq!(select(&selected, None), Err(AtomicError::Conflict));
+    assert_eq!(result_bytes(&store, &targeted), original);
+    let (generation, reclaimed) = select(&selected, Some(first_page.generation)).unwrap();
+    let marker = result_bytes(&store, &targeted);
+    assert!(marker.starts_with(b"LCE\0\x01"));
+    assert_eq!(reclaimed, (original.len() - marker.len()) as u64);
+    let view = store.snapshot().unwrap();
+    let progress = MaintenanceProgress::inspect(&view).unwrap().unwrap();
+    assert_eq!(progress.generation, generation);
+    assert_eq!(progress.cursor, first_page.cursor);
+    assert_eq!(view.get(&effect_key).unwrap().unwrap(), linked_effect);
+    let key = command_row_key(targeted.id);
+    validate_linked_row(&view, &key, &view.get(&key).unwrap().unwrap()).unwrap();
+}
+
+#[test]
 fn quota_read_bounds_corrupt_rows_and_preserves_small_legacy_stores() {
     let root = tempfile::tempdir().unwrap();
     let row = RowKey {

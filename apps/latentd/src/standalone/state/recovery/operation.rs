@@ -159,7 +159,12 @@ async fn prepare(
     original: &Arc<NativeReservation>,
 ) -> Result<Arc<Codecs>, PlatformError> {
     require_installed_marker(store, state, original).await?;
-    let payloads = if matches!(&request.request, Action::InspectNamespace {}) {
+    let payloads = if matches!(
+        &request.request,
+        Action::InspectNamespace {}
+            | Action::InspectResultMaintenance {}
+            | Action::ExpireResultBody { .. }
+    ) {
         bootstrap
             .local_payload_selection
             .as_deref()
@@ -175,6 +180,8 @@ async fn prepare(
             Action::InspectNamespace {}
                 | Action::CompactNamespace { .. }
                 | Action::SweepResultBodies { .. }
+                | Action::InspectResultMaintenance {}
+                | Action::ExpireResultBody { .. }
                 | Action::Snapshot { .. }
                 | Action::InspectRestore { .. }
                 | Action::Restore { .. }

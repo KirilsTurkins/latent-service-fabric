@@ -3,18 +3,27 @@ use crate::atomic::{
     record::{attempt_row_key, result_row_key},
     validate_linked_row,
     writer::{fenced_error, Usage},
-    AtomicError, CommandRecord, DurableResult, Outcome,
+    AtomicError, CommandRecord, DurableResult, Identity, Outcome,
 };
 use latent_core::{StateNamespaceId, TenantId};
 use latent_state::{
     embedded::{AtomicBatch, EmbeddedStore, ExpectedRow, Family, ReadView, RowKey, RowMutation},
     namespace::{namespace_record_key, NamespaceRecord},
+    recovery::namespace_resume::NamespaceRecoveryView,
 };
 
 #[derive(Clone, Copy)]
 enum ClockAdmission {
     ExistingAnchor,
     ReviewedGeneration(Option<u64>),
+}
+
+/// A single command selected from an explicitly inspected namespace view.
+pub struct ScopedResultBody<'a> {
+    pub command: Identity,
+    pub namespace: &'a NamespaceRecord,
+    pub expected_view: &'a [u8],
+    pub expected_generation: Option<u64>,
 }
 
 impl ResultMaintenanceOwner {
@@ -69,7 +78,14 @@ impl ResultMaintenanceOwner {
         clock: MaintenanceClock,
         authorize: impl FnMut(Option<&CommandRecord>) -> Result<(), AtomicError>,
     ) -> Result<MaintenanceProgress, AtomicError> {
-        self.step_inner(store, clock, ClockAdmission::ExistingAnchor, authorize)
+        self.step_inner(
+            store,
+            clock,
+            ClockAdmission::ExistingAnchor,
+            None,
+            authorize,
+        )
+        .map(|(progress, _)| progress)
     }
 
     /// An explicitly reviewed offline page may establish or restore clock
@@ -87,35 +103,76 @@ impl ResultMaintenanceOwner {
             store,
             clock,
             ClockAdmission::ReviewedGeneration(expected_generation),
+            None,
             authorize,
         )
+        .map(|(progress, _)| progress)
     }
 
+    /// Retire one expired body in the selected namespace without advancing
+    /// the shared sweep cursor or deleting any command or effect identity.
+    pub fn expire_reviewed_body(
+        &self,
+        store: &EmbeddedStore,
+        clock: MaintenanceClock,
+        selected: ScopedResultBody<'_>,
+        authorize: impl FnMut(Option<&CommandRecord>) -> Result<(), AtomicError>,
+    ) -> Result<(u64, u64), AtomicError> {
+        let admission = ClockAdmission::ReviewedGeneration(selected.expected_generation);
+        self.step_inner(store, clock, admission, Some(selected), authorize)
+            .map(|(progress, reclaimed)| (progress.generation, reclaimed))
+    }
+
+    #[expect(
+        clippy::too_many_lines,
+        reason = "Share accounting and final acceptance between bounded sweep and point retirement"
+    )]
     fn step_inner(
         &self,
         store: &EmbeddedStore,
         clock: MaintenanceClock,
         admission: ClockAdmission,
+        selected: Option<ScopedResultBody<'_>>,
         mut authorize: impl FnMut(Option<&CommandRecord>) -> Result<(), AtomicError>,
-    ) -> Result<MaintenanceProgress, AtomicError> {
+    ) -> Result<(MaintenanceProgress, u64), AtomicError> {
         let _physical_step = self.enter()?;
         authorize(None)?;
         let view = store.snapshot()?;
         latent_state::recovery::require_ready(&view)?;
         let old = view.get_bounded(&MaintenanceProgress::key(), super::clock::PROGRESS_BYTES)?;
         let mut progress = step_progress(old.as_deref(), clock, admission)?;
-        let page = view.scan_after(
-            Family::Command,
-            b"command-v1\0",
-            progress.cursor.as_deref(),
-            1,
-            128 * 1024,
-        )?;
+        let (row, next_cursor) = if let Some(target) = selected.as_ref() {
+            let scope = target.namespace;
+            let observed = NamespaceRecoveryView::capture(&view, &scope.tenant, &scope.id)?;
+            if observed.namespace.version.incarnation != scope.version.incarnation
+                || observed.view_token()? != target.expected_view
+            {
+                return Err(AtomicError::Conflict);
+            }
+            let key = super::super::record::command_row_key(target.command);
+            let bytes = view
+                .get_bounded(&key, 128 * 1024)?
+                .ok_or(AtomicError::NotFound)?;
+            if super::RetiredCommand::is_present(&bytes) {
+                return Err(AtomicError::NotFound);
+            }
+            (Some((key, bytes)), progress.cursor.clone())
+        } else {
+            let page = view.scan_after(
+                Family::Command,
+                b"command-v1\0",
+                progress.cursor.as_deref(),
+                1,
+                128 * 1024,
+            )?;
+            (page.rows.into_iter().next(), page.resume)
+        };
         let mut batch = AtomicBatch::default();
         let mut command = None;
         let mut observed_floor = false;
         let mut accounting_tenant = None;
-        if let Some((key, bytes)) = page.rows.first() {
+        let mut reclaimed = 0;
+        if let Some((key, bytes)) = row.as_ref() {
             if super::RetiredCommand::is_present(bytes) {
                 let floor = super::RetiredCommand::decode(bytes)?;
                 accounting_tenant = Some(TenantId(floor.tenant.clone()));
@@ -137,6 +194,20 @@ impl ResultMaintenanceOwner {
                 observed_floor = true;
             } else {
                 let record = CommandRecord::decode(bytes)?;
+                if let Some(target) = selected.as_ref() {
+                    let scope = target.namespace;
+                    if record.key.tenant != scope.tenant.0
+                        || record.key.namespace != scope.id.0
+                        || crate::atomic::incarnation(&record.key)? != scope.version.incarnation
+                    {
+                        return Err(AtomicError::NotFound);
+                    }
+                    if record.outcome == Outcome::Pending
+                        || clock.time.unix_millis < record.result_expires
+                    {
+                        return Err(AtomicError::Conflict);
+                    }
+                }
                 accounting_tenant = Some(TenantId(record.key.tenant.clone()));
                 batch.expectations.extend(
                     latent_state::recovery::namespace_readiness_expectations(
@@ -153,7 +224,7 @@ impl ResultMaintenanceOwner {
                 if record.outcome != Outcome::Pending
                     && clock.time.unix_millis >= record.result_expires
                 {
-                    let reclaimed = retire_body(&view, key, bytes, &record, clock, &mut batch)?;
+                    reclaimed = retire_body(&view, key, bytes, &record, clock, &mut batch)?;
                     if reclaimed != 0 {
                         progress.retired =
                             progress.retired.checked_add(1).ok_or(AtomicError::Limit)?;
@@ -179,7 +250,7 @@ impl ResultMaintenanceOwner {
             .ok_or(AtomicError::Limit)?;
         progress.unix_millis = clock.time.unix_millis;
         progress.monotonic_millis = clock.monotonic_millis;
-        progress.cursor = page.resume;
+        progress.cursor = next_cursor;
         replace(
             &mut batch,
             MaintenanceProgress::key(),
@@ -196,7 +267,7 @@ impl ResultMaintenanceOwner {
             ClockAdmission::ReviewedGeneration(_) => store.apply_reclamation_fenced(batch, accept),
         }
         .map_err(fenced_error)?;
-        Ok(progress)
+        Ok((progress, reclaimed))
     }
 }
 

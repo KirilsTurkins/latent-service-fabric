@@ -151,7 +151,33 @@ pub(super) async fn execute(
         Action::SweepResultBodies {
             expected_view,
             expected_generation,
-        } => retention::sweep(store, &codecs, expected_view.clone(), *expected_generation).await,
+        } => {
+            retention::sweep(
+                store,
+                &codecs,
+                expected_view.clone(),
+                *expected_generation,
+                None,
+            )
+            .await
+        }
+        Action::InspectResultMaintenance {} => retention::inspect_scope(store, &codecs).await,
+        Action::ExpireResultBody {
+            command_id,
+            expected_view,
+            expected_generation,
+        } => {
+            let command = latent_commit::atomic::Identity::parse_hex(command_id)
+                .map_err(|_| super::denied())?;
+            retention::sweep(
+                store,
+                &codecs,
+                expected_view.clone(),
+                *expected_generation,
+                Some(command),
+            )
+            .await
+        }
         Action::Snapshot { operation_id, file } => {
             snapshot(store, Arc::clone(&codecs), operation_id, file).await
         }
