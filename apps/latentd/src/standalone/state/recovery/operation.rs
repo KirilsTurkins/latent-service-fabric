@@ -326,6 +326,7 @@ async fn prepare(
         .map_err(|_| super::super::unavailable())?
 }
 
+#[cfg(test)]
 pub(in crate::standalone::state) async fn inspect_checkpoint(
     store: &ProtectedStoreOwner,
     state: &StateSettings,

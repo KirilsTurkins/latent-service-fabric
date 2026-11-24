@@ -2,7 +2,7 @@
 
 use super::{
     authority::{Authority, NativeProfile},
-    operation::{inspect_checkpoint, RecoveryOwners},
+    operation::{inspect_checkpoint_with_payloads, RecoveryOwners},
     request::{Action, NativeRecoveryRequest},
     selection::{capture_current, RecoverySource},
 };
@@ -78,7 +78,12 @@ pub(super) async fn run(
         return Err(super::denied());
     }
     super::operation::require_installed_marker(store, state, original).await?;
-    let (checkpoint, floor) = inspect_checkpoint(store, state, original).await?;
+    let payloads = bootstrap
+        .local_payload_selection
+        .as_deref()
+        .and_then(super::super::store::LocalPayloadSelection::inventory_payloads);
+    let (checkpoint, floor) =
+        inspect_checkpoint_with_payloads(store, state, original, payloads.as_ref()).await?;
     let clock = ProtectedEffectClock::admit(
         Arc::clone(&owners.clock),
         Arc::clone(&owners.supply_chain),
@@ -134,6 +139,7 @@ pub(super) async fn run(
             let after_identity = identity.clone();
             let quotas = super::super::validation::quotas(state);
             let after_quotas = quotas.clone();
+            let before_payloads = payloads.clone();
             let expected_view = expected_view.clone();
             let job = store
                 .enroll_inbox_source(
@@ -148,21 +154,23 @@ pub(super) async fn run(
                         if existing || current != expected_view {
                             return Err(StoreError::Conflict);
                         }
-                        super::super::validation::validate_inventory(
+                        super::super::validation::validate_offline_inventory(
                             view,
                             &identity,
                             &quotas,
                             &before.source.original,
+                            before_payloads.as_ref(),
                         )
                     },
                     move |view, initial| {
-                        super::super::validation::validate_inventory_addition(
+                        super::super::validation::validate_offline_inventory_addition(
                             view,
                             &after_identity,
                             &after_quotas,
                             &after.source.original,
                             &after.scope,
                             initial,
+                            payloads.as_ref(),
                         )
                     },
                     move || approved.check(),

@@ -75,7 +75,7 @@ pub(super) fn validate_inventory(
 
 /// Describes a single addition only after the same complete producer and quota
 /// validation. The caller must separately establish approval and exclusion.
-#[cfg(any(test, all(target_os = "linux", target_arch = "x86_64")))]
+#[cfg(test)]
 pub(super) fn validate_inventory_addition(
     view: &ReadView,
     identity: &StoreIdentity,
@@ -178,19 +178,58 @@ pub(super) fn validate_offline_inventory(
     original: &NativeReservation,
     payloads: Option<&super::store::InventoryPayloads>,
 ) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
+    validate_offline_inventory_inner(view, identity, quotas, original, None, payloads)
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(super) fn validate_offline_inventory_addition(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+    source: &latent_state::inbox_scope::InboxScope,
+    expected_before: Option<latent_state::store_identity::InboxCustodyWatermark>,
+    payloads: Option<&super::store::InventoryPayloads>,
+) -> Result<latent_state::store_identity::InboxCustodyWatermark, StoreError> {
+    validate_offline_inventory_inner(
+        view,
+        identity,
+        quotas,
+        original,
+        Some((source, expected_before)),
+        payloads,
+    )?
+    .ok_or(StoreError::Conflict)
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn validate_offline_inventory_inner(
+    view: &ReadView,
+    identity: &StoreIdentity,
+    quotas: &[TenantQuota],
+    original: &NativeReservation,
+    addition: Option<(
+        &latent_state::inbox_scope::InboxScope,
+        Option<latent_state::store_identity::InboxCustodyWatermark>,
+    )>,
+    payloads: Option<&super::store::InventoryPayloads>,
+) -> Result<Option<latent_state::store_identity::InboxCustodyWatermark>, StoreError> {
     match payloads {
-        Some((store, provider)) => validate_inventory_with_local_payloads(
+        Some((store, provider)) => validate_inventory_inner(
             view,
             identity,
             quotas,
             original,
+            addition,
             &LocalPayloadVerifier {
                 store,
                 provider,
                 original,
             },
         ),
-        None => validate_inventory(view, identity, quotas, original),
+        None => {
+            validate_inventory_inner(view, identity, quotas, original, addition, &RejectPayloads)
+        }
     }
 }
 
