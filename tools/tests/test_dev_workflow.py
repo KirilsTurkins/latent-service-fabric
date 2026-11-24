@@ -31,6 +31,25 @@ class Documents(unittest.TestCase):
         with self.assertRaises(common.DevError):
             protocol.result(response, {**request, "requestId": "0" * 32})
 
+    def test_installer_host_requirements_survive_the_existing_wire_format(self):
+        request = protocol.request("up", "workspace", {})
+        cases = {
+            "supported-distribution-is-ubuntu-24.04": "supported-distribution-is-ubuntu-24-04",
+            "kernel-6.8-or-newer-required": "kernel-6-8-or-newer-required",
+            "glibc-2.39-or-newer-required": "glibc-2-39-or-newer-required",
+            "python-3.12-or-newer-required": "python-3-12-or-newer-required",
+            "cpu-sse2-required": "cpu-sse2-required",
+            "unreviewed.1": "native-installer-input-or-host-check-failed",
+            "failed at /private/input": "native-installer-input-or-host-check-failed",
+        }
+        for message, expected in cases.items():
+            with self.subTest(message=message):
+                reply = protocol.response(request, {}, code=protocol.installer_error_code(message))
+                with self.assertRaises(common.DevError) as refused:
+                    protocol.result(reply, request)
+                self.assertEqual(refused.exception.code, expected)
+                self.assertFalse(refused.exception.uncertain)
+
     def test_unknown_remote_outcome_is_not_success(self):
         request = protocol.request("up", "workspace", {})
         with self.assertRaises(common.DevError) as result:
