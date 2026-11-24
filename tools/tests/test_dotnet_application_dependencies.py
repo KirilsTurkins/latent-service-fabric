@@ -654,6 +654,19 @@ class CapturedCompilerSelection(unittest.TestCase):
         self.evidence.mkdir()
         self.stages = []
 
+    def test_build_maps_the_private_workspace_for_application_and_helper_assemblies(self):
+        compiler = self.compiler_type.__new__(self.compiler_type)
+        compiler.dotnet = Path(sys.executable).resolve()
+        compiler.isolation = None
+        workspace = Path('/private') / 'sources ,= $(dir);percent%'
+        compiler.commands = self.namespace(root=workspace / 'project', run=lambda *args: args)
+        expected = '-p:PathMap=' + str(Path('/private') / 'sources %2C%2C== %24%28dir%29%3Bpercent%25') + '=/_/lsf'
+        for stage in ('native-aot', 'managed-entropy-build-helper'):
+            command = compiler.run(stage, compiler.dotnet, 'build', workspace / 'Code.csproj')
+            self.assertEqual(command[-2:], (workspace / 'Code.csproj', expected))
+        restore = compiler.run('restore', compiler.dotnet, 'restore', workspace / 'Code.csproj')
+        self.assertEqual(restore, ('restore', compiler.dotnet, 'restore', workspace / 'Code.csproj'))
+
     def graph(self, imports):
         interfaces, packages = [], [{'name': 'examples:greeting@1.0.0'}]
         for identity in imports:
