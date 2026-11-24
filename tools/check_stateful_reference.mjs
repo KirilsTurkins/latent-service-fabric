@@ -26,8 +26,8 @@ for (const row of config.backends) {
   assert.match(row.publication, /^publication:sha256:[0-9a-f]{64}$/);
 }
 assert.match(config.frontend.publication, /^publication:sha256:[0-9a-f]{64}$/);
-assert.match(config.frontend.client.path, /^\/client\/[a-zA-Z0-9._-]+\.js$/);
 assert.match(config.frontend.client.digest, /^sha256:[0-9a-f]{64}$/);
+assert.equal(config.frontend.client.path, '/client/' + config.frontend.client.digest.slice(7) + '/main.js');
 assert.ok(Number.isInteger(config.frontend.client.bytes) && config.frontend.client.bytes > 0 && config.frontend.client.bytes <= 8 * 1024 * 1024);
 assert.equal(config.users.length, 2);
 assert.deepEqual(config.users.map(user => user.subject).sort(), ['alice', 'bob']);
