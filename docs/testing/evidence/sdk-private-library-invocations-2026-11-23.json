@@ -696,9 +696,9 @@
     ]
   },
   "remainingQualification": [
-    "A common current-source matrix for private resources and ordinary HTTP in all six languages",
+    "The common current-source six-language matrix for private resources and ordinary HTTP",
     "Transitive scheduling, cancellation and in-flight physical measurements across the six runtime profiles",
-    "Packaged clean-host authoring"
+    "Cross-language authenticated clean-host authoring and frontend watch, including C publisher and release qualification"
   ],
   "additionalTypeScriptPublishedFetch": {
     "sourceRevision": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
@@ -1752,5 +1752,713 @@
       "instanceReservations": 0
     },
     "scope": "Ordinary typed HTTP and crate-owned resources. The signed invocations did not combine this client with standard threads."
+  },
+  "installedCPrivateDependencies": {
+    "observedOn": "2026-11-24",
+    "status": "passed",
+    "candidateSource": "baa2c984d880c1726b78f57ef68f9e229e7c43a1",
+    "nativeSource": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "pythonImage": "python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419",
+    "candidateBuilder": "tools/build_dev_guest_tools.py --language c",
+    "installedEntry": "recipe/tools/dev_guest_recipe.py",
+    "packageEntry": "tools.dev_workflow.build_artifacts.package and tools.dev_workflow.build_provenance.complete",
+    "signedNodeEntry": "tools.c_thread_runtime_node.run_http",
+    "publisherAuthenticated": false,
+    "publicRelease": false,
+    "fullFrontendWatchExercised": false,
+    "archive": {
+      "name": "latent-dev-linux-x86_64-c-tools.zip",
+      "sha256": "sha256:87c86a50cda32a37ee1370b6810eef0bba7293250e87ab4cf5544c23ca284a47",
+      "size": 83535101
+    },
+    "manifest": {
+      "sha256": "sha256:6a888792ca754a01bc30b55d731c24f2cbb4b8c1c3e2c7d2d9c710492d6ee136",
+      "bytes": 219259
+    },
+    "helper": {
+      "sha256": "sha256:c7ae0c2f926c37c048abcf72bb2aac4402606fdd3cbd11b9cbb27aa039440ba9",
+      "bytes": 334967
+    },
+    "qualifier": {
+      "sha256": "sha256:aee46ddaabce9721f766ca2d801fb4276b01c28b1f665bad2aa3be457f54d9de",
+      "bytes": 8661
+    },
+    "environment": {
+      "uid": 1000,
+      "interfaces": [
+        "lo"
+      ],
+      "checkoutMounted": false,
+      "readonlyCandidate": true,
+      "readonlyCapture": true,
+      "outerPython": "3.13.5"
+    },
+    "component": {
+      "sha256": "sha256:8fb889eb4dd01bf3e12121387daaa3b82b7ca1467b06d54ed92c9d5b72ba716a",
+      "bytes": 128782
+    },
+    "commands": {
+      "create-greeting": 0,
+      "create-word-count": 0,
+      "create-shipping": 0,
+      "create-http-status": 0,
+      "create-recovery": 0,
+      "create-transactional-aggregate": 0,
+      "verify-capture": 0,
+      "offline-build": 0,
+      "update": 0,
+      "update-requires-review": 1,
+      "remove": 0,
+      "remove-requires-review": 1,
+      "add-original": 0,
+      "reordered-add-requires-review": 1,
+      "verify-original-reviewed-bytes": 0
+    },
+    "variants": [
+      {
+        "dependencyIds": [
+          "shop-floor/price-card",
+          "shop-floor/card-policy"
+        ],
+        "capturedInputIdentity": "sha256:d96f4c4c0547387b1788a486b4774226e585cc0004b37541913e3cbc374f4238",
+        "resourceIndex": {
+          "sha256": "sha256:d1d7f1ef0b8b34563216cb0316f0085f337ac287cadea24148eb43cfb402161a",
+          "bytes": 944
+        },
+        "compilerRun": {
+          "sha256": "sha256:479aa54c016dacf0650820f46450078855d8a21111706c7490885a9d3e2e43b9",
+          "bytes": 7934
+        },
+        "compilerElapsedSeconds": 37.844,
+        "compilerObservation": {
+          "sha256": "sha256:a17ac319915c9c13c5a3b28e3533651f81a0fd8de557cb953133d9a6c8721aac",
+          "bytes": 9700
+        },
+        "compilerCompletion": {
+          "sha256": "sha256:148af0ef5e1d1c9df01bade8acdf8c5ad96c4d6c52dfb7d8914cf4aa241dd8bc",
+          "bytes": 3111
+        },
+        "packageDigest": "sha256:df5960fc8de0639748a30f03baddb2a18037985317b51919aa6932dcfde0c44a",
+        "packaging": {
+          "sha256": "sha256:75fed472b34b4131b79b8c3abf564589199bae0faaa20b2a3bea3e6c2a980360",
+          "bytes": 474
+        },
+        "node": {
+          "sha256": "sha256:55c3e79ef2ccbb76f3a25810ccb0786f2e20d08d643c9b412f8502a91f0d06a0",
+          "bytes": 17785
+        },
+        "invocation": {
+          "sha256": "sha256:7bb23011838f4e49dbc2da98c1fa67bc459057e01851ca5138bd1c9189a7375b",
+          "bytes": 1259
+        },
+        "result": "card:7:5:57:1776131770",
+        "cpuFuel": "60491",
+        "peakMemoryBytes": "2839471",
+        "outboundRequests": 1,
+        "loopbackConnections": 1,
+        "completedResponses": 1,
+        "committedMutations": 0,
+        "remainingPhysicalOwners": 0,
+        "remainingActiveProviderCounters": 0,
+        "peerOpenConnectionsAtExit": 0,
+        "nodeReaped": true,
+        "cleanNodeStop": true,
+        "resource": {
+          "bytes": 16,
+          "sha256": "sha256:87e7eb9b1dc90aa65dcd1a84f2511fc515935c0dedca941cf47b2f1c45747f7a",
+          "mediaType": "text/plain"
+        }
+      },
+      {
+        "dependencyIds": [
+          "warehouse/bin-label-reader",
+          "warehouse/label-policy"
+        ],
+        "capturedInputIdentity": "sha256:f2ff76aa8cae923367b936faae02e954f2677040204a7404b1fba9c3d9e594e4",
+        "resourceIndex": {
+          "sha256": "sha256:5fe7938ca460fd11b823a06c4b4a9a01aeac60d1d3911cc94fce6284de4ec3f3",
+          "bytes": 944
+        },
+        "compilerRun": {
+          "sha256": "sha256:58b361587aaa12534cb5446636b384f99542824802d50da488e42df04f080d68",
+          "bytes": 7933
+        },
+        "compilerElapsedSeconds": 38.518,
+        "compilerObservation": {
+          "sha256": "sha256:e41dcec6214dff3f084f26ccbcf6e8eb35b2cdb0f807bf8b4fe2ca0909e61912",
+          "bytes": 9700
+        },
+        "compilerCompletion": {
+          "sha256": "sha256:41ac5a18e5a85a838f999bc2008d613c7f223dfb16fbdf62695244a766b53c84",
+          "bytes": 3113
+        },
+        "packageDigest": "sha256:73bb1ea8309c84baab639b2337994cfb4698a589ff215b65037191fb24d7001b",
+        "packaging": {
+          "sha256": "sha256:112c214d7cfe096ba17bc78bb4500096932208d1eb8e44683cd01cbca0261c69",
+          "bytes": 474
+        },
+        "node": {
+          "sha256": "sha256:4f5b14735395be44b06142903c8c7e08ae44fc3d709304fdb199b7fa6218c16c",
+          "bytes": 17794
+        },
+        "invocation": {
+          "sha256": "sha256:3bb16ed1e2880f1bb7ca6b03de346926f7754768b8ad0a849abb42e40b4195d9",
+          "bytes": 1259
+        },
+        "result": "card:7:5:57:1776131770",
+        "cpuFuel": "60491",
+        "peakMemoryBytes": "2839471",
+        "outboundRequests": 1,
+        "loopbackConnections": 1,
+        "completedResponses": 1,
+        "committedMutations": 0,
+        "remainingPhysicalOwners": 0,
+        "remainingActiveProviderCounters": 0,
+        "peerOpenConnectionsAtExit": 0,
+        "nodeReaped": true,
+        "cleanNodeStop": true,
+        "resource": {
+          "bytes": 16,
+          "sha256": "sha256:87e7eb9b1dc90aa65dcd1a84f2511fc515935c0dedca941cf47b2f1c45747f7a",
+          "mediaType": "text/plain"
+        }
+      }
+    ]
+  },
+  "installedJavaPrivateDependencies": {
+    "observedOn": "2026-11-24",
+    "status": "passed",
+    "candidateSource": "baa2c984d880c1726b78f57ef68f9e229e7c43a1",
+    "nativeSource": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "archive": {
+      "sha256": "sha256:367553268ccb923f6e46435129322cbb4485c50978d0ecaa1e19c02334d3a461",
+      "bytes": 586424161
+    },
+    "manifest": {
+      "sha256": "sha256:633c651d23806a4b10ca23187a895aaba059cf84d559135976fa2362782e90e7",
+      "bytes": 510739
+    },
+    "target": "linux-x86_64",
+    "hostAbi": "lsf-host-abi-phase3-v5",
+    "candidateBuilder": "tools/build_dev_guest_tools.py --language java --java-compiler-input <verified-carrier>",
+    "captureCommand": "recipe/tools/java_capsule.py dependencies",
+    "buildCommand": "recipe/tools/dev_guest_recipe.py --language java",
+    "packageEntry": "tools.dev_workflow.build_artifacts.package and tools.dev_workflow.build_provenance.complete",
+    "nodeEntry": "tools.qualify_java_private_http.provider_controls and verify_node",
+    "effectiveUser": 1000,
+    "interfaces": [
+      "lo"
+    ],
+    "checkoutMounted": false,
+    "readonlyInputs": true,
+    "publicRelease": false,
+    "publisherAuthenticated": false,
+    "fullFrontendWatchExercised": false,
+    "variants": [
+      {
+        "dependencyIds": [
+          "outside.http.primary/1.0.7",
+          "outside.http.child/1.0.7"
+        ],
+        "acceptedLock": "sha256:806aae6886973ad272c1ade25968489486faee4ba74064f1325b75681cd9bdcd",
+        "capturedInputIdentity": "sha256:307ca9f5fe7f38f5095d9bda52a159cc8451939d67b321c2467b95e471c2ef0d",
+        "jars": {
+          "child": {
+            "sha256": "sha256:4a3f783791c10fc33fe30034a848f25a23dc6625493ac9e4d8db0f27b30646a6",
+            "bytes": 1339
+          },
+          "primary": {
+            "sha256": "sha256:61d12b75b0a1a0a497fef8f1d349633d08790875b802723625b2517396a1b5ab",
+            "bytes": 2600
+          }
+        },
+        "resourceDigest": "sha256:dcd9ca838d0134810c6295cde2d9919a12519c9e3c145280ecac29a1f6f89853",
+        "originalCompilerMaterials": {
+          "component.wasm": {
+            "sha256": "sha256:57923ebc3cdb2d88acf512b3e0345a506877cff855c9bbae6ee39779c12d4a3a",
+            "bytes": 1077424
+          },
+          "build-observation.json": {
+            "sha256": "sha256:dd4c3140a86d7d730438f5608f66498b6def71e88111ffed0422e9bc2ed84381",
+            "bytes": 3826
+          },
+          "BUILD-COMPLETE.json": {
+            "sha256": "sha256:3ab2a2b7fc5fcbf1d3e87e9a62c17992b9bec53bc494c04c8f28af269589b428",
+            "bytes": 9272
+          },
+          "java-classpath.json": {
+            "sha256": "sha256:a2de88053bd7b8e0a4ccd56546615b037bf55ecb1f092860cea28f941386d53b",
+            "bytes": 2085
+          }
+        },
+        "packageDigest": "sha256:5afb7b3688460039f4086d2159b90294244fd30da8a9617a18be93dff2e312cb",
+        "offlineRecord": {
+          "sha256": "sha256:aa45aa750470c5d7aa120edc5847134c462d922e9af285c61d2647a74d16fa2a",
+          "bytes": 284
+        },
+        "nodeRecord": {
+          "sha256": "sha256:3f8cc3e8e4d8f82c7cc369499f90587ac66a7c7347b4818511df99e6028d57bc",
+          "bytes": 1126
+        },
+        "signedCases": [
+          "json",
+          "http404",
+          "http500",
+          "truncated",
+          "oversized",
+          "forbidden",
+          "early",
+          "redirect",
+          "post",
+          "uncertain",
+          "alternate-denied",
+          "direct-factory",
+          "fresh"
+        ],
+        "peerRequests": 11,
+        "peerMutations": 1,
+        "peerReaped": true,
+        "cleanNodeStop": true,
+        "nodeReaped": true
+      },
+      {
+        "dependencyIds": [
+          "tenant.example.unlisted-client/2026.10.19",
+          "different.owner.helper/4.2.1"
+        ],
+        "acceptedLock": "sha256:d04d2a2ed2a987414416450816a15b22217b903bbe57c192d02278726ec46f3a",
+        "capturedInputIdentity": "sha256:39656694d4eddfed3e53ddaba65055485272b07add65c700bc5b9c452dd8aa01",
+        "jars": {
+          "child": {
+            "sha256": "sha256:4a3f783791c10fc33fe30034a848f25a23dc6625493ac9e4d8db0f27b30646a6",
+            "bytes": 1339
+          },
+          "primary": {
+            "sha256": "sha256:61d12b75b0a1a0a497fef8f1d349633d08790875b802723625b2517396a1b5ab",
+            "bytes": 2600
+          }
+        },
+        "resourceDigest": "sha256:dcd9ca838d0134810c6295cde2d9919a12519c9e3c145280ecac29a1f6f89853",
+        "originalCompilerMaterials": {
+          "component.wasm": {
+            "sha256": "sha256:57923ebc3cdb2d88acf512b3e0345a506877cff855c9bbae6ee39779c12d4a3a",
+            "bytes": 1077424
+          },
+          "build-observation.json": {
+            "sha256": "sha256:6dd1b670f478c13a3c8a1298cb099063abb68ca2370bf4daf495b13bd60ae8e6",
+            "bytes": 3826
+          },
+          "BUILD-COMPLETE.json": {
+            "sha256": "sha256:19d954b4c703f1cf7f99b5d512bc6d0dd4fef22dc06ea2e1dd7b4d69efefa299",
+            "bytes": 9267
+          },
+          "java-classpath.json": {
+            "sha256": "sha256:01f5c04ad1a03c671280b82b1c4a809a3a0153aebfcc048726c50c9d770c15fc",
+            "bytes": 2108
+          }
+        },
+        "packageDigest": "sha256:71546b18a715f54dcf79bcfffafa22b0ae38d42b277bd709301907c5370ef798",
+        "offlineRecord": {
+          "sha256": "sha256:c5a3271236052cd9ac70c0a70bd6dd768964b95d057bd1a41e12e6db079b9f08",
+          "bytes": 284
+        },
+        "nodeRecord": {
+          "sha256": "sha256:0eb81ee4f1ea3251aee5c7bacd477e9d660fa7c7c2919fd985da81a7b102b9e0",
+          "bytes": 1126
+        },
+        "signedCases": [
+          "json",
+          "http404",
+          "http500",
+          "truncated",
+          "oversized",
+          "forbidden",
+          "early",
+          "redirect",
+          "post",
+          "uncertain",
+          "alternate-denied",
+          "direct-factory",
+          "fresh"
+        ],
+        "peerRequests": 11,
+        "peerMutations": 1,
+        "peerReaped": true,
+        "cleanNodeStop": true,
+        "nodeReaped": true
+      }
+    ]
+  },
+  "installedRustPrivateDependencies": {
+    "observedOn": "2026-11-24",
+    "status": "passed",
+    "candidateSource": "9f75d2d8a5e0c19243da1f97f19b089cfd8043e5",
+    "archive": {
+      "sha256": "sha256:1cba9a5c5d8d963dee1351d23eb90519baea77739b2bc1ff706413e57c5a8c27",
+      "bytes": 378884511
+    },
+    "manifest": {
+      "sha256": "sha256:47bc83b53e08de9f15d069efd58d84b00abe6dd2fb1da57e1f9054d51b70d4ac",
+      "bytes": 350728
+    },
+    "target": "linux-x86_64",
+    "hostAbi": "lsf-host-abi-phase3-v5",
+    "nativeSource": "9f75d2d8a5e0c19243da1f97f19b089cfd8043e5",
+    "preparedBackend": {
+      "sha256": "sha256:8a522e39e282f6bcd2a877edcb2b570da8196d4ff9cefb27bea2a6f075276086",
+      "bytes": 4443
+    },
+    "compilerInventory": {
+      "sha256": "sha256:654e834b80b3cb0100587ab3ed5c1893e999eaeb182ea25be16e77a61ac3f392",
+      "bytes": 211215
+    },
+    "capturedSourceDigest": "sha256:1654366c7c14692a6e5f487010081cefafa91ad72df2a7b2e35279eafe6d0cc9",
+    "privatePackages": [
+      {
+        "package": {
+          "package": "outside-wasi-http-alpha-a2a9169dc8a9deaf",
+          "version": "1.41642.5790",
+          "alias": "alpha"
+        },
+        "includeBytes": {
+          "sha256": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+          "bytes": 57
+        },
+        "sourceInventory": "sha256:0beb956fde9baa7b2c3f3cb41aa5b3d4c8feb447c2042690ed6c1ffd9c8051ef"
+      },
+      {
+        "package": {
+          "package": "outside-wasi-http-delta-a2a9169dc8a9deaf",
+          "version": "2.41642.5790",
+          "alias": "delta"
+        },
+        "includeBytes": {
+          "sha256": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+          "bytes": 57
+        },
+        "sourceInventory": "sha256:51a9276c537b49317a7705950b09cb6ed9ae8a68cb4ef01be2c903b536d953c2"
+      }
+    ],
+    "clients": [
+      {
+        "package": "waki",
+        "version": "0.5.1",
+        "artifact": "waki/0.5.1/ac90bfd6cc544efa",
+        "archiveSha256": "sha256:6e2db2daf1dfbadf228fd8b3c22b96a359135fd673b3d2c203274ee6a0df9c77",
+        "capturedOriginal": {
+          "digest": "sha256:e197211d80e8d66faa724fb8e255588a2078f290aa127f04c021cf4cbf3d2158",
+          "size": 7146
+        },
+        "selectedFeatures": [
+          "json"
+        ]
+      },
+      {
+        "package": "golem-wasi-http",
+        "version": "0.2.0",
+        "artifact": "golem-wasi-http/0.2.0/9cc6ac8d6b6c6b0f",
+        "archiveSha256": "sha256:6e80794383f6d363e1f756c5ec9fa6ca0459824e54f9eef53b6b03491fb9d166",
+        "capturedOriginal": {
+          "digest": "sha256:8aa3f291ea1c35aeb569e08c457b6e7b53946c9af06c59f84e651885ee52feb4",
+          "size": 2593
+        },
+        "selectedFeatures": [
+          "default",
+          "json"
+        ]
+      }
+    ],
+    "approvedExecutableIdentity": "sha256:67867095d931b83e7ed6fbb2e0241b2e6340a5876af63645ec17e2ee2c8435d8",
+    "approvedExecutables": 16,
+    "buildCommands": [
+      {
+        "name": "unapproved",
+        "exitCode": 1
+      },
+      {
+        "name": "approved",
+        "exitCode": 0
+      }
+    ],
+    "compilerNetwork": "denied",
+    "checkoutMounted": false,
+    "guestComponentsCompiled": 1,
+    "compilerElapsedSeconds": 180.996,
+    "component": {
+      "sha256": "sha256:ead72f1b0f2c5b9b1f75ec81f2b42ef568b74402757b534536f133cb73b912b4",
+      "bytes": 966033
+    },
+    "packageDigest": "sha256:125870f6979bf2218de31ef99690d8705ea7e50791f4c030c843e046a1f6e4a3",
+    "packageEntry": "tools/dev_workflow/build_artifacts.package +tools/dev_workflow/build_provenance.complete",
+    "originalCompiler": {
+      "build-observation.json": {
+        "sha256": "sha256:0ed9eb4d059044109a9d9b57ea28c5fdda1eccaea6c587a48428913ebcbeb577",
+        "bytes": 4484
+      },
+      "BUILD-COMPLETE.json": {
+        "sha256": "sha256:a747e3ed80f4eb608434c7321a5a8fb0ef9f0a5f4da1827c626193d54afb6b98",
+        "bytes": 3801
+      },
+      "component.wasm": {
+        "sha256": "sha256:ead72f1b0f2c5b9b1f75ec81f2b42ef568b74402757b534536f133cb73b912b4",
+        "bytes": 966033
+      }
+    },
+    "joinedBuildObservation": {
+      "sha256": "sha256:a5f76c994dee5a47dc14a5428b85590fa0a4ffbe39652f72b4245421568e1242",
+      "bytes": 3725
+    },
+    "installedBuildRecord": {
+      "sha256": "sha256:ef55ab045d27ae2f5c1be44ba66d866b89548c870888e0e9057e0d4c01a98c0c",
+      "bytes": 226733
+    },
+    "fullReleasedFrontendQualified": false,
+    "publisherAuthenticated": false,
+    "installedNode": {
+      "entry": "tools.rust_wasi_http_installed_node.run",
+      "record": {
+        "sha256": "sha256:c1b107adb5e2388c3e9784dc76e0f79d3738802259a6f8f1ce3624d518999a28",
+        "bytes": 225767
+      },
+      "signedGuestCalls": 4,
+      "preEntryRefusals": 2,
+      "peerContacts": 4,
+      "cases": [
+        {
+          "tenant": "examples",
+          "client": "waki",
+          "crateAlias": "alpha",
+          "case": "installed-json",
+          "result": "fresh:waki:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "golem",
+          "crateAlias": "delta",
+          "case": "installed-json",
+          "result": "fresh:golem:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "golem",
+          "crateAlias": "delta",
+          "case": "installed-json",
+          "result": "fresh:golem:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "waki",
+          "crateAlias": "alpha",
+          "case": "installed-json",
+          "result": "fresh:waki:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        }
+      ],
+      "peers": {
+        "examples": {
+          "contacts": 2,
+          "mutations": 0,
+          "completedWrites": 2,
+          "allClosed": true,
+          "vectors": [
+            "domain-json",
+            "domain-json"
+          ]
+        },
+        "foreign": {
+          "contacts": 2,
+          "mutations": 0,
+          "completedWrites": 2,
+          "allClosed": true,
+          "vectors": [
+            "domain-json",
+            "domain-json"
+          ]
+        }
+      },
+      "nodeReaped": true,
+      "cleanNodeStop": true
+    },
+    "extendedNode": {
+      "record": {
+        "sha256": "sha256:2cf3a4a16ea9ab764991aebc5c68af73b88199471022e9937e7d76be146f70a0",
+        "bytes": 1005536
+      },
+      "signedGuestCalls": 16,
+      "preEntryRefusals": 2,
+      "cases": [
+        {
+          "tenant": "examples",
+          "client": "waki",
+          "crateAlias": "alpha",
+          "case": "json",
+          "result": "fresh:waki:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "waki",
+          "crateAlias": "alpha",
+          "case": "json",
+          "result": "fresh:waki:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "waki",
+          "crateAlias": "delta",
+          "case": "json",
+          "result": "fresh:waki:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "waki",
+          "crateAlias": "delta",
+          "case": "json",
+          "result": "fresh:waki:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "golem",
+          "crateAlias": "alpha",
+          "case": "json",
+          "result": "fresh:golem:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "golem",
+          "crateAlias": "alpha",
+          "case": "json",
+          "result": "fresh:golem:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "golem",
+          "crateAlias": "delta",
+          "case": "json",
+          "result": "fresh:golem:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "golem",
+          "crateAlias": "delta",
+          "case": "json",
+          "result": "fresh:golem:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "waki",
+          "crateAlias": "alpha",
+          "case": "http404",
+          "result": "fresh:waki:404:domain-error",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "waki",
+          "crateAlias": "alpha",
+          "case": "http404",
+          "result": "fresh:waki:404:domain-error",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "golem",
+          "crateAlias": "alpha",
+          "case": "http404",
+          "result": "fresh:golem:404:domain-error",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "golem",
+          "crateAlias": "alpha",
+          "case": "http404",
+          "result": "fresh:golem:404:domain-error",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "waki",
+          "crateAlias": "delta",
+          "case": "repeat",
+          "result": "fresh:waki:repeat:200:domain:7:café:first|λ:",
+          "peerContacts": 2
+        },
+        {
+          "tenant": "foreign",
+          "client": "waki",
+          "crateAlias": "delta",
+          "case": "repeat",
+          "result": "fresh:waki:repeat:200:domain:7:café:first|λ:",
+          "peerContacts": 2
+        },
+        {
+          "tenant": "examples",
+          "client": "golem",
+          "crateAlias": "delta",
+          "case": "repeat",
+          "result": "fresh:golem:repeat:200:domain:7:café:first|λ:",
+          "peerContacts": 2
+        },
+        {
+          "tenant": "foreign",
+          "client": "golem",
+          "crateAlias": "delta",
+          "case": "repeat",
+          "result": "fresh:golem:repeat:200:domain:7:café:first|λ:",
+          "peerContacts": 2
+        }
+      ],
+      "peers": {
+        "examples": {
+          "contacts": 10,
+          "mutations": 0,
+          "completedWrites": 10,
+          "allClosed": true,
+          "vectors": [
+            "domain-json",
+            "domain-json",
+            "domain-json",
+            "domain-json",
+            "http-404",
+            "http-404",
+            "domain-json",
+            "domain-json",
+            "domain-json",
+            "domain-json"
+          ]
+        },
+        "foreign": {
+          "contacts": 10,
+          "mutations": 0,
+          "completedWrites": 10,
+          "allClosed": true,
+          "vectors": [
+            "domain-json",
+            "domain-json",
+            "domain-json",
+            "domain-json",
+            "http-404",
+            "http-404",
+            "domain-json",
+            "domain-json",
+            "domain-json",
+            "domain-json"
+          ]
+        }
+      },
+      "nodeReaped": true,
+      "cleanNodeStop": true
+    }
   }
 }

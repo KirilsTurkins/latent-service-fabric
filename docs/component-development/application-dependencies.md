@@ -37,8 +37,19 @@ checkout. Keep that checkout separate from your application directory.
 
 Each walkthrough's language has run a developer-owned dependency in a signed
 greeting capsule. All six preserved the declared error on blank input and
-succeeded on a fresh call. The C example fetched and parsed a price card, and a
-Java HTTP client read a resource from its transitive JAR. The Go example
+succeeded on a fresh call. The installed Linux C toolkit also built two
+independent private library declarations offline. Each signed package fetched
+a price card, read its own immutable resource and returned the same result.
+[Installed C commands and results](../testing/c-installed-library.md)
+
+The installed Java toolkit built two local-JAR dependency graphs offline. Each signed
+application read the transitive JAR resource and passed 13 HTTP cases. The
+installed Rust toolkit ran Waki and Golem with two outside crates in two tenants.
+Each crate compared a fetched price card with its embedded copy.
+[Java package evidence](../testing/java-installed-library-inputs.md) and
+[Rust package evidence](../testing/rust-private-dependency-ingestion.md)
+
+The Go example
 ran Sling and Requests with their default clients and a private module that
 read a `//go:embed` resource from a goroutine. Both Go module coordinates
 passed all 30 HTTP cases after capture.

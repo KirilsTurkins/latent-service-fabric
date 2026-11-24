@@ -43,3 +43,21 @@ redacted peer observations and actual node receipts. Private keys and registry
 credential values are excluded from artifact selection. A checked-in programme
 is not proof that its current hosted run passed. The Rust runtime/port and HTTP
 client qualifications remain separate owners.
+
+## Installed Rust HTTP toolkit
+
+On November 24 an installed Linux source-candidate toolkit built a captured
+application with Waki 0.5.1, Golem WASI HTTP 0.2.0 and two outside crates. The
+compiler ran offline with no source checkout. It required explicit approval
+for the 16 captured executable inputs before building the 966,033-byte
+component. The controller packaged the resulting bytes and preserved the
+compiler observation.
+
+The installed-node check ran four signed calls across two tenants and
+refused two calls before guest entry. A second run of the same package
+exercised both crate aliases, real 404 responses and repeated requests. All
+16 signed calls returned their expected results. Each tenant observed ten
+requests, zero mutations and closed connections. Each private crate used its
+57-byte embedded price card to check the successful domain response. Both nodes
+shut down cleanly. The receipt records the component, package and both runs.
+[Installed package and execution record](evidence/sdk-private-library-invocations-2026-11-23.json)
