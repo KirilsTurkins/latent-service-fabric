@@ -10,23 +10,6 @@ use latent_rpc::{
     transaction::v1::{self as t, transaction_service_client::TransactionServiceClient},
 };
 
-macro_rules! call {
-    ($session:ident,$client:ident,$method:ident,$request:ident) => {{
-        let mut client = $client::new($session.channel())
-            .max_decoding_message_size(
-                $session
-                    .max_response_bytes()
-                    .min(phase4::MAX_RESPONSE_BYTES),
-            )
-            .max_encoding_message_size($session.max_request_bytes().min(phase4::MAX_REQUEST_BYTES));
-        Response::from(
-            $session
-                .call(client.$method($session.request(*$request)?))
-                .await?
-                .into_inner(),
-        )
-    }};
-}
 pub async fn execute(request: Request, session: &Session) -> Result<Outcome, Failure> {
     request.validate().map_err(|_| invalid())?;
     let association = request.association();
@@ -40,55 +23,73 @@ pub async fn execute(request: Request, session: &Session) -> Result<Outcome, Fai
     Ok(project_outcome(&response))
 }
 async fn dispatch(request: Request, session: &Session) -> Result<Response, Failure> {
+    let limit = match &request {
+        Request::InvokeCommand(_) | Request::Query(_) => std::time::Duration::MAX,
+        _ => latent_wire::phase4::MAX_MANAGEMENT_TIMEOUT,
+    };
+    macro_rules! call {
+        ($client:ident, $method:ident, $request:ident) => {{
+            let mut client = $client::new(session.channel())
+                .max_decoding_message_size(
+                    session.max_response_bytes().min(phase4::MAX_RESPONSE_BYTES),
+                )
+                .max_encoding_message_size(
+                    session.max_request_bytes().min(phase4::MAX_REQUEST_BYTES),
+                );
+            Response::from(
+                session
+                    .call(client.$method(session.request_with_timeout_limit(*$request, limit)?))
+                    .await?
+                    .into_inner(),
+            )
+        }};
+    }
     Ok(match request {
         Request::InspectDispatcher(value) => {
-            call!(session, DispatcherServiceClient, inspect_dispatcher, value)
+            call!(DispatcherServiceClient, inspect_dispatcher, value)
         }
         Request::ControlDispatcher(value) => {
-            call!(session, DispatcherServiceClient, control_dispatcher, value)
+            call!(DispatcherServiceClient, control_dispatcher, value)
         }
-        Request::GetDispatcherOperation(value) => call!(
-            session,
-            DispatcherServiceClient,
-            get_dispatcher_operation,
-            value
-        ),
+        Request::GetDispatcherOperation(value) => {
+            call!(DispatcherServiceClient, get_dispatcher_operation, value)
+        }
         Request::InspectNamespace(value) => {
-            call!(session, StateServiceClient, inspect_namespace, value)
+            call!(StateServiceClient, inspect_namespace, value)
         }
         Request::MutateNamespace(value) => {
-            call!(session, StateServiceClient, mutate_namespace, value)
+            call!(StateServiceClient, mutate_namespace, value)
         }
-        Request::SelectEntity(value) => call!(session, StateServiceClient, select_entity, value),
-        Request::MutateState(value) => call!(session, StateServiceClient, mutate_state, value),
+        Request::SelectEntity(value) => {
+            call!(StateServiceClient, select_entity, value)
+        }
+        Request::MutateState(value) => {
+            call!(StateServiceClient, mutate_state, value)
+        }
         Request::PlanEffectMutation(value) => {
-            call!(session, StateServiceClient, plan_effect_mutation, value)
+            call!(StateServiceClient, plan_effect_mutation, value)
         }
-        Request::GetStateOperationReceipt(value) => call!(
-            session,
-            StateServiceClient,
-            get_state_operation_receipt,
-            value
-        ),
+        Request::GetStateOperationReceipt(value) => {
+            call!(StateServiceClient, get_state_operation_receipt, value)
+        }
         Request::InvokeCommand(value) => {
-            call!(session, TransactionServiceClient, invoke_command, value)
+            call!(TransactionServiceClient, invoke_command, value)
         }
-        Request::Query(value) => call!(session, TransactionServiceClient, query, value),
+        Request::Query(value) => call!(TransactionServiceClient, query, value),
         Request::LookupCommand(value) => {
-            call!(session, TransactionServiceClient, lookup_command, value)
+            call!(TransactionServiceClient, lookup_command, value)
         }
         Request::LookupCommit(value) => {
-            call!(session, TransactionServiceClient, lookup_commit, value)
+            call!(TransactionServiceClient, lookup_commit, value)
         }
-        Request::GetEffect(value) => call!(session, TransactionServiceClient, get_effect, value),
-        Request::ListEffectHistory(value) => call!(
-            session,
-            TransactionServiceClient,
-            list_effect_history,
-            value
-        ),
+        Request::GetEffect(value) => {
+            call!(TransactionServiceClient, get_effect, value)
+        }
+        Request::ListEffectHistory(value) => {
+            call!(TransactionServiceClient, list_effect_history, value)
+        }
         Request::CancelCommand(value) => {
-            call!(session, TransactionServiceClient, cancel_command, value)
+            call!(TransactionServiceClient, cancel_command, value)
         }
     })
 }
