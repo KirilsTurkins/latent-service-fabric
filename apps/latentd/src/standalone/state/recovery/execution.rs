@@ -25,8 +25,10 @@ use latent_state::{
 use serde::Serialize;
 use std::{sync::Arc, time::Instant};
 
+mod compaction;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod migration_package_tests;
+mod retention;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -143,6 +145,13 @@ pub(super) async fn execute(
     settings: &crate::config::state::StateSettings,
 ) -> Result<serde_json::Value, PlatformError> {
     match &codecs.action {
+        Action::CompactNamespace { expected_view } => {
+            compaction::compact(store, &codecs, expected_view.clone()).await
+        }
+        Action::SweepResultBodies {
+            expected_view,
+            expected_generation,
+        } => retention::sweep(store, &codecs, expected_view.clone(), *expected_generation).await,
         Action::Snapshot { operation_id, file } => {
             snapshot(store, Arc::clone(&codecs), operation_id, file).await
         }
@@ -627,7 +636,7 @@ async fn metadata_action(
     settings: &crate::config::state::StateSettings,
 ) -> Result<serde_json::Value, PlatformError> {
     let worker = Arc::clone(&codecs);
-    let io = if matches!(&codecs.action, Action::InspectNamespace {}) {
+    let kind = if matches!(&codecs.action, Action::InspectNamespace {}) {
         StoreIoKind::RecoveryRead
     } else {
         StoreIoKind::RecoveryWrite
@@ -639,33 +648,27 @@ async fn metadata_action(
             8 * 1024 * 1024,
         )
         .map_err(|_| super::capacity())?;
-    let job = store.with_store_retaining(io, 8 * 1024 * 1024, Arc::clone(&codecs) as Arc<dyn std::any::Any + Send + Sync>, move |engine| {
+    let job = store.with_store_retaining(kind, 8 * 1024 * 1024, Arc::clone(&codecs) as Arc<dyn std::any::Any + Send + Sync>, move |engine| {
         let _memory = memory;
         let outcome = (|| {
             let view = engine.snapshot()?;
-            worker.closure(&view)?;
+            let closure = worker.closure(&view)?;
             let observed = worker.selected_view(&view)?;
             let mut batch = AtomicBatch::default();
             let mut time_changed = false;
             let result = match &worker.action {
-                Action::InspectNamespace {} => {
-                    let capacity = engine.file_capacity()?;
-                    serde_json::json!({
-                        "action": "inspect-namespace",
-                        "namespace": observed.namespace.encode().map_err(|_| StoreError::Corrupt)?,
-                        "history": observed.history.encode().map_err(|_| StoreError::Corrupt)?,
-                        "view": observed.view_token()?,
-                        "guard": observed.guard.as_ref().map(RecoveryGuard::encode).transpose()?,
-                        "reviewDigest": digest(worker.review),
-                        "publicationEffects": publication_effects(&worker, &view)?,
-                        "storeCapacity": {
-                            "observedFileBytes": capacity.observed_bytes,
-                            "fileLimitBytes": capacity.limit_bytes,
-                            "growthHeadroomBytes": capacity.growth_headroom_bytes,
-                            "compactionActive": capacity.compaction_active,
-                        },
-                    })
-                },
+                Action::InspectNamespace {} => serde_json::json!({
+                    "action":"inspect-namespace",
+                    "namespace":observed.namespace.encode().map_err(|_| StoreError::Corrupt)?,
+                    "history":observed.history.encode().map_err(|_| StoreError::Corrupt)?,
+                    "view":observed.view_token()?,
+                    "guard":observed.guard.as_ref().map(RecoveryGuard::encode).transpose()?,
+                    "reviewDigest":digest(worker.review),
+                    "publicationEffects":publication_effects(&worker, &view)?,
+                    "retainedFormats":retained_formats(&closure.inventory),
+                    "storeCapacity":store_capacity(engine)?,
+                    "resultMaintenance":retention::inspect(&view)?
+                }),
                 Action::InspectCloseEffects { operation_id, effect_ids, reason } => {
                     let plan = inspect(&view, close_scope(&worker), worker.authority.actor.clone(), operation_id.clone(), effect_ids.clone(), reason.clone())?;
                     serde_json::json!({"action":"inspect-close-effects", "acknowledgement":digest(plan.digest()?), "plan":plan})
@@ -678,14 +681,13 @@ async fn metadata_action(
                     serde_json::json!({"action":"close-effects", "receipt":prepared.receipt, "replay":prepared.replay})
                 },
                 Action::Review {} => {
-                    worker.closure(&view)?.inventory.require_retirement_drained().map_err(|_| StoreError::Unavailable)?;
+                    closure.inventory.require_retirement_drained().map_err(|_| StoreError::Unavailable)?;
                     let guard = observed.guard.as_ref().ok_or(StoreError::Unavailable)?;
                     batch = guard.prepare_reviewed(&view, worker.review, |_, _, _| worker.check())?;
                     serde_json::json!({"action":"review", "reviewDigest":digest(worker.review)})
                 },
                 Action::Resume { operation_id, expected_view } => {
                     let request = NamespaceResumeRequest { scope: observed.scope(), operation_id: operation_id.clone(), operator_id: worker.authority.actor.clone(), expected_view: expected_view.clone(), review_digest: worker.review };
-                    let closure = worker.closure(&view)?;
                     let plan = super::original_resume::prepare(&view, &request, &closure.inventory, worker.authority.deadline, || worker.check())?;
                     let result = serde_json::json!({"action":"resume", "receipt":plan.receipt().encode()?, "view":plan.receipt().view_token()?, "replay":plan.replayed()});
                     batch = plan.into_batch();
@@ -713,6 +715,24 @@ async fn metadata_action(
     Ok(result)
 }
 
+fn retained_formats(
+    inventory: &latent_state::namespace::compatibility::RetainedInventory,
+) -> Vec<serde_json::Value> {
+    inventory
+        .entries()
+        .iter()
+        .map(|(format, count)| {
+            serde_json::json!({
+                "kind": format.kind,
+                "identity": format.identity,
+                "rows": count.rows.to_string(),
+                "bytes": count.bytes.to_string(),
+                "unresolved": count.unresolved.to_string(),
+            })
+        })
+        .collect()
+}
+
 fn publication_effects(
     codecs: &Codecs,
     view: &latent_state::embedded::ReadView,
@@ -737,6 +757,18 @@ fn publication_effects(
         "policyBlocked":counts.blocked.to_string(),
         "unresolvedPayloadBytes":counts.payload_bytes.to_string(),
         "hasUnresolvedEffects":counts.oldest_unresolved_millis.is_some()
+    }))
+}
+
+fn store_capacity(
+    engine: &latent_state::embedded::EmbeddedStore,
+) -> Result<serde_json::Value, StoreError> {
+    let capacity = engine.file_capacity()?;
+    Ok(serde_json::json!({
+        "observedFileBytes": capacity.observed_bytes,
+        "fileLimitBytes": capacity.limit_bytes,
+        "growthHeadroomBytes": capacity.growth_headroom_bytes,
+        "compactionActive": capacity.compaction_active,
     }))
 }
 

@@ -33,6 +33,8 @@ Current action fields are:
 | --- | --- |
 | `snapshot` | `operationId`, `file: {root,name}` |
 | `inspect-namespace` | none |
+| `compact-namespace` | exact `expectedView` byte array from `inspect-namespace` |
+| `sweep-result-bodies` | exact `expectedView` and `expectedGeneration` from `inspect-namespace` |
 | `inspect-inbox-source` | `binding` |
 | `enroll-inbox-source` | `binding`, `expectedScope`, `expectedView`, `expectedCheckpointGeneration` |
 | `inspect-restore` | `file`, `destinationRoot`, `destinationCheckpointRoot`, `operationId`, `snapshotDigest`, `manifestDigest`, optional `destinationStoreIdentity` |
@@ -52,12 +54,31 @@ inspection returns encoded `namespace`, `history`, current `view`, optional
 pending, dispatching, uncertain, blocked and retry counts before retiring it.
 These counts describe the authorized namespace view and leave retained work
 available for drain or explicit reconciliation. Run the check while the
-publication still has inspection authority.
+publication still has inspection authority. The bounded `retainedFormats` array names
+each retained decoder dependency and reports its row, byte and unresolved
+counts as decimal strings. One record can require more than one decoder.
 
-The `storeCapacity` field reports the protected
-engine file's observed length, configured byte limit, remaining growth
-allowance and whether compaction is active. This reports storage pressure
-against the selected file limit independently from memory and queue admission.
+Namespace inspection reports the protected file through `storeCapacity`, including
+its observed length, configured limit, growth headroom and compaction activity.
+To compact a stopped installation, use `compact-namespace` with its exact
+`expectedView` and the protected `state-checkpoint` permission. The worker
+rechecks the view and current authority before using the bounded redb compactor.
+The profile allows 8 MiB of work, 64 MiB of read and write I/O each, up to
+8192 I/O operations and 256 KiB of file growth within five seconds. The
+receipt reports the actual file sizes, I/O and elapsed time. Physical
+uncertainty holds the store for recovery. Business records and recovery
+floors are preserved by successful compaction.
+
+For a stopped single-namespace installation with its namespace active and
+ready, use `sweep-result-bodies` with protected `purge-expired-payload`
+permission. Copy the inspected `view`
+and `resultMaintenance.generation` into the request as `expectedView` and
+`expectedGeneration`. Use null if there is no progress yet. Each call advances
+one indexed page under the protected clock. After a restart, the reviewed
+generation resumes that same pass. Check `passComplete` to stop, and inspect
+again after an uncertain return. Only eligible expired response bodies and
+their own payload references are released. Command identities, inbox history
+and unresolved effect references remain protective.
 
 Migration resume returns action `resume-migration`,
 encoded current `receipt`, current `view`, and `resourcePhysicallyRetired`.

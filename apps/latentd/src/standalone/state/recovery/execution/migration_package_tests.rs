@@ -10,6 +10,114 @@ mod seed;
 use fixture::*;
 use latent_state::{embedded::StoreError, recovery::snapshot::RequiredArtifact};
 
+#[tokio::test]
+async fn protected_result_sweep_checks_the_inspected_generation() {
+    let mut fixture = Box::pin(Fixture::with_namespace(1, false)).await;
+    fixture.reseal(Action::InspectNamespace {});
+    let read = super::execute(&fixture.store, fixture.codecs.clone(), &fixture.settings)
+        .await
+        .unwrap();
+    assert!(read["resultMaintenance"].is_null());
+    let formats = read["retainedFormats"].as_array().unwrap();
+    assert!(formats.iter().any(|format| {
+        format["kind"] == "migration-checkpoint"
+            && format["rows"].as_str().unwrap().parse::<u64>().unwrap() > 0
+            && format["bytes"].as_str().unwrap().parse::<u64>().unwrap() > 0
+    }));
+    let view: Vec<u8> = serde_json::from_value(read["view"].clone()).unwrap();
+    fixture.idle().await;
+
+    fixture.reseal(Action::SweepResultBodies {
+        expected_view: view,
+        expected_generation: None,
+    });
+    let result = super::execute(&fixture.store, fixture.codecs.clone(), &fixture.settings)
+        .await
+        .unwrap();
+    let progress = &result["resultMaintenance"];
+    assert_eq!(progress["generation"], "1");
+    assert_eq!(progress["passComplete"], true);
+    fixture.idle().await;
+    let stale = super::execute(&fixture.store, fixture.codecs.clone(), &fixture.settings)
+        .await
+        .unwrap_err();
+    assert_eq!(stale.message, "protected-result-maintenance:Conflict");
+    fixture.idle().await;
+
+    fixture.reseal(Action::InspectNamespace {});
+    let inspected = super::execute(&fixture.store, fixture.codecs.clone(), &fixture.settings)
+        .await
+        .unwrap();
+    assert_eq!(&inspected["resultMaintenance"], progress);
+    assert!(fixture.finish().await);
+}
+
+#[tokio::test]
+async fn protected_compaction_checks_the_selected_view_and_preserves_logical_rows() {
+    let mut fixture = Box::pin(Fixture::new(1)).await;
+    let worker = fixture.codecs.clone();
+    let (view, closure) = fixture
+        .store
+        .with_store(StoreIoKind::RecoveryRead, 8 * 1024 * 1024, move |engine| {
+            let snapshot = engine.snapshot()?;
+            Ok((
+                worker.selected_view(&snapshot)?.view_token()?,
+                worker.closure(&snapshot)?,
+            ))
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    fixture.idle().await;
+    let mut stale = view.clone();
+    stale[0] ^= 1;
+    fixture.reseal(Action::CompactNamespace {
+        expected_view: stale,
+    });
+    let refused = super::execute(&fixture.store, fixture.codecs.clone(), &fixture.settings)
+        .await
+        .unwrap_err();
+    assert!(refused.message.contains("Conflict"), "{refused:?}");
+
+    fixture.idle().await;
+    fixture.reseal(Action::CompactNamespace {
+        expected_view: view.clone(),
+    });
+    let result = super::execute(&fixture.store, fixture.codecs.clone(), &fixture.settings)
+        .await
+        .unwrap();
+    assert_eq!(result["view"], json!(view));
+    assert!(
+        result["fileBytesAfter"]
+            .as_str()
+            .unwrap()
+            .parse::<u64>()
+            .unwrap()
+            > 0
+    );
+
+    fixture.idle().await;
+    let worker = fixture.codecs.clone();
+    let (after, retained) = fixture
+        .store
+        .with_store(StoreIoKind::RecoveryRead, 8 * 1024 * 1024, move |engine| {
+            let snapshot = engine.snapshot()?;
+            Ok((
+                worker.selected_view(&snapshot)?.view_token()?,
+                worker.closure(&snapshot)?,
+            ))
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(after, view);
+    assert_eq!(retained.inventory, closure.inventory);
+    assert_eq!(retained.required_artifacts, closure.required_artifacts);
+    assert!(fixture.finish().await);
+}
+
 fn canonical(fixture: &Fixture) -> RequiredArtifact {
     let source = fixture.codecs.catalog.primary();
     RequiredArtifact {

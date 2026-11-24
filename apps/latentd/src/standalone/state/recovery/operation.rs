@@ -173,6 +173,8 @@ async fn prepare(
         && !matches!(
             &request.request,
             Action::InspectNamespace {}
+                | Action::CompactNamespace { .. }
+                | Action::SweepResultBodies { .. }
                 | Action::Snapshot { .. }
                 | Action::InspectRestore { .. }
                 | Action::Restore { .. }

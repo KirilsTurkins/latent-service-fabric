@@ -11,7 +11,11 @@ use latent_state::{
     tenant::TenantQuota,
 };
 
-pub(super) fn populate(engine: &EmbeddedStore, quota: TenantQuota) -> Result<(), StoreError> {
+pub(super) fn populate(
+    engine: &EmbeddedStore,
+    quota: TenantQuota,
+    quiesce: bool,
+) -> Result<(), StoreError> {
     let view = engine.snapshot()?;
     let installed = latent_state::tenant::prepare_install(&view, &[quota])?;
     drop(view);
@@ -84,6 +88,9 @@ pub(super) fn populate(engine: &EmbeddedStore, quota: TenantQuota) -> Result<(),
     sealed.append_to(&mut batch, pins).unwrap();
     drop(view);
     engine.apply(batch)?;
+    if !quiesce {
+        return Ok(());
+    }
     let current = catalog
         .inspect(engine, &tenant, &namespace)
         .unwrap()

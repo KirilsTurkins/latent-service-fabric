@@ -11,6 +11,12 @@ use latent_state::{
     namespace::{namespace_record_key, NamespaceRecord},
 };
 
+#[derive(Clone, Copy)]
+enum ClockAdmission {
+    ExistingAnchor,
+    ReviewedGeneration(Option<u64>),
+}
+
 impl ResultMaintenanceOwner {
     /// Explicit maintenance-policy operation, including installation on an old
     /// store and recovery after boot/history changes. The host must verify clock
@@ -61,17 +67,43 @@ impl ResultMaintenanceOwner {
         &self,
         store: &EmbeddedStore,
         clock: MaintenanceClock,
+        authorize: impl FnMut(Option<&CommandRecord>) -> Result<(), AtomicError>,
+    ) -> Result<MaintenanceProgress, AtomicError> {
+        self.step_inner(store, clock, ClockAdmission::ExistingAnchor, authorize)
+    }
+
+    /// An explicitly reviewed offline page may establish or restore clock
+    /// continuity against the exact observed generation. Reopening a process
+    /// does not restart the indexed pass. The page and the new anchor are
+    /// committed together, and a call with an old generation cannot advance it.
+    pub fn reviewed_step(
+        &self,
+        store: &EmbeddedStore,
+        clock: MaintenanceClock,
+        expected_generation: Option<u64>,
+        authorize: impl FnMut(Option<&CommandRecord>) -> Result<(), AtomicError>,
+    ) -> Result<MaintenanceProgress, AtomicError> {
+        self.step_inner(
+            store,
+            clock,
+            ClockAdmission::ReviewedGeneration(expected_generation),
+            authorize,
+        )
+    }
+
+    fn step_inner(
+        &self,
+        store: &EmbeddedStore,
+        clock: MaintenanceClock,
+        admission: ClockAdmission,
         mut authorize: impl FnMut(Option<&CommandRecord>) -> Result<(), AtomicError>,
     ) -> Result<MaintenanceProgress, AtomicError> {
         let _physical_step = self.enter()?;
         authorize(None)?;
         let view = store.snapshot()?;
         latent_state::recovery::require_ready(&view)?;
-        let old = view
-            .get_bounded(&MaintenanceProgress::key(), super::clock::PROGRESS_BYTES)?
-            .ok_or(AtomicError::RecoveryRequired)?;
-        let mut progress = MaintenanceProgress::decode(&old)?;
-        clock.next(&progress)?;
+        let old = view.get_bounded(&MaintenanceProgress::key(), super::clock::PROGRESS_BYTES)?;
+        let mut progress = step_progress(old.as_deref(), clock, admission)?;
         let page = view.scan_after(
             Family::Command,
             b"command-v1\0",
@@ -151,17 +183,49 @@ impl ResultMaintenanceOwner {
         replace(
             &mut batch,
             MaintenanceProgress::key(),
-            Some(old),
+            old,
             progress.encode()?,
         );
         if let Some(tenant) = accounting_tenant {
             crate::atomic::accounting::apply(&view, &tenant, &mut batch)?;
         }
-        store
-            .apply_fenced(batch, || accept_step(&mut authorize, command.as_ref()))
-            .map_err(fenced_error)?;
+        drop(view);
+        let accept = || accept_step(&mut authorize, command.as_ref());
+        match admission {
+            ClockAdmission::ExistingAnchor => store.apply_fenced(batch, accept),
+            ClockAdmission::ReviewedGeneration(_) => store.apply_reclamation_fenced(batch, accept),
+        }
+        .map_err(fenced_error)?;
         Ok(progress)
     }
+}
+
+fn step_progress(
+    previous: Option<&[u8]>,
+    clock: MaintenanceClock,
+    admission: ClockAdmission,
+) -> Result<MaintenanceProgress, AtomicError> {
+    let mut previous = previous.map(MaintenanceProgress::decode).transpose()?;
+    if let ClockAdmission::ReviewedGeneration(expected) = admission {
+        if previous.as_ref().map(|progress| progress.generation) != expected {
+            return Err(AtomicError::Conflict);
+        }
+        if previous
+            .as_ref()
+            .is_some_and(|progress| clock.next(progress).is_ok())
+        {
+            return previous.ok_or(AtomicError::Corrupt);
+        }
+        let cursor = previous
+            .as_mut()
+            .and_then(|progress| progress.cursor.take());
+        let mut progress = MaintenanceProgress::reanchor(clock, expected.unwrap_or(0), previous)?;
+        progress.cursor = cursor;
+        return Ok(progress);
+    }
+    let progress = previous.ok_or(AtomicError::RecoveryRequired)?;
+    clock.next(&progress)?;
+    Ok(progress)
 }
 
 fn accept_step(
