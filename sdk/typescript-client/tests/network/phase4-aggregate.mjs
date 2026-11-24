@@ -9,3 +9,12 @@ export function aggregateTarget(tenant, operation) {
     route,
   };
 }
+
+export function fixtureWallLimitMillis() {
+  const value = process.env.LSF_401_WALL_TIME_MILLIS;
+  if (value === undefined) return 120000n;
+  if (!/^[1-9][0-9]{0,5}$/.test(value) || BigInt(value) > 120000n) {
+    throw new RangeError("invalid fixture wall-time limit");
+  }
+  return BigInt(value);
+}

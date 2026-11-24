@@ -1,7 +1,7 @@
 // Explicit rejection and recovery probes against a separately provisioned node.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { aggregateTarget } from "./phase4-aggregate.mjs";
+import { aggregateTarget, fixtureWallLimitMillis } from "./phase4-aggregate.mjs";
 import { RpcClient } from "../../dist/node/index.js";
 import { currentProfile, CommandOutcome } from "../../dist/transactions.js";
 function required(name) { const value = process.env[name]; assert.ok(value, `missing fixture field: ${name}`); return value; }
@@ -18,7 +18,7 @@ test("durable rejection leaves the business key unchanged", { skip: process.env.
       payload: Buffer.from('[{"delta":1,"reject":true}]'), mediaType: "application/vnd.latent.wit-values.v1+json", priority: 0,
       metadata: {}, budget: { cpuFuel: 1000000000n, memoryBytes: 67108864n, childCalls: 0, outboundRequests: 0,
         stateReadBytes: 4194304n, stateWriteBytes: 2097152n, blobReadBytes: 0n, blobWriteBytes: 0n, logBytes: 0n,
-        effectCount: 1, wallTimeLimitMillis: 120000n } };
+        effectCount: 1, wallTimeLimitMillis: fixtureWallLimitMillis() } };
     const result = (await client.invokeCommand({ profile: currentProfile(), command: selector(tenant), invocation,
       inputFormat: "lsf-wit-values-v1", expectedVersions: [{ key: Buffer.from("aggregate/count"), version: Buffer.from(version,"hex") }] })).value;
     const command = result.command, rejection = result.invocation?.declaredError;

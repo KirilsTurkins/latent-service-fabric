@@ -1,7 +1,7 @@
 // Explicit fresh query after a committed command on a provisioned node.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { aggregateTarget } from "./phase4-aggregate.mjs";
+import { aggregateTarget, fixtureWallLimitMillis } from "./phase4-aggregate.mjs";
 import { RpcClient } from "../../dist/node/index.js";
 import { currentProfile } from "../../dist/transactions.js";
 function required(name) { const value = process.env[name]; assert.ok(value, `missing fixture field: ${name}`); return value; }
@@ -20,7 +20,7 @@ test("fresh query observes the committed view without a command receipt", { skip
     for (let i = 0; i < 3; i++) {
       const invocation = { activationId: `typescript-sdk-fresh-query-${i}`, target: aggregateTarget(tenant, "query"),
         payload: Buffer.from("[]"), mediaType: "application/vnd.latent.wit-values.v1+json", priority: 0, metadata: {},
-        budget: { cpuFuel: 1000000000n, memoryBytes, childCalls: 0, outboundRequests: 0, stateReadBytes: 4194304n, stateWriteBytes: 0n, blobReadBytes: 0n, blobWriteBytes: 0n, logBytes: 0n, effectCount: 0, wallTimeLimitMillis: 120000n } };
+        budget: { cpuFuel: 1000000000n, memoryBytes, childCalls: 0, outboundRequests: 0, stateReadBytes: 4194304n, stateWriteBytes: 0n, blobReadBytes: 0n, blobWriteBytes: 0n, logBytes: 0n, effectCount: 0, wallTimeLimitMillis: fixtureWallLimitMillis() } };
       const response = await client.query({ profile: currentProfile(), namespace, minimumViewVersion: minimum, invocation });
       assert.equal(response.metadata.observedTransaction, undefined);
       const value = response.value; assert.ok(value.view && value.view.namespace && value.source && value.invocation?.success);

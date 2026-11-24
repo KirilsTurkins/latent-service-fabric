@@ -1,7 +1,7 @@
 // Explicit live command probe; caller provisions a separate signed node.
 import assert from "node:assert/strict";
 import test from "node:test";
-import { aggregateTarget } from "./phase4-aggregate.mjs";
+import { aggregateTarget, fixtureWallLimitMillis } from "./phase4-aggregate.mjs";
 import { RpcClient } from "../../dist/node/index.js";
 import { currentProfile, CommandOutcome } from "../../dist/transactions.js";
 function required(name) {
@@ -22,7 +22,7 @@ test("version-fenced command commits through the real Node client and retires", 
         payload: Buffer.from('[{"delta":1,"reject":false}]'), mediaType: "application/vnd.latent.wit-values.v1+json", priority: 0,
         metadata: {}, budget: { cpuFuel: 1000000000n, memoryBytes: 67108864n, childCalls: 0, outboundRequests: 0,
           stateReadBytes: 4194304n, stateWriteBytes: 2097152n, blobReadBytes: 0n, blobWriteBytes: 0n, logBytes: 0n,
-          effectCount: 1, wallTimeLimitMillis: 120000n } }, inputFormat: "lsf-wit-values-v1",
+          effectCount: 1, wallTimeLimitMillis: fixtureWallLimitMillis() } }, inputFormat: "lsf-wit-values-v1",
       expectedVersions: [{ key: Buffer.from("aggregate/count"), version: Buffer.from(version, "hex") }] };
     let result;
     try { result = await client.invokeCommand(request); }
