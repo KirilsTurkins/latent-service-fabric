@@ -46,6 +46,16 @@ Actual managed and NativeAOT compilation requires separate qualification.
 
 Use literal `EmbeddedResource Include="resources/prefix.txt" LogicalName="example.prefix"` declarations for captured application data. The maintained compiler preserves those bytes and ordinary managed assembly resource lookup. Resources inside captured managed package assemblies retain their assembly ownership. Embedding grants no host filesystem access. Resource names, bytes, selected package ownership and final component identity must remain consistent with signed package/resource evidence; inclusion alone does not establish every resource-reader implementation.
 
+For a resource shipped inside a private NuGet package, declare the
+`EmbeddedResource` in the library project before packing it. Open it through
+`typeof(Worker).Assembly.GetManifestResourceStream("outside.price-card")`
+inside that library. The signed example reads a UTF-8 price card, awaits
+`Task.Delay(10, token)`, fetches JSON with `new HttpClient()`, then compares
+the two documents. It runs after removing both private source projects and
+their feed. The same component also exercises Flurl.Http 4.0.2 and Refit
+16.4.0 through their ordinary factories.
+[Published and private client results](../testing/evidence/sdk-private-library-invocations-2026-11-23.json)
+
 `TrimmerRootDescriptor` items must refer to captured literal paths. The actual NativeAOT compiler performs reflection/trimming analysis; unsupported JIT, dynamic loading, native/PInvoke assets and missing runtime members remain concrete incompatibilities. An assembly's managed PE header is a capture preflight, not proof of its complete AOT compatibility. `Task`, `ThreadPool` or timer references do not imply blanket package rejection and do not establish their execution: #746 owns those runtime ports, and #693 owns ordinary `HttpClient`.
 
 The [descriptor reflection qualification](../testing/dotnet-reflection-qualification.md)

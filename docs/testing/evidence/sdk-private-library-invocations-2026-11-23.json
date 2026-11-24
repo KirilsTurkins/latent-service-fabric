@@ -1072,5 +1072,258 @@
       "nodesReaped": 3,
       "missingProviderContacts": 0
     }
+  },
+  "additionalDotnetPrivateResourceHttp": {
+    "sourceRevision": "815d94ac535a86dea46203e33c42bfd50dd760b4",
+    "observedOn": "2026-11-24",
+    "environment": "Local Linux x86_64",
+    "qualification": "tools/qualify_dotnet_published_http.py --native-qualification",
+    "receipt": "sha256:48cc99bf936d0c2b4822705305bbdf70e8d00442828a75cdc6b141f5d7ce3280",
+    "captureReceipt": "sha256:5a496887304bb738ec476652b03dc389deca1a680935a55fd6725107a9bf4d5c",
+    "nodeReceipt": "sha256:1e30d4fc76053484a8b4d8d5b0f8e2b47c37525a72914a388ac5ec59790ad7ae",
+    "verifiedTemplateQualification": {
+      "sha256": "sha256:956494b5328de021aafc05ef74fb3b1db49bf892896acd552150b1aa50c26a4f",
+      "bytes": 31161
+    },
+    "nativeSource": {
+      "sha256": "sha256:c071acafd05ff2855166281917a3b3b4f0a6127b13a0c161cea3c4428b75b490",
+      "bytes": 56654
+    },
+    "packages": {
+      "Flurl.Http": "4.0.2",
+      "Refit": "16.4.0"
+    },
+    "privatePackages": [
+      {
+        "identity": "Outside.Http.bad80257feff00271cb2.Alpha",
+        "version": "1.0.0",
+        "source": "sha256:24a0eacc2721bfe7d167a85f7e2eca42401a719e9cf59692af9ed80311127347",
+        "assembly": "sha256:f3b7364a52b1ae3cdd9ff9a3076dd653eb45838fa595e0f2044facf59a1b90b2",
+        "archive": "sha256:173f9742036736d296b8ae3cd4b24495c406d905f097c07cc51cda181d0b4d04",
+        "embeddedResource": {
+          "name": "outside.price-card",
+          "sha256": "sha256:5f285194401591a1e0a89af16ec2b875f3d68fa6c76b6817f88e34357c6d1d75",
+          "bytes": 58
+        }
+      },
+      {
+        "identity": "Outside.Http.bad80257feff00271cb2.Delta",
+        "version": "1.0.0",
+        "source": "sha256:b4ad88f7aab8a3d8817b7492806a2da50d6997a8059c44408ac21a5a407c7e28",
+        "assembly": "sha256:7330d3e82e93658d34ab80ff65bc9103de2182600a9e5b1e271d9d011c27195f",
+        "archive": "sha256:7899fd09f4a384e80dd703882cfd3ecda80a6a2bb43f1366d2ef14b97d08232d",
+        "embeddedResource": {
+          "name": "outside.price-card",
+          "sha256": "sha256:5f285194401591a1e0a89af16ec2b875f3d68fa6c76b6817f88e34357c6d1d75",
+          "bytes": 58
+        }
+      }
+    ],
+    "acceptedDependencyLock": "sha256:f555992ec8247c9b93c221d1054005b3647c85a161029d5dd231fc8a1c797bdf",
+    "originalSourcesRemoved": true,
+    "catalogueDataPresent": false,
+    "applicationHandlerInjection": false,
+    "unapprovedGeneratorRefused": true,
+    "generatorOutputs": {
+      "sha256": "sha256:95198133f7a5e19c1b0cb4390e489c701fdaa000c10012b3bb16a7c1d22a6d0a",
+      "bytes": 2207
+    },
+    "component": {
+      "sha256": "sha256:6e50e566d95708590f65b3dd6b8e5f671f38e5de8ebfb99d40e3ee75125ecb74",
+      "bytes": 10813979
+    },
+    "buildSeconds": 130.30509,
+    "signedGuestExecutions": 20,
+    "preEntryRefusals": [
+      {
+        "case": "runtime-missing",
+        "code": "permission-denied",
+        "fuel": 0,
+        "outboundRequests": 0
+      },
+      {
+        "case": "http-missing",
+        "code": "permission-denied",
+        "fuel": 0,
+        "outboundRequests": 0
+      }
+    ],
+    "cases": [
+      {
+        "case": "flurl-json",
+        "result": "1:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "cpuFuel": "53903898",
+        "peakMemoryBytes": "58904928"
+      },
+      {
+        "case": "refit-json",
+        "result": "1:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "cpuFuel": "54690331",
+        "peakMemoryBytes": "58904928"
+      },
+      {
+        "case": "outside-alpha",
+        "result": "1:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "cpuFuel": "53371685",
+        "peakMemoryBytes": "58839392"
+      },
+      {
+        "case": "outside-delta",
+        "result": "1:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "cpuFuel": "53371086",
+        "peakMemoryBytes": "58839392"
+      },
+      {
+        "case": "flurl-404",
+        "result": "1:404:error:domain-error",
+        "outboundRequests": 1,
+        "cpuFuel": "53916442",
+        "peakMemoryBytes": "58904916"
+      },
+      {
+        "case": "refit-404",
+        "result": "1:404:error:domain-error",
+        "outboundRequests": 1,
+        "cpuFuel": "53433822",
+        "peakMemoryBytes": "58904916"
+      },
+      {
+        "case": "flurl-500",
+        "result": "1:500:error:domain-error",
+        "outboundRequests": 1,
+        "cpuFuel": "53915990",
+        "peakMemoryBytes": "58485060"
+      },
+      {
+        "case": "refit-500",
+        "result": "1:500:error:domain-error",
+        "outboundRequests": 1,
+        "cpuFuel": "53432410",
+        "peakMemoryBytes": "58904916"
+      },
+      {
+        "case": "flurl-pending-cancel",
+        "result": "1:cancelled",
+        "outboundRequests": 1,
+        "cpuFuel": "53860878",
+        "peakMemoryBytes": "58485034"
+      },
+      {
+        "case": "refit-pending-cancel",
+        "result": "1:cancelled",
+        "outboundRequests": 1,
+        "cpuFuel": "53320607",
+        "peakMemoryBytes": "58485034"
+      },
+      {
+        "case": "reserved-header",
+        "result": "1:transport-error",
+        "outboundRequests": 0,
+        "cpuFuel": "53687898",
+        "peakMemoryBytes": "58904902"
+      },
+      {
+        "case": "foreign-target",
+        "result": "1:transport-error",
+        "outboundRequests": 0,
+        "cpuFuel": "53699659",
+        "peakMemoryBytes": "58485046"
+      },
+      {
+        "case": "flurl-post",
+        "result": "1:200:echo:AAECAw==",
+        "outboundRequests": 1,
+        "cpuFuel": "54006443",
+        "peakMemoryBytes": "58904906"
+      },
+      {
+        "case": "uncertain-post",
+        "result": "1:transport-error",
+        "outboundRequests": 1,
+        "cpuFuel": "53868429",
+        "peakMemoryBytes": "58485046"
+      },
+      {
+        "case": "flurl-pre-cancelled",
+        "result": "1:cancelled",
+        "outboundRequests": 0,
+        "cpuFuel": "53545784",
+        "peakMemoryBytes": "58904890"
+      },
+      {
+        "case": "refit-pre-cancelled",
+        "result": "1:cancelled",
+        "outboundRequests": 0,
+        "cpuFuel": "52985805",
+        "peakMemoryBytes": "58485034"
+      },
+      {
+        "case": "early-body-dispose",
+        "result": "1:early:4",
+        "outboundRequests": 1,
+        "cpuFuel": "53720436",
+        "peakMemoryBytes": "58904886"
+      },
+      {
+        "case": "guest-extension",
+        "result": "1:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "cpuFuel": "52809031",
+        "peakMemoryBytes": "58419536"
+      },
+      {
+        "case": "guest-extension-denied",
+        "result": "1:transport-error",
+        "outboundRequests": 0,
+        "cpuFuel": "52525532",
+        "peakMemoryBytes": "58839366"
+      },
+      {
+        "case": "fresh-default",
+        "result": "1:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "cpuFuel": "53903878",
+        "peakMemoryBytes": "58904928"
+      }
+    ],
+    "peer": {
+      "contacts": 15,
+      "completedWrites": 11,
+      "mutations": 1,
+      "heldGatesReleased": 0,
+      "allClosed": true,
+      "exactVectors": [
+        "domain-json",
+        "domain-json",
+        "domain-json",
+        "domain-json",
+        "http-404",
+        "http-404",
+        "http-500",
+        "http-500",
+        "pending-headers",
+        "pending-headers",
+        "method-bytes",
+        "commit-close",
+        "partial-body",
+        "domain-json",
+        "domain-json"
+      ]
+    },
+    "reapedCleanNode": true,
+    "shutdown": {
+      "liveStores": 0,
+      "liveInstances": 0,
+      "reservedCpuFuel": 0,
+      "reservedMemoryBytes": 0,
+      "quarantinedCells": 0,
+      "queuedActivations": 0
+    },
+    "publisherAuthenticated": false,
+    "hermetic": false
   }
 }
