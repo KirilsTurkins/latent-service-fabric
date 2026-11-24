@@ -1,7 +1,10 @@
 //! Fresh provider custody for a private restore, before application adoption.
 use super::super::codecs::Codecs;
-use latent_blobs::local::{LocalBlobError, LocalBlobStore, LocalBlobWriter};
-use latent_core::TenantId;
+use latent_blobs::{
+    local::{LocalBlobError, LocalBlobReader, LocalBlobStore, LocalBlobWriter},
+    BlobReference,
+};
+use latent_core::{BlobDigest, TenantId};
 use latent_state::{
     embedded::{ReadView, StoreError},
     payload_references::PayloadReference,
@@ -83,7 +86,12 @@ impl RestoredPayloads {
 struct PayloadWriter<'a> {
     codecs: &'a Codecs,
     store: Arc<LocalBlobStore>,
-    pending: Option<(PayloadReference, LocalBlobWriter)>,
+    pending: Option<PayloadFrame>,
+}
+
+enum PayloadFrame {
+    Existing(LocalBlobReader),
+    New(BlobReference, LocalBlobWriter),
 }
 
 impl SnapshotPayloadSink for PayloadWriter<'_> {
@@ -105,43 +113,65 @@ impl SnapshotPayloadSink for PayloadWriter<'_> {
         {
             return Err(StoreError::Conflict);
         }
-        let writer = self
-            .store
-            .create(
-                &TenantId(payload.tenant.clone()),
-                &payload.media_type,
-                Some(payload.size),
-                &|| checkpoint(self.codecs),
-            )
-            .map_err(storage)?;
-        self.pending = Some((reference.clone(), writer));
+        let expected = BlobReference {
+            digest: BlobDigest(format!(
+                "sha256:{:x}",
+                latent_core::digest::HexDigest(payload.digest)
+            )),
+            tenant: TenantId(payload.tenant.clone()),
+            size_bytes: payload.size,
+            media_type: payload.media_type.clone(),
+            metadata: Default::default(),
+        };
+        let current = || checkpoint(self.codecs);
+        self.pending = Some(
+            match self.store.open_read(&expected.tenant, &expected, &current) {
+                Ok(reader) => PayloadFrame::Existing(reader),
+                Err(LocalBlobError::NotFound) => {
+                    let writer = self
+                        .store
+                        .create(
+                            &expected.tenant,
+                            &expected.media_type,
+                            Some(expected.size_bytes),
+                            &current,
+                        )
+                        .map_err(storage)?;
+                    PayloadFrame::New(expected, writer)
+                }
+                Err(error) => return Err(storage(error)),
+            },
+        );
         Ok(())
     }
 
     fn write(&mut self, chunk: &[u8]) -> Result<(), StoreError> {
-        let (_, writer) = self.pending.as_mut().ok_or(StoreError::Corrupt)?;
-        for chunk in chunk.chunks(self.store.limits().maximum_chunk_bytes) {
-            writer
-                .write(writer.written(), chunk, &|| checkpoint(self.codecs))
-                .map_err(storage)?;
+        // The archive reader hashes every frame, including repeated owners of
+        // a previously sealed physical object.
+        match self.pending.as_mut().ok_or(StoreError::Corrupt)? {
+            PayloadFrame::Existing(_) => self.codecs.check()?,
+            PayloadFrame::New(_, writer) => {
+                for chunk in chunk.chunks(self.store.limits().maximum_chunk_bytes) {
+                    writer
+                        .write(writer.written(), chunk, &|| checkpoint(self.codecs))
+                        .map_err(storage)?;
+                }
+            }
         }
         Ok(())
     }
 
     fn seal(&mut self) -> Result<(), StoreError> {
-        let (reference, writer) = self.pending.take().ok_or(StoreError::Corrupt)?;
+        let pending = self.pending.take().ok_or(StoreError::Corrupt)?;
         self.codecs.fence("namespace-restore", || Ok(()))?;
-        let blob = writer.seal(&|| checkpoint(self.codecs)).map_err(storage)?;
-        let digest = format!(
-            "sha256:{:x}",
-            latent_core::digest::HexDigest(reference.payload.digest)
-        );
-        if blob.digest.0 != digest
-            || blob.size_bytes != reference.payload.size
-            || blob.media_type != reference.payload.media_type
-            || blob.tenant.0 != reference.payload.tenant
-        {
-            return Err(StoreError::Corrupt);
+        match pending {
+            PayloadFrame::Existing(reader) => drop(reader),
+            PayloadFrame::New(expected, writer) => {
+                let actual = writer.seal(&|| checkpoint(self.codecs)).map_err(storage)?;
+                if actual != expected {
+                    return Err(StoreError::Corrupt);
+                }
+            }
         }
         Ok(())
     }
