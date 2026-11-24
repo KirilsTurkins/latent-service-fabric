@@ -1,0 +1,751 @@
+{
+  "schemaVersion": "latent.go.read-into-caller-buffer.v1",
+  "issue": 742,
+  "sourceRevision": "9c74c6a5011187cd455705eff0f531af5f66990c",
+  "baselineRevision": "21efe3bcc6065239809dbbadde6de4807b1ceaf3",
+  "platform": "linux-x86_64",
+  "status": "passed",
+  "nativeChunkCopy": {
+    "status": "passed",
+    "sources": {
+      "legacy": {
+        "source": "21efe3bcc6065239809dbbadde6de4807b1ceaf3",
+        "templateSha256": "a68b95e731c0e3d4a2fd13bcacb30bfbce390452a90a107a9108180ef30020bc",
+        "methods": {
+          "BytesContext": "4c18e2aab3f50e49a0e77f4bb8a3c6a98f1f3f680a623a200098bdf1a4a772dc",
+          "Close": "0be451934e44afd967c4b0b008fb8943452076493b880e03e61a8e1ad0111b90"
+        }
+      },
+      "current": {
+        "source": "9c74c6a5011187cd455705eff0f531af5f66990c",
+        "templateSha256": "fdbd2251f1f2fe7de9439dcc0383a177d990bb32ff3bd58353d0875db5018a30",
+        "methods": {
+          "BytesContext": "3f22f19a18f51b287ebabf1fb48d28e041607805fd7560468ef060983ccdc655",
+          "Close": "0be451934e44afd967c4b0b008fb8943452076493b880e03e61a8e1ad0111b90",
+          "copyBytesContext": "047dd1ea59e225adb9e43cb256120f4bfff199341e598bf58dc5b4ba303cd1b9",
+          "ReadIntoContext": "4148b66fc6da3ba901e95e90b8df49d7d5dae055f5ab335983c589deadb1e795"
+        }
+      }
+    },
+    "stockGo": "de0ae3e082ce7599eae4fb69fa2ef1e43b8f31ffd3fce62cdf81930aa9005050",
+    "ownerSha256": "1411834a321debbdad8d2bb61b238dcbd5a7eaefee566f712915d7acae3011db",
+    "fixtureSha256": "58b08e75b9dff120581402d220df438eb66a388866f79e12f2681a1406d5eb76",
+    "rawDoubleSha256": "8cc79e2a0f0809d27138c57371cc85e85f083904146972213243bcf077ab3668",
+    "observations": [
+      {
+        "size": 1,
+        "oldAlloc": 3,
+        "oldBytes": 56,
+        "currentAlloc": 2,
+        "currentBytes": 48
+      },
+      {
+        "size": 1024,
+        "oldAlloc": 3,
+        "oldBytes": 1072,
+        "currentAlloc": 2,
+        "currentBytes": 48
+      },
+      {
+        "size": 16384,
+        "oldAlloc": 3,
+        "oldBytes": 16432,
+        "currentAlloc": 2,
+        "currentBytes": 48
+      }
+    ],
+    "controls": [
+      "borrowed-storage-and-exact-drop",
+      "independent-owned-return",
+      "bounded-eof",
+      "original-read-error",
+      "canonical-error",
+      "nil-context-keeps-owner",
+      "three-invalid-lengths-drop-before-write"
+    ],
+    "sourceRevision": "9c74c6a5011187cd455705eff0f531af5f66990c",
+    "method": "Pinned Linux Go testing.Benchmark over the exact parent BytesContext body followed by copy, and the current copyBytesContext body with the original destination. Both paths constructed one actual ownership.Owner per read, used go.bytecodealliance.org/pkg/wit/types v0.2.3, reused the same raw result and destination and called Close after each operation. Only the generated raw chunk and its source connection were doubled.",
+    "goTestTranscript": [
+      "go: downloading go.bytecodealliance.org/pkg v0.2.3",
+      "=== RUN   TestBorrowedStorage",
+      "--- PASS: TestBorrowedStorage (0.00s)",
+      "=== RUN   TestInvalidBoundDropsBeforeReuse",
+      "--- PASS: TestInvalidBoundDropsBeforeReuse (0.00s)",
+      "=== RUN   TestBoundedReadAllocations",
+      "WITNESS size=1 oldAlloc=3 oldBytes=56 currentAlloc=2 currentBytes=48",
+      "WITNESS size=1024 oldAlloc=3 oldBytes=1072 currentAlloc=2 currentBytes=48",
+      "WITNESS size=16384 oldAlloc=3 oldBytes=16432 currentAlloc=2 currentBytes=48",
+      "--- PASS: TestBoundedReadAllocations (8.13s)",
+      "PASS",
+      "ok  \twit_component/current\t8.134s"
+    ]
+  },
+  "signedOrdinaryTCP": {
+    "v5": {
+      "component": {
+        "profile": "go-component-activation-v5",
+        "sourceUnchanged": true,
+        "sourceDigest": "sha256:d40cd571be6bf96bc2dd43ee52363e66724e70e5acb1017d73454f71f2206769",
+        "componentDigest": "sha256:ef6df6bd29bd83847865d7bdfcef698969ca198de10eaef6458e6782b2346714",
+        "tools": {
+          "go": {
+            "name": "go",
+            "digest": "sha256:de0ae3e082ce7599eae4fb69fa2ef1e43b8f31ffd3fce62cdf81930aa9005050",
+            "size": 17256487
+          },
+          "componentize-go": {
+            "name": "componentize-go",
+            "digest": "sha256:e759d91337ab2f8dc402a975e7ee2b4a14def017c89e801f983be65ae2e21df9",
+            "size": 17836552
+          },
+          "wasm-tools": {
+            "name": "wasm-tools",
+            "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+            "size": 20231696
+          },
+          "go-checkpoints": {
+            "name": "go-checkpoints",
+            "digest": "sha256:f6be1ec90ebcd01176d93f1d5ea7862faac0007f65f6a88c3c6f0f0b8167a07d",
+            "size": 4823951
+          }
+        },
+        "compilerInputsDigest": "sha256:12ef39ac396a4bdeca021ad2ac53722ff66ff352dc43e0a6a3b47a6f879dc16f"
+      },
+      "componentBytes": 3342426,
+      "nativeExecutableDigest": "sha256:8e62beb47dac326212fc21ffae8d011bf9687f8e08074e2581e2b5756be3713e",
+      "nativeCompiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "sourceInputsDigest": "sha256:03db8911da216fc9d1bd6e418fd71fe0ab7d7d7b0c1a202725e43ef19ad8b9b1",
+      "rawReceiptDigest": "sha256:f0e6bccb9e01a45b422d48d0b2368a26220b5266c3094acde56374ca452cdc4d",
+      "nativeStdoutDigest": "sha256:a75cbe311eaf8176d339a9163a3471beb8d892306e958b574420917e63c7a4ae",
+      "observations": {
+        "cases": [
+          {
+            "case": "unsupported-network",
+            "contacts": 0,
+            "mode": 0,
+            "result": "unsupported-network"
+          },
+          {
+            "case": "standalone-dns",
+            "contacts": 0,
+            "mode": 1,
+            "result": "unsupported-standalone-dns"
+          },
+          {
+            "case": "pre-cancelled",
+            "contacts": 0,
+            "mode": 2,
+            "result": "cancelled-before-connect"
+          },
+          {
+            "case": "expired",
+            "contacts": 0,
+            "mode": 3,
+            "result": "expired-before-connect"
+          },
+          {
+            "case": "resolver-replaced",
+            "contacts": 0,
+            "mode": 5,
+            "result": "unsupported-custom-default-resolver"
+          },
+          {
+            "case": "resolver-prefer-go",
+            "contacts": 0,
+            "mode": 6,
+            "result": "unsupported-custom-default-resolver"
+          },
+          {
+            "case": "resolver-strict",
+            "contacts": 0,
+            "mode": 7,
+            "result": "unsupported-custom-default-resolver"
+          },
+          {
+            "case": "resolver-dial",
+            "contacts": 0,
+            "mode": 8,
+            "result": "unsupported-custom-default-resolver"
+          },
+          {
+            "case": "ordinary-tcp",
+            "contacts": 1,
+            "mode": 4,
+            "result": "ordinary-tcp-exchange"
+          },
+          {
+            "case": "half-close-eof",
+            "contacts": 1,
+            "mode": 9,
+            "result": "ordinary-half-close-eof"
+          },
+          {
+            "case": "fragmented-read",
+            "contacts": 1,
+            "mode": 4,
+            "result": "ordinary-tcp-exchange"
+          },
+          {
+            "case": "cancel-pending-read",
+            "contacts": 1,
+            "mode": 4,
+            "result": "cancelled"
+          },
+          {
+            "case": "fresh-after-cancel",
+            "contacts": 1,
+            "mode": 4,
+            "result": "ordinary-tcp-exchange"
+          }
+        ],
+        "readEdges": [
+          {
+            "activeActivations": 1,
+            "case": "fragmented-read",
+            "connections": 1,
+            "constructedReads": 2,
+            "currentGenerationRetired": false,
+            "deliveredReadBytes": 1,
+            "ioCalls": 1,
+            "liveStores": 1,
+            "pendingOperations": 1,
+            "pendingReads": 1,
+            "providerStopped": false,
+            "quarantinedConnections": 0,
+            "retiredGenerations": 0,
+            "retiredReadDeliveredBytes": 1,
+            "streamOwners": 1
+          },
+          {
+            "activeActivations": 1,
+            "case": "cancel-pending-read",
+            "connections": 1,
+            "constructedReads": 2,
+            "currentGenerationRetired": false,
+            "deliveredReadBytes": 1,
+            "ioCalls": 1,
+            "liveStores": 1,
+            "pendingOperations": 1,
+            "pendingReads": 1,
+            "providerStopped": false,
+            "quarantinedConnections": 0,
+            "retiredGenerations": 0,
+            "retiredReadDeliveredBytes": 1,
+            "streamOwners": 1
+          }
+        ],
+        "cancelEdge": {
+          "case": "cancel-pending-read",
+          "readDropStartsAfterAccepted": 1,
+          "readDropStartsBefore": 1,
+          "sameConnection": true,
+          "sameGenerationCurrent": true
+        },
+        "userSpaceOwners": [
+          {
+            "case": "unsupported-network",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "standalone-dns",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "pre-cancelled",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "expired",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "resolver-replaced",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "resolver-prefer-go",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "resolver-strict",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "resolver-dial",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "ordinary-tcp",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "half-close-eof",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "fragmented-read",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "cancel-pending-read",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "fresh-after-cancel",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          }
+        ],
+        "completion": {
+          "cases": 13,
+          "cleanLogicalProviderStop": true,
+          "contacts": 5,
+          "kernelRetirementQualified": false,
+          "normalProviderInstalled": false
+        }
+      }
+    },
+    "v7": {
+      "component": {
+        "profile": "go-component-activation-v7",
+        "sourceUnchanged": true,
+        "sourceDigest": "sha256:d40cd571be6bf96bc2dd43ee52363e66724e70e5acb1017d73454f71f2206769",
+        "componentDigest": "sha256:2b06eb4e21a11b7f627358001ea4bb323e434c027e3ba2603a1b0fa6375f6bbf",
+        "tools": {
+          "go": {
+            "name": "go",
+            "digest": "sha256:de0ae3e082ce7599eae4fb69fa2ef1e43b8f31ffd3fce62cdf81930aa9005050",
+            "size": 17256487
+          },
+          "componentize-go": {
+            "name": "componentize-go",
+            "digest": "sha256:e759d91337ab2f8dc402a975e7ee2b4a14def017c89e801f983be65ae2e21df9",
+            "size": 17836552
+          },
+          "wasm-tools": {
+            "name": "wasm-tools",
+            "digest": "sha256:cc1f862d69363aac2d4a88f01c414a2dcf10858632d0c0a45e93ff60503979d6",
+            "size": 20231696
+          },
+          "go-checkpoints": {
+            "name": "go-checkpoints",
+            "digest": "sha256:a5a2c8aa71df2f9361838fd90ca24fe8ec7ee8d926652cc24e6ed4e5547f9ee9",
+            "size": 4823951
+          }
+        },
+        "compilerInputsDigest": "sha256:12ef39ac396a4bdeca021ad2ac53722ff66ff352dc43e0a6a3b47a6f879dc16f"
+      },
+      "componentBytes": 3346484,
+      "nativeExecutableDigest": "sha256:8e62beb47dac326212fc21ffae8d011bf9687f8e08074e2581e2b5756be3713e",
+      "nativeCompiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "sourceInputsDigest": "sha256:03db8911da216fc9d1bd6e418fd71fe0ab7d7d7b0c1a202725e43ef19ad8b9b1",
+      "rawReceiptDigest": "sha256:96994be9aaec66ab02e1c17b5d804692498beb95a65efafb26477084815f10f1",
+      "nativeStdoutDigest": "sha256:41794f317a25803d104a3ade9bfff1c72215005b308bb2f50c5cb4101243ccfa",
+      "observations": {
+        "cases": [
+          {
+            "case": "unsupported-network",
+            "contacts": 0,
+            "mode": 0,
+            "result": "unsupported-network"
+          },
+          {
+            "case": "standalone-dns",
+            "contacts": 0,
+            "mode": 1,
+            "result": "unsupported-standalone-dns"
+          },
+          {
+            "case": "pre-cancelled",
+            "contacts": 0,
+            "mode": 2,
+            "result": "cancelled-before-connect"
+          },
+          {
+            "case": "expired",
+            "contacts": 0,
+            "mode": 3,
+            "result": "expired-before-connect"
+          },
+          {
+            "case": "resolver-replaced",
+            "contacts": 0,
+            "mode": 5,
+            "result": "unsupported-custom-default-resolver"
+          },
+          {
+            "case": "resolver-prefer-go",
+            "contacts": 0,
+            "mode": 6,
+            "result": "unsupported-custom-default-resolver"
+          },
+          {
+            "case": "resolver-strict",
+            "contacts": 0,
+            "mode": 7,
+            "result": "unsupported-custom-default-resolver"
+          },
+          {
+            "case": "resolver-dial",
+            "contacts": 0,
+            "mode": 8,
+            "result": "unsupported-custom-default-resolver"
+          },
+          {
+            "case": "ordinary-tcp",
+            "contacts": 1,
+            "mode": 4,
+            "result": "ordinary-tcp-exchange"
+          },
+          {
+            "case": "half-close-eof",
+            "contacts": 1,
+            "mode": 9,
+            "result": "ordinary-half-close-eof"
+          },
+          {
+            "case": "fragmented-read",
+            "contacts": 1,
+            "mode": 4,
+            "result": "ordinary-tcp-exchange"
+          },
+          {
+            "case": "cancel-pending-read",
+            "contacts": 1,
+            "mode": 4,
+            "result": "cancelled"
+          },
+          {
+            "case": "fresh-after-cancel",
+            "contacts": 1,
+            "mode": 4,
+            "result": "ordinary-tcp-exchange"
+          }
+        ],
+        "readEdges": [
+          {
+            "activeActivations": 1,
+            "case": "fragmented-read",
+            "connections": 1,
+            "constructedReads": 2,
+            "currentGenerationRetired": false,
+            "deliveredReadBytes": 1,
+            "ioCalls": 1,
+            "liveStores": 1,
+            "pendingOperations": 1,
+            "pendingReads": 1,
+            "providerStopped": false,
+            "quarantinedConnections": 0,
+            "retiredGenerations": 0,
+            "retiredReadDeliveredBytes": 1,
+            "streamOwners": 1
+          },
+          {
+            "activeActivations": 1,
+            "case": "cancel-pending-read",
+            "connections": 1,
+            "constructedReads": 2,
+            "currentGenerationRetired": false,
+            "deliveredReadBytes": 1,
+            "ioCalls": 1,
+            "liveStores": 1,
+            "pendingOperations": 1,
+            "pendingReads": 1,
+            "providerStopped": false,
+            "quarantinedConnections": 0,
+            "retiredGenerations": 0,
+            "retiredReadDeliveredBytes": 1,
+            "streamOwners": 1
+          }
+        ],
+        "cancelEdge": {
+          "case": "cancel-pending-read",
+          "readDropStartsAfterAccepted": 1,
+          "readDropStartsBefore": 1,
+          "sameConnection": true,
+          "sameGenerationCurrent": true
+        },
+        "userSpaceOwners": [
+          {
+            "case": "unsupported-network",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "standalone-dns",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "pre-cancelled",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "expired",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "resolver-replaced",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "resolver-prefer-go",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "resolver-strict",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "resolver-dial",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "ordinary-tcp",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "half-close-eof",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "fragmented-read",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "cancel-pending-read",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          },
+          {
+            "case": "fresh-after-cancel",
+            "instances": 0,
+            "ioOwners": 0,
+            "kernelRetirementQualified": false,
+            "stores": 0,
+            "streamOwners": 0
+          }
+        ],
+        "completion": {
+          "cases": 13,
+          "cleanLogicalProviderStop": true,
+          "contacts": 5,
+          "kernelRetirementQualified": false,
+          "normalProviderInstalled": false
+        }
+      },
+      "selectedRuntimeLimits": {
+        "executors": 2,
+        "nativeOwners": 2,
+        "profile": "go-component-activation-v7",
+        "queuedWork": 16,
+        "results": 2,
+        "tasks": 16,
+        "timers": 2,
+        "waits": 4
+      }
+    }
+  },
+  "nativeStreamControls": {
+    "latent.go.network-deadline.reference.v1": {
+      "outcomes": {
+        "deadline-old": [
+          "TestLongDeadlineEntersProviderWithAcceptedArgument"
+        ],
+        "deadline-current": [
+          "TestLongDeadlineEntersProviderWithAcceptedArgument",
+          "TestNoDeadlineAndExpiredDeadline",
+          "TestCeilingAndProviderMaximum",
+          "TestProviderModelRetainsNarrowerOriginalDeadline"
+        ]
+      },
+      "rawReceiptDigest": "sha256:24c2be9be141065d623a27f411fd0ba9cc36abc1efdc124c61289d115dad5b9d"
+    },
+    "latent.go.network-deadline-set.reference.v1": {
+      "outcomes": {
+        "deadline-set-old": [
+          "TestMixedMonotonicDeadlineRefusal"
+        ],
+        "deadline-set-current": [
+          "TestMixedMonotonicDeadlineRefusal",
+          "TestSameBasisAndZeroDeadlineRemainAllowed",
+          "TestBothDirectionsClosedAndIdleRemainUnchanged",
+          "TestSyntheticWallStepSeparatesEqualDeadlineBases"
+        ]
+      },
+      "rawReceiptDigest": "sha256:39a2ce0d253fa928e62de68889e3946b38565b1c6e249e221ba201f6c341d464"
+    },
+    "latent.go.empty-read.reference.v1": {
+      "outcomes": {
+        "empty-read-old": [
+          "TestZeroReadExpiredNoDispatch"
+        ],
+        "empty-read-current": [
+          "TestZeroReadExpiredNoDispatch",
+          "TestZeroReadEOFNoDispatch",
+          "TestZeroReadClosedAndBusyKeepProfileRules",
+          "TestNonemptyExpiredStillRefusesBeforeDispatch",
+          "TestNonemptyReadPreservesProviderPathAndEOF",
+          "TestPinnedNativeTCPZeroReadDeadlineEOFAndClose"
+        ]
+      },
+      "rawReceiptDigest": "sha256:db579bbe1713c45a3263ce6ab16070b83a5f9791b8f0dbc9c1772b9555ac4ef3"
+    },
+    "latent.go.endpoint.reference.v1": {
+      "outcomes": {
+        "endpoint-old": [
+          "TestUnicodeAliasRejected"
+        ],
+        "endpoint-current": [
+          "TestUnicodeAliasRejected",
+          "TestSupportedASCII",
+          "TestExistingRefusals",
+          "TestASCIIHostLengthBound"
+        ]
+      },
+      "rawReceiptDigest": "sha256:863b5185933ada75399bf7c80ce3962a58d627e0e8a0b944e265dc90d0d70b5e"
+    },
+    "latent.go.half-close.reference.v1": {
+      "outcomes": {
+        "half-close-old": [
+          "TestExpiredDeadlineStillHalfCloses"
+        ],
+        "half-close-current": [
+          "TestExpiredDeadlineStillHalfCloses",
+          "TestFutureDeadlineDoesNotCancelShutdown",
+          "TestHalfClosePreservesClosedAndOverlapRules",
+          "TestHalfCloseFailureIsNotReplayed",
+          "TestProviderStopIsNotRelabeledOrRetried",
+          "TestHalfCloseKeepsWriteOwnerAndReadIndependent",
+          "TestCloseCancelsAndWaitsForOriginalBorrow",
+          "TestPinnedNativeTCPHalfCloseIgnoresWriteDeadline"
+        ]
+      },
+      "rawReceiptDigest": "sha256:9dc96e455091fbacbdafa352331de9512a07aa97c2fa4893b44ff5cff8c41854"
+    },
+    "latent.go.write-progress.reference.v1": {
+      "outcomes": {
+        "old": [
+          "TestCopyCrossesChunkBoundary"
+        ],
+        "before-close-guard": [
+          "TestCloseBetweenFragmentsKeepsPrefixAndStopsDispatch"
+        ],
+        "current": [
+          "TestCopyCrossesChunkBoundary",
+          "TestDirectWriteAdvancesOnlyAcceptedBytes",
+          "TestErrorKeepsCumulativePrefixAndUncertaintyWithoutRetry",
+          "TestZeroProgressStopsWithoutSpin",
+          "TestAbsoluteDeadlineDoesNotRestartForEachFragment",
+          "TestSameDirectionRefusalAndSingleOwnerSurviveAllFragments",
+          "TestImpossibleCountsFailClosedBeforeAnotherDispatch",
+          "TestEmptyClosedAndHalfClosedPathsKeepAdmissionRules",
+          "TestCloseBetweenFragmentsKeepsPrefixAndStopsDispatch"
+        ]
+      },
+      "rawReceiptDigest": "sha256:bf815f94ea79970f1e93e9031d9c4628fe922dce5d8ea148a6818c0d84e9d405"
+    }
+  },
+  "qualification": {
+    "provider": "explicit development TCP provider",
+    "normalProviderInstalled": false,
+    "kernelRetirementQualified": false,
+    "wholeGuestAllocationMeasurement": false
+  }
+}
