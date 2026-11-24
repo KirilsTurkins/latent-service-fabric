@@ -1,0 +1,216 @@
+{
+  "schemaVersion": "latent.sdk.private-guest-extensions.v1",
+  "scope": "Optional guest extensions exercised under ordinary publication grants. The source-bound records identify their individual build and node tuples.",
+  "languages": {
+    "C": {
+      "extension": "order_run_request takes the application read_order callback on the captured worker thread.",
+      "observedCases": [
+        "denied",
+        "normal"
+      ],
+      "evidence": {
+        "path": "c-private-pthread-library-2026-11-24.json",
+        "sha256": "sha256:3725ae32cf72b5eb321119979a7c90463c28411dcbddce01f89f83a466b7b67b",
+        "bytes": 21544
+      }
+    },
+    "Go": {
+      "extension": "An application http.RoundTripper delegates to the standard transport.",
+      "observedCases": [
+        "delegating-extension",
+        "delegating-origin-denied"
+      ],
+      "evidence": {
+        "path": "go-http-tenant-catalogue-signed-2026-10-20.json",
+        "sha256": "sha256:e981d36d15bfd097ad4b14178c7311f46bfde3498a057bf262866a33c35cc38e",
+        "bytes": 67941
+      },
+      "hostedJob": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39461611124/job/118762220036"
+    },
+    "TypeScript": {
+      "extension": "A guest-provided Fetch implementation delegates to global Fetch.",
+      "observedCases": [
+        "public-guest-extension",
+        "public-extension-denied"
+      ],
+      "evidence": {
+        "path": "typescript-private-npm-coordinates-2026-11-24.json",
+        "sha256": "sha256:7f7d68bf1a26018947fd37a63cb29088237dda208e21c82ec63c5c5a3bb94498",
+        "bytes": 10839
+      }
+    },
+    ".NET": {
+      "extension": "The application supplies a guest HTTP handler.",
+      "observedCases": [
+        "guest-extension",
+        "guest-extension-denied"
+      ],
+      "evidence": {
+        "path": "dotnet-installed-refit-approval-2026-11-24.json",
+        "sha256": "sha256:378c8bf474aef01eaa64e58ac42a708ffbac784066eee029c57a490d407903fd",
+        "bytes": 12920
+      }
+    },
+    "Java": {
+      "extension": "A captured transitive JAR supplies a java.net.URLStreamHandler for one URL construction. Its openConnection delegates to the platform URL connection.",
+      "qualificationSource": "4316ae05f34592f19413ea7c6de07ca665a1eca7",
+      "nativeSource": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+      "nativeTuple": {
+        "sha256": "sha256:c49bee2f43e9e4112300ecdba33ec4c6d8a69005ed27d70a6d0e5cd6dc631b54",
+        "bytes": 1495
+      },
+      "originalQualification": {
+        "sha256": "sha256:4869af23cd3014b8656fc47aaa121e6616a1b5f3b7b42566d3d2ba10a559e0c4",
+        "bytes": 70743
+      },
+      "signedInvocations": 30,
+      "sourceTestsPassed": 17,
+      "variants": [
+        {
+          "packages": [
+            "outside.http.primary/1.0.7",
+            "outside.http.child/1.0.7"
+          ],
+          "acceptedLock": "sha256:d421691019989997da2fc0c5ed44108e3a5b3200a42dafeee52e1ff1b11df4db",
+          "originalJars": {
+            "child": {
+              "sha256": "sha256:6777053b044341201b0da17927707eaf57c8805db54072f14667b91b27d7d472",
+              "bytes": 1987
+            },
+            "primary": {
+              "sha256": "sha256:dff8da73d4e379ea2721fd15ab31f05ca639cee3f7e8cef9473f8a27657eebff",
+              "bytes": 2800
+            }
+          },
+          "component": {
+            "sha256": "sha256:e45df064ee4ec8e455cc45d51d7e34067a9d44cdaea8aca92de928b6f8736ee3",
+            "bytes": 1211294
+          },
+          "originalJarsRemovedBeforeBuild": true,
+          "ordinaryInvocations": 13,
+          "guestHandlerInvocations": 2,
+          "originalNodeQualification": {
+            "sha256": "sha256:9b5dbb105da6576b749ff967386c2dd89fe9f829f72cae15c30aa7cdc915343a",
+            "bytes": 18732
+          },
+          "peer": {
+            "startedRequests": 12,
+            "acceptedConnections": 12,
+            "openConnections": 0,
+            "rejectedRequests": 0,
+            "committedMutations": 1,
+            "state": "stopped"
+          },
+          "nodeReapedClean": true,
+          "observed": [
+            {
+              "case": "private-handler",
+              "decoded": [
+                "1:handler:200:{\"empty\":\"\",\"id\":7,\"items\":[\"first\",\"\u03bb\"],\"name\":\"caf\u00e9\"}"
+              ],
+              "chargedOutboundRequests": 1,
+              "originalInvocation": {
+                "sha256": "sha256:9bac292f55c445f8a8bd7f776187bb6f9f13afbb41c3610a64a1dbf19fbe7221",
+                "bytes": 1307
+              }
+            },
+            {
+              "case": "private-handler-denied",
+              "decoded": [
+                "1:handler:transport:permission-denied"
+              ],
+              "chargedOutboundRequests": 0,
+              "originalInvocation": {
+                "sha256": "sha256:86fe57540a41fab553c4c013653199cdd8d0a8cc5ce47ddc6c6807f2e84d6d5a",
+                "bytes": 1188
+              }
+            },
+            {
+              "case": "fresh",
+              "decoded": [
+                "1:200:{\"empty\":\"\",\"id\":7,\"items\":[\"first\",\"\u03bb\"],\"name\":\"caf\u00e9\"}"
+              ],
+              "chargedOutboundRequests": 1,
+              "originalInvocation": {
+                "sha256": "sha256:2c88874cc4e3801697f67635e48d203f9a366eec4e8fe4d38fb3c31e1df101ea",
+                "bytes": 1277
+              }
+            }
+          ]
+        },
+        {
+          "packages": [
+            "tenant.example.unlisted-client/2026.10.19",
+            "different.owner.helper/4.2.1"
+          ],
+          "acceptedLock": "sha256:1d54e962063c06d7f0099b9c402311ff017efc94c205ebaae4ef6c10c1ab364b",
+          "originalJars": {
+            "child": {
+              "sha256": "sha256:6777053b044341201b0da17927707eaf57c8805db54072f14667b91b27d7d472",
+              "bytes": 1987
+            },
+            "primary": {
+              "sha256": "sha256:dff8da73d4e379ea2721fd15ab31f05ca639cee3f7e8cef9473f8a27657eebff",
+              "bytes": 2800
+            }
+          },
+          "component": {
+            "sha256": "sha256:e45df064ee4ec8e455cc45d51d7e34067a9d44cdaea8aca92de928b6f8736ee3",
+            "bytes": 1211294
+          },
+          "originalJarsRemovedBeforeBuild": true,
+          "ordinaryInvocations": 13,
+          "guestHandlerInvocations": 2,
+          "originalNodeQualification": {
+            "sha256": "sha256:d3da533afbda42eed2001bcfbd50662d4bd33bb1f2158e14ac5ff0be7f702a10",
+            "bytes": 18738
+          },
+          "peer": {
+            "startedRequests": 12,
+            "acceptedConnections": 12,
+            "openConnections": 0,
+            "rejectedRequests": 0,
+            "committedMutations": 1,
+            "state": "stopped"
+          },
+          "nodeReapedClean": true,
+          "observed": [
+            {
+              "case": "private-handler",
+              "decoded": [
+                "1:handler:200:{\"empty\":\"\",\"id\":7,\"items\":[\"first\",\"\u03bb\"],\"name\":\"caf\u00e9\"}"
+              ],
+              "chargedOutboundRequests": 1,
+              "originalInvocation": {
+                "sha256": "sha256:3aa8f12421b6e42bcfc1a41d7c6661f8113306054e2dc4bdd7b80730e1646ae1",
+                "bytes": 1307
+              }
+            },
+            {
+              "case": "private-handler-denied",
+              "decoded": [
+                "1:handler:transport:permission-denied"
+              ],
+              "chargedOutboundRequests": 0,
+              "originalInvocation": {
+                "sha256": "sha256:a51039b91e04ed9716e4a0ae1c3cb8fd624046dfccb5441790bb05262e7cdced",
+                "bytes": 1187
+              }
+            },
+            {
+              "case": "fresh",
+              "decoded": [
+                "1:200:{\"empty\":\"\",\"id\":7,\"items\":[\"first\",\"\u03bb\"],\"name\":\"caf\u00e9\"}"
+              ],
+              "chargedOutboundRequests": 1,
+              "originalInvocation": {
+                "sha256": "sha256:d88f2856f58b1601503d8b3d8c696b5633ad2682edcb46c325064b23d9c0efc6",
+                "bytes": 1277
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -96,6 +96,13 @@ dev status --workspace "$Workspace"
 A custom transport or executor is an optional guest extension for a library
 that exposes one. It uses the same reviewed capture and runtime grants.
 The ordinary client examples below use their runtime's default transport.
+For example, the private Java project's transitive JAR supplies a
+`URLStreamHandler` for one connection. The handler delegates to the platform
+connection. Each of two signed packages received the expected JSON from its
+permitted peer, received a permission error on the second origin, and then
+completed a fresh request through the default handler. The Go, C, TypeScript
+and .NET examples exercise their own extension points under publication grants.
+[Optional guest extension cases and source receipts](../testing/evidence/sdk-private-guest-extensions-2026-11-24.json)
 
 Each walkthrough's language has run a developer-owned dependency in a signed
 greeting capsule. All six preserved the declared error on blank input and
