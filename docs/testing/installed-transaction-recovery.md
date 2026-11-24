@@ -136,7 +136,9 @@ Run `latentd inspect-transaction-hosts` with that protected configuration to rea
 the trigger's caller scope from `configuredTriggerCallers`. Apply the required
 state and intent grants to the exact trigger subject, namespace and current
 publication. Use the reported `recoveryKind` and `recoveryScope` in their state
-resource scopes.
+resource scopes. Include `read-result` for the same trigger scope. Before
+acknowledging the input, the node checks current permission to read the
+original terminal command.
 
 A stale inspection requires a fresh read. If an interrupted write leaves a
 checkpoint mismatch, startup and offline enrollment hold the source for
