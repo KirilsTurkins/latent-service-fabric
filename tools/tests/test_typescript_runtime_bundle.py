@@ -19,7 +19,8 @@ class TypeScriptRuntimeBundleTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             payload = Path(temporary)
             recipe(payload, 'typescript')
-            for name in ('wit/platform/activation-runtime/package.wit', 'wit/platform/clock/package.wit'):
+            for name in ('wit/platform/activation-runtime/package.wit', 'wit/platform/clock/package.wit',
+                         'wit/host-abi-phase3-v7.json'):
                 with self.subTest(name=name):
                     self.assertEqual((payload / 'recipe' / name).read_bytes(), (ROOT / name).read_bytes())
 

@@ -2460,5 +2460,219 @@
       "nodeReaped": true,
       "cleanNodeStop": true
     }
+  },
+  "installedGoPrivateDependencies": {
+    "observedOn": "2026-11-24",
+    "status": "passed",
+    "candidateSource": "bc4320049800976505730bbe64e8060c7df2967a",
+    "nativeSource": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+    "archive": {
+      "sha256": "sha256:ac50cd704972aefe79a1ccb2b3dd17b7c4833bf07afdfb1e80468aa754c14c3e",
+      "bytes": 96186731
+    },
+    "manifest": {
+      "sha256": "sha256:34b2a588578321eb5e1fd7afcb273a787cc196d2dcb28ad2ff873b6cae674b71",
+      "bytes": 313806
+    },
+    "hostAbi": "lsf-host-abi-phase3-v5",
+    "target": "linux-x86_64",
+    "candidateBuilder": "tools/build_dev_guest_tools.py --language go",
+    "captureCommand": "recipe/tools/go_capsule.py dependencies",
+    "buildCommand": "recipe/tools/dev_guest_recipe.py --language go",
+    "nodeEntry": "tools.go_standard_http_node.run (libraries)",
+    "packageEntry": "tools.dev_workflow.build_artifacts.package and tools.dev_workflow.build_provenance.complete",
+    "compilerNetwork": "denied",
+    "effectiveUser": 1000,
+    "checkoutMounted": false,
+    "readOnlyInputs": true,
+    "publicRelease": false,
+    "publisherAuthenticated": false,
+    "fullFrontendWatchExercised": false,
+    "variants": [
+      {
+        "coordinate": "outside.example.test/http-library/original-coordinate",
+        "capturedInputIdentity": "sha256:0aedfacacd899e4018ddfe012cdd7fb800cbfdc40c39c934efbdb1f419819ee9",
+        "nativeGraphDigest": "sha256:13b051b93d00d7844c0ea3069207bc937eda9f0dd633b76d6e583b3889f1643d",
+        "runtimeSelection": {
+          "runtimeProfile": "go-component-activation-v4",
+          "tags": [],
+          "target": "wasip1/wasm"
+        },
+        "libraries": [
+          {
+            "artifact": "go-module/41e189b48c35a1d7fa6a1363",
+            "module": "github.com/dghubble/sling",
+            "version": "v1.4.0",
+            "ordinaryApi": "sling.New/Request/Do with its default http.Client",
+            "selection": "application-root-direct"
+          },
+          {
+            "artifact": "go-module/dade53f75779eeed50589de8",
+            "module": "github.com/carlmjohnson/requests",
+            "version": "v0.24.3",
+            "ordinaryApi": "requests.URL/ToJSON/Fetch with its default http.Client",
+            "selection": "application-root-direct"
+          },
+          {
+            "artifact": "go-module/68ca3c29ba08f6d3b757fe7d",
+            "module": "outside.example.test/http-library/original-coordinate",
+            "version": "v0.0.0",
+            "ordinaryApi": "private.Marker ordinary goroutine/WaitGroup/time.Sleep/embed",
+            "selection": "application-root-direct"
+          }
+        ],
+        "component": {
+          "sha256": "sha256:4c60284a913296e42ae7b405fc0ff7da48795981d1d29f5e9f3dae099f65b3f5",
+          "bytes": 10517405
+        },
+        "compilerObservation": {
+          "sha256": "sha256:0e9c79a2e21495d2bd80d8fb3557d0d3971a4bdc6ffc06601b86e93c560dfb68",
+          "bytes": 3518
+        },
+        "compilerCompletion": {
+          "sha256": "sha256:3d035d55e9ebef45e0f62c5a044d66e40bafcd8c6be0d85735f5ce1d829e03a6",
+          "bytes": 2416
+        },
+        "packageDigest": "sha256:d199ed1c6a541b12f1f9549287c99e13651c0cb378a3a945d2c5fd9a53110a49",
+        "installedBuild": {
+          "sha256": "sha256:9aadbffd9497dc75754eeabcce7cf52c127eca60266689a6e102ada95ec7b562",
+          "bytes": 284
+        },
+        "signedExecution": {
+          "sha256": "sha256:c6bef8f27507f154850dc86aca62cd4e00d17ba1b7f10204dd5611d84c34638f",
+          "bytes": 5339
+        },
+        "signedCases": [
+          "sling-json",
+          "sling-http404",
+          "sling-http500",
+          "sling-truncated",
+          "sling-oversized",
+          "sling-malformed-json",
+          "sling-forbidden",
+          "sling-cancel-headers",
+          "sling-partial-context-cancel",
+          "sling-post",
+          "sling-uncertain",
+          "sling-alternate-denied",
+          "sling-pre-cancelled",
+          "sling-sibling-cancel",
+          "sling-fresh",
+          "requests-json",
+          "requests-http404",
+          "requests-http500",
+          "requests-truncated",
+          "requests-oversized",
+          "requests-malformed-json",
+          "requests-forbidden",
+          "requests-cancel-headers",
+          "requests-partial-context-cancel",
+          "requests-post",
+          "requests-uncertain",
+          "requests-alternate-denied",
+          "requests-pre-cancelled",
+          "requests-sibling-cancel",
+          "requests-fresh"
+        ],
+        "peerRequests": 24,
+        "peerMutations": 2,
+        "rejectedPeerRequests": 0,
+        "peerReaped": true,
+        "nodeReaped": true,
+        "cleanNodeStop": true
+      },
+      {
+        "coordinate": "outside.example.test/http-library/renamed-coordinate",
+        "capturedInputIdentity": "sha256:27ad50508c5a2199e8e721bedcdeddafdb376a3e02853723f097fe927944a2b9",
+        "nativeGraphDigest": "sha256:a2073241cf481ad50d1605055154f6b0ba586afef009d51d90a33ac78ab7edea",
+        "runtimeSelection": {
+          "runtimeProfile": "go-component-activation-v4",
+          "tags": [],
+          "target": "wasip1/wasm"
+        },
+        "libraries": [
+          {
+            "artifact": "go-module/41e189b48c35a1d7fa6a1363",
+            "module": "github.com/dghubble/sling",
+            "version": "v1.4.0",
+            "ordinaryApi": "sling.New/Request/Do with its default http.Client",
+            "selection": "application-root-direct"
+          },
+          {
+            "artifact": "go-module/dade53f75779eeed50589de8",
+            "module": "github.com/carlmjohnson/requests",
+            "version": "v0.24.3",
+            "ordinaryApi": "requests.URL/ToJSON/Fetch with its default http.Client",
+            "selection": "application-root-direct"
+          },
+          {
+            "artifact": "go-module/b95ab61ed04ae016fbcfdba0",
+            "module": "outside.example.test/http-library/renamed-coordinate",
+            "version": "v0.0.0",
+            "ordinaryApi": "private.Marker ordinary goroutine/WaitGroup/time.Sleep/embed",
+            "selection": "application-root-direct"
+          }
+        ],
+        "component": {
+          "sha256": "sha256:984d9f8dce7c3b77010c471e248d153660154321d9f7ce63b17408af781423d2",
+          "bytes": 10517403
+        },
+        "compilerObservation": {
+          "sha256": "sha256:265c3ed9f8a1f0f76e41b467842dbc9ed584a1bdd9d24d0b92401115726fcac8",
+          "bytes": 3518
+        },
+        "compilerCompletion": {
+          "sha256": "sha256:081413246df2352f23e3db3207a9db02bfe62d0ac2b164f3e932f11c8db2dc62",
+          "bytes": 2415
+        },
+        "packageDigest": "sha256:9b6d1b5cc95d6cbe3550dabd87eba984a51e7ca166e70a862615412e90715e31",
+        "installedBuild": {
+          "sha256": "sha256:37f69582192ce9083f894869642b3e6dfe9dbc6ed4a536d85c344851a0ee083d",
+          "bytes": 284
+        },
+        "signedExecution": {
+          "sha256": "sha256:23cadf63fe49ca9ca4f40e45bfd17385880aff7f58be2ca11334d72a0261c342",
+          "bytes": 5337
+        },
+        "signedCases": [
+          "sling-json",
+          "sling-http404",
+          "sling-http500",
+          "sling-truncated",
+          "sling-oversized",
+          "sling-malformed-json",
+          "sling-forbidden",
+          "sling-cancel-headers",
+          "sling-partial-context-cancel",
+          "sling-post",
+          "sling-uncertain",
+          "sling-alternate-denied",
+          "sling-pre-cancelled",
+          "sling-sibling-cancel",
+          "sling-fresh",
+          "requests-json",
+          "requests-http404",
+          "requests-http500",
+          "requests-truncated",
+          "requests-oversized",
+          "requests-malformed-json",
+          "requests-forbidden",
+          "requests-cancel-headers",
+          "requests-partial-context-cancel",
+          "requests-post",
+          "requests-uncertain",
+          "requests-alternate-denied",
+          "requests-pre-cancelled",
+          "requests-sibling-cancel",
+          "requests-fresh"
+        ],
+        "peerRequests": 24,
+        "peerMutations": 2,
+        "rejectedPeerRequests": 0,
+        "peerReaped": true,
+        "nodeReaped": true,
+        "cleanNodeStop": true
+      }
+    ]
   }
 }

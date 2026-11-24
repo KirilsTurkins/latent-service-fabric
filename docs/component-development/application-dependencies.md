@@ -52,7 +52,9 @@ Each crate compared a fetched price card with its embedded copy.
 The Go example
 ran Sling and Requests with their default clients and a private module that
 read a `//go:embed` resource from a goroutine. Both Go module coordinates
-passed all 30 HTTP cases after capture.
+passed all 30 HTTP cases after capture. The installed Linux Go toolkit then
+rebuilt both projects offline. Each signed package passed the same 30 cases
+and its peer recorded 24 requests, two mutations and no rejected requests.
 
 Two independently captured TypeScript packages used Ky and Wretch through
 global Fetch. Both clients returned their ordinary HTTP errors for a 404
