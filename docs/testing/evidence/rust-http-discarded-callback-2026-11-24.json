@@ -26,5 +26,89 @@
     "engineStateEmptyAfterDrain": true
   },
   "signedApplicationExecuted": false,
-  "ordinaryCombinedThreadHttpBuilderQualified": false
+  "ordinaryCombinedThreadHttpBuilderQualified": false,
+  "nativeProducer": {
+    "sourceRevision": "9f75d2d8a5e0c19243da1f97f19b089cfd8043e5",
+    "profile": "normal-managed-guest-default-features",
+    "compiler": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "receipt": "sha256:74cd8e0373c99dca02b302b0f6dfd8605cc44a0e01a13855e96f08ece227dfb6",
+    "controlsReceipt": "sha256:1f4e3e6ee6d235d54697ee6e02cb5fca934c3c66652c55ce45b7b647b050a8ed",
+    "controlsByGroup": {
+      "original-host-memory": 8,
+      "result-owner": 4,
+      "result-wire": 4,
+      "result-capacity": 1,
+      "actual-host-codec": 9,
+      "actual-dynamic-allocation-hook": 6,
+      "raw-input-lifetime": 4,
+      "result-lifetime": 2,
+      "original-accounting": 20,
+      "child-capacity": 1,
+      "c-public-async-type": 1,
+      "c-public-sync-abi": 1,
+      "journal-result-retirement": 1,
+      "ordinary-backend": 1,
+      "actual-native-table-owner": 9,
+      "actual-native-store-owner": 10,
+      "closed-guest-trap-diagnostics": 1,
+      "actual-native-registry-owner": 4,
+      "actual-native-funcrefs-owner": 5,
+      "c-ready-handoff": 2,
+      "resource-substitutions": 5,
+      "actual-linear-allocation-notifications": 3,
+      "native-thread-audit-codec": 3,
+      "retained-activation-context": 11,
+      "actual-host-future-owner": 8,
+      "c-canonical-wait-routes": 2,
+      "actual-owned-context-reply": 5,
+      "cli-native-thread-audit-projection": 2,
+      "actual-retained-capability-directory": 5,
+      "actual-streaming-table-shared-owner": 17,
+      "actual-blob-table-owner": 1,
+      "original-session-table-native-owner": 2,
+      "actual-runtime-timer-strong-weak-owner": 73,
+      "original-session-native-owner": 7,
+      "original-session-optional-shared-owner": 1,
+      "c-canonical-private-system-stack": 2,
+      "actual-native-only-cumulative-retirement": 5,
+      "original-handle-owned-text": 1,
+      "original-handle-native-owner": 3,
+      "original-pending-clock-handle-native-owner": 2,
+      "original-call-native-buffer-owner": 5,
+      "rust-original-catalogue": 2,
+      "rust-normal-component": 2,
+      "rust-private-dispatch-engine": 1
+    },
+    "totalControls": 262,
+    "commandsInNativeBuildAndControls": 91,
+    "products": {
+      "latent": {
+        "sha256": "sha256:91dca312633e7996e5dab6ee4e9eb60e76591314b9ad5b8831203e0e41bed6ea",
+        "bytes": 76442344
+      },
+      "latentd": {
+        "sha256": "sha256:9688674a173301527077b1c4221a37a06076f0b08d7c1530d3b45a46365ca492",
+        "bytes": 212359352
+      },
+      "examples/package": {
+        "sha256": "sha256:7d39ae32d5c4be19480c800eac3041e0ca6de7f9fbe2cb3b0fb442f166a7f68c",
+        "bytes": 19685760
+      },
+      "examples/capsule_contracts": {
+        "sha256": "sha256:064df5c939093b2a14f3db4c5cb70b01aeb7dfeed317257237f45696af0554e8",
+        "bytes": 14401464
+      },
+      "examples/capsule_authoring": {
+        "sha256": "sha256:79e0622d0c3e0449e545720f6b31414d8324b111c151926f3cc424c38da24042",
+        "bytes": 26132920
+      }
+    },
+    "historicalPlanRevision": "c7134289f446cb3171eb0ffd800a94afc2a5209f",
+    "historicalCommandStages": 34,
+    "commandsInHistoricalControls": 63,
+    "elapsedSeconds": 948.6438819719988,
+    "sourceBoundNativeVerified": true,
+    "signedQualification": false,
+    "guestComponentsBuilt": 0
+  }
 }
