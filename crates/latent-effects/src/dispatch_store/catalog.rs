@@ -211,6 +211,24 @@ impl DispatchCatalog {
         time: EffectTime,
         accept: impl FnOnce() -> Result<(), crate::authority::AuthorityError>,
     ) -> Result<ClaimedEffect, DispatchStoreError> {
+        Self::claim_fenced_with_payload(store, epoch, due, time, |_, _, _| Ok(((), None)), accept)
+            .map(|(claim, ())| claim)
+    }
+
+    /// Prepare a physical pin from the same view that supplies the claimed
+    /// effect. Any additional expected row participates in the claim CAS.
+    pub(crate) fn claim_fenced_with_payload<T>(
+        store: &EmbeddedStore,
+        epoch: DispatchEpoch,
+        due: &DueRecord,
+        time: EffectTime,
+        prepare: impl FnOnce(
+            &ReadView,
+            &DurableEffectAuthority,
+            &PayloadRecord,
+        ) -> Result<(T, Option<ExpectedRow>), DispatchStoreError>,
+        accept: impl FnOnce() -> Result<(), AuthorityError>,
+    ) -> Result<(ClaimedEffect, T), DispatchStoreError> {
         let view = store.snapshot()?;
         let mut writer = write::WriteSet::new(&view, epoch, time)?;
         let mut loaded = write::Loaded::read(&view, &due.effect)?;
@@ -237,16 +255,23 @@ impl DispatchCatalog {
                 return Err(error.into());
             }
         };
+        let (pin, expected) = prepare(&view, &authority, &payload)?;
+        if let Some(expected) = expected {
+            writer.expect(expected.key, expected.value);
+        }
         writer.expect(payload_key, Some(payload_bytes));
         writer.reserve_attempt(&loaded.record)?;
         writer.replace(loaded)?;
         drop(view);
         writer.apply_fenced(store, accept)?;
-        Ok(ClaimedEffect {
-            authority,
-            attempt,
-            payload,
-        })
+        Ok((
+            ClaimedEffect {
+                authority,
+                attempt,
+                payload,
+            },
+            pin,
+        ))
     }
 
     pub fn begin_send(

@@ -10,6 +10,7 @@ mod driver;
 mod effect_management;
 mod management;
 mod owner;
+mod payload;
 mod reconciliation;
 mod state;
 mod store;
@@ -33,6 +34,7 @@ pub use management::{
     RetainedDispatcherControlLookup, RetainedDispatcherLookup,
 };
 pub use owner::DispatcherOwner;
+pub use payload::{DispatchPayloadPin, DispatchPayloadVerifier};
 pub use reconciliation::{
     ProviderConfirmation, ProviderReconciliationOutcome, ProviderReconciliationReason,
     ProviderReconciliationRequest,

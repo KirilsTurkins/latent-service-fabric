@@ -8,8 +8,8 @@ use latent_state::store_io::StoreIoOwner;
 use super::state::Shared;
 use super::worker::Services;
 use super::{
-    store, DeferredEffectAdapter, DispatcherConfig, DispatcherError, DispatcherShutdown,
-    DispatcherSnapshot, EffectTimeSource, RequiredProfilePage,
+    store, DeferredEffectAdapter, DispatchPayloadVerifier, DispatcherConfig, DispatcherError,
+    DispatcherShutdown, DispatcherSnapshot, EffectTimeSource, RequiredProfilePage,
 };
 
 /// Retain this owner through node lifecycle. Drop closes logical admission;
@@ -63,6 +63,7 @@ impl DispatcherOwner {
             minimum_checkpoint,
             runtime,
             false,
+            None,
         )
         .await
     }
@@ -70,6 +71,10 @@ impl DispatcherOwner {
     /// The protected composition root retains a separate temporary hold until
     /// its actual current installations and readiness checks have completed.
     /// Configured and durably restored operator pause remain independent.
+    #[allow(
+        clippy::too_many_arguments,
+        reason = "Protected startup supplies the original physical payload owner explicitly"
+    )]
     pub async fn start_with_startup_suppression(
         config: DispatcherConfig,
         store: Arc<ProtectedStoreOwner>,
@@ -78,6 +83,7 @@ impl DispatcherOwner {
         time: Arc<dyn EffectTimeSource>,
         minimum_checkpoint: Option<(u64, u64)>,
         runtime: tokio::runtime::Handle,
+        payload_verifier: Option<Arc<DispatchPayloadVerifier>>,
     ) -> Result<Self, DispatcherError> {
         Self::start_owned(
             config,
@@ -88,6 +94,7 @@ impl DispatcherOwner {
             minimum_checkpoint,
             runtime,
             true,
+            payload_verifier,
         )
         .await
     }
@@ -105,6 +112,7 @@ impl DispatcherOwner {
         minimum_checkpoint: Option<(u64, u64)>,
         runtime: tokio::runtime::Handle,
         startup_suppressed: bool,
+        payload_verifier: Option<Arc<DispatchPayloadVerifier>>,
     ) -> Result<Self, DispatcherError> {
         config.validate()?;
         if adapters.len() > 32
@@ -163,6 +171,7 @@ impl DispatcherOwner {
             store,
             authority,
             adapters: adapters.into(),
+            payload_verifier,
             time,
             epoch,
             runtime: runtime.clone(),

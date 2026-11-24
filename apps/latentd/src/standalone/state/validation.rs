@@ -284,6 +284,48 @@ impl PayloadVerifier for LocalPayloadVerifier<'_> {
     }
 }
 
+/// Bind dispatch to the exact local immutable provider that passed protected
+/// startup. The original attempt checks its capacity/deadline during file I/O.
+#[cfg(target_os = "linux")]
+pub(super) fn dispatch_payload_verifier(
+    store: std::sync::Arc<latent_blobs::local::LocalBlobStore>,
+    provider: crate::config::ProviderIdentity,
+) -> std::sync::Arc<latent_effects::runtime::DispatchPayloadVerifier> {
+    use latent_blobs::local::LocalBlobError;
+    std::sync::Arc::new(move |view, key, bytes, checkpoint| {
+        let reference = latent_state::payload_references::owner_reference(key, bytes)?
+            .ok_or(StoreError::Corrupt)?;
+        if reference.payload.tenant != provider.tenant
+            || reference.payload.provider != provider.id
+            || reference.payload.provider_epoch != provider.epoch
+        {
+            return Err(StoreError::UnsupportedFormat.into());
+        }
+        let reader = store.pin_required_reference(view, key, bytes, &|| {
+            checkpoint().map_err(|_| LocalBlobError::Cancelled)
+        });
+        let reader = match reader {
+            Ok(reader) => reader,
+            Err(LocalBlobError::Cancelled) => {
+                checkpoint()?;
+                return Err(StoreError::Unavailable.into());
+            }
+            Err(error) => {
+                return Err(match error {
+                    LocalBlobError::Corrupt
+                    | LocalBlobError::NotFound
+                    | LocalBlobError::Invalid => StoreError::Corrupt,
+                    LocalBlobError::PermissionDenied => StoreError::UnsupportedFormat,
+                    LocalBlobError::Capacity | LocalBlobError::Busy => StoreError::Capacity,
+                    _ => StoreError::Unavailable,
+                }
+                .into());
+            }
+        };
+        Ok(Box::new(reader))
+    })
+}
+
 /// Return an inbox watermark only after the same physical payload checks.
 #[cfg(target_os = "linux")]
 pub(super) fn validate_inventory_with_local_payloads(

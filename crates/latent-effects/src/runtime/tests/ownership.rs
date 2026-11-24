@@ -100,3 +100,105 @@ async fn dropped_dispatcher_waiter_keeps_provider_and_root_until_actual_record_a
     assert_eq!(fixture.authority.owners().unwrap().physical, 0);
     fixture.finish().await;
 }
+
+#[tokio::test]
+async fn linked_effect_keeps_the_verified_reader_through_provider_and_receipt() {
+    use latent_state::payload_references::{
+        LocalPayloadIdentity, PayloadOwner, PayloadOwnerKind, PayloadReference,
+        PreparedPayloadReferences,
+    };
+    use sha2::{Digest, Sha256};
+
+    struct Reader(Arc<AtomicUsize>);
+    impl Drop for Reader {
+        fn drop(&mut self) {
+            self.0.fetch_sub(1, Ordering::SeqCst);
+        }
+    }
+
+    let fixture = Fixture::new().await;
+    let authority = fixture
+        .seed(1, "tenant-a", "old-publication", profile("test.v1"))
+        .await;
+    let scope = authority.scope();
+    let reference = PayloadReference {
+        owner: PayloadOwner {
+            tenant: scope.tenant.clone(),
+            namespace: scope.namespace.clone(),
+            incarnation: scope.incarnation,
+            kind: PayloadOwnerKind::Effect,
+            identity: crate::effect_identity::parse(&authority.link().effect).unwrap(),
+            generation: authority.link().attempt,
+            format: authority.profile().payload_format.clone(),
+        },
+        payload: LocalPayloadIdentity {
+            tenant: scope.tenant.clone(),
+            provider: "blob-a".into(),
+            provider_epoch: 1,
+            provider_configuration: [17; 32],
+            blob_namespace: "blobs".into(),
+            digest: Sha256::digest(b"committed payload 1").into(),
+            size: authority.payload_bytes(),
+            media_type: "application/octet-stream".into(),
+        },
+    };
+    let exact = reference.clone();
+    fixture
+        .store
+        .with_store(StoreIoKind::Write, 1024 * 1024, move |store| {
+            let view = store.snapshot()?;
+            let refs = PreparedPayloadReferences::prepare(&view, &[(None, Some(reference))])?;
+            let mut plan = AtomicBatch::default();
+            refs.append_to(&mut plan)?;
+            drop(view);
+            store.apply(plan)?;
+            Ok(())
+        })
+        .unwrap()
+        .await
+        .unwrap()
+        .unwrap();
+
+    let (adapter, mut entered) = Adapter::new("test.v1", Some("tenant-a"));
+    let reader_count = Arc::new(AtomicUsize::new(0));
+    let current = Arc::clone(&reader_count);
+    let verifier: Arc<DispatchPayloadVerifier> = Arc::new(move |view, key, bytes, checkpoint| {
+        checkpoint()?;
+        latent_state::payload_references::validate_row(view, key, bytes)?;
+        assert_eq!(PayloadReference::decode(bytes)?, exact);
+        assert_eq!(current.fetch_add(1, Ordering::SeqCst), 0);
+        Ok(Box::new(Reader(Arc::clone(&current))) as DispatchPayloadPin)
+    });
+    let mut dispatcher = DispatcherOwner::start_with_startup_suppression(
+        config(),
+        fixture.store.clone(),
+        fixture.authority.clone(),
+        vec![adapter.clone()],
+        fixture.clock.clone(),
+        None,
+        tokio::runtime::Handle::current(),
+        Some(verifier),
+    )
+    .await
+    .unwrap();
+    dispatcher.bind_native_capacity(&fixture.capacity).unwrap();
+    dispatcher.release_startup().unwrap();
+
+    let parked = event(&mut entered).await;
+    assert_eq!(parked.effect, authority.link().effect);
+    assert_eq!(reader_count.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        fixture.record(&authority).await.disposition(),
+        Disposition::Dispatching
+    );
+    adapter.gates.release(parked.ticket.unwrap()).unwrap();
+    wait_disposition(&fixture, &authority, Disposition::ProviderAcknowledged).await;
+    let report = dispatcher
+        .shutdown(Instant::now() + WATCHDOG)
+        .await
+        .unwrap();
+    assert!(report.clean && report.physically_retired);
+    assert_eq!(reader_count.load(Ordering::SeqCst), 0);
+    assert_eq!(adapter.sent.load(Ordering::SeqCst), 1);
+    fixture.finish().await;
+}

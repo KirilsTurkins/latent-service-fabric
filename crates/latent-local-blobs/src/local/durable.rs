@@ -266,11 +266,25 @@ impl LocalBlobStore {
         bytes: &[u8],
         checkpoint: &dyn Fn() -> Result<()>,
     ) -> Result<()> {
+        self.pin_required_reference(view, key, bytes, checkpoint)
+            .map(drop)
+    }
+
+    /// Verify and retain the original physical reader for one required
+    /// catalogue row. The trusted consumer must hold it through physical
+    /// completion, with its own authority and capacity already admitted.
+    pub fn pin_required_reference(
+        &self,
+        view: &ReadView,
+        key: &RowKey,
+        bytes: &[u8],
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<LocalBlobReader> {
         let (reader, _) = self.open_required_reference(view, key, bytes, checkpoint)?;
-        drop(reader);
         checkpoint()?;
         let _ = view.is_empty().map_err(storage)?;
-        self.check_owner()
+        self.check_owner()?;
+        Ok(reader)
     }
 
     /// Copy the exact bytes of one retained owner into a staged recovery sink.

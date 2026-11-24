@@ -16,6 +16,7 @@ async fn suppressed(
         fixture.clock.clone(),
         checkpoint,
         tokio::runtime::Handle::current(),
+        None,
     )
     .await
     .unwrap();

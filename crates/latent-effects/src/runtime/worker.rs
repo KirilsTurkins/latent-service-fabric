@@ -7,6 +7,7 @@ use latent_state::protected_store::ProtectedStoreOwner;
 use latent_state::store_io::StoreIoKind;
 
 use super::capacity::AttemptCapacity;
+use super::payload::{self, DispatchPayloadPin};
 use super::state::{ActiveGuard, Shared};
 use super::store::{self, Candidate};
 use super::{AdapterOutcome, DeferredEffectAdapter, DispatcherError, EffectTimeSource};
@@ -16,6 +17,7 @@ pub(super) struct Services {
     pub store: Arc<ProtectedStoreOwner>,
     pub authority: EffectAuthorityOwner,
     pub adapters: Arc<[Arc<dyn DeferredEffectAdapter>]>,
+    pub payload_verifier: Option<Arc<super::DispatchPayloadVerifier>>,
     pub time: Arc<dyn EffectTimeSource>,
     pub epoch: DispatchEpoch,
     pub runtime: tokio::runtime::Handle,
@@ -34,6 +36,13 @@ pub(super) struct ReceiptWork {
 struct Prepared {
     attempt: crate::dispatch::AttemptIdentity,
     accepted: Result<latent_core::BoxFuture<'static, AdapterOutcome>, AdapterOutcome>,
+    payload_pin: Option<DispatchPayloadPin>,
+}
+
+struct Completed {
+    attempt: crate::dispatch::AttemptIdentity,
+    outcome: AdapterOutcome,
+    payload_pin: Option<DispatchPayloadPin>,
 }
 
 pub(super) fn run(
@@ -124,7 +133,11 @@ async fn execute(
         .retire()
         .map_err(DispatcherError::from);
     let result = match outcome {
-        Ok(Some((attempt, outcome))) => record(services, attempt, outcome, capacity).await,
+        Ok(Some(completed)) => {
+            let result = record(services, completed.attempt, completed.outcome, capacity).await;
+            drop(completed.payload_pin);
+            result
+        }
         Ok(None) => Ok(()),
         Err(error) => Err(error),
     };
@@ -136,7 +149,7 @@ async fn execute(
 async fn run_prepared(
     services: &Services,
     prepared: Result<Prepared, DispatcherError>,
-) -> Result<Option<(crate::dispatch::AttemptIdentity, AdapterOutcome)>, DispatcherError> {
+) -> Result<Option<Completed>, DispatcherError> {
     match prepared {
         Ok(prepared) => {
             {
@@ -154,7 +167,11 @@ async fn run_prepared(
                 Ok(future) => future.await,
                 Err(outcome) => outcome,
             };
-            Ok(Some((prepared.attempt, outcome)))
+            Ok(Some(Completed {
+                attempt: prepared.attempt,
+                outcome,
+                payload_pin: prepared.payload_pin,
+            }))
         }
         Err(
             DispatcherError::Store(DispatchStoreError::Authority(
@@ -187,6 +204,7 @@ async fn prepare(
     let epoch = services.epoch;
     let shared = Arc::clone(&services.shared);
     let original = Arc::clone(&capacity);
+    let payload_verifier = services.payload_verifier.clone();
     store::call_retaining(
         &services.store,
         StoreIoKind::Write,
@@ -203,7 +221,23 @@ async fn prepare(
                 }
                 original.check()
             };
-            let claim = DispatchCatalog::claim_fenced(store, epoch, &candidate.due, time, accept)?;
+            let (claim, payload_pin) = DispatchCatalog::claim_fenced_with_payload(
+                store,
+                epoch,
+                &candidate.due,
+                time,
+                |view, authority, record| {
+                    payload::pin(
+                        view,
+                        authority,
+                        record,
+                        payload_verifier.as_deref(),
+                        &accept,
+                    )
+                    .map(|(pin, expected)| (pin, Some(expected)))
+                },
+                accept,
+            )?;
             let crate::dispatch_store::ClaimedEffect {
                 authority,
                 attempt,
@@ -247,7 +281,11 @@ async fn prepare(
                     retry: None,
                 }),
             };
-            Ok(Prepared { attempt, accepted })
+            Ok(Prepared {
+                attempt,
+                accepted,
+                payload_pin,
+            })
         },
     )
     .await

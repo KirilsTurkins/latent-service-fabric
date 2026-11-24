@@ -282,6 +282,12 @@ impl StateKernel {
             .local_payload_selection
             .as_ref()
             .and_then(|selection| selection.inventory_payloads());
+        #[cfg(target_os = "linux")]
+        let payload_verifier = inventory_payloads.as_ref().map(|(store, provider)| {
+            super::validation::dispatch_payload_verifier(Arc::clone(store), provider.clone())
+        });
+        #[cfg(not(target_os = "linux"))]
+        let payload_verifier = None;
         let inventory = ProtectedInboxInventory::new(
             crate::config::state::STARTUP_VALIDATOR_BYTES,
             move |view| {
@@ -320,6 +326,7 @@ impl StateKernel {
             identity: settings.store_identity.clone(),
             preparation,
             inventory: Some(inventory),
+            payload_verifier,
             original_deadline: bootstrap.deadline,
             control_runtime,
         })

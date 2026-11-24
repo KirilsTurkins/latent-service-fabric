@@ -103,6 +103,7 @@ pub struct ProtectedEffectStartup {
     pub identity: StoreIdentity,
     pub preparation: Option<super::ProtectedStatePreparation>,
     pub inventory: Option<ProtectedInboxInventory>,
+    pub payload_verifier: Option<Arc<latent_effects::runtime::DispatchPayloadVerifier>>,
     pub original_deadline: Instant,
     pub control_runtime: tokio::runtime::Handle,
 }
@@ -245,6 +246,7 @@ async fn admitted(
         time.clone(),
         minimum,
         startup.control_runtime,
+        startup.payload_verifier,
     )
     .await
     .map_err(super::runtime_error)?;
