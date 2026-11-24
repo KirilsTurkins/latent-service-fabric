@@ -113,6 +113,39 @@ insufficient grounds for another edit. [Transaction HTTP](../development/transac
 
 ## Choose operator actions deliberately
 
+To stop new dispatch while investigating an outage, use the authorized
+node-scoped dispatcher control. Take `OwnerEpoch` and `Revision` from the
+current inspection and retain the original values with `PauseOperationId`.
+
+```bash
+latent --phase4 dispatcher inspect --scope node
+latent --phase4 dispatcher pause --scope node --operation-id "$PauseOperationId" \
+  --expected-owner-epoch "$OwnerEpoch" --expected-revision "$Revision"
+latent --phase4 dispatcher inspect --scope node
+```
+
+Use the response's `published` status and the current `paused` observation to
+confirm the pause. The snapshot exposes claims, active jobs and physical owners
+independently. Use those fields to inspect draining work. If the pause response
+is lost, recover it using the original generation and operation ID.
+
+```bash
+latent --phase4 dispatcher operation --scope node --original-action pause \
+  --operation-id "$PauseOperationId" \
+  --expected-owner-epoch "$OwnerEpoch" --expected-revision "$Revision"
+```
+
+Resume after reviewing current authority and outstanding work. Use a new
+operation ID and the owner epoch and revision from a fresh inspection.
+
+```bash
+latent --phase4 dispatcher resume --scope node --operation-id "$ResumeOperationId" \
+  --expected-owner-epoch "$ResumeOwnerEpoch" --expected-revision "$ResumeRevision"
+```
+
+Restored histories require their own reconciliation and resume workflow.
+[Dispatcher control contract](../development/dispatcher-management-contract.md)
+
 `state plan-effect` prepares a checked redrive, reconcile or terminate plan with
 the inspected record version, policy digest, original operation ID and reason.
 `state apply-effect` submits its exact encoded plan once. After response loss,

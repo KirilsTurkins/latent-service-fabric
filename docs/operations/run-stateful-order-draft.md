@@ -30,6 +30,21 @@ Install the separate staging and dispatch policies for the
 [HTTPS recipient](../development/deferred-http-installation.md) and
 [JetStream publisher](../development/deferred-jetstream.md).
 
+Prepare each admitted backend before opening the browser. Set `Publication`
+to its admitted publication ID. Read the lifecycle generation and use the
+returned value for `GuestGeneration` in the preparation request. Repeat for
+Bob's backend.
+
+```bash
+latent --phase4 release lifecycle --publication "$Publication"
+latent --phase4 --rpc-timeout-ms 120000 release prepare \
+  --publication "$Publication" --lifecycle-generation "$GuestGeneration" \
+  --maximum-wait-ms 120000
+```
+
+Expect a prepared response for that publication. Preparation uses the current
+node profile and leaves command execution to the authorized ingress route.
+
 Use the [reference deployment workflow](../../examples/stateful-reference/README.md)
 to derive the shared ingress routes from the signed companion and actual
 publication, revision and generation. The
