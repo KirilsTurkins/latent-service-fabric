@@ -138,7 +138,15 @@ def recipe(payload: Path, language: str, *, rust_http_runtime: bool = False) -> 
     if language in {"java", "dotnet", "go", "typescript"}:
         names.add("tools/dev_managed_tools.py")
     if language == "typescript":
-        names.add("tools/dev_workflow/diagnostics.py")
+        from tools.typescript_guest import runtime_profile, splicer_input
+        from tools.typescript_guest.activation_engine import engine_input_paths
+
+        # The installed recipe revalidates the captured engine and splicer
+        # against its own source tree before it runs the compiler.
+        for profile in runtime_profile.NATIVE_PROFILES:
+            names.update(engine_input_paths(profile))
+        names.update(splicer_input.input_paths())
+        names.update({"tools/dev_workflow/diagnostics.py", "wit/platform/activation-runtime/package.wit"})
     if language == "java":
         names.update(java_capsule_project.authoring_inputs(ROOT))
         # Server builds already emit declarations. Ship their existing scoped
