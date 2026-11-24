@@ -9,11 +9,19 @@ use latent_state::{
     },
     recovery::{
         restore::RestoreWindow,
-        snapshot::{visit_view, RequiredArtifact, SnapshotClosure, SnapshotError},
+        snapshot::{
+            visit_view, RequiredArtifact, SnapshotClosure, SnapshotError, SnapshotPayloadSink,
+            SnapshotReceipt,
+        },
         RecoveryGuard, RecoveryStatus,
     },
     tenant::{TenantCensusContribution, TenantUsage},
 };
+
+#[cfg(target_os = "linux")]
+mod payloads;
+#[cfg(target_os = "linux")]
+pub(super) use payloads::RestoredPayloads;
 
 impl RestoreInputOwners for Codecs {
     fn archive_row(&self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
@@ -139,6 +147,18 @@ impl RestoreStageOwners for Codecs {
     ) -> Result<RestoreRowDisposition, StoreError> {
         self.row(key, bytes)?;
         Ok(RestoreRowDisposition::Retain)
+    }
+    fn stage_payloads(
+        &self,
+        snapshot: &SnapshotReceipt,
+    ) -> Result<Box<dyn SnapshotPayloadSink + '_>, StoreError> {
+        #[cfg(target_os = "linux")]
+        return self.restored_payloads.start(self, snapshot);
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = snapshot;
+            Err(StoreError::UnsupportedFormat)
+        }
     }
     fn stage_controls(
         &self,

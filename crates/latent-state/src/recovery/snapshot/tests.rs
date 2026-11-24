@@ -319,23 +319,60 @@ fn linked_snapshot_requires_and_verifies_each_retained_payload_frame() {
         inspect_snapshot(&mut input, deadline(), |_, _| Ok(())).unwrap(),
         receipt
     );
-    assert_eq!(
-        visit_snapshot_rows_bounded(
-            &mut input,
-            &receipt,
-            deadline(),
-            |_, _| Ok(()),
-            |_, _| panic!("logical import must refuse linked archives"),
-            PAGE_BYTES,
-            SNAPSHOT_NAMESPACES,
-        ),
-        Err(StoreError::UnsupportedFormat)
-    );
+    #[derive(Default)]
+    struct Destination {
+        staged: Vec<u8>,
+        sealed: usize,
+    }
+    impl SnapshotPayloadSink for Destination {
+        fn start(&mut self, _: &PayloadReference) -> Result<(), StoreError> {
+            assert!(self.staged.is_empty());
+            Ok(())
+        }
+        fn write(&mut self, chunk: &[u8]) -> Result<(), StoreError> {
+            self.staged.extend_from_slice(chunk);
+            Ok(())
+        }
+        fn seal(&mut self) -> Result<(), StoreError> {
+            assert_eq!(self.staged, DATA);
+            self.sealed += 1;
+            self.staged.clear();
+            Ok(())
+        }
+    }
+    let mut destination = Destination::default();
+    visit_snapshot_rows_bounded(
+        &mut input,
+        &receipt,
+        deadline(),
+        |_, _| Ok(()),
+        |_, _| Ok(()),
+        Some(&mut destination),
+        PAGE_BYTES,
+        SNAPSHOT_NAMESPACES,
+    )
+    .unwrap();
+    assert_eq!(destination.sealed, 2);
     let first_payload = bytes
         .windows(DATA.len())
         .position(|chunk| chunk == DATA)
         .unwrap();
     bytes[first_payload] ^= 1;
+    let mut destination = Destination::default();
+    assert_eq!(
+        visit_snapshot_rows_bounded(
+            &mut Cursor::new(&bytes),
+            &receipt,
+            deadline(),
+            |_, _| Ok(()),
+            |_, _| Ok(()),
+            Some(&mut destination),
+            PAGE_BYTES,
+            SNAPSHOT_NAMESPACES,
+        ),
+        Err(StoreError::Corrupt)
+    );
+    assert_eq!(destination.sealed, 0);
     assert_eq!(
         inspect_snapshot(&mut Cursor::new(bytes), deadline(), |_, _| Ok(())),
         Err(StoreError::Corrupt)

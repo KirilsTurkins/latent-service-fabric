@@ -303,6 +303,14 @@ pub trait SnapshotPayloadSource: Send {
     ) -> Result<(), SnapshotError>;
 }
 
+/// A protected restore sink writes private staging data. It seals an object
+/// only after the parser verifies the exact length and digest of its frame.
+pub trait SnapshotPayloadSink {
+    fn start(&mut self, reference: &PayloadReference) -> Result<(), StoreError>;
+    fn write(&mut self, chunk: &[u8]) -> Result<(), StoreError>;
+    fn seal(&mut self) -> Result<(), StoreError>;
+}
+
 /// Source-engine faults are separate from operator-file, review and deadline
 /// refusal. A failed output never quarantines a healthy source database.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -638,6 +646,7 @@ pub(crate) fn inspect_snapshot_bounded_with_visit(
         &mut validate_row,
         Some(&first.manifest),
         &mut visit,
+        None,
         row_bytes,
         namespace_count,
     )?;
@@ -661,6 +670,7 @@ fn inspect_stream(
         validate_row,
         expected,
         &mut |_, _| Ok(()),
+        None,
         row_bytes,
         namespace_count,
     )
@@ -670,19 +680,16 @@ fn inspect_stream(
 /// into one bounded private destination transaction without cloning a 4 MiB
 /// value or accumulating an archive-wide batch. Final digest/readback equality
 /// is mandatory; any changed/truncated stream leaves staging unusable.
-pub(crate) fn visit_snapshot_rows_bounded(
+pub(crate) fn visit_snapshot_rows_bounded<'owner>(
     input: &mut (impl Read + Seek),
     expected: &SnapshotReceipt,
     deadline: Instant,
     mut validate_row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
     mut visit: impl FnMut(RowKey, Vec<u8>) -> Result<(), StoreError>,
+    payload_sink: Option<&mut (dyn SnapshotPayloadSink + 'owner)>,
     row_bytes: usize,
     namespace_count: usize,
 ) -> Result<(), StoreError> {
-    // The logical importer has no protected destination blob owner.
-    if expected.manifest.payloads.is_some() {
-        return Err(StoreError::UnsupportedFormat);
-    }
     input
         .seek(SeekFrom::Start(0))
         .map_err(|_| StoreError::Unavailable)?;
@@ -692,6 +699,7 @@ pub(crate) fn visit_snapshot_rows_bounded(
         &mut validate_row,
         Some(&expected.manifest),
         &mut visit,
+        payload_sink,
         row_bytes,
         namespace_count,
     )?;
@@ -701,12 +709,13 @@ pub(crate) fn visit_snapshot_rows_bounded(
     Ok(())
 }
 
-fn inspect_stream_with_visit(
+fn inspect_stream_with_visit<'owner>(
     input: &mut impl Read,
     deadline: Instant,
     validate_row: &mut impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
     expected: Option<&SnapshotManifest>,
     visit: &mut impl FnMut(RowKey, Vec<u8>) -> Result<(), StoreError>,
+    mut payload_sink: Option<&mut (dyn SnapshotPayloadSink + 'owner)>,
     row_bytes: usize,
     namespace_count: usize,
 ) -> Result<SnapshotReceipt, StoreError> {
@@ -797,7 +806,7 @@ fn inspect_stream_with_visit(
                 return Err(StoreError::UnsupportedFormat);
             }
             payloads.observe(&reference)?;
-            reader.read_payload(&reference)?;
+            reader.read_payload(&reference, &mut payload_sink)?;
         }
         previous = Some((family, key.key.clone()));
         visit(key, value)?;
@@ -1059,9 +1068,16 @@ impl<R: Read> SnapshotReader<'_, R> {
         Ok(bytes)
     }
 
-    fn read_payload(&mut self, reference: &PayloadReference) -> Result<(), StoreError> {
+    fn read_payload<'owner>(
+        &mut self,
+        reference: &PayloadReference,
+        sink: &mut Option<&mut (dyn SnapshotPayloadSink + 'owner)>,
+    ) -> Result<(), StoreError> {
         if self.read(1)? != [2] {
             return Err(StoreError::Corrupt);
+        }
+        if let Some(sink) = sink.as_mut() {
+            sink.start(reference)?;
         }
         let mut digest = Sha256::new();
         let mut remaining = reference.payload.size;
@@ -1071,11 +1087,17 @@ impl<R: Read> SnapshotReader<'_, R> {
                 .map_err(|_| StoreError::Capacity)?;
             let chunk = &mut scratch[..count];
             self.read_exact(chunk)?;
-            digest.update(chunk);
+            digest.update(&*chunk);
+            if let Some(sink) = sink.as_mut() {
+                sink.write(chunk)?;
+            }
             remaining -= count as u64;
         }
         if <[u8; 32]>::from(digest.finalize()) != reference.payload.digest {
             return Err(StoreError::Corrupt);
+        }
+        if let Some(sink) = sink.as_mut() {
+            sink.seal()?;
         }
         Ok(())
     }

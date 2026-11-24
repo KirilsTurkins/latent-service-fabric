@@ -28,12 +28,37 @@ pub(super) struct Codecs {
     pub identity: StoreIdentity,
     pub quotas: Vec<TenantQuota>,
     pub payloads: Option<super::super::store::InventoryPayloads>,
+    #[cfg(target_os = "linux")]
+    pub restored_payloads: super::restore::RestoredPayloads,
     pub checkpoint: ExternalCheckpoint,
     pub original: Arc<NativeReservation>,
     pub _metadata: NativeBufferPermit,
 }
 
 impl Codecs {
+    #[cfg(target_os = "linux")]
+    pub fn payload_destination(&self) -> Result<std::path::PathBuf, StoreError> {
+        let destination = match &self.action {
+            Action::InspectRestore {
+                destination_root, ..
+            }
+            | Action::Restore {
+                destination_root, ..
+            } => destination_root,
+            _ => return Err(StoreError::Invalid),
+        };
+        let (_, provider) = self
+            .payloads
+            .as_ref()
+            .ok_or(StoreError::UnsupportedFormat)?;
+        let parent = destination.parent().ok_or(StoreError::Invalid)?;
+        let root = parent.join(format!("provider-blobs-{}", provider.id));
+        if root == *destination || root.as_os_str().len() > 4096 {
+            return Err(StoreError::Conflict);
+        }
+        Ok(root)
+    }
+
     pub fn identities(catalog: &Catalog, actor: &str) -> Result<([u8; 32], [u8; 32]), StoreError> {
         let mut runtime = Sha256::new();
         runtime.update(b"latent.current.installed-offline-review.v2\0");
@@ -148,7 +173,17 @@ impl Codecs {
             .action
             .restore_destination_identity(&self.identity)
             .map_err(|_| StoreError::Invalid)?;
-        super::super::validation::validate(view, &identity, &self.quotas, &self.original)?;
+        #[cfg(target_os = "linux")]
+        let payloads = self.restored_payloads.for_view(self, view)?;
+        #[cfg(not(target_os = "linux"))]
+        let payloads = None;
+        super::super::validation::validate_offline_inventory(
+            view,
+            &identity,
+            &self.quotas,
+            &self.original,
+            payloads.as_ref(),
+        )?;
         let owner = DispatchCatalog::checkpoint(view)?.ok_or(StoreError::Corrupt)?;
         if owner.0 < self.checkpoint.dispatch_owner_epoch()
             || owner.1 < self.checkpoint.clock_floor_millis()
@@ -170,12 +205,15 @@ impl Codecs {
     }
     pub fn row(&self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
         self.check()?;
-        // Only export has the original verified payload source. Restore and
-        // migration need their own protected destination before accepting it.
-        if matches!(self.action, Action::Snapshot { .. }) {
+        if matches!(
+            self.action,
+            Action::Snapshot { .. } | Action::InspectRestore { .. } | Action::Restore { .. }
+        ) {
             use latent_state::payload_references;
             if payload_references::owns_row(key) {
-                return if payload_references::row_tenant(key, bytes)? == self.namespace.tenant.0 {
+                return if self.payloads.is_some()
+                    && payload_references::row_tenant(key, bytes)? == self.namespace.tenant.0
+                {
                     Ok(())
                 } else {
                     Err(StoreError::Conflict)

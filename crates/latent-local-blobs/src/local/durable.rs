@@ -10,7 +10,9 @@ use latent_state::{
     embedded::{EmbeddedStore, ReadView, RowKey, StoreBinding, StoreError},
     payload_references::{
         self, physical_owner_count, required_physical_page, LocalPayloadIdentity,
+        MAX_REFERENCE_BYTES,
     },
+    recovery::{RecoveryGuard, RecoveryStatus},
     store_identity::StoreIdentity,
 };
 use serde::{Deserialize, Serialize};
@@ -25,17 +27,32 @@ pub(super) struct ModeRecord {
     version: u8,
     store_identity: String,
     configuration_digest: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    archived_configuration_digest: Option<String>,
 }
 impl ModeRecord {
     pub(super) fn validate(&self) -> Result<()> {
-        if self.version != 1
-            || StoreIdentity::new(self.store_identity.clone()).is_err()
-            || !self.configuration_digest.starts_with("sha256:")
-            || !model::hex(&self.configuration_digest[7..], 64)
+        if !matches!(
+            (self.version, self.archived_configuration_digest.as_ref()),
+            (1, None) | (2, Some(_))
+        ) || StoreIdentity::new(self.store_identity.clone()).is_err()
+            || decode_digest(&self.configuration_digest).is_err()
+            || self
+                .archived_configuration_digest
+                .as_ref()
+                .is_some_and(|digest| decode_digest(digest).is_err())
         {
             return Err(LocalBlobError::Corrupt);
         }
         Ok(())
+    }
+
+    fn retained_configuration(&self) -> Result<[u8; 32]> {
+        decode_digest(
+            self.archived_configuration_digest
+                .as_deref()
+                .unwrap_or(&self.configuration_digest),
+        )
     }
 }
 
@@ -149,7 +166,7 @@ impl LocalReferenceAudit {
                 tenant: reference.tenant.0.clone(),
                 provider: "local-retention-inventory".into(),
                 provider_epoch: 1,
-                provider_configuration: decode_digest(&mode.configuration_digest)?,
+                provider_configuration: mode.retained_configuration()?,
                 blob_namespace: store.namespace().into(),
                 digest: decode_digest(&reference.digest.0)?,
                 size: reference.size_bytes,
@@ -327,8 +344,7 @@ impl LocalBlobStore {
             .map_err(storage)?
             .ok_or(LocalBlobError::Corrupt)?;
         if identity.as_str() != mode.store_identity
-            || reference.payload.provider_configuration
-                != decode_digest(&mode.configuration_digest)?
+            || reference.payload.provider_configuration != mode.retained_configuration()?
             || reference.payload.blob_namespace != self.namespace()
             || self.configuration_digest()? != mode.configuration_digest
         {
@@ -387,7 +403,38 @@ impl LocalBlobStore {
     /// transition and finish semantic startup validation before publication.
     /// Existing readers, handles or another owner prevent the transition.
     pub fn enable_durable_for_view(owner: &mut Arc<Self>, view: &ReadView) -> Result<()> {
-        Self::enable_durable_for_view_inner(owner, view, || {})
+        Self::enable_durable_for_view_inner(owner, view, None, || {})
+    }
+
+    /// Bind a freshly staged provider to an imported store. Preserve the
+    /// observed archive's reference lineage and separately fence the actual
+    /// destination inode. The caller must verify the complete imported
+    /// provider and logical closure before the staged store can be sealed.
+    pub fn enable_durable_for_restored_view(
+        owner: &mut Arc<Self>,
+        view: &ReadView,
+        snapshot_digest: [u8; 32],
+    ) -> Result<()> {
+        let guard = RecoveryGuard::capture(view)
+            .map_err(storage)?
+            .ok_or(LocalBlobError::PermissionDenied)?;
+        if guard.status() != RecoveryStatus::Staging || guard.snapshot_digest() != snapshot_digest {
+            return Err(LocalBlobError::PermissionDenied);
+        }
+        if owner.inner.durable.is_some() {
+            return Err(LocalBlobError::Busy);
+        }
+        let page = payload_references::required_owner_page(view, None, 1, MAX_REFERENCE_BYTES)
+            .map_err(storage)?;
+        let reference = page.references.first().ok_or(LocalBlobError::Invalid)?;
+        if reference.payload.blob_namespace != owner.namespace() {
+            return Err(LocalBlobError::PermissionDenied);
+        }
+        let archived = format!(
+            "sha256:{:x}",
+            latent_core::digest::HexDigest(reference.payload.provider_configuration,)
+        );
+        Self::enable_durable_for_view_inner(owner, view, Some(archived), || {})
     }
 
     #[cfg(test)]
@@ -396,12 +443,13 @@ impl LocalBlobStore {
         view: &ReadView,
         after_publish: impl FnOnce(),
     ) -> Result<()> {
-        Self::enable_durable_for_view_inner(owner, view, after_publish)
+        Self::enable_durable_for_view_inner(owner, view, None, after_publish)
     }
 
     fn enable_durable_for_view_inner(
         owner: &mut Arc<Self>,
         view: &ReadView,
+        archived_configuration_digest: Option<String>,
         after_publish: impl FnOnce(),
     ) -> Result<()> {
         owner.inner.check()?;
@@ -416,9 +464,14 @@ impl LocalBlobStore {
             .map_err(storage)?
             .ok_or(LocalBlobError::Invalid)?;
         let mode = ModeRecord {
-            version: 1,
+            version: if archived_configuration_digest.is_some() {
+                2
+            } else {
+                1
+            },
             store_identity: identity.as_str().into(),
             configuration_digest: owner.configuration_digest()?,
+            archived_configuration_digest,
         };
         mode.validate()?;
         let encoded = record(&mode)?;
@@ -491,7 +544,7 @@ impl LocalBlobStore {
         self.inner.check()?;
         Ok(LocalDurablePin {
             reader,
-            configuration: decode_digest(&self.configuration_digest()?)?,
+            configuration: mode.retained_configuration()?,
             namespace: self.namespace().into(),
             store_identity: mode.store_identity.clone(),
             store_binding: store_binding.clone(),
@@ -551,7 +604,7 @@ impl LocalBlobStore {
             tenant: scope.0.clone(),
             provider: "local-retention-inventory".into(),
             provider_epoch: 1,
-            provider_configuration: decode_digest(&mode.configuration_digest)?,
+            provider_configuration: mode.retained_configuration()?,
             blob_namespace: self.namespace().into(),
             digest: decode_digest(&reference.digest.0)?,
             size: reference.size_bytes,

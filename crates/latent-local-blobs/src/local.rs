@@ -136,7 +136,13 @@ impl LocalBlobStore {
     ) -> Result<Arc<Self>> {
         limits.validate()?;
         model::text(namespace)?;
-        recovery::open(root, namespace, limits, checkpoint, true)
+        recovery::open(
+            root,
+            namespace,
+            limits,
+            checkpoint,
+            recovery::OpenMode::Mount,
+        )
     }
 
     /// Reopen a completely installed owner during protected offline recovery.
@@ -149,7 +155,32 @@ impl LocalBlobStore {
     ) -> Result<Arc<Self>> {
         limits.validate()?;
         model::text(namespace)?;
-        recovery::open(root, namespace, limits, checkpoint, false)
+        recovery::open(
+            root,
+            namespace,
+            limits,
+            checkpoint,
+            recovery::OpenMode::Existing,
+        )
+    }
+
+    /// Create the provider under a fresh protected destination only. Existing
+    /// files, including an interrupted prior attempt, are never reused.
+    pub fn create_restore_destination(
+        root: &Path,
+        namespace: &str,
+        limits: LocalBlobLimits,
+        checkpoint: &dyn Fn() -> Result<()>,
+    ) -> Result<Arc<Self>> {
+        limits.validate()?;
+        model::text(namespace)?;
+        recovery::open(
+            root,
+            namespace,
+            limits,
+            checkpoint,
+            recovery::OpenMode::Restore,
+        )
     }
     #[must_use]
     pub fn limits(&self) -> LocalBlobLimits {

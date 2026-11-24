@@ -118,6 +118,8 @@ impl Fixture {
             identity: settings.store_identity.clone(),
             quotas,
             payloads: None,
+            #[cfg(target_os = "linux")]
+            restored_payloads: Default::default(),
             checkpoint,
             original,
             _metadata: metadata,

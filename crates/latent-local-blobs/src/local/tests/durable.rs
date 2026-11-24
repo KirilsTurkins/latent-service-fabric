@@ -988,6 +988,89 @@ fn required_reference_verification_refuses_owner_closed_at_final_checkpoint() {
 }
 
 #[test]
+fn restored_provider_retains_original_references_under_its_new_physical_owner() {
+    use latent_state::recovery::RecoveryGuard;
+
+    let source_root = temporary_root();
+    let source_blobs = temporary_root();
+    let source = database(source_root.path(), true, "source-store");
+    let original =
+        LocalBlobStore::open_durable(source_blobs.path(), "private", limits(), &source).unwrap();
+    let body = b"original data";
+    let source_blob = put(&original, body);
+    let pin = original
+        .capture_durable_reference(&scope(), &source_blob, &|| Ok(()))
+        .unwrap();
+    let required = reference(&pin, PayloadOwnerKind::Effect, 13, "local", 1);
+    let original_configuration = required.payload.provider_configuration;
+
+    let target_root = temporary_root();
+    let target_blobs = temporary_root();
+    let target = database(target_root.path(), true, "new-destination-store");
+    let mut copied = LocalBlobStore::create_restore_destination(
+        target_blobs.path(),
+        "private",
+        limits(),
+        &|| Ok(()),
+    )
+    .unwrap();
+    let copied_blob = put(&copied, body);
+    assert_ne!(
+        copied.configuration_digest().unwrap(),
+        original.configuration_digest().unwrap()
+    );
+    update(&target, &[(None, Some(required.clone()))]);
+    let guard = RecoveryGuard::staging([1; 32], [2; 32], [3; 32]).unwrap();
+    target.apply(guard.prepare_staging().unwrap()).unwrap();
+    let view = target.snapshot().unwrap();
+    assert_eq!(
+        LocalBlobStore::enable_durable_for_restored_view(&mut copied, &view, [3; 32]),
+        Err(LocalBlobError::PermissionDenied)
+    );
+    LocalBlobStore::enable_durable_for_restored_view(&mut copied, &view, [2; 32]).unwrap();
+    let key = required.owner_key().unwrap();
+    let encoded = required.encode().unwrap();
+    copied
+        .verify_required_reference(&view, &key, &encoded, &|| Ok(()))
+        .unwrap();
+    drop(copied);
+
+    let mut reopened = LocalBlobStore::reopen_with_checkpoint(
+        target_blobs.path(),
+        "private",
+        limits(),
+        &|| Ok(()),
+    )
+    .unwrap();
+    assert!(LocalBlobStore::bind_existing_durable_for_view(&mut reopened, &view).unwrap());
+    reopened
+        .verify_required_reference(&view, &key, &encoded, &|| Ok(()))
+        .unwrap();
+    let pin = reopened
+        .capture_durable_reference(&scope(), &copied_blob, &|| Ok(()))
+        .unwrap();
+    assert_eq!(
+        pin.identity("local", 1).unwrap().provider_configuration,
+        original_configuration
+    );
+    drop((view, pin));
+    assert_eq!(
+        reopened.release_durable_reference(&scope(), &copied_blob, &target, &|| Ok(())),
+        Err(LocalBlobError::Busy)
+    );
+    drop(reopened);
+    assert!(matches!(
+        LocalBlobStore::create_restore_destination(
+            target_blobs.path(),
+            "private",
+            limits(),
+            &|| Ok(())
+        ),
+        Err(LocalBlobError::PermissionDenied)
+    ));
+}
+
+#[test]
 fn empty_recovery_page_rechecks_view_after_final_checkpoint() {
     let state_root = temporary_root();
     let blob_root = temporary_root();

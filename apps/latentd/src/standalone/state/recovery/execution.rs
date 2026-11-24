@@ -222,6 +222,21 @@ pub(super) async fn execute(
                 }
             };
             let inbox_replay = input.inbox_custody().zip(input.inbox_history());
+            #[cfg(target_os = "linux")]
+            let payload_destination = match input
+                .snapshot()
+                .manifest
+                .payloads
+                .map(|_| codecs.payload_destination())
+                .transpose()
+            {
+                Ok(root) => root,
+                Err(error) => {
+                    drop(input);
+                    retire(snapshot, &codecs).await;
+                    return Err(storage(error));
+                }
+            };
             if let Action::Restore {
                 window_acknowledgement,
                 ..
@@ -260,10 +275,18 @@ pub(super) async fn execute(
                         "checkpoint":receipt.checkpoint().encode(), "importedRows":receipt.imported_rows().to_string(),
                         "resourcePhysicallyRetired":retired, "pausedForReconciliation":true});
                 report_inbox_replay(&mut value, inbox_replay);
+                #[cfg(target_os = "linux")]
+                if let Some(root) = payload_destination {
+                    value["destinationPayloadRoot"] = serde_json::json!(root);
+                }
                 Ok(value)
             } else {
                 let mut value = serde_json::json!({"action":"inspect-restore", "snapshot":snapshot_value(input.snapshot()), "windowDigest":digest(input.window().digest().map_err(storage)?), "window":input.window()});
                 report_inbox_replay(&mut value, inbox_replay);
+                #[cfg(target_os = "linux")]
+                if let Some(root) = payload_destination {
+                    value["destinationPayloadRoot"] = serde_json::json!(root);
+                }
                 drop(input);
                 let retired = retire(snapshot, &codecs).await;
                 Ok(with_retirement(value, retired))

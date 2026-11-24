@@ -11,18 +11,37 @@ use super::{
 // on the same exact, versioned bytes; malformed markers never authorize removal.
 pub(super) const RELEASE_MARKER: &[u8] = b"LSF blob reference released v1\n";
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum OpenMode {
+    Mount,
+    Existing,
+    Restore,
+}
+
 pub(super) fn open(
     path: &Path,
     namespace: &str,
     limits: LocalBlobLimits,
     checkpoint: &dyn Fn() -> Result<()>,
-    create: bool,
+    mode: OpenMode,
 ) -> Result<Arc<LocalBlobStore>> {
+    let create = mode != OpenMode::Existing;
     checkpoint()?;
     let root = Directory::root(path, create)?;
-    let lock = root.open_file("LOCK", true, create && !root.present("LOCK")?, 0)?;
+    if mode == OpenMode::Restore {
+        let filesystem =
+            rustix::fs::fstatfs(&root.file).map_err(|_| LocalBlobError::Unavailable)?;
+        if filesystem.f_type != 0xef53 || !root.names(5)?.is_empty() {
+            return Err(LocalBlobError::PermissionDenied);
+        }
+    }
+    let new_lock = mode == OpenMode::Restore || create && !root.present("LOCK")?;
+    let lock = root.open_file("LOCK", true, new_lock, 0)?;
     lock.try_lock().map_err(|_| LocalBlobError::Busy)?;
     let names = root.names(5)?;
+    if mode == OpenMode::Restore && names != ["LOCK"] {
+        return Err(LocalBlobError::PermissionDenied);
+    }
     if names.iter().any(|n| {
         !["LOCK", "OWNER.json", "objects", "staging", "DURABLE.json"].contains(&n.as_str())
     }) {

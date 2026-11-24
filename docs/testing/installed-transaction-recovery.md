@@ -76,8 +76,16 @@ Snapshot export carries linked local payloads in a protected v3 archive.
 exported for them. The archive places each byte stream after its exact owner
 row, and readback checks its length and digest. The configured snapshot file
 limit includes these bytes. Inline-only snapshots retain the v2 format.
-Keep the original provider directory and state until a restore can be staged
-and verified. Restore and migration currently require an inline-only archive.
+To restore a linked archive, choose a fresh state root inside a separate
+destination data directory on ext4. Restore stages the local blob provider as
+the sibling `provider-blobs-PROVIDER_ID`. Both restore actions report that path
+as `destinationPayloadRoot`. The original provider must still be configured
+for the source review. The destination uses its own directory identity and
+keeps the archived content and owner identities. An interrupted restore leaves
+the destination paused and requires fresh destination roots for another
+attempt. Adopt the verified destination state, data directory and checkpoint
+together, then review before enabling ingress. Schema migration currently
+requires an inline-only archive.
 
 When the archive contains anchored inbox sources, restore inspection and
 staging report `inboxReplay` with the exact source inventory generation and

@@ -364,6 +364,8 @@ impl Fixture {
             identity,
             quotas: Vec::new(),
             payloads: None,
+            #[cfg(target_os = "linux")]
+            restored_payloads: Default::default(),
             checkpoint,
             original,
             _metadata: metadata,

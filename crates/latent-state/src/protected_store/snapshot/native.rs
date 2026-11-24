@@ -7,7 +7,9 @@ use latent_core::native_capacity::NativeReservation;
 use super::{ProtectedSnapshotConfig, ProtectedSnapshotProfile};
 use crate::embedded::{RowKey, StoreError};
 use crate::protected_store::physical::PhysicalStore;
-use crate::recovery::snapshot::{SnapshotError, SnapshotReceipt, SNAPSHOT_FILE_BYTES};
+use crate::recovery::snapshot::{
+    SnapshotError, SnapshotPayloadSink, SnapshotReceipt, SNAPSHOT_FILE_BYTES,
+};
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 use latent_protected_files::{ProtectedMutableFile, ProtectedRoot};
@@ -150,11 +152,12 @@ impl SnapshotFile {
             self.profile.namespaces(),
         )
     }
-    pub(in crate::protected_store) fn visit_rows(
+    pub(in crate::protected_store) fn visit_rows<'owner>(
         &self,
         expected: &SnapshotReceipt,
         row: impl FnMut(&RowKey, &[u8]) -> Result<(), StoreError>,
         visit: impl FnMut(RowKey, Vec<u8>) -> Result<(), StoreError>,
+        payloads: Option<&mut (dyn SnapshotPayloadSink + 'owner)>,
     ) -> Result<(), StoreError> {
         crate::recovery::snapshot::visit_snapshot_rows_bounded(
             &mut self.cursor(),
@@ -162,6 +165,7 @@ impl SnapshotFile {
             self.deadline(),
             row,
             visit,
+            payloads,
             self.profile.row_bytes(),
             self.profile.namespaces(),
         )

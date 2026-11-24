@@ -312,6 +312,8 @@ async fn prepare(
                         identity: configuration.store_identity.clone(),
                         quotas: super::super::validation::quotas(&configuration),
                         payloads,
+                        #[cfg(target_os = "linux")]
+                        restored_payloads: Default::default(),
                         checkpoint: floor,
                         original,
                         _metadata: metadata,

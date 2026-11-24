@@ -16,7 +16,7 @@ use crate::{
     recovery::{
         guard_key,
         restore::RestoreWindow,
-        snapshot::{RequiredArtifact, SnapshotError, SnapshotReceipt},
+        snapshot::{RequiredArtifact, SnapshotError, SnapshotPayloadSink, SnapshotReceipt},
         RecoveryGuard,
     },
     store_identity::{ExternalCheckpoint, StoreIdentity},
@@ -134,6 +134,12 @@ pub trait RestoreStageOwners: Send + Sync + 'static {
         key: &RowKey,
         bytes: &[u8],
     ) -> Result<RestoreRowDisposition, StoreError>;
+    fn stage_payloads(
+        &self,
+        _snapshot: &SnapshotReceipt,
+    ) -> Result<Box<dyn SnapshotPayloadSink + '_>, StoreError> {
+        Err(StoreError::UnsupportedFormat)
+    }
     fn stage_controls(
         &self,
         current: &ReadView,
@@ -172,6 +178,7 @@ pub trait RestoreStageOwners: Send + Sync + 'static {
 pub enum RestoreWriteKind {
     InitializeIdentity,
     ImportRow,
+    ImportPayloads,
     InstallControls,
     SealCheckpoint,
 }
@@ -673,6 +680,22 @@ fn import_rows(
         )
         .map_err(|error| RestoreStageError::Review(protected_error(error)))?;
     let mut imported_rows = 0;
+    let mut payloads = if review.snapshot.manifest.payloads.is_some() {
+        accept(
+            file,
+            owners,
+            review.operation_digest,
+            RestoreWriteKind::ImportPayloads,
+        )
+        .map_err(RestoreStageError::Review)?;
+        Some(
+            owners
+                .stage_payloads(&review.snapshot)
+                .map_err(RestoreStageError::Review)?,
+        )
+    } else {
+        None
+    };
     file.visit_rows(
         &review.snapshot,
         |key, bytes| {
@@ -707,6 +730,7 @@ fn import_rows(
             }
             Ok(())
         },
+        payloads.as_deref_mut(),
     )
     .map_err(RestoreStageError::Review)?;
     Ok(imported_rows)
@@ -985,6 +1009,7 @@ fn verify_import(
             }
             Ok(())
         },
+        None,
     )?;
     for namespace in window.namespaces() {
         let history = namespace.proposed_history()?;
