@@ -45,20 +45,21 @@ python tools/stateful_reference_project.py --language dotnet --draft-id alice --
 ```
 
 These commands create editable sources without selecting an HTTP provider.
-To capture the installed adapter requirements, add
-`--http-profile "qualified-http-v1:<configured endpoint digest>"` at creation.
-Use the actual configured adapter's profile; a project creator cannot invent it.
-The closed signed document selects `qualified-http-effect-v1`, operation `http`
-and `http-body-value-v1`, with a 22,528-byte response allowance. Without the
-profile, no obsolete put-once descriptor is emitted. Staging and dispatch still
-need independently installed current rules and grants.
+For a deployment that accepts edits, select both installed provider profiles
+at creation with `--http-profile "qualified-http-v1:<configured endpoint digest>"`
+and `--event-profile "js-window-v1:<configured event digest>"`. The package
+carries each exact requirements document with the same signed transaction
+companion. The node's strict edit operation installs `deferredHttp` and
+`deferredEvent` with their own current staging and dispatch policies. Fresh
+query operations need neither provider setting.
 
 The captured SDK and original template lock remain unchanged. The ordinary
 language build captures the edited application source and binding inputs.
 `order-draft-source.json` identifies the selected source/WIT/schema; the
 transaction companion declares only strict `edit` and fresh read-only `query`.
-Application state allowances narrow to 4 KiB reads, 1 KiB writes and two intents;
-the selected language's existing compiler/runtime/watchdog limits remain intact.
+The app budgets 1 MiB for the host's bounded value reads, 64 KiB of write and
+intent accounting, and two intents.
+The selected language keeps its existing compiler, runtime and watchdog limits.
 
 The shared browser client uses the existing `transaction-http-v1` routes,
 `idempotency-key`, explicit abort-fence retry and minimum-view query headers.

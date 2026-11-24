@@ -71,7 +71,7 @@ def inbox_binding(source: dict, command: dict, namespace: str, incarnation: int,
         "budget": dict(budget),
         "transaction": {"namespace": namespace, "incarnation": incarnation, "entity": entity,
                         "processingScope": source["processingScope"], "qualification": dict(qualification),
-                        "duplicateWindowMillis": window, "stateReadBytes": 4096, "stateWriteBytes": 1024,
+                        "duplicateWindowMillis": window, "stateReadBytes": 1024 * 1024, "stateWriteBytes": 64 * 1024,
                         "effectCount": 2},
     }
 

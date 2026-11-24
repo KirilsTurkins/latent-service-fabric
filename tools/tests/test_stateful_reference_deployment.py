@@ -92,7 +92,7 @@ class StatefulReferenceDeployment(unittest.TestCase):
         self.assertEqual(inbox["transaction"], {
             "namespace": "order-drafts-alice", "incarnation": 8, "entity": "alice",
             "processingScope": "alice-edits", "qualification": source["qualification"],
-            "duplicateWindowMillis": 30_000, "stateReadBytes": 4096, "stateWriteBytes": 1024, "effectCount": 2,
+            "duplicateWindowMillis": 30_000, "stateReadBytes": 1024 * 1024, "stateWriteBytes": 64 * 1024, "effectCount": 2,
         })
         with self.assertRaisesRegex(ValueError, "closed"):
             self.derive(inbox_source=dict(source, entity="bob"))

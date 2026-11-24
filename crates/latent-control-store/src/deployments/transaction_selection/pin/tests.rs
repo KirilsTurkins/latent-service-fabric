@@ -529,6 +529,10 @@ fn installed_selection_checks_actual_tenant_namespace_entity_incarnation_revisio
         )
         .unwrap();
     installed.check_resolved(&resolved, &publication).unwrap();
+    // A confirmed HTTP trigger update advances only the control transaction,
+    // sharing the same compiled deployment routes with the previous catalog.
+    fixture.store.current.write().unwrap().transaction += 1;
+    installed.check_resolved(&resolved, &publication).unwrap();
     installed
         .check_selectors("orders", 1, Some("entity"), "echo")
         .unwrap();
