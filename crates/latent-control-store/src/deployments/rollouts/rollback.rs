@@ -66,6 +66,7 @@ impl DirectoryDeploymentRepository {
             &row.status.tenant,
             &row.status.candidate,
             &row.status.base,
+            self.config.manifest_profile,
         )
         .await?;
         let generation = next_generation(previous.routes.generation)?;

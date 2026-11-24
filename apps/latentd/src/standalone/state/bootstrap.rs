@@ -26,6 +26,7 @@ pub(in crate::standalone) struct StateBootstrap {
     memory: Option<ProtectedStoreStartupMemory>,
     configuration: [u8; 32],
     original: Arc<NativeReservation>,
+    pub(in crate::standalone) recovery_only: bool,
     pub(super) opened_store: Option<Arc<ProtectedStoreOwner>>,
     #[cfg(target_os = "linux")]
     pub(super) local_payload_selection: Option<Box<super::store::LocalPayloadSelection>>,
@@ -120,6 +121,7 @@ impl StateBootstrap {
             memory: Some(memory),
             configuration,
             original,
+            recovery_only: false,
             opened_store: None,
             #[cfg(target_os = "linux")]
             local_payload_selection: None,

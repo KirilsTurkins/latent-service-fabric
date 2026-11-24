@@ -85,6 +85,12 @@ Generic resume refuses a retained current migration and cannot replace its
 protected checkpoint and activation owner. Old v1 recipes and bytes retain
 their own approval boundary.
 
+Namespace inspection also checks required local payloads when the protected
+configuration selects the original durable blob installation. Recovery reopens
+the existing store and blob owner with the configured mode and verifies the
+retained references and bytes. Missing, corrupt or foreign payloads refuse the
+inspection. Snapshot, restore and migration still require an inline-only store.
+
 When the archive contains anchored inbox sources, restore inspection and
 staging report `inboxReplay` with the exact source inventory generation and
 digest and status `reconciliation-required`. It reports the number of terminal
