@@ -107,6 +107,15 @@ confer no namespace, result-read or effect grants. Their policy identities,
 provider installations and current-user access must be applied independently
 through the maintained operator workflow.
 
+Deploy the signed frontend as `stateful-reference` with the approved Angular
+renderer limits and one outbound request. Use the ordinary two control workers
+so the covered clock can renew during package verification. Keep two execution
+cells available so a renderer can fetch a fresh query through the same listener.
+Pass `--renderer-selection ../renderer-selection.json` to the deployment helper
+with the frontend's current `publication`, `revision` and `deploymentGeneration`.
+Apply the emitted exact GET and HEAD document triggers alongside the draft API
+triggers.
+
 For an incoming edit, pass `--inbox-binding ../protected-inbox-binding.json` to
 the deployment helper and install its `transactionalTrigger` in the node's
 protected `TriggerConfig.bindings`. Supply the trigger ID, principal subject,

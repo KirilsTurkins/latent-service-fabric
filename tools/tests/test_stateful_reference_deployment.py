@@ -66,6 +66,21 @@ class StatefulReferenceDeployment(unittest.TestCase):
                               result_policy="alice-results", state_policies=["alice-state"])
         self.validator.validate(self.derive(incarnation="18446744073709551615")["triggers"][0])
 
+    def test_renderer_documents_match_the_pinned_publication_and_have_exact_paths(self):
+        selection = {key: self.published[key] for key in ("publication", "revision", "deploymentGeneration")}
+        routes = [trigger for entity in deployment.ENTITIES
+                  for trigger in deployment.renderer_triggers(selection, entity)]
+        for trigger in routes:
+            self.validator.validate(trigger)
+            self.assertEqual(trigger["spec"]["target"]["publication"], selection["publication"])
+            self.assertEqual(trigger["spec"]["target"]["contract"], "latent:web/application@0.1.0")
+            self.assertEqual(trigger["spec"]["configuration"]["pathMatch"], "exact")
+        self.assertEqual([(route["spec"]["configuration"]["path"], route["spec"]["configuration"]["method"])
+                          for route in routes],
+                         [(f"/drafts/{entity}", method) for entity in deployment.ENTITIES for method in ("GET", "HEAD")])
+        with self.assertRaises(ValueError):
+            deployment.renderer_triggers(dict(selection, deploymentGeneration=True), "alice")
+
     def test_inbox_source_uses_the_same_fixed_edit_target_and_rejects_an_override(self):
         source = {
             "id": "alice-order-input", "principalSubject": "alice-order-producer",
