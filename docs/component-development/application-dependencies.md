@@ -103,6 +103,15 @@ library on the matching node. Two additional invocations were refused before
 guest entry, and the peer closed every connection.
 [Packaged commands, build measurements and signed results](../testing/evidence/dotnet-installed-refit-approval-2026-11-24.json)
 
+The managed compiler now records a stable logical path for sources in its
+private build copy. Two subsequent cold workspaces used the installed CLI to
+build the same eight-package graph with the original Refit generator. Their
+NativeAOT modules and 10,813,091-byte components were byte-identical, and
+their package digests matched. Both builds stayed below the 4 GiB attempt
+limit. The second package passed 20 signed Flurl, Refit and private-library
+calls and two pre-entry grant refusals on the matching node.
+[Independent builds and signed results](../testing/evidence/dotnet-packaged-refit-reproducibility-2026-11-24.json)
+
 A captured Cargo build tool, Java annotation processor or NuGet source generator
 can require explicit approval. In a project created from a matching installed
 toolkit, first run the ordinary trusted build. If it stops at
