@@ -50,10 +50,7 @@ impl TransactionAssetProfile {
     }
 }
 pub(crate) const DOCUMENT_BYTES: usize = 256 * 1024;
-pub(crate) const COMPANION_BYTES: usize = 128 * 1024;
 pub(crate) const CONTROL_METADATA_BYTES: usize = 4 * 1024 * 1024;
-pub(crate) const COMPANION_MEDIA_TYPE: &str = "application/vnd.latent.transaction-binding.v1+json";
-pub(crate) const COMPANION_PATH: &str = "transaction-binding.json";
 
 pub type SelectedTransactionAssetParts = (
     VerifiedArtifactMetadata,

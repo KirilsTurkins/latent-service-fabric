@@ -1,7 +1,7 @@
 //! Semantic rollout transitions committed through the deployment publication.
 pub(crate) mod canary;
 mod commit;
-mod comparison;
+pub(super) mod comparison;
 mod prepare;
 mod reads;
 mod rollback;
@@ -17,6 +17,7 @@ pub struct PreparedRolloutMutation {
     owner: Arc<AtomicBool>,
     previous: PublicationView,
     next_routes: Arc<CompiledCatalog>,
+    schemas: Option<super::PreparedSchemas>,
     next_table: Arc<table::RolloutTable>,
     bytes: Vec<u8>,
     receipt: RolloutOperationReceipt,
