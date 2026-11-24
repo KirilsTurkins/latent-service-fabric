@@ -52,7 +52,7 @@ func TestPhase4FreshQueryAfterCommitAgainstRealNode(t *testing.T) {
 			t.Fatal("invalid expected view")
 		}
 	}
-	key, wall := "go-sdk-fresh-query", uint64(120000)
+	key, wall := "go-sdk-fresh-query", phase4FixtureWallLimit(t)
 	current := tx.CurrentProfile()
 	ns := tx.NamespaceSelector{Tenant: tenant, Namespace: rejectionField(t, "LSF_401_NAMESPACE"), Incarnation: rejectionField(t, "LSF_401_INCARNATION")}
 	query := tx.QueryRequest{Profile: &current, Namespace: &ns, MinimumViewVersion: &minimum, Invocation: &profile.InvokeRequest{

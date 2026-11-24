@@ -42,7 +42,7 @@ func TestPhase4CommandAgainstRealNode(t *testing.T) {
 			t.Errorf("client retirement: %v", err)
 		}
 	}()
-	current, activation, wall := tx.CurrentProfile(), "go-sdk-direct-command", uint64(120000)
+	current, activation, wall := tx.CurrentProfile(), "go-sdk-direct-command", phase4FixtureWallLimit(t)
 	request := tx.InvokeCommandRequest{Profile: &current, Command: &tx.CommandSelector{Namespace: &tx.NamespaceSelector{Tenant: tenant, Namespace: required("LSF_401_NAMESPACE"), Incarnation: required("LSF_401_INCARNATION")}, Operation: "update", ClientKey: activation}, Invocation: &profile.InvokeRequest{ActivationId: &activation, Target: phase4AggregateTarget(tenant, "update"), Payload: []byte(`[{"delta":1,"reject":false}]`), MediaType: "application/vnd.latent.wit-values.v1+json", Budget: &profile.ResourceBudget{CpuFuel: 1000000000, MemoryBytes: 67108864, StateReadBytes: 4194304, StateWriteBytes: 2097152, EffectCount: 1, WallTimeLimitMillis: &wall}}, InputFormat: "lsf-wit-values-v1", ExpectedVersions: []tx.ExpectedVersion{{Key: []byte("aggregate/count"), Version: &version}}}
 	response, err := client.InvokeCommand(ctx, request, profile.CallOptions{})
 	if err != nil {
