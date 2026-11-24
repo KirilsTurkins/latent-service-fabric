@@ -197,8 +197,7 @@ export class DraftClient {
     boundedId(draftId); revision(expectedRevision);
     if (!Number.isInteger(units) || units < 0 || units > 10000 || typeof reject !== 'boolean') throw new Error('invalid-draft-edit');
     if (ifMatch !== undefined && ifMatch !== '"absent"' && !/^"[A-Za-z0-9+/]+={0,2}"$/.test(ifMatch)) throw new Error('invalid-original-precondition');
-    const body = '[{"draft-id":' + JSON.stringify(draftId) + ',"expected-revision":' + expectedRevision
-      + ',"units":' + units + ',"reject":' + String(reject) + '}]';
+    const body = JSON.stringify([{'draft-id': draftId, 'expected-revision': expectedRevision, units, reject}]);
     const key = globalThis.crypto.randomUUID();
     this.pending = Object.freeze({key, body, draftId, ifMatch}); this.status = 'prepared';
     return key;

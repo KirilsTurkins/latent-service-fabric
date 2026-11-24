@@ -340,7 +340,7 @@ test('u64 business revisions retain every original bit in requests and decoded r
   const app = client(async (url, options) => { body = options.body; return response('committed', {revision: maximum}); });
   app.prepare('demo', maximum, 3);
   const result = await app.submit();
-  assert.ok(body.includes('"expected-revision":' + maximum));
+  assert.equal(JSON.parse(body)[0]['expected-revision'], maximum);
   assert.equal(result.value.revision, maximum);
   assert.throws(() => revisionOverflow(), /invalid-business-revision/);
   function revisionOverflow() { client(async () => response('query')).prepare('demo', '18446744073709551616', 3); }
