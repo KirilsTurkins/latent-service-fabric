@@ -68,10 +68,12 @@ def run(source: Path, output: Path) -> dict:
               "source": [], "selections": [], "originals": [], "passed": False}
     browser = None
     with owned_cancellation() as cancellation:
-        operator = RecordingClient(Path(inputs["cli"]), output, cancellation, deadline, evidence)
+        operator = RecordingClient(Path(inputs["cli"]), output, cancellation, deadline, evidence,
+                                   phase4=True, profile=None)
         operator.environment = build_environment(output)
         operator.config = Path(inputs["operatorConfiguration"])
-        user = RecordingClient(Path(inputs["cli"]), output, cancellation, deadline, evidence)
+        user = RecordingClient(Path(inputs["cli"]), output, cancellation, deadline, evidence,
+                               phase4=True, profile=None)
         user.environment = build_environment(output)
         user.config = Path(inputs["aliceConfiguration"])
         # The observer does not derive or replace any credential. Existing
