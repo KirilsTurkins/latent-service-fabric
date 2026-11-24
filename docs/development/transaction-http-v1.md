@@ -99,6 +99,9 @@ never manufactures an abort proof or triggers a retry.
 
 Ordinary activation admission and the signed installed route check run before
 preparation. Namespace-specific permission is sealed before any durable claim.
+The same HTTP method, canonical target and trigger generation must still win
+route selection when the host accepts the claim and the business disposition.
+Replacing or removing the trigger closes that authority for in-flight requests.
 The existing backend retains immutable code readiness under the original
 activation reservation, deadline and cancellation. Wasmtime canonicalizes the
 input with the prepared component's actual parameter types, using the same
@@ -137,7 +140,9 @@ The shared HTTP delivery owner can retain a current-purpose data fence. The
 listener checks it inside every actual socket write and flush future poll,
 including polls after a pending socket wakes. Revocation can stop the remaining
 delivery; it cannot alter an already durable disposition or rerun the command.
-The fence uses the original caller, publication, namespace, policy and deadline.
+The fence uses the original caller, publication, namespace, policy, deadline
+and the exact HTTP trigger. Result recovery also checks the current result
+route while delivering the response.
 These final checks open no additional native view and consume no execution
 ledger after its terminal accounting freezes.
 

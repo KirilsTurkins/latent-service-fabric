@@ -50,6 +50,7 @@ pub struct StateAuthorization {
     pub(super) budget: ActivationBudget,
     pub(super) role: Option<Arc<super::command_role::CommandRole>>,
     pub(super) retention: Option<Arc<super::TransactionRetention>>,
+    ingress: Option<Arc<dyn super::TransactionIngressFence>>,
     pub(super) cancelled_metadata: Option<Arc<super::cancellation::CancellationAbortPermit>>,
 }
 impl StateAuthorization {
@@ -155,6 +156,7 @@ impl StateAuthorization {
             budget,
             role: None,
             retention: None,
+            ingress: None,
             cancelled_metadata: None,
         })
     }
@@ -167,6 +169,26 @@ impl StateAuthorization {
     pub(super) fn with_retention(mut self, retention: Arc<super::TransactionRetention>) -> Self {
         self.retention = Some(retention);
         self
+    }
+
+    pub(super) fn with_ingress(
+        mut self,
+        ingress: Option<Arc<dyn super::TransactionIngressFence>>,
+    ) -> Self {
+        self.ingress = ingress;
+        self
+    }
+
+    pub(super) fn with_ingress_current(
+        &self,
+        action: impl FnOnce() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        if let Some(ingress) = &self.ingress {
+            let mut action = Some(action);
+            ingress.with_current(&mut || action.take().ok_or_else(denied)?())
+        } else {
+            action()
+        }
     }
 
     pub(super) fn authorize(
@@ -243,7 +265,7 @@ impl StateAuthorization {
                 decision,
                 &self.namespace,
                 operation,
-                action,
+                || self.with_ingress_current(action),
             )
         })
     }

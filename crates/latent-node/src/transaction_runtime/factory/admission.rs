@@ -176,6 +176,9 @@ impl NativeTransactionAdmission {
         budget: &ActivationBudget,
         control: Option<crate::TransactionAdmissionControl>,
     ) -> Result<Arc<dyn TransactionHost>, PlatformError> {
+        if let Some(fence) = &self.ingress_fence {
+            fence.with_current(&mut || Ok(()))?;
+        }
         let mut selection = {
             let mut state = self.state.lock().map_err(|_| authorization::denied())?;
             let State::Fresh(selection) = &mut *state else {
@@ -694,7 +697,9 @@ impl NativeTransactionAdmission {
             self.installation.intents.clone(),
             budget.clone(),
         )?;
-        let authorization = authorization.with_retention(self.retained_capacity()?);
+        let authorization = authorization
+            .with_retention(self.retained_capacity()?)
+            .with_ingress(self.ingress_fence.clone());
         let authorization = match role {
             Some(role) => authorization.with_command_role(role),
             None => authorization,
@@ -795,7 +800,9 @@ impl NativeTransactionAdmission {
                         let final_accept = || {
                             retained_role.with_current(|_| {
                                 authorization
-                                    .authorize("commit", 0, 0, || Ok(()))
+                                    .authorize("commit", 0, 0, || {
+                                        authorization.with_ingress_current(|| Ok(()))
+                                    })
                                     .map_err(|_| AtomicError::PermissionDenied)
                             })
                         };
