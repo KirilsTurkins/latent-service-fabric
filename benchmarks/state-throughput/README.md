@@ -21,7 +21,13 @@ operations per case. The cases cover durable commits, stale conflicts, fresh
 point reads, bounded prefix scans and clean reopen with verification of the
 last committed value. The JSON reports p50, p95 and p99
 latencies, completed operation rates, logical value bytes and the file size
-before and after the run. The pinned-view case times another 30 commits while
+before and after the run. Two fixed writers also run 30 paired rounds for one
+shared key and 30 for independent keys. Each round captures both preconditions
+from the same view before dispatch. The sample requires one commit and one
+conflict per shared-key round and two commits per independent-key round.
+The JSON separates commit and conflict latencies and counts. Paired throughput
+includes snapshot, scheduling and write time, and each writer latency starts
+at submission. The pinned-view case times another 30 commits while
 the original snapshot remains readable. It checks that compaction refuses the
 live view, then records bounded compaction I/O, file growth and scratch limits
 after that view retires. Reopen checks the latest committed value after

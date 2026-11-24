@@ -10,6 +10,9 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[path = "state_throughput/contention.rs"]
+mod contention;
+
 const WARMUP: usize = 5;
 const SAMPLES: usize = 30;
 const ROWS: usize = 16;
@@ -55,6 +58,8 @@ struct Report {
     stale_conflict: Observation,
     fresh_point_read: Observation,
     bounded_prefix_scan: Observation,
+    same_key_writers: contention::PairedWriters,
+    independent_key_writers: contention::PairedWriters,
     reclamation: Reclamation,
     reopen_and_verify: Observation,
 }
@@ -115,12 +120,63 @@ fn main() -> io::Result<()> {
         }
         Ok(())
     })?;
-    let file_bytes_before_view = std::fs::metadata(&path)?.len();
+    let same_key_writers = contention::measure(&store, &[key(1), key(1)])?;
+    let independent_key_writers = contention::measure(&store, &[key(2), key(3)])?;
+    let reclamation = measure_reclamation(&store, &path, &primary, &mut current, write_next)?;
+    let file_bytes_after = std::fs::metadata(&path)?.len();
+    drop(store);
+    let reopen_and_verify = measure(|| {
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open(&path)
+            .map_err(|_| StoreError::Unavailable)?;
+        let (reopened, _) =
+            EmbeddedStore::open_bounded_file(file, StoreLimits::default(), FILE_LIMIT_BYTES)?;
+        let view = reopened.snapshot()?;
+        if view.get(&primary)?.as_deref() != Some(current.as_slice()) {
+            return Err(StoreError::Corrupt);
+        }
+        Ok(())
+    })?;
+    let report = Report {
+        profile: "latent.state-throughput.embedded-file.v3",
+        os: std::env::consts::OS,
+        architecture: std::env::consts::ARCH,
+        warmup_per_case: WARMUP,
+        rows: ROWS,
+        value_bytes: VALUE_BYTES,
+        file_limit_bytes: FILE_LIMIT_BYTES,
+        file_bytes_before,
+        file_bytes_after,
+        logical_read_value_bytes: SAMPLES * (ROWS + 6) * VALUE_BYTES,
+        logical_written_value_bytes: 5 * SAMPLES * VALUE_BYTES,
+        commit,
+        stale_conflict,
+        fresh_point_read,
+        bounded_prefix_scan,
+        same_key_writers,
+        independent_key_writers,
+        reclamation,
+        reopen_and_verify,
+    };
+    println!("{}", serde_json::to_string(&report)?);
+    Ok(())
+}
+
+fn measure_reclamation(
+    store: &EmbeddedStore,
+    path: &std::path::Path,
+    primary: &RowKey,
+    current: &mut Vec<u8>,
+    mut write_next: impl FnMut(&mut Vec<u8>) -> Result<(), StoreError>,
+) -> io::Result<Reclamation> {
+    let file_bytes_before_view = std::fs::metadata(path)?.len();
     let original = current.clone();
     let pinned = store.snapshot().map_err(storage)?;
-    let commits_with_pinned_view = measure(|| write_next(&mut current))?;
-    let file_bytes_with_view = std::fs::metadata(&path)?.len();
-    if pinned.get(&primary).map_err(storage)?.as_deref() != Some(original.as_slice()) {
+    let commits_with_pinned_view = measure(|| write_next(current))?;
+    let file_bytes_with_view = std::fs::metadata(path)?.len();
+    if pinned.get(primary).map_err(storage)?.as_deref() != Some(original.as_slice()) {
         return Err(storage(StoreError::Corrupt));
     }
     let began = Instant::now();
@@ -142,7 +198,7 @@ fn main() -> io::Result<()> {
             Ok::<_, StoreError>(())
         })
         .map_err(|error| io::Error::other(format!("bounded compaction failed: {error:?}")))?;
-    let reclamation = Reclamation {
+    Ok(Reclamation {
         commits_with_pinned_view,
         file_bytes_before_view,
         file_bytes_with_view,
@@ -158,44 +214,7 @@ fn main() -> io::Result<()> {
             "scratchRequirementBytes": compacted.scratch_requirement_bytes,
             "scratchLimitBytes": compacted.scratch_limit_bytes,
         }),
-    };
-    let file_bytes_after = std::fs::metadata(&path)?.len();
-    drop(store);
-    let reopen_and_verify = measure(|| {
-        let file = OpenOptions::new()
-            .read(true)
-            .write(true)
-            .open(&path)
-            .map_err(|_| StoreError::Unavailable)?;
-        let (reopened, _) =
-            EmbeddedStore::open_bounded_file(file, StoreLimits::default(), FILE_LIMIT_BYTES)?;
-        let view = reopened.snapshot()?;
-        if view.get(&primary)?.as_deref() != Some(current.as_slice()) {
-            return Err(StoreError::Corrupt);
-        }
-        Ok(())
-    })?;
-    let report = Report {
-        profile: "latent.state-throughput.embedded-file.v2",
-        os: std::env::consts::OS,
-        architecture: std::env::consts::ARCH,
-        warmup_per_case: WARMUP,
-        rows: ROWS,
-        value_bytes: VALUE_BYTES,
-        file_limit_bytes: FILE_LIMIT_BYTES,
-        file_bytes_before,
-        file_bytes_after,
-        logical_read_value_bytes: SAMPLES * (ROWS + 2) * VALUE_BYTES,
-        logical_written_value_bytes: 2 * SAMPLES * VALUE_BYTES,
-        commit,
-        stale_conflict,
-        fresh_point_read,
-        bounded_prefix_scan,
-        reclamation,
-        reopen_and_verify,
-    };
-    println!("{}", serde_json::to_string(&report)?);
-    Ok(())
+    })
 }
 
 fn compaction_limits() -> CompactionLimits {
@@ -243,15 +262,20 @@ fn measure(mut step: impl FnMut() -> Result<(), StoreError>) -> io::Result<Obser
         .iter()
         .try_fold(0_u64, |total, sample| total.checked_add(*sample))
         .ok_or_else(|| io::Error::other("total duration exceeds u64"))?;
+    Ok(summarize(&mut samples, nanos))
+}
+
+fn summarize(samples: &mut [u64], elapsed_nanos: u64) -> Observation {
     samples.sort_unstable();
-    let percentile = |rank: usize| samples[(rank * SAMPLES).div_ceil(100) - 1];
-    Ok(Observation {
-        samples: SAMPLES,
+    let count = samples.len();
+    let percentile = |rank: usize| samples[(rank * count).div_ceil(100) - 1];
+    Observation {
+        samples: count,
         p50_nanos: percentile(50),
         p95_nanos: percentile(95),
         p99_nanos: percentile(99),
-        operations_per_second: (1_000_000_000 * SAMPLES as u64).checked_div(nanos),
-    })
+        operations_per_second: (1_000_000_000 * count as u64).checked_div(elapsed_nanos),
+    }
 }
 
 fn elapsed_nanos(began: Instant) -> io::Result<u64> {
