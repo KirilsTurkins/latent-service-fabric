@@ -5,13 +5,14 @@ from . import state
 from .common import require
 
 
-def target(root: Path, descriptor: dict, receipt: dict, cli) -> tuple[dict, dict, list]:
+def target(root: Path, descriptor: dict, receipt: dict, cli, *, phase4: bool = False) -> tuple[dict, dict, list]:
     require((root / "last-deployment.json").exists(), "test-requires-confirmed-deployment")
     deployed = state.load(root, "last-deployment.json")
     require(deployed["source"] == receipt["source"]
             and deployed["componentDigest"] == receipt["artifacts"]["component"],
             "test-build-is-not-confirmed-deployment")
-    observed = cli.call("deployment", "get", deployed["deployment"], "--operation-snapshot")
+    profile = ("--phase4",) if phase4 else ()
+    observed = cli.call(*profile, "deployment", "get", deployed["deployment"], "--operation-snapshot")
     require(observed["outcomeKnown"] and observed["category"] == "success",
             "test-deployment-observation-unavailable")
     current = observed["data"].get("deployment")

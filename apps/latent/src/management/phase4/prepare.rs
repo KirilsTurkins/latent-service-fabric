@@ -19,6 +19,7 @@ use serde::Deserialize;
 use std::path::Path;
 mod dispatcher;
 mod effect_management;
+mod transaction_submission;
 pub use dispatcher::prepare_dispatcher;
 
 fn target(args: &NamespaceArgs, config: &ResolvedConfig) -> c::InspectNamespaceRequest {
@@ -153,6 +154,8 @@ pub fn prepare_transaction(
 ) -> Result<Operation, Failure> {
     command_args.validate()?;
     let request = match command_args {
+        TransactionCommand::Invoke(args) => transaction_submission::invoke(args, config)?,
+        TransactionCommand::Query(args) => transaction_submission::query(args, config)?,
         TransactionCommand::Lookup(args) => Request::from(lookup(args, config)),
         TransactionCommand::Commit(args) => Request::from(t::LookupCommitRequest {
             profile: Some(phase4::current_profile()),
@@ -176,11 +179,15 @@ pub fn prepare_transaction(
     finish(request)
 }
 fn decode(value: &str) -> Result<Vec<u8>, Failure> {
-    if value.len() > 344 {
+    decode_bounded(value, latent_core::transaction_contract::VERSION_BYTES)
+}
+
+fn decode_bounded(value: &str, maximum: usize) -> Result<Vec<u8>, Failure> {
+    if value.len() > maximum.div_ceil(3) * 4 {
         return Err(invalid());
     }
     let bytes = STANDARD.decode(value).map_err(|_| invalid())?;
-    if STANDARD.encode(&bytes) != value || bytes.len() > 256 {
+    if STANDARD.encode(&bytes) != value || bytes.len() > maximum {
         return Err(invalid());
     }
     Ok(bytes)
