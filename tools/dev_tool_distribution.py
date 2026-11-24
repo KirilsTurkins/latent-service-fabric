@@ -80,8 +80,11 @@ def python(payload: Path, prefix: Path) -> set[str]:
     copy(prefix / "bin/python3.13", payload / "sdk/python/bin/python3.13")
     for name in ("libpython3.so", "libpython3.13.so.1.0"):
         copy(prefix / "lib" / name, payload / "sdk/python/lib" / name)
+    # The CLI omits Tk. Its native extension would still make a captured
+    # compiler resolve desktop libraries when inventorying the delivered ELF files.
     shutil.copytree(prefix / "lib/python3.13", payload / "sdk/python/lib/python3.13",
-        ignore=shutil.ignore_patterns("site-packages", "__pycache__", "test", "tests", "idlelib", "tkinter", "turtledemo", "ensurepip"))
+        ignore=shutil.ignore_patterns("site-packages", "__pycache__", "test", "tests", "idlelib",
+                                      "tkinter", "_tkinter.so", "_tkinter.*.so", "turtledemo", "ensurepip"))
     copy(prefix / "lib/python3.13/LICENSE.txt", payload / "licenses/CPython-3.13.5.txt")
     launcher = payload / "sdk/bin/python"
     launcher.parent.mkdir(mode=0o700, parents=True, exist_ok=True)

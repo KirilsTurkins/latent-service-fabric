@@ -637,6 +637,29 @@ class ScenarioReports(unittest.TestCase):
 
 
 class BackendCompilerInventory(unittest.TestCase):
+    def test_headless_sdk_omits_tk_native_extension_and_preserves_other_extensions(self):
+        from tools import dev_tool_distribution as distribution
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            prefix, payload = root / "prefix", root / "payload"
+            library = Path("lib/python3.13")
+            extensions = library / "lib-dynload"
+            kept = "_ssl.cpython-313-x86_64-linux-gnu.so"
+            tk = ("_tkinter.cpython-313-x86_64-linux-gnu.so", "_tkinter.so")
+            for name in (Path("bin/python3.13"), Path("lib/libpython3.so"), Path("lib/libpython3.13.so.1.0"),
+                         library / "LICENSE.txt", library / "os.py", library / "tkinter/__init__.py",
+                         *(extensions / module for module in (*tk, kept))):
+                path = prefix / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(name.as_posix().encode())
+
+            distribution.python(payload, prefix)
+            shipped = payload / "sdk/python"
+            self.assertFalse((shipped / library / "tkinter").exists())
+            self.assertEqual({p.name for p in (shipped / extensions).iterdir()}, {kept})
+            self.assertEqual((shipped / extensions / kept).read_bytes(), (prefix / extensions / kept).read_bytes())
+
     @unittest.skipUnless(sys.platform == "linux", "Linux delivered CPython compiler inventory")
     def test_actual_helper_preserves_delivered_python_inventory_and_old_command_is_rejected(self):
         from tools import dev_tool_distribution as distribution
