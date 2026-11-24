@@ -1,0 +1,30 @@
+{
+  "issue": 689,
+  "sourceRevision": "15c470a0d84866e85d3bb4dd2a9abc3a3233a724",
+  "platform": "linux-x86_64",
+  "scope": "Compiler-built WASI HTTP adapter and executed callback probe",
+  "nativeControls": 8,
+  "components": {
+    "rust_http_pump_probe": {
+      "bytes": 98411,
+      "sha256": "sha256:c5fc848c3abe1762a924b4e4639454a0eb555bc2f996b03e13952942207030ff"
+    },
+    "rust_wasi_http_runtime": {
+      "bytes": 337518,
+      "sha256": "sha256:b520f8c3f8e21ce75b70bcfa9ef3d446436d665521aed35335915311a1e78362"
+    }
+  },
+  "executions": {
+    "ordinary-engine": "sha256:b418d3141f350b0dd05b57f59c842a87fd7e463273808863db82c85b1f257963",
+    "native-enabled-engine": "sha256:1adab10041af3534de1f6732ad725bc13bce9e2cc7ad8cd50db4f14ee4c09804"
+  },
+  "observations": {
+    "sequentialSiblingsWhileOriginalHeld": 2,
+    "startedImportHeldUntilAsyncDrain": true,
+    "discardedBeforeTurnHostPolls": 0,
+    "discardedBeforeTurnHostFutureDrops": 0,
+    "engineStateEmptyAfterDrain": true
+  },
+  "signedApplicationExecuted": false,
+  "ordinaryCombinedThreadHttpBuilderQualified": false
+}

@@ -51,6 +51,7 @@ A separate operation is abandoned while its host future is still live; only
 the explicit async drain may destroy it. The engine must then report empty
 concurrent state. One callback discards a sibling before its first poll. The
 host observes zero polls and zero host-future destructors for that operation.
+[Compiled probe results](evidence/rust-http-discarded-callback-2026-11-24.json)
 Native tests additionally cover cancellation, waiter capacity,
 index preservation, waker replacement and refusal of premature drain.
 
