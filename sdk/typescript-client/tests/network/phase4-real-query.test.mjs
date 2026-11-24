@@ -11,13 +11,16 @@ test("fresh query observes the committed view without a command receipt", { skip
   assert.ok(minimum.length && expected.length);
   const count = process.env.LSF_401_QUERY_EXPECTED_COUNT ?? "2";
   assert.ok(/^(0|[1-9][0-9]{0,19})$/.test(count) && BigInt(count) <= (1n << 64n) - 1n, "expected query count");
+  const memoryProfile = process.env.LSF_401_QUERY_MEMORY_MIB ?? "64";
+  assert.ok(memoryProfile === "64" || memoryProfile === "128", "query memory must select 64 or 128 MiB");
+  const memoryBytes = BigInt(memoryProfile) * 1024n * 1024n;
   const namespace = { tenant, namespace: required("LSF_401_NAMESPACE"), incarnation: required("LSF_401_INCARNATION") };
   const client = new RpcClient({ endpoint: `http://${required("LSF_401_ENDPOINT")}`, tenant, credential: Buffer.from(required("LSF_401_TOKEN")) });
   try {
     for (let i = 0; i < 3; i++) {
       const invocation = { activationId: `typescript-sdk-fresh-query-${i}`, target: aggregateTarget(tenant, "query"),
         payload: Buffer.from("[]"), mediaType: "application/vnd.latent.wit-values.v1+json", priority: 0, metadata: {},
-        budget: { cpuFuel: 1000000000n, memoryBytes: 67108864n, childCalls: 0, outboundRequests: 0, stateReadBytes: 4194304n, stateWriteBytes: 0n, blobReadBytes: 0n, blobWriteBytes: 0n, logBytes: 0n, effectCount: 0, wallTimeLimitMillis: 120000n } };
+        budget: { cpuFuel: 1000000000n, memoryBytes, childCalls: 0, outboundRequests: 0, stateReadBytes: 4194304n, stateWriteBytes: 0n, blobReadBytes: 0n, blobWriteBytes: 0n, logBytes: 0n, effectCount: 0, wallTimeLimitMillis: 120000n } };
       const response = await client.query({ profile: currentProfile(), namespace, minimumViewVersion: minimum, invocation });
       assert.equal(response.metadata.observedTransaction, undefined);
       const value = response.value; assert.ok(value.view && value.view.namespace && value.source && value.invocation?.success);

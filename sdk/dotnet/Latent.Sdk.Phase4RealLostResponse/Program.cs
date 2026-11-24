@@ -31,10 +31,17 @@ try
         var count = Environment.GetEnvironmentVariable("LSF_401_QUERY_EXPECTED_COUNT") ?? "2";
         Check(ulong.TryParse(count, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed)
               && parsed.ToString(CultureInfo.InvariantCulture) == count, "expected query count");
+        var memoryProfile = Environment.GetEnvironmentVariable("LSF_401_QUERY_MEMORY_MIB") ?? "64";
+        ulong memoryBytes = memoryProfile switch
+        {
+            "64" => 64UL * 1024 * 1024,
+            "128" => 128UL * 1024 * 1024,
+            _ => throw new InvalidOperationException("query memory must select 64 or 128 MiB")
+        };
         for (int i = 0; i < 3; ++i)
         {
             var target = new Profile.InvocationTarget(tenant, service, "examples:transactional-aggregate/api@1.0.0", "query", queryRoute);
-            var budget = new Profile.ResourceBudget(1000000000, 67108864, 0, 0, 4194304, 0, 0, 0, 0, 0, 120000);
+            var budget = new Profile.ResourceBudget(1000000000, memoryBytes, 0, 0, 4194304, 0, 0, 0, 0, 0, 120000);
             var invoke = new Profile.InvokeRequest("dotnet-sdk-fresh-query-" + i, null, null, target, Encoding.UTF8.GetBytes("[]"), "application/vnd.latent.wit-values.v1+json", null, 0, null, budget, new Dictionary<string,string>());
             var response = await client.QueryAsync(new Tx.QueryRequest(Tx.CurrentTransactionProfile.Create(), invoke, ns, null, minimum), options);
             var value = response.Value; var view = value.View ?? throw new InvalidOperationException("query view");
