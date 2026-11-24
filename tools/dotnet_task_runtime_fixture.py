@@ -25,7 +25,8 @@ BASELINE_CASES = ('run', 'when-all', 'thread-pool', 'scheduler', 'error', 'cance
 CASES = BASELINE_CASES + ('cancel-pending',)
 RESET_NOTIFICATION_MODE = 'reset-notification-refusal'
 EVENT_WAIT_MODE = 'manual-reset-sibling'
-QUALIFICATION_CASES = CASES + (EVENT_WAIT_MODE,) + event_context.CASES + (RESET_NOTIFICATION_MODE,)
+TIMER_CHANGE_CASES = ('timer-change-before-dispose', 'timer-change-after-dispose')
+QUALIFICATION_CASES = CASES + (EVENT_WAIT_MODE,) + event_context.CASES + TIMER_CHANGE_CASES + (RESET_NOTIFICATION_MODE,)
 CANCEL_CASE = '        case "cancel-pending": {\n            using var cancellation = new CancellationTokenSource();\n            var token = cancellation.Token;\n            var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);\n            var running = Task.Run(async () => {\n                Stage = "cancel-pending-delay";\n                var delay = Task.Delay(10000, token);\n                Incomplete(delay);\n                entered.SetResult(true);\n                await delay.ConfigureAwait(false);\n                throw new Exception("pending cancellation ignored");\n            }, token);\n            Stage = "cancel-pending-enter";\n            entered.Task.GetAwaiter().GetResult();\n            Incomplete(running);\n            Stage = "cancel-pending-cancel";\n            cancellation.Cancel();\n            try { running.GetAwaiter().GetResult(); throw new Exception("running task did not cancel"); }\n            catch (OperationCanceledException error) {\n                if (error.CancellationToken != token || !running.IsCanceled)\n                    throw new Exception("pending cancellation identity or state changed");\n            }\n            break;\n        }\n'
 RESET_NOTIFICATION_CASE = r'''        case "reset-notification-refusal": {
             Stage = "reset-notification-setup";
@@ -98,6 +99,63 @@ EVENT_WAIT_CASE = r'''        case "manual-reset-sibling": {
             return "ordinary-tasks:manual-reset-sibling|pending=1|same-thread=1|setter=1|fresh=1";
         }
 '''
+TIMER_CHANGE_SOURCE = r'''        case "timer-change-before-dispose":
+        case "timer-change-after-dispose": {
+            bool changeFirst = mode == "timer-change-before-dispose";
+            int callbacks = 0, callbackActive = 0;
+            var finished = new TaskCompletionSource<(Task Drain, bool Changed)>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            Timer? timer = null;
+            timer = new Timer(_ => {
+                try {
+                    if (Interlocked.Increment(ref callbacks) != 1)
+                        throw new InvalidOperationException("unexpected second timer callback");
+                    Volatile.Write(ref callbackActive, 1);
+                    Stage = "timer-callback-submits-worker";
+                    var worker = Task.Run(() => {
+                        if (Volatile.Read(ref callbackActive) != 1 || TaskScheduler.Current != TaskScheduler.Default)
+                            throw new InvalidOperationException("timer worker outside the active callback");
+                        bool changed = false;
+                        if (changeFirst)
+                            changed = timer!.Change(TimeSpan.FromHours(1), Timeout.InfiniteTimeSpan);
+                        var drain = timer!.DisposeAsync();
+                        if (drain.IsCompleted)
+                            throw new InvalidOperationException("timer disposal completed during callback");
+                        if (!changeFirst)
+                            changed = timer.Change(TimeSpan.FromHours(1), Timeout.InfiniteTimeSpan);
+                        return (Drain: drain.AsTask(), Changed: changed);
+                    });
+                    Stage = "timer-callback-joins-worker";
+                    var callbackResult = worker.GetAwaiter().GetResult();
+                    if (callbackResult.Changed != changeFirst || callbackResult.Drain.IsCompleted)
+                        throw new InvalidOperationException("timer change or pending disposal state changed");
+                    finished.TrySetResult(callbackResult);
+                } catch (Exception error) {
+                    finished.TrySetException(error);
+                } finally {
+                    Volatile.Write(ref callbackActive, 0);
+                }
+            }, null, Timeout.Infinite, Timeout.Infinite);
+            try {
+                Stage = "timer-change-start";
+                if (!timer.Change(1, Timeout.Infinite))
+                    throw new InvalidOperationException("initial timer change refused");
+                var disposed = finished.Task.GetAwaiter().GetResult();
+                Stage = "timer-callback-disposal-join";
+                disposed.Drain.GetAwaiter().GetResult();
+                timer.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                if (!disposed.Drain.IsCompletedSuccessfully || Volatile.Read(ref callbackActive) != 0
+                    || Volatile.Read(ref callbacks) != 1 || SynchronizationContext.Current != null)
+                    throw new InvalidOperationException("timer callbacks or context survived disposal");
+                return "ordinary-tasks:" + mode + "|changed=" + (disposed.Changed ? 1 : 0)
+                    + "|pending=1|callbacks=" + callbacks + "|drained=1|fresh=1";
+            } finally {
+                timer.Dispose();
+            }
+        }
+'''
+
+
 LIBRARY_SOURCE = r'''using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -313,7 +371,7 @@ def selected_fixture(monitor_cancel: bool = False, *, reset_notification: bool =
         require(source.count(marker) == 1 and 'case "reset-notification-refusal"' not in source
                 and 'case "manual-reset-sibling"' not in source,
                 'dotnet-task-reset-notification-source')
-        return source.replace(marker, EVENT_WAIT_CASE + event_context.SOURCE + RESET_NOTIFICATION_CASE + marker), QUALIFICATION_CASES
+        return source.replace(marker, EVENT_WAIT_CASE + event_context.SOURCE + TIMER_CHANGE_SOURCE + RESET_NOTIFICATION_CASE + marker), QUALIFICATION_CASES
     return source, CASES
 
 
@@ -321,6 +379,9 @@ def expected(mode):
     require(mode in QUALIFICATION_CASES, 'dotnet-task-unknown-case')
     if mode in event_context.CASES:
         return event_context.expected(mode)
+    if mode in TIMER_CHANGE_CASES:
+        changed = int(mode == 'timer-change-before-dispose')
+        return f'ordinary-tasks:{mode}|changed={changed}|pending=1|callbacks=1|drained=1|fresh=1'
     witness = '|pending=1|same-thread=1|setter=1' if mode == EVENT_WAIT_MODE else ''
     return 'ordinary-tasks:' + mode + witness + '|fresh=1'
 

@@ -109,7 +109,7 @@ bool exports_examples_libfetch_api_run(probe_string_t *input, probe_string_t *re
             ? "redirect-unsupported" : "unexpected-stat-error";
         free(copy); probe_string_dup(error, message); return false;
     }
-    if (strcmp(copy, "normal") && strcmp(copy, "fresh")) {
+    if (strcmp(copy, "normal") && strcmp(copy, "fresh") && strcmp(copy, "modified")) {
         free(copy); probe_string_dup(error, "unexpected-stat-success"); return false;
     }
     free(copy);

@@ -1,6 +1,6 @@
 """Unseen captured crates using two unchanged published ordinary HTTP factories.
 
-No application transport, executor, callback adapter or library patch is supplied.
+Both clients use ordinary transports. The optional Golem body reader lives in the guest.
 The normal builder alone selects the separately prepared standard-WASI backend.
 """
 from __future__ import annotations
@@ -139,8 +139,41 @@ fn waki(mode: &str, url: &str) -> Result<String, String> {
         Err(error) => Ok(waki_error!("body", error)),
     }
 }
+struct CardReader {
+    offset: u8,
+    reads: std::rc::Rc<std::cell::Cell<usize>>,
+}
+
+impl Read for CardReader {
+    fn read(&mut self, buffer: &mut [u8]) -> std::io::Result<usize> {
+        if buffer.is_empty() { return Ok(0); }
+        self.reads.set(self.reads.get() + 1);
+        if self.offset == 4 { return Ok(0); }
+        buffer[0] = self.offset;
+        self.offset += 1;
+        Ok(1)
+    }
+}
+
+fn golem_reader(client: &golem_wasi_http::Client, url: &str) -> Result<String, String> {
+    let reads = std::rc::Rc::new(std::cell::Cell::new(0));
+    let reader = CardReader { offset: 0, reads: reads.clone() };
+    let request = client.post(url).header("x-conformance", "rust-client")
+        .body(golem_wasi_http::Body::new(reader));
+    let response = match request.send() {
+        Ok(response) => response,
+        Err(error) => return Ok(golem_error("send", error)),
+    };
+    let status = response.status().as_u16();
+    match response.json::<serde_json::Value>() {
+        Ok(value) => Ok(format!("reader:{}:{}", reads.get(), echo(status, value)?)),
+        Err(error) => Ok(golem_error("json", error)),
+    }
+}
+
 fn golem(mode: &str, url: &str) -> Result<String, String> {
     let client = golem_wasi_http::Client::new();
+    if mode == "reader-post" { return golem_reader(&client, url); }
     if mode == "capacity" {
         let mut held = Vec::new();
         for _ in 0..9 {

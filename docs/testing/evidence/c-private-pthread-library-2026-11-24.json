@@ -491,5 +491,194 @@
   "coverageLimits": [
     "The child compared its pthread identity, ran the synchronous request, and returned the original job address to the joining caller. These calls did not measure runnable sibling progress or preemption.",
     "All three executions used a locally assembled source toolkit and test signing. Publisher authentication and a released installation were outside these runs."
-  ]
+  ],
+  "callbackPolicy": {
+    "qualifierSource": "353755de8de36abbecf1cf57aefc9d14ac1d9d9c",
+    "input": "The original three packages above. The outside card library passed its read_order callback and request arguments to the separately captured order_run_request worker.",
+    "sharedClientBudget": {
+      "calls": 84,
+      "controlAttempts": 84,
+      "retainedBytes": 277110
+    },
+    "samples": [
+      {
+        "project": "guide-from-new-project",
+        "packageDigest": "sha256:b937c596a0b7d2515ef160c31913705542dd7aae7689dd75a5d365bbe28d98e3",
+        "originalInstalledBuild": {
+          "sha256": "sha256:c04e63d1a58df6765f64b22265904953991dd71ec0035f297fcbb7411925bfe1",
+          "bytes": 4711
+        },
+        "nodeReceipt": {
+          "sha256": "sha256:9729d7a1f770570eebb58374de2fcbaf254b4ff396d1698563eb33be71c066f7",
+          "bytes": 18177
+        },
+        "nodeShutdownClean": true,
+        "nodeReaped": true,
+        "peerStopped": true,
+        "cases": [
+          {
+            "case": "denied",
+            "exitCode": 3,
+            "returned": [
+              {
+                "err": "card-status:5"
+              }
+            ],
+            "chargedOutboundRequests": 0,
+            "cpuFuel": "140140",
+            "peakMemoryBytes": "8344128",
+            "peerConnections": 0,
+            "peerRequests": 0,
+            "peerMutations": 0,
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0,
+            "invocationReceipt": {
+              "sha256": "sha256:5ba14e344efd8463bf5da0fd38b7a6917478b13f1f9c7e426eea1b8fdd3b954b",
+              "bytes": 1208
+            }
+          },
+          {
+            "case": "normal",
+            "exitCode": 0,
+            "returned": [
+              {
+                "ok": "card:7:5:57:1776131770"
+              }
+            ],
+            "chargedOutboundRequests": 1,
+            "cpuFuel": "155608",
+            "peakMemoryBytes": "5217689",
+            "peerConnections": 1,
+            "peerRequests": 1,
+            "peerMutations": 0,
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0,
+            "invocationReceipt": {
+              "sha256": "sha256:9fe7872d24270991b8ea8608befe0adc836764c5dd58c1b94921142fabce6771",
+              "bytes": 1258
+            }
+          }
+        ]
+      },
+      {
+        "project": "original-coordinate",
+        "packageDigest": "sha256:a2b508af407341ececca2d6eb83f47cc2237e6d43b481978edb152a41f7cc333",
+        "originalInstalledBuild": {
+          "sha256": "sha256:cac6398e48ff940dd9334d764023451969dd4a2adcc87d0c89433d76d8d9c812",
+          "bytes": 7930
+        },
+        "nodeReceipt": {
+          "sha256": "sha256:14265fa8dcf80dc192355ec84c92166b139d05c25ecf13dbab8f87f625039705",
+          "bytes": 18183
+        },
+        "nodeShutdownClean": true,
+        "nodeReaped": true,
+        "peerStopped": true,
+        "cases": [
+          {
+            "case": "denied",
+            "exitCode": 3,
+            "returned": [
+              {
+                "err": "card-status:5"
+              }
+            ],
+            "chargedOutboundRequests": 0,
+            "cpuFuel": "140140",
+            "peakMemoryBytes": "8344128",
+            "peerConnections": 0,
+            "peerRequests": 0,
+            "peerMutations": 0,
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0,
+            "invocationReceipt": {
+              "sha256": "sha256:cc06989c71f5abe898198e5816711119d9993ab5bdf085cd99d347037ea0d57d",
+              "bytes": 1208
+            }
+          },
+          {
+            "case": "normal",
+            "exitCode": 0,
+            "returned": [
+              {
+                "ok": "card:7:5:57:1776131770"
+              }
+            ],
+            "chargedOutboundRequests": 1,
+            "cpuFuel": "155608",
+            "peakMemoryBytes": "5217842",
+            "peerConnections": 1,
+            "peerRequests": 1,
+            "peerMutations": 0,
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0,
+            "invocationReceipt": {
+              "sha256": "sha256:6ad5c05dc1543343a870743e217f1b3a2c805cdeb593bd36039bc3a060c9db61",
+              "bytes": 1258
+            }
+          }
+        ]
+      },
+      {
+        "project": "renamed-coordinate",
+        "packageDigest": "sha256:8533ef0a34d6651b32b72202aeab20cd220c0dfcca9406b99be84262c35d028c",
+        "originalInstalledBuild": {
+          "sha256": "sha256:dee8b7401f8133d2d865c465952d71b5f43c3104a593c69e3a28c452aac3de6e",
+          "bytes": 7931
+        },
+        "nodeReceipt": {
+          "sha256": "sha256:e11d1bece8cac119969105f6f20dbd2d7d7f98e50b7943ea2135d66772cc051a",
+          "bytes": 18190
+        },
+        "nodeShutdownClean": true,
+        "nodeReaped": true,
+        "peerStopped": true,
+        "cases": [
+          {
+            "case": "denied",
+            "exitCode": 3,
+            "returned": [
+              {
+                "err": "card-status:5"
+              }
+            ],
+            "chargedOutboundRequests": 0,
+            "cpuFuel": "140140",
+            "peakMemoryBytes": "8344128",
+            "peerConnections": 0,
+            "peerRequests": 0,
+            "peerMutations": 0,
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0,
+            "invocationReceipt": {
+              "sha256": "sha256:bffab7c8246766ae2384624143a260278a0222dda2286f6c91745e235ad8de02",
+              "bytes": 1208
+            }
+          },
+          {
+            "case": "normal",
+            "exitCode": 0,
+            "returned": [
+              {
+                "ok": "card:7:5:57:1776131770"
+              }
+            ],
+            "chargedOutboundRequests": 1,
+            "cpuFuel": "155608",
+            "peakMemoryBytes": "5220423",
+            "peerConnections": 1,
+            "peerRequests": 1,
+            "peerMutations": 0,
+            "physicalOwnersAfter": 0,
+            "activeProviderCountersAfter": 0,
+            "invocationReceipt": {
+              "sha256": "sha256:a83b43ea3f148c6a9dd76ec6598d683099f1d09d38dcd36d6050c356476a9901",
+              "bytes": 1258
+            }
+          }
+        ]
+      }
+    ],
+    "sourceTests": 18
+  }
 }

@@ -1,0 +1,446 @@
+{
+  "issue": 742,
+  "date": "2026-11-24",
+  "platform": "linux-x86_64",
+  "sourceRevision": "bdd9ff31a0e8f1a8ce2dc0db896fb02c4ece71f9",
+  "compile": "tools/qualify_go_activation.py --runtime-profile go-component-activation-{v5,v7} --fixture timer-overlap",
+  "signed": "tools/qualify_go_synchronization.py --campaign {timer-overlap,timer-overlap-v7} --source-commit bdd9ff31a0e8f1a8ce2dc0db896fb02c4ece71f9",
+  "controls": {
+    "ran": 33,
+    "skipped": 0,
+    "log": {
+      "sha256": "sha256:968e4bbdb9a2f0041fc28e4401f0eefa15ce4fe51f9ed71c5893f5a06bc188ce",
+      "bytes": 132
+    }
+  },
+  "profiles": {
+    "v5": {
+      "profile": "go-component-activation-v5",
+      "component": {
+        "sha256": "sha256:682dad619bae141b298658ed8709f19703069e7b13e83e23eea60ac544cc8524",
+        "bytes": 2752779
+      },
+      "sourceDigest": "sha256:4537f95861390413f41cacfbf7cb333e64e60301b9062f88cd3a4f3a5dbd69c4",
+      "bindingDigest": "sha256:82a839378608abf8dbd8b9ba4ee59055da630c38051786d8416f560387535c1b",
+      "nativeReference": {
+        "qualification": "reviewed-fixture-only",
+        "fixture": "timer-overlap",
+        "modes": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "freshProcessPerMode": true,
+        "sourceDigest": "sha256:4537f95861390413f41cacfbf7cb333e64e60301b9062f88cd3a4f3a5dbd69c4",
+        "binaryDigest": "sha256:df898c534ed2011b1766821c9c856d8ff548df1eda6e8d3df39d0d380b5b7812",
+        "outputs": [
+          42,
+          42,
+          42,
+          42,
+          42,
+          42
+        ]
+      },
+      "compileReceipt": {
+        "sha256": "sha256:48c611a6b5c0e9f4fcbbb648db7c3d355ba14c713fb2feb8e63b0908893e19e9",
+        "bytes": 7560
+      },
+      "signedReceipt": {
+        "sha256": "sha256:9ac30cd8bae10ae273b6f64379939f195022dcbdd0a1e8a8d0ff6d91e951ff58",
+        "bytes": 50112
+      },
+      "signedStdout": {
+        "sha256": "sha256:999f61d828507455b3c0053b73a68940d6209b369141459a64f79a2b1b7443b8",
+        "bytes": 2310
+      },
+      "signedStderr": {
+        "sha256": "sha256:ce82f7d1648e64fa5237775cfce786662d1803ef57469b340494e3ef02c7cb74",
+        "bytes": 12152
+      },
+      "sourceFilesCheckedBeforeAndAfter": 175,
+      "limits": {
+        "guestTaskCeiling": 16,
+        "managedCapacity": 8,
+        "waitCeiling": 4,
+        "timerCeiling": 2
+      },
+      "signedInvocations": 9,
+      "originalWaitDrops": 8,
+      "cases": [
+        {
+          "case": "reset-reset",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 0,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 1,
+          "physicalWaitDropped": true,
+          "observedAfterGC": false,
+          "bothParkedBeforeRootStop": false,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "reset-stop",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 1,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 2,
+          "physicalWaitDropped": true,
+          "observedAfterGC": false,
+          "bothParkedBeforeRootStop": false,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "gc-reset-reset",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 2,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 3,
+          "physicalWaitDropped": true,
+          "observedAfterGC": true,
+          "bothParkedBeforeRootStop": false,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "gc-reset-stop",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 3,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 4,
+          "physicalWaitDropped": true,
+          "observedAfterGC": true,
+          "bothParkedBeforeRootStop": false,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "stop-reset",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 4,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 5,
+          "physicalWaitDropped": true,
+          "observedAfterGC": false,
+          "bothParkedBeforeRootStop": false,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "stop-stop",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 5,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 6,
+          "physicalWaitDropped": true,
+          "observedAfterGC": false,
+          "bothParkedBeforeRootStop": false,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "cancel-reset-reset",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 0,
+          "outcome": "cancelled",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 7,
+          "physicalWaitDropped": true,
+          "observedAfterGC": false,
+          "bothParkedBeforeRootStop": true,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "deadline-reset-stop",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 1,
+          "outcome": "deadline-exceeded",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 8,
+          "physicalWaitDropped": true,
+          "observedAfterGC": false,
+          "bothParkedBeforeRootStop": true,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "fresh",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 0,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 9
+        }
+      ]
+    },
+    "v7": {
+      "profile": "go-component-activation-v7",
+      "component": {
+        "sha256": "sha256:600d00acaabd9f16983ddcfae9d4ba131524ed2c9d8da4feb2857cb1cd0ee6d5",
+        "bytes": 2756817
+      },
+      "sourceDigest": "sha256:4537f95861390413f41cacfbf7cb333e64e60301b9062f88cd3a4f3a5dbd69c4",
+      "bindingDigest": "sha256:82a839378608abf8dbd8b9ba4ee59055da630c38051786d8416f560387535c1b",
+      "nativeReference": {
+        "qualification": "reviewed-fixture-only",
+        "fixture": "timer-overlap",
+        "modes": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5
+        ],
+        "freshProcessPerMode": true,
+        "sourceDigest": "sha256:4537f95861390413f41cacfbf7cb333e64e60301b9062f88cd3a4f3a5dbd69c4",
+        "binaryDigest": "sha256:b6d068fbefd9f0b3feba82961e5ce7379338c3638a497d8eb4c5c6e33ae94bd8",
+        "outputs": [
+          42,
+          42,
+          42,
+          42,
+          42,
+          42
+        ]
+      },
+      "compileReceipt": {
+        "sha256": "sha256:1442e87fcec725151f9e2a01a105b5e8a0ce7f23101e6fdd3688ab6f42b9d4c0",
+        "bytes": 7769
+      },
+      "signedReceipt": {
+        "sha256": "sha256:3fcf29a1270eda1cb02bede7775e7612e12f5048ed71a5ca6fe8eee4328a3c5e",
+        "bytes": 50219
+      },
+      "signedStdout": {
+        "sha256": "sha256:aacf2bbcc8b5a571050ab69d5776c90328845c518acd965cf0fadb563ac0d18c",
+        "bytes": 2319
+      },
+      "signedStderr": {
+        "sha256": "sha256:3376170ee1a8bc71c8369601840b4a17fcef400666de065d1cc41cf791b938cd",
+        "bytes": 12152
+      },
+      "sourceFilesCheckedBeforeAndAfter": 175,
+      "limits": {
+        "guestTaskCeiling": 16,
+        "managedCapacity": 8,
+        "waitCeiling": 4,
+        "timerCeiling": 2,
+        "queuedWorkCeiling": 16
+      },
+      "signedInvocations": 9,
+      "originalWaitDrops": 8,
+      "cases": [
+        {
+          "case": "reset-reset",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 0,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 1,
+          "physicalWaitDropped": true,
+          "observedAfterGC": false,
+          "bothParkedBeforeRootStop": false,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "reset-stop",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 1,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 2,
+          "physicalWaitDropped": true,
+          "observedAfterGC": false,
+          "bothParkedBeforeRootStop": false,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "gc-reset-reset",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 2,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 3,
+          "physicalWaitDropped": true,
+          "observedAfterGC": true,
+          "bothParkedBeforeRootStop": false,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "gc-reset-stop",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 3,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 4,
+          "physicalWaitDropped": true,
+          "observedAfterGC": true,
+          "bothParkedBeforeRootStop": false,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "stop-reset",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 4,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 5,
+          "physicalWaitDropped": true,
+          "observedAfterGC": false,
+          "bothParkedBeforeRootStop": false,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "stop-stop",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 5,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 6,
+          "physicalWaitDropped": true,
+          "observedAfterGC": false,
+          "bothParkedBeforeRootStop": false,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "cancel-reset-reset",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 0,
+          "outcome": "cancelled",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 7,
+          "physicalWaitDropped": true,
+          "observedAfterGC": false,
+          "bothParkedBeforeRootStop": true,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "deadline-reset-stop",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 1,
+          "outcome": "deadline-exceeded",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 8,
+          "physicalWaitDropped": true,
+          "observedAfterGC": false,
+          "bothParkedBeforeRootStop": true,
+          "observerReservationBytes": 608
+        },
+        {
+          "case": "fresh",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 0,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 9
+        }
+      ]
+    }
+  },
+  "earlierAttempts": [
+    {
+      "source": "76038f28459c9fedb36c98f7bc7206d9e7eebe6a",
+      "stage": "native-reference-validation",
+      "signedInvocations": 0,
+      "failure": "The verifier expected four native reference modes and received six.",
+      "stdout": {
+        "sha256": "sha256:608c50b66e8aceb0d575db5e953f2309dd4bc4f70a119fc8ebad300aa7b81f2d",
+        "bytes": 942
+      }
+    },
+    {
+      "source": "ed7004751ac909cedd65f4372c9fe9ff9b1e4b9e",
+      "stage": "receipt-count",
+      "reportedInvocationsPerProfile": 7,
+      "actualCasesPerProfile": 9,
+      "receipts": {
+        "v5": {
+          "sha256": "sha256:b212ebc211d8315b9eec83b26e42af9999cd7089b34be68e5c86654e9e3000a5",
+          "bytes": 50112
+        },
+        "v7": {
+          "sha256": "sha256:61a98beb933568161745cb5b6eb93a55735f527875c46dcece8d7f677200953f",
+          "bytes": 50219
+        }
+      }
+    }
+  ],
+  "scope": "The development observer records original pending timer ownership. The two signed profiles use the same six operation schedules and preserve their individual compilation and execution identities. The observer reservation is a model charge. Aggregate physical Go costs, every timer interleaving, cross-tenant reuse and kernel retirement have separate qualification."
+}
