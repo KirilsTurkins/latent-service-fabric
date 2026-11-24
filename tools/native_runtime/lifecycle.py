@@ -14,7 +14,7 @@ import time
 from . import archive, files
 from .checks import current
 from .common import document, encode, execute, require
-from .configuration import LOCAL, approve_compiler, provision
+from .configuration import LOCAL, approve_compiler, load, provision, validate_layout
 from .layout import Layout, node_identity
 from .verify import VerifiedRelease, development_publisher, manifest, publisher_id, publisher_policy, transaction_engine, version
 
@@ -275,6 +275,43 @@ def install(layout: Layout, release: VerifiedRelease, *, profile: str, policy: P
         return {"schemaVersion": "latent.native-install-result.v1", "installationId": installed["installationId"],
                 "version": selected, "sourceCommit": release.metadata["sourceCommit"], "profile": profile,
                 "activationReady": ready, "preflight": preflight, "experimental": True}
+
+
+def prepare_state_roots(layout: Layout) -> dict:
+    identity = node_identity(layout)
+    with ExitStack() as stack:
+        stack.enter_context(files.lock(layout.prefix / "install.lock"))
+        if not layout.system:
+            stack.enter_context(files.lock(layout.prefix / "run.lock", timeout=0))
+        require(not os.path.lexists(layout.transaction), "finish-interrupted-installation-before-state-provisioning")
+        require(not os.path.lexists(layout.prefix / "purge.json"), "finish-interrupted-purge-before-state-provisioning")
+        installation = read_state(layout)
+        require(installation is not None and installation["status"] == "installed", "installed-runtime-required")
+        validate_roots(layout, installation, identity)
+        node = load(layout, identity)
+        validate_layout(layout, node, installation["profile"])
+        state = node.get("state")
+        require(isinstance(state, dict) and state.get("createIfMissing") is True,
+                "explicit-first-state-initialization-required-in-node-configuration")
+        release = installation["releases"][installation["currentVersion"]]["metadata"]
+        require(transaction_engine(release["engine"]) is not None,
+                "selected-release-does-not-admit-transaction-state")
+        expected_release = layout.prefix / "releases" / installation["currentVersion"]
+        require(current(layout) == expected_release, "current-release-link-substitution")
+        archive.check_tree(expected_release, release["files"])
+        checkpoint = layout.data / "state-checkpoint"
+        require(state.get("checkpointRoot") == str(checkpoint), "checkpoint-root-is-outside-managed-state-layout")
+        if layout.system:
+            status, active = systemctl("show", "lsf.service", "--property=ActiveState", "--value")
+            require(status == 0 and active.strip() == b"inactive", "state-provisioning-requires-stopped-service")
+        owners = {0, os.geteuid(), identity[0]}
+        store = layout.data / "state"
+        created_store = files.mkdir(store, 0o700, identity, owners=owners)
+        created_checkpoint = files.mkdir(checkpoint, 0o700, identity, owners=owners)
+        preflight = child_check(layout, identity, "preflight")
+        return {"schemaVersion": "latent.native-state-roots.v1", "storeRoot": str(store),
+                "checkpointRoot": str(checkpoint), "createdStoreRoot": created_store,
+                "createdCheckpointRoot": created_checkpoint, "preflight": preflight}
 
 
 def remove(layout: Layout, *, purge: str | None = None) -> dict:
