@@ -148,6 +148,16 @@ The instrumented programme measures these interleavings and their activation
 counters. Kernel retirement and aggregate Go resource costs remain open.
 [Component, per-case results and provider witnesses](../testing/evidence/go-v7-timer-overlap-2026-11-24.json)
 
+The v5 and v7 profiles also ran both cases where `Stop` reached the pending
+timer first. In Stop/Reset, `Stop` returned true, `Reset` returned false and
+the timer was active again. In Stop/Stop, the calls returned true and false
+and the timer stayed stopped. Both goroutines parked on the original wait.
+The signed programme verified its physical release in all eight overlap cases
+per profile. Each profile completed nine invocations including a fresh final
+call. The observed Stores, instances, provider waits and reservations returned
+to zero after each call.
+[v5 and v7 components, earlier failed checks and per-call observations](../testing/evidence/go-stop-first-timer-races-2026-11-24.json)
+
 ## Go 1.27.4 and the v7 profile
 
 The managed v7 programme completed 43 signed invocations with its original

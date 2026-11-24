@@ -51,25 +51,25 @@ impl RecoverySource {
     }
 }
 
-pub(super) fn profile(
+pub(super) fn profiles(
     operation: &RecoverySource,
     adapters: &[Arc<latent_http::deferred::HttpEffectAdapter>],
     event_adapters: &[Arc<latent_nats::deferred::JetStreamEffectAdapter>],
-) -> Result<Option<RecoveryProfile>, PlatformError> {
-    let profile = if operation.input.deferred_event.is_some() {
-        super::super::installations::event::recovery_profile(
-            operation.asset.get(),
-            &operation.input,
-            event_adapters,
-        )?
-    } else {
-        super::super::installations::http::recovery_profile(
-            operation.asset.get(),
-            &operation.input,
-            adapters,
-        )?
-    };
-    Ok(profile.map(|(scope, profile)| RecoveryProfile { scope, profile }))
+) -> Result<impl Iterator<Item = RecoveryProfile>, PlatformError> {
+    let http = super::super::installations::http::recovery_profile(
+        operation.asset.get(),
+        &operation.input,
+        adapters,
+    )?;
+    let event = super::super::installations::event::recovery_profile(
+        operation.asset.get(),
+        &operation.input,
+        event_adapters,
+    )?;
+    Ok([http, event]
+        .into_iter()
+        .flatten()
+        .map(|(scope, profile)| RecoveryProfile { scope, profile }))
 }
 
 pub(super) fn current_profiles(

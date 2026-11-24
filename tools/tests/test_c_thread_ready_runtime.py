@@ -32,8 +32,43 @@ POST_ADDENDUM = (
             )
 
 
+def before_deadline_sampling(text):
+    # Both complete source versions are authenticated by before_post. These are
+    # the six edits which moved audit paging out of the 250 ms live sample.
+    lines = text.splitlines(keepends=True)
+    for start, end, original in (
+        (394, 397, "        if mode in ('cancel', 'deadline'):\n"),
+        (322, 363, ''),
+        (306, 307,
+         '        pages, token = [], None\n'
+         '        for _ in range(4):\n'
+         "            command = ('audit', 'query', '--scope', 'tenant', '--page-size', '64',\n"
+         "                '--from-unix-millis', str(max(0, process.authoring_started_unix_millis - 1)))\n"
+         '            if token is not None:\n'
+         "                command += ('--page-token', token)\n"
+         '            page = client.call(*command)\n'
+         '            pages.append(page)\n'
+         "            write_json(output / f'child-audit-{process.authoring_activation}-{attempt}-{len(pages)}.json', page)\n"
+         "            token = page['data']['page']['nextPageToken']\n"
+         '            if token is None:\n'
+         '                break\n'),
+        (286, 302, ''),
+        (168, 174, "    if any(integer(rows[name]['activeCount']) != 1 for name in LIVE):\n"),
+        (163, 164,
+         'def child_entry(inventory, pages, activation, *, expected_revision, positive_only=False):\n'
+         "    require(type(positive_only) is bool, 'c-thread-closed-audit-evidence-mode')\n"),
+    ):
+        lines[start:end] = original.splitlines(keepends=True)
+    return ''.join(lines)
+
+
 def before_post(text):
     current = hashlib.sha256(text.encode()).hexdigest()
+    if current == '0e1d266e93f5edfe923fac3ee0ff2a36104a482815b940e408512cf74338a200':
+        text = before_deadline_sampling(text)
+        current = hashlib.sha256(text.encode()).hexdigest()
+        if current != 'e94beca2207d259a7dd03273bc83f7749e13bbf590c5d34cdaf463595ae2e31e':
+            raise AssertionError('c-thread-before-deadline-sampling-source')
     if current == '37535d730b206b1ea2304c78697201d37b6930cd62c9e40326b4f3ead5d8e647':
         return text
     if current != 'e94beca2207d259a7dd03273bc83f7749e13bbf590c5d34cdaf463595ae2e31e':
@@ -274,6 +309,9 @@ if products is not None and products.SOURCE == 'f5351a9331ed954c49ae83f2f4004e0f
 
     def test_outside_card_inverse_refuses_every_missing_duplicated_changed_hunk_and_old_body_drift(self):
         selected = (qualification.ROOT/'tools/c_thread_runtime_node.py').read_text()
+        for name in ('child_owners_live', 'child_audit_pages', 'deadline_child'):
+            with self.subTest(helper=name), self.assertRaisesRegex(AssertionError, 'c-thread-exact-post-source'):
+                before_post(selected.replace('def ' + name + '(', 'def changed_' + name + '(', 1))
         current = before_post(selected)
         self.assertNotEqual(selected, current)
         self.assertEqual(before_post(current), current)

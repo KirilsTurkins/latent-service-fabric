@@ -143,6 +143,10 @@ class BuildTools:
         # auth tokens, npm settings, arbitrary Node options or application env.
         private_home = temporary / 'home'
         private_home.mkdir()
+        if os.name == 'nt':
+            # Windows resolves Wizer's default Wasmtime directories under USERPROFILE.
+            (private_home / 'AppData' / 'Roaming').mkdir(parents=True)
+            (private_home / 'AppData' / 'Local').mkdir()
         self.node_environment = {key: value for key, value in self.environment.items()
                                  if key in ('PATH', 'SystemRoot', 'SYSTEMROOT', 'WINDIR', 'COMSPEC', 'ComSpec',
                                             'PATHEXT', 'TEMP', 'TMP', 'TMPDIR', 'LC_ALL', 'TZ')}

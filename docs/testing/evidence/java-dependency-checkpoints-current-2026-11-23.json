@@ -1,0 +1,187 @@
+{
+  "schemaVersion": "latent.java.dependency-checkpoints.current-observation.v1",
+  "issue": 741,
+  "observedOn": "2026-11-23",
+  "environment": "Local Linux x86_64, ordinary development node",
+  "sourceRevision": "02bdf199b57f0e740237cddf0f02d9e5c9118bd9",
+  "qualificationRecord": {
+    "sha256": "sha256:68e6d3c0255face1bd16f34375eac716ba4edde602f9b38fdc29932c63d4be14",
+    "bytes": 468195
+  },
+  "native": {
+    "sourceHead": "02bdf199b57f0e740237cddf0f02d9e5c9118bd9",
+    "sourceTree": "4268f22935071918b28eaa8a3abad15fb8cee862",
+    "tupleRole": "ordinary-defaults",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.9",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:5669d9660bb550f0347cdafc1a03a2a99547928e864eb87082f5c6c157760293",
+        "bytes": 78851920,
+        "actualFeatures": []
+      },
+      "latentd": {
+        "sha256": "sha256:b4bc0349c72b7fcce3a9aed476f989f4346d7e1ca157ba6e9203638ce1b858e9",
+        "bytes": 214257848,
+        "actualFeatures": []
+      },
+      "package": {
+        "sha256": "sha256:78ed627079f74622d6b07eb42f1e49ec264c6d2136d2bff56bb4a788cf36b695",
+        "bytes": 22183904,
+        "actualFeatures": []
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:556f9b3e47eb8270683d942580dccfead4c717b39080b0f87c2ec9594f7913dc",
+        "bytes": 15217168,
+        "actualFeatures": []
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:8d616dac1aee230330838bdb1048791c28ed8e08a9bfecb4698e9199ece88504",
+        "bytes": 28448736,
+        "actualFeatures": []
+      }
+    }
+  },
+  "dependency": {
+    "coordinate": "org.apache.commons:commons-lang3:3.14.0",
+    "originalJar": {
+      "sha256": "sha256:7b96bf3ee68949abb5bc465559ac270e0551596fa34523fddf890ec418dde13c",
+      "bytes": 657952
+    },
+    "selectedJar": {
+      "sha256": "sha256:9948b2564eb3fd0fc0408b567b607f04e68a2a3bf7631a1faa64083022363514",
+      "bytes": 1515328
+    },
+    "capturedInputIdentity": "sha256:801174af3d153c52d281011da2ede05168a8f7c8fbae6f86fd16b5f47e123c34"
+  },
+  "java": "openjdk 25.0.4.1 2026-08-18 LTS",
+  "component": {
+    "sha256": "sha256:08326fbdf66e7eb401f643adff1918c31aa7fc232052b5693c4da10701132e5c",
+    "bytes": 1696112
+  },
+  "completionMarker": {
+    "previousBytes": 141534,
+    "signerLimitBytes": 65536,
+    "acceptedMarker": {
+      "sha256": "sha256:cfe06890b3ee3999372ff99cee70a7fd954cdffaa4956ffda1f445b0d4edca42",
+      "bytes": 11783
+    },
+    "compilerStages": 38,
+    "externalCommandRecordsVerified": 34,
+    "sameComponentBeforeAndAfter": true
+  },
+  "compilerControls": {
+    "referenceResults": [
+      {
+        "mode": "fresh",
+        "result": "checkpoint|fresh=1"
+      },
+      {
+        "mode": "dependency",
+        "result": "checkpoint|dependency=42|initializations=1|locals=root:child|error=retained|fresh=1"
+      },
+      {
+        "mode": "monitor",
+        "result": "checkpoint|monitor=42|initializations=1|locals=root:child|error=retained|fresh=1"
+      }
+    ],
+    "maintainedPluginControl": "DEPENDENCY_CHECKPOINT_CONTROL PASS actual-published-loop;original-instructions;unselected-negative;class-initializer-unmanaged-negatives"
+  },
+  "guestBuilds": 1,
+  "heapBudgetBytes": 4194304,
+  "cases": [
+    {
+      "tenant": "examples",
+      "mode": "dependency",
+      "result": "checkpoint|dependency=42|initializations=1|locals=root:child|error=retained|fresh=1",
+      "elapsedNanos": "241600257",
+      "availableCellsAfter": 1,
+      "activeCellsAfter": 0,
+      "quarantinedCellsAfter": 0,
+      "queueDepthAfter": 0,
+      "observedRssBytesAfter": 265666560
+    },
+    {
+      "tenant": "foreign",
+      "mode": "monitor",
+      "result": "checkpoint|monitor=42|initializations=1|locals=root:child|error=retained|fresh=1",
+      "elapsedNanos": "251394085",
+      "availableCellsAfter": 1,
+      "activeCellsAfter": 0,
+      "quarantinedCellsAfter": 0,
+      "queueDepthAfter": 0,
+      "observedRssBytesAfter": 265744384
+    },
+    {
+      "tenant": "examples",
+      "mode": "monitor",
+      "result": "checkpoint|monitor=42|initializations=1|locals=root:child|error=retained|fresh=1",
+      "elapsedNanos": "246319643",
+      "availableCellsAfter": 1,
+      "activeCellsAfter": 0,
+      "quarantinedCellsAfter": 0,
+      "queueDepthAfter": 0,
+      "observedRssBytesAfter": 265801728
+    },
+    {
+      "tenant": "foreign",
+      "mode": "dependency",
+      "result": "checkpoint|dependency=42|initializations=1|locals=root:child|error=retained|fresh=1",
+      "elapsedNanos": "240473587",
+      "availableCellsAfter": 1,
+      "activeCellsAfter": 0,
+      "quarantinedCellsAfter": 0,
+      "queueDepthAfter": 0,
+      "observedRssBytesAfter": 265859072
+    },
+    {
+      "tenant": "examples",
+      "mode": "fresh",
+      "result": "checkpoint|fresh=1",
+      "elapsedNanos": "26630578",
+      "availableCellsAfter": 1,
+      "activeCellsAfter": 0,
+      "quarantinedCellsAfter": 0,
+      "queueDepthAfter": 0,
+      "observedRssBytesAfter": 265908224
+    },
+    {
+      "tenant": "foreign",
+      "mode": "fresh",
+      "result": "checkpoint|fresh=1",
+      "elapsedNanos": "26621569",
+      "availableCellsAfter": 1,
+      "activeCellsAfter": 0,
+      "quarantinedCellsAfter": 0,
+      "queueDepthAfter": 0,
+      "observedRssBytesAfter": 266014720
+    }
+  ],
+  "providerCountersAtZeroAfterEveryCase": [
+    "broker_calls",
+    "broker_handles",
+    "io_streams",
+    "io_calls",
+    "pool_connections"
+  ],
+  "missingRuntimeGrant": [
+    {
+      "tenant": "examples",
+      "error": "permission-denied"
+    },
+    {
+      "tenant": "foreign",
+      "error": "permission-denied"
+    }
+  ],
+  "afterDeletion": {
+    "dormantDeployments": 0,
+    "observedRssBytes": 266043392,
+    "nodeClean": true,
+    "nodeReaped": true,
+    "peerReaped": true,
+    "peerRequests": 0
+  },
+  "garbageCollectionObserved": false,
+  "fullTicketQualification": false
+}

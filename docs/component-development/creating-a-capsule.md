@@ -51,6 +51,11 @@ Open the project in your editor:
 | `tests/scenarios.json` | Read the named test cases |
 | `tests/*-input.json`, `tests/*-expected.json` | See each input and its expected answer |
 
+If the handler calls a library of your own, add its declaration and review the
+captured inputs now. The [dependency walkthrough](application-dependencies.md#add-a-library-to-your-capsule)
+includes a private library with a resource, an ordinary HTTP call and a
+deployment check. Continue below for the standalone greeting.
+
 ## 3. Build and prepare the node
 
 After reviewing the project, run these commands in the same terminal on either OS:

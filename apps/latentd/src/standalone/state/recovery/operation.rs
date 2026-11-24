@@ -265,11 +265,11 @@ async fn prepare(
                         &event_adapters,
                     )?;
                     for source in sources.iter().skip(1) {
-                        if let Some(profile) =
-                            super::selection::profile(source, &adapters, &event_adapters)?
-                        {
-                            profiles.push(profile);
-                        }
+                        profiles.extend(super::selection::profiles(
+                            source,
+                            &adapters,
+                            &event_adapters,
+                        )?);
                     }
                     let catalog =
                         Catalog::capture(&repository, &sources, profiles, &request.publication)?;

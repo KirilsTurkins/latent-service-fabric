@@ -45,6 +45,7 @@ pub trait DeferredHttpAuthorization: Send + Sync {
 /// binding and provider pools. It creates no activation, worker or new engine.
 pub struct HttpEffectAdapter {
     provider: HttpProvider,
+    credential: usize,
     transport: ProtocolTransport,
     endpoint: Arc<QualifiedHttpEndpoint>,
     tenant: String,
@@ -61,18 +62,21 @@ impl HttpProvider {
         endpoint: QualifiedHttpEndpoint,
         time: Arc<dyn EffectTimeSource>,
     ) -> Result<HttpEffectAdapter, AuthorityError> {
-        endpoint
-            .validate(&self.inner.config)
+        let destination = endpoint
+            .configured_destination(&self.inner.config)
             .map_err(authority_error)?;
-        if self.inner.streaming.is_some()
-            || tenant.is_empty()
-            || tenant.len() > 128
-            || self.inner.credential_references.len() != 1
-        {
+        if self.inner.streaming.is_some() || tenant.is_empty() || tenant.len() > 128 {
             return Err(AuthorityError::PolicyBlocked);
         }
-        let credential = &self.inner.credential_references[0];
-        if credential.destination != 0
+        let mut credentials = self
+            .inner
+            .credential_references
+            .iter()
+            .enumerate()
+            .filter(|(_, credential)| credential.destination == destination);
+        let (credential_index, credential) =
+            credentials.next().ok_or(AuthorityError::PolicyBlocked)?;
+        if credentials.next().is_some()
             || !credential.name.eq_ignore_ascii_case("authorization")
             || credential.binding.scope().tenant.0 != tenant
         {
@@ -83,18 +87,21 @@ impl HttpProvider {
             .pools
             .reserve_protocol_metadata(4096)
             .map_err(|error| authority_error(error.into()))?;
-        let transport =
-            ProtocolTransport::from_http_provider(&self.inner).map_err(authority_error)?;
+        // Keep the qualified profile bound to its exact origin, policy
+        // limits and trust roots even when the provider has other destinations.
+        // This is byte-identical to the original single-destination profile.
+        let scoped = crate::HttpProviderConfig {
+            format_version: self.inner.config.format_version,
+            destinations: vec![self.inner.config.destinations[destination].clone()],
+            limits: self.inner.config.limits,
+            extra_roots: self.inner.config.extra_roots.clone(),
+            public_roots: self.inner.config.public_roots,
+        };
         let mut hash = HashWriter(Sha256::new());
         hash.0.update(b"lsf-qualified-http-effect-v1\0");
         serde_json::to_writer(
             &mut hash,
-            &(
-                &self.inner.config,
-                &endpoint,
-                tenant,
-                credential.binding.reference(),
-            ),
+            &(&scoped, &endpoint, tenant, credential.binding.reference()),
         )
         .map_err(|_| AuthorityError::Invalid)?;
         let profile = DispatchProfile {
@@ -111,8 +118,11 @@ impl HttpProvider {
                 latent_core::digest::HexDigest(hash.0.finalize())
             ),
         };
+        let transport = ProtocolTransport::from_http_provider(&self.inner, destination, scoped)
+            .map_err(authority_error)?;
         Ok(HttpEffectAdapter {
             provider: self.clone(),
+            credential: credential_index,
             transport,
             endpoint: Arc::new(endpoint),
             tenant: tenant.into(),
@@ -205,6 +215,7 @@ impl HttpEffectAdapter {
         );
         Ok(attempt::AcceptedOperation {
             provider: self.provider.clone(),
+            credential: self.credential,
             transport: self.transport.clone(),
             endpoint: Arc::clone(&self.endpoint),
             time: Arc::clone(&self.time),
@@ -239,7 +250,8 @@ impl HttpEffectAdapter {
             profile: self.profile.clone(),
             policy_revision,
             credential_epoch,
-            protected_credential_reference: self.provider.inner.credential_references[0]
+            protected_credential_reference: self.provider.inner.credential_references
+                [self.credential]
                 .binding
                 .reference()
                 .into(),
@@ -260,7 +272,7 @@ impl HttpEffectAdapter {
             || grant.effect() != attempt.effect()
             || grant.attempt() != attempt.attempt()
             || grant.protected_credential_reference()
-                != self.provider.inner.credential_references[0]
+                != self.provider.inner.credential_references[self.credential]
                     .binding
                     .reference()
         {

@@ -115,14 +115,14 @@ jobs:
               assert len(value) <= 65536 and b"\r" not in value, name
               before[name] = value
           source = before["tests/thread_sync_native.rs"]
-          assert hashlib.sha256(source).hexdigest() == "db61a651ef33931b90d6c2af44abee352936a1cf3a059c637bef13c14dcef67a"
+          assert hashlib.sha256(source).hexdigest() == "98af31d11cd5cd8e9c194e252d18b3cb6b54c700d504bf1a99b95f9d64dbe1b9"
           added = before["tests/mutex_reuse_cases.rs.inc"]
           original_cases = re.findall(rb"(?m)^#\[test\]\nfn ([A-Za-z0-9_]+)\(", source)
           new_cases = re.findall(rb"(?m)^#\[test\]\nfn ([A-Za-z0-9_]+)\(", added)
           expected_new = [b"reused_index_after_leaked_mutex_guard_waits_without_fabricating_ownership",
                           b"reused_index_after_leaked_writer_guard_keeps_rwlock_gate_closed",
                           b"reference_safe_forgotten_guards_keep_locks_held_after_thread_exit"]
-          assert len(original_cases) == len(set(original_cases)) == 22
+          assert len(original_cases) == len(set(original_cases)) == 24
           assert new_cases == expected_new
           current = before["mutex.rs"]
           comment = b"""        // A canonical index may be reused after an earlier thread leaked its
@@ -166,13 +166,13 @@ jobs:
               assert len(listing.stdout) + len(listing.stderr) <= 1024 * 1024
               actual = [line.removesuffix(b": test") for line in listing.stdout.splitlines() if line.endswith(b": test")]
               expected = original_cases + expected_new
-              assert len(actual) == len(set(actual)) == len(expected) == 25 and set(actual) == set(expected)
+              assert len(actual) == len(set(actual)) == len(expected) == 27 and set(actual) == set(expected)
               result = subprocess.run([str(executables["current"]), "--test-threads=1"], cwd=temporary,
                                       capture_output=True, timeout=60, check=True)
               assert len(result.stdout) + len(result.stderr) <= 1024 * 1024
               passed = re.findall(rb"(?m)^test ([^\r\n]+) \.\.\. ok$", result.stdout)
-              assert len(passed) == 25 and set(passed) == set(expected)
-              assert b"test result: ok. 25 passed; 0 failed; 0 ignored;" in result.stdout
+              assert len(passed) == 27 and set(passed) == set(expected)
+              assert b"test result: ok. 27 passed; 0 failed; 0 ignored;" in result.stdout
               guard = temporary / "guard_send.rs"
               guard.write_text("fn require_send<T: Send>() {}\nfn main() { require_send::<std::sync::MutexGuard<'static, ()>>(); require_send::<std::sync::RwLockWriteGuard<'static, ()>>(); }\n")
               denied = subprocess.run(["rustc", "--edition=2024", str(guard), "-o", str(temporary / "guard")],
@@ -180,7 +180,7 @@ jobs:
               assert denied.returncode != 0 and len(denied.stderr) <= 1024 * 1024
               assert denied.stderr.count(b"cannot be sent between threads safely") >= 2
               assert b"MutexGuard" in denied.stderr and b"RwLockWriteGuard" in denied.stderr
-              print("two old reused-index failures; 25 source-port controls passed; MutexGuard and RwLockWriteGuard are !Send")
+              print("two old reused-index failures; 27 source-port controls passed; MutexGuard and RwLockWriteGuard are !Send")
           for name in files:
               assert (root / base / name).read_bytes() == before[name], name
           PY

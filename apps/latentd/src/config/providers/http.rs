@@ -36,24 +36,27 @@ impl HttpInstallation {
         if self.deferred.is_empty() {
             return Ok(());
         }
-        if self.deferred.capacity() > 16
-            || self.credentials.len() != 1
-            || self.credentials[0].destination != 0
-            || !self.credentials[0]
-                .header
-                .eq_ignore_ascii_case("authorization")
-            || self.credential_directory.is_none()
-        {
+        if self.deferred.capacity() > 16 || self.credential_directory.is_none() {
             return Err(invalid("providers.http.deferred"));
         }
         for (index, endpoint) in self.deferred.iter().enumerate() {
             endpoint
                 .validate(&self.configuration)
                 .map_err(|_| invalid("providers.http.deferred"))?;
-            if self.deferred[..index].iter().any(|previous| {
-                previous.operation_path == endpoint.operation_path
-                    || previous.lookup_prefix == endpoint.lookup_prefix
-            }) {
+            let has_credential = self.credentials.iter().any(|credential| {
+                credential.header.eq_ignore_ascii_case("authorization")
+                    && self
+                        .configuration
+                        .destinations
+                        .get(credential.destination)
+                        .is_some_and(|destination| destination.origin == endpoint.origin)
+            });
+            if !has_credential
+                || self.deferred[..index].iter().any(|previous| {
+                    previous.operation_path == endpoint.operation_path
+                        || previous.lookup_prefix == endpoint.lookup_prefix
+                })
+            {
                 return Err(invalid("providers.http.deferred"));
             }
         }

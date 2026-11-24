@@ -119,7 +119,7 @@ impl StateAuthorization {
             Some(permit) => authority.with_metadata_dependency(permit.decision()),
             None => authority,
         };
-        let mut authorization = Self::new(
+        let mut authorization = Self::new_with_intents(
             Arc::clone(&self.policy),
             Arc::new(authority),
             namespace,
