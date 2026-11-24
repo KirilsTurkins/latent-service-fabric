@@ -23,20 +23,46 @@ python tools/stateful_reference_project.py \
 
 Use the [guest authoring workflow](../component-development/transactional-authoring.md)
 for the selected compiler, package, signing and admission steps. Install each
-build's actual publication and signed transaction companion. For
-the deferred notification, select the exact qualified HTTP adapter on the node
-and capture its `--http-profile` when creating the project. Install the separate
-staging and dispatcher grants described by the
-[deferred HTTP installation](../development/deferred-http-installation.md).
+build's actual publication and signed transaction companion. For the two
+deferred notifications, set `--http-profile` and `--event-profile` to the
+qualified adapter profiles observed from the node when creating the project.
+Install the separate staging and dispatch policies for the
+[HTTPS recipient](../development/deferred-http-installation.md) and
+[JetStream publisher](../development/deferred-jetstream.md).
 
 Use the [reference deployment workflow](../../examples/stateful-reference/README.md)
 to derive the shared ingress routes from the signed companion and actual
 publication, revision and generation. The
 [transaction HTTP binding](../development/transaction-http-v1.md) defines the
 command, query and original-result routes and their separate permissions.
-The Angular renderer needs narrowly scoped
-read credentials for its two installed draft query routes. Keep those
-credentials in the protected renderer configuration.
+
+## Install the signed Angular frontend
+
+Use the [Angular build recipe](../development/angular-build-evidence.md) with
+`examples/stateful-reference/angular` as the input root. Sign the assembled
+frontend and the two completed guest builds with
+`capsule_authoring demo-sign-stateful-reference` for a disposable node. Publish
+the frontend with `latent web publish` and deploy it as `stateful-reference`
+with the approved Angular renderer budget and one outbound HTTP request.
+
+Keep the two read credentials in the protected HTTP provider configuration.
+Each origin uses a separate static loopback destination and an independently
+authorized GET on its draft's query path. The outbound policy ceiling must
+cover the installed provider's bounded response body, header copies and
+response framing. Keep two execution cells available for a renderer and its
+upstream query on the shared listener.
+
+Pass the frontend's current publication, revision and deployment generation
+to `--renderer-selection` in the reference deployment helper and apply the
+emitted GET and HEAD triggers. Prepare the approved publication on the
+running node before opening the page. Read its lifecycle generation with
+`latent web get`.
+
+```bash
+latent --phase4 --rpc-timeout-ms 120000 web prepare \
+  --publication "$FrontendPublication" --lifecycle-generation "$FrontendGeneration" \
+  --maximum-wait-ms 120000
+```
 
 ## Create the namespace and submit a draft
 
