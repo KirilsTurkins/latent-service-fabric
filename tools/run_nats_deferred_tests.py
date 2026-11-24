@@ -29,8 +29,9 @@ def authorization(standalone_token):
         # selects the approved topic; the token itself is not a guest grant.
         return {"token": PASSWORD}
     return {"users": [
-        {"user":"operator", "password":PASSWORD, "permissions":{"publish":["$JS.API.>"], "subscribe":["_INBOX.ADMIN.>"]}},
+        {"user":"operator", "password":PASSWORD, "permissions":{"publish":["$JS.API.>", "lsf.trigger.a"], "subscribe":["_INBOX.ADMIN.>"]}},
         {"user":"publisher", "password":PASSWORD, "permissions":{"publish":["lsf.deferred.allowed", "$JS.API.STREAM.INFO.DURABLE"], "subscribe":["_INBOX.LSF.>"]}},
+        {"user":"observer", "password":PASSWORD, "permissions":{"publish":["$JS.API.STREAM.INFO.INBOX", "$JS.API.CONSUMER.INFO.INBOX.INPUT"], "subscribe":["_INBOX.LSF.>"]}},
     ]}
 
 

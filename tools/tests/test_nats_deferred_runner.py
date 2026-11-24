@@ -18,7 +18,12 @@ with patch.object(sys, "path", [str(SCRIPT.parent), *sys.path]):
 class DeferredNatsRunnerTests(unittest.TestCase):
     def test_standalone_token_mode_is_explicit_and_keeps_default_scoped_users(self):
         self.assertEqual(RUNNER.authorization(True), {"token": RUNNER.PASSWORD})
-        self.assertEqual(len(RUNNER.authorization(False)["users"]), 2)
+        users = {entry["user"]: entry["permissions"] for entry in RUNNER.authorization(False)["users"]}
+        self.assertEqual(set(users), {"operator", "publisher", "observer"})
+        self.assertEqual(users["observer"], {
+            "publish": ["$JS.API.STREAM.INFO.INBOX", "$JS.API.CONSUMER.INFO.INBOX.INPUT"],
+            "subscribe": ["_INBOX.LSF.>"],
+        })
         for invalid in (None, 0, 1, "true"):
             with self.assertRaises(ValueError):
                 RUNNER.authorization(invalid)

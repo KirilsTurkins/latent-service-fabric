@@ -55,7 +55,7 @@ use std::{
 
 pub const WATCHDOG: Duration = Duration::from_secs(20);
 
-fn standalone_token_auth() -> bool {
+pub(super) fn standalone_token_auth() -> bool {
     match std::env::var("LSF_NATS_TEST_TOKEN_AUTH") {
         Ok(value) if value == "1" => true,
         Ok(value) if value == "0" => false,
@@ -234,7 +234,7 @@ pub fn permission(
     }
 }
 
-fn install_shared_pools(
+pub(super) fn install_shared_pools(
     root: &Path,
 ) -> (
     Arc<DirectoryArtifactRepository>,
@@ -278,7 +278,7 @@ fn install_shared_pools(
     (catalog, policies, pools)
 }
 
-async fn install_protected_credentials(
+pub(super) async fn install_protected_credentials(
     root: &Path,
     pools: Arc<ProviderPools>,
     config: &NatsConfig,

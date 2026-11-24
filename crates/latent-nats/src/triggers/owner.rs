@@ -15,6 +15,11 @@ use std::{
 };
 
 pub const NATS_TRIGGER_PROFILE: &str = "nats-jetstream-pull-v1";
+pub(super) enum InstallationMode {
+    Ordinary,
+    Transactional(Arc<dyn super::InboxAdmissionFactory>),
+    Inspection,
+}
 pub(super) struct Tenant {
     pub credential: usize,
     pub bindings: Vec<usize>,
@@ -53,7 +58,7 @@ impl NatsTriggers {
             expected_epoch,
             config,
             credentials,
-            None,
+            InstallationMode::Ordinary,
         )
     }
 
@@ -75,7 +80,7 @@ impl NatsTriggers {
             expected_epoch,
             config,
             credentials,
-            Some(admission),
+            InstallationMode::Transactional(admission),
         )
     }
 
@@ -83,21 +88,21 @@ impl NatsTriggers {
         clippy::too_many_lines,
         reason = "Fixed provider and admission owners install together"
     )]
-    fn install_inner(
+    pub(super) fn install_inner(
         pools: Arc<ProviderPools>,
         logical_id: &str,
         epoch: u64,
         expected_epoch: u64,
         config: TriggerConfig,
         credentials: Vec<NatsCredential>,
-        transaction_admission: Option<Arc<dyn super::InboxAdmissionFactory>>,
+        mode: InstallationMode,
     ) -> Result<Self> {
         config.validate()?;
         if config
             .bindings
             .iter()
             .any(|binding| binding.transaction.is_some())
-            && transaction_admission.is_none()
+            && matches!(mode, InstallationMode::Ordinary)
         {
             return Err(EventError::PermissionDenied);
         }
@@ -201,7 +206,10 @@ impl NatsTriggers {
             installed,
             pools,
             monitor,
-            transaction_admission,
+            transaction_admission: match mode {
+                InstallationMode::Transactional(admission) => Some(admission),
+                InstallationMode::Ordinary | InstallationMode::Inspection => None,
+            },
         })
     }
     #[must_use]
