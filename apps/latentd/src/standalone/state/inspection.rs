@@ -12,6 +12,8 @@ pub struct NativeTransactionHostInspection {
     pub configured_providers: Vec<crate::standalone::ProviderDescriptor>,
     pub configured_http_callers: Vec<NativeHttpCallerInspection>,
     pub configured_transport_callers: Vec<NativeHttpCallerInspection>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub configured_trigger_callers: Vec<NativeHttpCallerInspection>,
     pub state_provider_profile: String,
     pub state_configuration_digest: String,
     pub state_configuration_epoch: u64,
@@ -87,6 +89,17 @@ pub(in crate::standalone) fn callers(
         .collect::<Result<Vec<_>, _>>()?;
     Ok((http, transport))
 }
+pub(in crate::standalone) fn trigger_callers(
+    settings: &NodeSettings,
+) -> Result<Vec<NativeHttpCallerInspection>, PlatformError> {
+    settings
+        .transactional_triggers
+        .iter()
+        .flat_map(|source| &source.configuration.bindings)
+        .map(|binding| caller(&binding.principal()))
+        .collect()
+}
+
 fn caller(principal: &InvocationPrincipal) -> Result<NativeHttpCallerInspection, PlatformError> {
     let scope = CallerScope::derive(principal, &RecoverySelection::OriginalCaller)?;
     Ok(NativeHttpCallerInspection {

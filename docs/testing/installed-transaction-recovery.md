@@ -132,6 +132,12 @@ checkpoint by one source. Restart the node after the recovery report confirms
 success and clean physical retirement. The broker qualifies the configured
 stream incarnation and consumer during delivery.
 
+Run `latentd inspect-transaction-hosts` with that protected configuration to read
+the trigger's caller scope from `configuredTriggerCallers`. Apply the required
+state and intent grants to the exact trigger subject, namespace and current
+publication. Use the reported `recoveryKind` and `recoveryScope` in their state
+resource scopes.
+
 A stale inspection requires a fresh read. If an interrupted write leaves a
 checkpoint mismatch, startup and offline enrollment hold the source for
 reconciliation. Keep both the original database and external checkpoint.
