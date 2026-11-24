@@ -554,6 +554,9 @@ class CHttpClientControls(unittest.TestCase):
         expected_card = 'card:7:5:' + str(len(body)) + ':' + str(checksum)
         self.assertEqual(expected_card, 'card:7:5:57:1776131770')
         fixture.unseen_result({'exitCode': 0, 'decoded': [{'ok': expected_card}]}, 'normal')
+        fixture.unseen_result({'exitCode': 3, 'decoded': [{'err': 'card-status:5'}]}, 'denied')
+        with self.assertRaisesRegex(ValueError, '^c-card-exact-ordinary-result$'):
+            fixture.unseen_result({'exitCode': 0, 'decoded': [{'ok': expected_card}]}, 'denied')
         for row in ({'exitCode': False, 'decoded': [{'ok': expected_card}]},
                     {'exitCode': 0, 'decoded': [{'ok': 'card:7:5:57:2650795109'}]},
                     {'exitCode': 0, 'decoded': [{'ok': 'wrong-domain'}]}):

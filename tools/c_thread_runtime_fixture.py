@@ -214,11 +214,13 @@ def prepare_unseen_library(directory: Path, identity_variant: int = 0) -> Path:
     return project
 
 
-CARD_CASES = ('normal',)
+CARD_CASES = ('denied', 'normal')
 
 
 def unseen_result(row: dict, case: str) -> None:
     # The captured card library uses unsigned-byte FNV-1a, unlike the libfetch fixture.
-    if (type(row.get('exitCode')) is not int or case != 'normal'
-            or (row['exitCode'], row.get('decoded')) != (0, [{'ok': 'card:7:5:57:1776131770'}])):
+    expected = {'denied': (3, [{'err': 'card-status:5'}]),
+                'normal': (0, [{'ok': 'card:7:5:57:1776131770'}])}
+    if (type(row.get('exitCode')) is not int or case not in expected
+            or (row['exitCode'], row.get('decoded')) != expected[case]):
         raise ValueError('c-card-exact-ordinary-result')
