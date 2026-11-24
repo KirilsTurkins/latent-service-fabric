@@ -29,6 +29,16 @@ BUILD FAILED in 5s
 '''
 
 
+RATE_LIMIT = LOG.replace(
+    f'   > Could not find {COORDINATE}.\n     Searched in the following locations:\n       - {POM}\n',
+    f'   > Could not resolve {COORDINATE}.\n'
+).replace("         buildscript of root project 'lsf-java-guest-feasibility'\n",
+          "         buildscript of root project 'lsf-java-guest-feasibility'\n"
+          f"      > Could not resolve {COORDINATE}.\n"
+          f"         > Could not get resource '{POM}'.\n"
+          f"            > Could not GET '{POM}'. Received status code 429 from server: Too Many Requests\n")
+
+
 class AcquisitionRetryTests(unittest.TestCase):
     def setUp(self):
         self.stack = ExitStack()
@@ -58,7 +68,7 @@ class AcquisitionRetryTests(unittest.TestCase):
     def test_first_success_keeps_the_original_command(self):
         self.outcomes(None)
         self.assertEqual(self.run_compiler(), 'GENERATED\n')
-        self.assertEqual(self.process.call_args.args[0], ['/tools/gradle', '--no-daemon', 'generateC'])
+        self.assertEqual(self.process.call_args.args[0], [str(self.compiler.paths['gradle']), '--no-daemon', 'generateC'])
         self.sleep.assert_not_called()
         self.compiler.check_unchanged.assert_not_called()
 
@@ -66,8 +76,8 @@ class AcquisitionRetryTests(unittest.TestCase):
         self.outcomes(LOG, None)
         self.assertEqual(self.run_compiler(), 'GENERATED\n')
         self.assertEqual([call.args[0] for call in self.process.call_args_list], [
-            ['/tools/gradle', '--no-daemon', 'generateC'],
-            ['/tools/gradle', '--no-daemon', '--refresh-dependencies', 'generateC']])
+            [str(self.compiler.paths['gradle']), '--no-daemon', 'generateC'],
+            [str(self.compiler.paths['gradle']), '--no-daemon', '--refresh-dependencies', 'generateC']])
         self.assertEqual([row['exitCode'] for row in self.compiler.records], [1, 0])
         self.assertEqual(self.compiler.deadline, 100.0)
         self.assertIn('Could not find', (self.compiler.directory / '0-java-to-c.log').read_text())
@@ -75,6 +85,31 @@ class AcquisitionRetryTests(unittest.TestCase):
         self.assertEqual(json.loads((self.compiler.directory / '1-java-to-c.command.json').read_text())['exitCode'], 0)
         self.sleep.assert_called_once_with(2)
         self.compiler.check_unchanged.assert_called_once_with()
+
+    def test_rate_limited_locked_plugin_can_recover_within_the_original_deadline(self):
+        self.outcomes(RATE_LIMIT, RATE_LIMIT, None)
+        self.assertEqual(self.run_compiler(), 'GENERATED\n')
+        self.assertEqual([call.args for call in self.sleep.call_args_list], [(15,), (30,)])
+        self.assertEqual([row['exitCode'] for row in self.compiler.records], [1, 1, 0])
+        self.assertIn('--refresh-dependencies', self.process.call_args.args[0])
+
+    def test_rate_limit_recognition_requires_the_exact_locked_metadata_request(self):
+        variants = (RATE_LIMIT.replace(POM, POM.replace('repo.maven.apache.org', 'other.example')),
+            RATE_LIMIT.replace(POM, POM.replace('.pom', '.jar')),
+            RATE_LIMIT.replace('Could not GET', 'Could not HEAD'),
+            RATE_LIMIT.replace('429', '403'),
+            RATE_LIMIT.replace(COORDINATE, 'org.teavm:unreviewed:0.15.0', 1),
+            RATE_LIMIT + 'Could not download a transitive dependency\n',
+            RATE_LIMIT + 'Dependency verification failed\n')
+        for log in variants:
+            with self.subTest(log=log):
+                self.assertEqual(owner.compiler_metadata_retry_delay(log, LOCK), 0)
+        self.compiler.deadline = 24.0
+        self.outcomes(RATE_LIMIT, None)
+        with self.assertRaises(ValueError):
+            self.run_compiler()
+        self.sleep.assert_not_called()
+        self.assertEqual(self.process.call_count, 1)
 
     def test_multiple_missing_locked_poms_are_retryable_but_unknowns_are_not(self):
         other = 'teavm-metaprogramming-api'
