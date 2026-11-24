@@ -148,6 +148,7 @@ pub(crate) fn populate_with_inbox(
                 tenant: scope.tenant.0.clone(),
                 namespace: scope.namespace.0.clone(),
                 incarnation: scope.incarnation,
+                entity: None,
                 processing_scope: processing_scope.into(),
                 provider: "fixture-jetstream".into(),
                 stream: "orders".into(),
