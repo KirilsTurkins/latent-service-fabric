@@ -74,6 +74,33 @@ def selected(root: Path, version: str = "0.1.0-test.1", previous: dict | None = 
                                      {"method": "synthetic-for-safety-test-only", "policy": policy})
 
 
+class StatefulServiceStopTests(unittest.TestCase):
+    def test_orderly_stateful_stop_and_never_started_service_are_accepted(self):
+        for pid, start, code in ((b"247", b"82901", b"1"), (b"0", b"0", b"0"),
+                                 (b"0", b"82901", b"1")):
+            with self.subTest(pid=pid, start=start), patch.object(lifecycle, "systemctl") as call:
+                call.side_effect = [
+                    (0, pid), (0, b""), (0, b"0"), (0, b""),
+                    (0, b"Result=success\nExecMainCode=" + code
+                     + b"\nExecMainStatus=0\nExecMainStartTimestampMonotonic=" + start),
+                ]
+                lifecycle.stop_service(stateful=True)
+                self.assertEqual(call.call_count, 5)
+
+    def test_forced_stop_and_lost_service_status_cannot_confirm_clean_drain(self):
+        outcomes = (
+            b"Result=timeout\nExecMainCode=2\nExecMainStatus=9\nExecMainStartTimestampMonotonic=82901",
+            b"Result=success\nExecMainCode=2\nExecMainStatus=15\nExecMainStartTimestampMonotonic=82901",
+            b"Result=exit-code\nExecMainCode=1\nExecMainStatus=1\nExecMainStartTimestampMonotonic=82901",
+            b"Result=success\nExecMainCode=0\nExecMainStatus=0\nExecMainStartTimestampMonotonic=0",
+        )
+        for outcome in outcomes:
+            with self.subTest(outcome=outcome), patch.object(lifecycle, "systemctl") as call:
+                call.side_effect = [(0, b"247"), (0, b""), (0, b"0"), (0, b""), (0, outcome)]
+                with self.assertRaisesRegex(InstallError, "stateful-service-shutdown-unconfirmed"):
+                    lifecycle.stop_service(stateful=True)
+
+
 class ManifestTests(unittest.TestCase):
     def test_native_upgrade_preserves_the_approved_retained_transaction_profile(self):
         from types import SimpleNamespace
@@ -736,6 +763,51 @@ class LifecycleTests(unittest.TestCase):
             self.assertEqual(self.layout.state.read_bytes(), original)
             self.assertEqual(os.readlink(self.layout.current), "releases/" + first.metadata["version"])
             self.assertTrue(self.layout.transaction.exists())
+
+    def test_first_state_provisioning_creates_private_roots_and_preserves_existing_data(self):
+        with selected(self.root) as release:
+            self.install(release)
+            node = document(self.layout.node.read_bytes())
+            checkpoint = self.layout.data / "state-checkpoint"
+            node["state"] = {"createIfMissing": True, "checkpointRoot": str(checkpoint)}
+            self.layout.node.write_bytes(encode(node))
+            with patch.object(lifecycle, "transaction_engine", return_value={"testProfile": True}):
+                first = lifecycle.prepare_state_roots(self.layout)
+                store = self.layout.data / "state"
+                self.assertTrue(first["createdStoreRoot"] and first["createdCheckpointRoot"])
+                for path in (store, checkpoint):
+                    self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o700)
+                    self.assertEqual(path.stat().st_uid, os.geteuid())
+                marker = store / "retained-record"
+                marker.write_bytes(b"original-business-state")
+                repeated = lifecycle.prepare_state_roots(self.layout)
+                self.assertFalse(repeated["createdStoreRoot"] or repeated["createdCheckpointRoot"])
+                self.assertEqual(marker.read_bytes(), b"original-business-state")
+                self.assertEqual(self.layout.node.read_bytes(), encode(node))
+                self.probe.assert_called_with(self.layout, (os.geteuid(), os.getegid()), "preflight")
+
+    def test_state_provisioning_requires_explicit_managed_checkpoint_and_refuses_symlink(self):
+        with selected(self.root) as release:
+            self.install(release)
+            node = document(self.layout.node.read_bytes())
+            store = self.layout.data / "state"
+            outside = self.root / "outside"
+            outside.mkdir(mode=0o700)
+            with patch.object(lifecycle, "transaction_engine", return_value={"testProfile": True}):
+                with self.assertRaisesRegex(InstallError, "explicit-first-state-initialization"):
+                    lifecycle.prepare_state_roots(self.layout)
+                node["state"] = {"createIfMissing": True, "checkpointRoot": str(outside)}
+                self.layout.node.write_bytes(encode(node))
+                with self.assertRaisesRegex(InstallError, "checkpoint-root-is-outside-managed"):
+                    lifecycle.prepare_state_roots(self.layout)
+                self.assertFalse(store.exists())
+                node["state"]["checkpointRoot"] = str(self.layout.data / "state-checkpoint")
+                self.layout.node.write_bytes(encode(node))
+                store.symlink_to(outside, target_is_directory=True)
+                with self.assertRaises(OSError):
+                    lifecycle.prepare_state_roots(self.layout)
+                self.assertEqual(list(outside.iterdir()), [])
+                self.assertFalse((self.layout.data / "state-checkpoint").exists())
 
     def test_removal_retention_reinstallation_and_explicit_purge(self):
         with selected(self.root) as release:

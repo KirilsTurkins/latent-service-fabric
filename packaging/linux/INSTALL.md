@@ -27,23 +27,37 @@ checks a state-enabled configuration against that authenticated ABI. Durability
 uses the protected local ext4 store and immediate commits. Enable state
 explicitly in the protected node configuration before starting the service.
 
-For a systemd installation, prepare separate mode-0700 ext4 directories
-`/var/lib/lsf/state` and `/var/lib/lsf/state-checkpoint` owned by `lsf:lsf`
-as part of state enablement. Set `state.checkpointRoot` to the second
-directory. Keep the two directories empty for first initialization and
-preserve both for reinstall or upgrade. Preflight checks the actual protected
-directories as the service account before selecting the release. A retained
-state root requires explicit state configuration. Preparing snapshot and
-restore destinations uses the separate authenticated transaction recovery
-workflow.
+For first initialization on a stopped systemd node, set
+`state.createIfMissing` to `true` and `state.checkpointRoot` to
+`/var/lib/lsf/state-checkpoint` in the protected node configuration. Run the
+installed bootstrap to prepare the private directories and check them as
+`lsf:lsf`.
+
+```sh
+sudo python3 -I /opt/lsf/current/lsf-install.pyz prepare-state-roots --system
+```
+
+This creates `/var/lib/lsf/state` and `/var/lib/lsf/state-checkpoint` in the
+recorded data root. Both must be private mode-0700 directories on ext4. Start
+the service explicitly after preflight succeeds. After first initialization,
+set `state.createIfMissing` to `false` and preserve both roots for reinstall or
+upgrade. If you manage a separate checkpoint path, prepare it with the same
+ownership and permissions and run preflight as the service account. Snapshot
+and restore destinations use the authenticated transaction recovery workflow. For
+foreground operation with enforced admission, allow six seconds after the
+node has stopped cleanly before starting it again so the original admission
+lease can expire.
 
 For a version upgrade with state enabled, the installer runs the candidate's
 retained-state check against the stopped original store before selecting the
 candidate. It checks the engine metadata, store identity, row and quota bounds,
 and the retained records with the candidate's decoders under the original root
 lock. The check opens the database read-only. If it fails, the original release
-stays selected. Inspect the original store and resolve the failure before
-resuming the exact upgrade.
+stays selected. A stateful systemd upgrade or removal also checks the node's
+exit status after draining. If the service was force-stopped or reported a
+shutdown failure, recover with the original release and complete a clean stop
+before retrying. Pending effects and inbox records remain in the original
+store.
 
 Before executing **any downloaded installer or verifier code**, independently
 provision GitHub CLI **2.96.0 or newer**, Sigstore trusted roots, and the exact

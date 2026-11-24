@@ -14,7 +14,7 @@ import time
 from . import archive, files
 from .checks import current
 from .common import document, encode, execute, require
-from .configuration import LOCAL, approve_compiler, provision
+from .configuration import LOCAL, approve_compiler, load, provision, validate_layout
 from .layout import Layout, node_identity
 from .verify import VerifiedRelease, development_publisher, manifest, publisher_id, publisher_policy, transaction_engine, version
 
@@ -27,7 +27,12 @@ def systemctl(*arguments: str, timeout: float = 100) -> tuple[int, bytes]:
                    timeout=timeout, maximum=32768)
 
 
-def stop_service() -> None:
+def stop_service(*, stateful: bool = False) -> None:
+    started = False
+    if stateful:
+        status, pid = systemctl("show", "lsf.service", "--property=MainPID", "--value")
+        require(status == 0 and pid.strip().isdigit(), "service-main-process-observation-failed")
+        started = int(pid) != 0
     status, _output = systemctl("stop", "lsf.service")
     require(status == 0, "service-stop-failed")
     status, output = systemctl("show", "lsf.service", "--property=MainPID", "--value")
@@ -40,6 +45,19 @@ def stop_service() -> None:
         processes = Path("/sys/fs/cgroup") / group.lstrip("/") / "cgroup.procs"
         if processes.exists():
             require(not files.read(processes, 32768).strip(), "compiler-children-not-reaped")
+    if stateful:
+        status, output = systemctl("show", "lsf.service", "--property=Result", "--property=ExecMainCode",
+                                   "--property=ExecMainStatus", "--property=ExecMainStartTimestampMonotonic")
+        properties = dict(line.split(b"=", 1) for line in output.splitlines() if b"=" in line)
+        observed_start = properties.get(b"ExecMainStartTimestampMonotonic", b"")
+        # CLD_EXITED is 1. systemd can report success for SIGTERM, so also require
+        # the node's own orderly exit status once a main process has started.
+        exit_code = properties.get(b"ExecMainCode")
+        clean = status == 0 and properties.get(b"Result") == b"success" and observed_start.isdigit()
+        if clean:
+            expected = b"1" if started or int(observed_start) else b"0"
+            clean = exit_code == expected and properties.get(b"ExecMainStatus") == b"0"
+        require(clean, "stateful-service-shutdown-unconfirmed-recover-with-original-release")
 
 
 def read_state(layout: Layout) -> dict | None:
@@ -212,8 +230,9 @@ def install(layout: Layout, release: VerifiedRelease, *, profile: str, policy: P
         if layout.system and state and state["status"] == "installed" and state["currentVersion"] != selected:
             status, _output = systemctl("is-active", "--quiet", "lsf.service")
             require(status != 0 or start, "running-service-upgrade-requires-explicit-start")
-            stop_service()
-            if profile != LOCAL:
+            stop_service(stateful=node.get("state") is not None)
+            if node.get("supplyChain", {}).get("mode") == "enforced":
+                # Preserve the stopped node's existing admission lease interval.
                 time.sleep(6)
         if state and state["currentVersion"] != selected and node.get("state") is not None:
             preflight = child_check(layout, identity, "preflight", candidate=selected, retained_state=True)
@@ -259,6 +278,43 @@ def install(layout: Layout, release: VerifiedRelease, *, profile: str, policy: P
                 "activationReady": ready, "preflight": preflight, "experimental": True}
 
 
+def prepare_state_roots(layout: Layout) -> dict:
+    identity = node_identity(layout)
+    with ExitStack() as stack:
+        stack.enter_context(files.lock(layout.prefix / "install.lock"))
+        if not layout.system:
+            stack.enter_context(files.lock(layout.prefix / "run.lock", timeout=0))
+        require(not os.path.lexists(layout.transaction), "finish-interrupted-installation-before-state-provisioning")
+        require(not os.path.lexists(layout.prefix / "purge.json"), "finish-interrupted-purge-before-state-provisioning")
+        installation = read_state(layout)
+        require(installation is not None and installation["status"] == "installed", "installed-runtime-required")
+        validate_roots(layout, installation, identity)
+        node = load(layout, identity)
+        validate_layout(layout, node, installation["profile"])
+        state = node.get("state")
+        require(isinstance(state, dict) and state.get("createIfMissing") is True,
+                "explicit-first-state-initialization-required-in-node-configuration")
+        release = installation["releases"][installation["currentVersion"]]["metadata"]
+        require(transaction_engine(release["engine"]) is not None,
+                "selected-release-does-not-admit-transaction-state")
+        expected_release = layout.prefix / "releases" / installation["currentVersion"]
+        require(current(layout) == expected_release, "current-release-link-substitution")
+        archive.check_tree(expected_release, release["files"])
+        checkpoint = layout.data / "state-checkpoint"
+        require(state.get("checkpointRoot") == str(checkpoint), "checkpoint-root-is-outside-managed-state-layout")
+        if layout.system:
+            status, active = systemctl("show", "lsf.service", "--property=ActiveState", "--value")
+            require(status == 0 and active.strip() == b"inactive", "state-provisioning-requires-stopped-service")
+        owners = {0, os.geteuid(), identity[0]}
+        store = layout.data / "state"
+        created_store = files.mkdir(store, 0o700, identity, owners=owners)
+        created_checkpoint = files.mkdir(checkpoint, 0o700, identity, owners=owners)
+        preflight = child_check(layout, identity, "preflight")
+        return {"schemaVersion": "latent.native-state-roots.v1", "storeRoot": str(store),
+                "checkpointRoot": str(checkpoint), "createdStoreRoot": created_store,
+                "createdCheckpointRoot": created_checkpoint, "preflight": preflight}
+
+
 def remove(layout: Layout, *, purge: str | None = None) -> dict:
     identity = node_identity(layout)
     with ExitStack() as stack:
@@ -299,7 +355,7 @@ def remove(layout: Layout, *, purge: str | None = None) -> dict:
         validate_roots(layout, state, identity)
         if layout.system and state["status"] == "installed":
             require(files.digest(UNIT) == state["unitSha256"], "operator-modified-unit-not-removed")
-            stop_service()
+            stop_service(stateful=os.path.lexists(layout.data / "state"))
             status, _output = systemctl("disable", "lsf.service")
             require(status == 0, "service-disable-failed")
         if state["status"] != "removed":
