@@ -42,7 +42,7 @@ test("lost rejection response preserves unknown outcome and explicit recovery", 
       assert.ok(failure); assert.equal(failure.dispatched, true); assert.equal(failure.outcome, OutcomeKnowledge.Unknown);
       if (cancellation) { assert.equal(failure.category, FailureCategory.LocalCancelled); console.log("CANCELLED_DISPATCH_UNKNOWN"); }
       assert.equal(failure.transactionIdentity?.command?.clientKey, key); assert.equal(failure.observedTransaction, undefined);
-      if (mode === "conflict") { assert.equal(failure.grpcStatus, 6); console.log("CHANGED_INPUT_CONFLICT"); }
+      if (mode === "conflict") { assert.equal(failure.grpcStatus, 10); console.log("CHANGED_INPUT_CONFLICT"); }
       else console.log("LOST_REJECTION_UNKNOWN");
     }
   } finally {

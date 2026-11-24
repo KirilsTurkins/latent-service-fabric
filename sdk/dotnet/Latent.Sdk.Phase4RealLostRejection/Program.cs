@@ -68,7 +68,7 @@ try
             Check(!cancellation, "unexpected transaction failure during cancellation");
             Check(failure.Transport.Dispatched && failure.Transport.Outcome == Profile.OutcomeKnowledge.Unknown, "dispatched unknown");
             Check(failure.Identity.Command?.ClientKey == key && failure.Observed is null, "original identity without fabricated outcome");
-            if (mode == "conflict") Check(failure.Transport.GrpcStatus == 6, "retained key conflict");
+            if (mode == "conflict") Check(failure.Transport.GrpcStatus == 10, "retained key conflict");
             failed = true;
         }
         Check(failed, "response must be withheld");

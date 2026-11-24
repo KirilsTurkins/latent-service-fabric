@@ -148,7 +148,7 @@ func TestPhase4ChangedInputConflictsWithOriginalRejection(t *testing.T) {
 	if !errors.As(err, &failure) || failure.Transport == nil {
 		t.Fatalf("expected dispatched conflicting-input refusal: %v", err)
 	}
-	if failure.Transport.GrpcStatus == nil || *failure.Transport.GrpcStatus != 6 || !failure.Transport.Dispatched {
+	if failure.Transport.GrpcStatus == nil || *failure.Transport.GrpcStatus != 10 || !failure.Transport.Dispatched {
 		status := int32(-1)
 		if failure.Transport.GrpcStatus != nil {
 			status = *failure.Transport.GrpcStatus

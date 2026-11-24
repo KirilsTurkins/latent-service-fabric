@@ -215,7 +215,7 @@ async fn changed_input_conflicts_with_original_rejection() {
         .await
         .expect_err("changed input under the retained key must conflict");
     assert!(failure.transport.dispatched);
-    assert_eq!(failure.transport.grpc_status, Some(6));
+    assert_eq!(failure.transport.grpc_status, Some(10)); // gRPC ABORTED (state-conflict)
     assert_eq!(failure.transport.outcome, OutcomeKnowledge::UNKNOWN);
     assert_eq!(
         failure

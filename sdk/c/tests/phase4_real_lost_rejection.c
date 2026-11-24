@@ -29,7 +29,7 @@ static void invoked(const latent_transaction_invoke_command_result *r, const lat
         memcmp(f->identity.command->client_key.data,expected_key.data,expected_key.length)==0 && !f->observed.has_command);
     if (o->pre_cancel) puts("CANCELLED_BEFORE_DISPATCH");
     else if (strcmp(required("LSF_401_MODE"),"conflict")==0) {
-        assert(f->transport.has_grpc_status && f->transport.grpc_status==6);
+        assert(f->transport.has_grpc_status && f->transport.grpc_status==10);
         puts("CHANGED_INPUT_CONFLICT");
     } else {
         if (strcmp(required("LSF_401_MODE"),"cancel")==0) puts("CANCELLED_DISPATCH_UNKNOWN");

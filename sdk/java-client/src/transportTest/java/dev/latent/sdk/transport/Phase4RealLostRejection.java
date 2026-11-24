@@ -60,7 +60,7 @@ public final class Phase4RealLostRejection {
                     var failure=TransactionClient.clientFailure(error).orElseThrow();
                     check(failure.transport().dispatched() && failure.transport().outcome().equals(Management.OutcomeKnowledge.UNKNOWN), "dispatched unknown");
                     check(failure.identity().command().orElseThrow().clientKey().equals(key) && failure.observed().isEmpty(), "original identity without fabricated outcome");
-                    if (mode.equals("conflict")) check(failure.transport().grpcStatus().orElse(-1) == 6, "retained key conflict");
+                    if (mode.equals("conflict")) check(failure.transport().grpcStatus().orElse(-1) == 10, "retained key conflict");
                     if (cancellation) { check(failure.transport().category().equals(Management.FailureCategory.LOCAL_CANCELLED), "caller cancellation"); System.out.println("CANCELLED_DISPATCH_UNKNOWN"); }
                     failed = true;
                 }
