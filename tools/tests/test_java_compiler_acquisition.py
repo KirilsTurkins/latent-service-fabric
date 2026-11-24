@@ -257,6 +257,20 @@ class AcquisitionRetryTests(unittest.TestCase):
         compiler.return_value.compile.assert_called_once_with(project / 'src', project / 'wit',
             'examples:greeting/service@1.0.0', capture / 'managed-dependency-build')
 
+    def test_shared_contract_compiler_acquires_pinned_inputs_within_its_parent_deadline(self):
+        from tools import qualify_transaction_contracts as contracts
+
+        output = self.compiler.directory
+        wasi_sdk = output / 'wasi-sdk'
+        commands = Mock(deadline=130.0)
+        with patch.object(acquisition, 'AcquisitionCompiler', autospec=True) as compiler:
+            compiler.return_value.compile.side_effect = ValueError('contract compiler probe')
+            with self.assertRaisesRegex(ValueError, 'contract compiler probe'):
+                contracts.compile_contract('java', output, commands, tools=None, wasi_sdk=wasi_sdk)
+        compiler.assert_called_once_with(output / 'compiler', wasi_sdk, _deadline=commands.deadline)
+        compiler.return_value.compile.assert_called_once_with(contracts.FIXTURE / 'java',
+            contracts.FIXTURE / 'wit', contracts.WORLD, output / 'compiled')
+
     def test_ordinary_application_compiler_remains_single_attempt(self):
         application = production.Compiler.__new__(production.Compiler)
         application.__dict__.update(self.compiler.__dict__)

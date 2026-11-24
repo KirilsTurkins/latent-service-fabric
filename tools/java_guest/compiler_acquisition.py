@@ -55,7 +55,7 @@ def missing_compiler_metadata(log: str, lock: bytes) -> bool:
 
 
 class AcquisitionCompiler(Compiler):
-    """Retry bounded metadata failures during the maintained greeting's online acquisition.
+    """Retry bounded metadata failures when a maintained build acquires its compiler.
 
     Ordinary application compilers are unchanged. Every attempt still uses the
     pinned build, dependency verification, original deadline and retention cap.

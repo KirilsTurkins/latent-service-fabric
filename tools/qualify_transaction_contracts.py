@@ -150,10 +150,10 @@ def compile_contract(language: str, output: Path, commands: Commands, *, tools: 
         compiler.check_unchanged()
         return component, {"bindings": bindings, "tools": compiler.materials}
     if language == "java":
-        from tools.java_guest.compiler import Compiler
+        from tools.java_guest.compiler_acquisition import AcquisitionCompiler
         if wasi_sdk is None:
             raise ValueError("Java definition qualification requires --wasi-sdk")
-        compiler = Compiler(output / "compiler", wasi_sdk)
+        compiler = AcquisitionCompiler(output / "compiler", wasi_sdk, _deadline=commands.deadline)
         component, details = compiler.compile(FIXTURE / "java", FIXTURE / "wit", WORLD, output / "compiled")
         compiler.check_unchanged()
         (output / "compiler-inputs.json").write_bytes(compiler.compiler_inputs)
