@@ -227,7 +227,7 @@ class HistoricalInventory(unittest.TestCase):
 
             native_record = {'commands': [{'argv': ['git']},
                 {'argv': argv(original['rust-version'])}, {'argv': argv(original['normal-host-build'])}],
-                'controlCount': 254}
+                'controlCount': 262}
             current = types.SimpleNamespace(current_source=lambda: (head, {}),
                 committed_materials=lambda *_: None, native_evidence=evidence,
                 read_json=lambda *_: native_record)
