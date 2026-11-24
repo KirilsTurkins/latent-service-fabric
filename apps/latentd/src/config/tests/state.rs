@@ -50,6 +50,41 @@ fn incoming_configuration_requires_private_leaf_before_runtime_custody_check() {
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+#[test]
+fn packaged_preflight_checks_actual_private_disjoint_state_roots_without_opening_storage() {
+    use super::super::state::check_protected_roots;
+    use latent_protected_files::ProtectedRoot;
+    use std::os::unix::fs::{symlink, PermissionsExt};
+
+    let directory = tempfile::tempdir().unwrap();
+    let data = directory.path().join("state");
+    let checkpoint = directory.path().join("checkpoint");
+    for root in [&data, &checkpoint] {
+        fs::create_dir(root).unwrap();
+        fs::set_permissions(root, fs::Permissions::from_mode(0o700)).unwrap();
+    }
+    let local_ext4 = ProtectedRoot::open(&data)
+        .unwrap()
+        .filesystem_type()
+        .unwrap()
+        == 0xef53;
+    assert_eq!(
+        check_protected_roots(&data, &checkpoint).is_ok(),
+        local_ext4
+    );
+    assert!(check_protected_roots(&data, &data).is_err());
+
+    let linked = directory.path().join("linked");
+    symlink(&checkpoint, &linked).unwrap();
+    assert!(check_protected_roots(&data, &linked).is_err());
+    fs::set_permissions(&checkpoint, fs::Permissions::from_mode(0o750)).unwrap();
+    assert!(check_protected_roots(&data, &checkpoint).is_err());
+
+    assert!(fs::read_dir(&data).unwrap().next().is_none());
+    assert!(fs::read_dir(&checkpoint).unwrap().next().is_none());
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 fn write_test_admission_policy(path: &std::path::Path) {
     use std::os::unix::fs::PermissionsExt;
 

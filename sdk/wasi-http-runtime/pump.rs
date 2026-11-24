@@ -217,23 +217,14 @@ impl Pump {
             self.driver_waker.borrow_mut().take();
             return Poll::Ready(());
         }
-        // End list borrows before calling code which can retire an operation.
-        let owners: Vec<_> = self
-            .operations
-            .borrow()
-            .iter()
-            .filter_map(Weak::upgrade)
-            .collect();
-        for owner in owners {
+        // An earlier callback can cancel a later sibling. Snapshot the registry
+        // without extending sibling lifetimes, then check each owner at its turn.
+        let owners = self.operations.borrow().clone();
+        for owner in owners.iter().filter_map(Weak::upgrade) {
             owner.progress(context);
         }
-        let waiters: Vec<_> = self
-            .waiters
-            .borrow()
-            .iter()
-            .filter_map(Weak::upgrade)
-            .collect();
-        for waiter in waiters {
+        let waiters = self.waiters.borrow().clone();
+        for waiter in waiters.iter().filter_map(Weak::upgrade) {
             if waiter.sources.iter().any(|source| source.ready()) {
                 let waker = waiter.waker.borrow_mut().take();
                 if let Some(waker) = waker {

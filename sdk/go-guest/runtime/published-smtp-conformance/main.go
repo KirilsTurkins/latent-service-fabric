@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"errors"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -43,7 +44,7 @@ func workerTimerStage() bool {
 // The published client uses its ordinary factories, without an injected Conn,
 // transport, executor or application-level retry around SMTP.
 func Run(which uint32, input string) string {
-	if which > 5 {
+	if which > 6 {
 		return "unsupported-fixture-mode"
 	}
 	var config struct {
@@ -110,8 +111,17 @@ func Run(which uint32, input string) string {
 			return "tls-state-error"
 		}
 	}
+	if which == 6 {
+		message := strings.NewReader("Subject: controlled fixture\r\n\r\nOne controlled message.\r\n")
+		if client.SendMail("sender@example.invalid", []string{"recipient@example.invalid"}, message) != nil {
+			return "published-smtp-delivery-error"
+		}
+	}
 	if client.Quit() != nil {
 		return "published-smtp-quit-error"
+	}
+	if which == 6 {
+		return "published-smtp-delivery-acknowledged"
 	}
 	if which == 0 {
 		return "published-smtp-plain"

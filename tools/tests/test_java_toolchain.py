@@ -85,6 +85,14 @@ class BuildWiringTests(unittest.TestCase):
         self.assertEqual(open_.call_count, 2)
         sleep.assert_called_once_with(3)
 
+        throttles = [urllib.error.HTTPError("https://repo.test/jar", 429, "rate limit", {}, None)
+                     for _ in range(2)]
+        with mock.patch.object(build.urllib.request, "urlopen", side_effect=[*throttles, io.BytesIO(content)]) as open_, \
+                mock.patch.object(build.time, "sleep") as sleep:
+            self.assertEqual(build.download_locked("https://repo.test/jar", artifact), content)
+        self.assertEqual(open_.call_count, 3)
+        self.assertEqual(sleep.call_args_list, [mock.call(15), mock.call(30)])
+
     def test_locked_download_does_not_retry_integrity_auth_or_unbounded_backoff(self):
         artifact = {"size": 3, "sha256": hashlib.sha256(b"jar").hexdigest()}
         for reply in [io.BytesIO(b"bad"), io.BytesIO(b"jar-extra"),

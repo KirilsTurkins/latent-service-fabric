@@ -60,6 +60,9 @@ def compile_recipe(root: Path, source: Path, descriptor: dict, record: dict, too
             raise DevError("language-adapter-result-invalid", uncertain=True, diagnostics=observed) from error
         if response["cleanup"] != "reaped":
             raise DevError("guest-build-cleanup-unconfirmed", uncertain=True, diagnostics=observed)
+        if response['code'] == 'compiler-input-or-build-failed' and executable_approval is None:
+            from .executable_approval_request import retain_managed_refusal
+            retain_managed_refusal(source, descriptor)
     if result.returncode != 0:
         raise DevError("guest-build-failed-last-deployment-retained", diagnostics=observed)
     return observed

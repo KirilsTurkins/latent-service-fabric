@@ -26,6 +26,15 @@ PLATFORM = {"osId": "ubuntu", "osVersion": "24.04", "minimumKernel": "6.8",
             "minimumGlibc": "2.39", "cpuFeatures": ["sse2"], "pythonMinimum": "3.12"}
 DEVELOPMENT_TEST = {"formatVersion": 1, "purpose": "disposable-development-tests",
                     "features": ["latentd/development-test-node"], "fixtures": ["guest-clock-v1"]}
+TRANSACTION_ABI = "lsf-host-abi-phase4-v1"
+TRANSACTION_STORE = {"engine": "redb", "format": "latent.transaction-store.v2",
+                     "durability": "immediate", "filesystem": "ext4"}
+TRANSACTION_ABI_PATH = "wit/host-abi-phase4-v1.json"
+TRANSACTION_SCHEMAS = {
+    "schemas/transaction-api.schema.json",
+    "schemas/transaction-binding.schema.json",
+    "schemas/transaction-durable-record.schema.json",
+}
 REQUIRED = {"bin/latent", "bin/latentd", "bin/latent-aot-compiler", "lsf-install.pyz",
             "systemd/lsf.service", "config/local-experimental-v1.json",
             "config/external-capsule-v1.json", "LICENSE", "NOTICE", "INSTALL.md",
@@ -48,6 +57,27 @@ def relative(value: str) -> str:
     return value
 
 
+def transaction_engine(value: dict) -> dict | None:
+    if "transactionState" not in value:
+        return None
+    profile = value["transactionState"]
+    require(isinstance(profile, dict) and set(profile) == {
+        "hostAbiProfile", "hostAbiDigest", "abiFileSha256", "store"
+    }, "invalid-transaction-runtime-profile")
+    require(profile["hostAbiProfile"] == TRANSACTION_ABI
+            and isinstance(profile["hostAbiDigest"], str)
+            and re.fullmatch(r"sha256:[0-9a-f]{64}", profile["hostAbiDigest"])
+            and isinstance(profile["abiFileSha256"], str)
+            and SHA256.fullmatch(profile["abiFileSha256"]), "invalid-transaction-runtime-abi")
+    store = profile["store"]
+    require(isinstance(store, dict) and set(store) == set(TRANSACTION_STORE) | {"engineVersion"}
+            and all(store.get(key) == item for key, item in TRANSACTION_STORE.items())
+            and isinstance(store["engineVersion"], str)
+            and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", store["engineVersion"]),
+            "unsupported-transaction-store-profile")
+    return profile
+
+
 def manifest(value: dict, selected: str) -> dict:
     require(set(value) - {"developmentTest"} == {"schemaVersion", "version", "sourceCommit", "target", "toolchain",
                            "engine", "platform", "compatibility", "archive", "bootstrap", "files"},
@@ -65,9 +95,10 @@ def manifest(value: dict, selected: str) -> dict:
             and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", value["toolchain"]["rust"])
             and SHA256.fullmatch(value["toolchain"]["lockSha256"]), "release-toolchain-identity")
     engine = value["engine"]
-    require(set(engine) == {"wasmtimeVersion", "hostAbiProfile", "compilerSha256", "dynamicDependencies"}
+    require(set(engine) - {"transactionState"} == {"wasmtimeVersion", "hostAbiProfile", "compilerSha256", "dynamicDependencies"}
             and isinstance(engine["wasmtimeVersion"], str) and isinstance(engine["hostAbiProfile"], str)
             and SHA256.fullmatch(engine["compilerSha256"]), "release-engine-identity")
+    transaction = transaction_engine(engine)
     require(isinstance(engine["dynamicDependencies"], list)
         and set(engine["dynamicDependencies"]) <= {"libc.so.6", "libgcc_s.so.1", "libm.so.6",
                                                        "libpthread.so.0", "libdl.so.2", "librt.so.1", "ld-linux-x86-64.so.2"},
@@ -103,6 +134,11 @@ def manifest(value: dict, selected: str) -> dict:
                                   else 0o644), "release-file-mode")
         total += entry["size"]
     require(total <= 1_073_741_824 and REQUIRED <= names, "release-inventory-incomplete-or-large")
+    if transaction is not None:
+        require(TRANSACTION_SCHEMAS | {TRANSACTION_ABI_PATH} <= names,
+                "transaction-runtime-files-missing")
+        abi = next(entry for entry in entries if entry["path"] == TRANSACTION_ABI_PATH)
+        require(abi["sha256"] == transaction["abiFileSha256"], "transaction-runtime-abi-file-mismatch")
     require(not any("/".join(name.split("/")[:depth]) in names for name in names
                     for depth in range(1, len(name.split("/")))), "release-path-conflict")
     compiler = next(entry for entry in entries if entry["path"] == "bin/latent-aot-compiler")

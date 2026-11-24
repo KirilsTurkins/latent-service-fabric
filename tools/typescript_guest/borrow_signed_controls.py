@@ -538,6 +538,11 @@ def qualify_node_net(tools, material_directory, output, prepared_native):
             '--','--ignored','--exact','--nocapture','--test-threads=1',seconds=600,
             env={**environment,'LSF_GUEST_SDK_LANGUAGE':'typescript','LSF_TYPESCRIPT_BORROW_FIXTURE':str(prepared),'LSF_GUEST_CAPSULES':str(prepared)})
         record['actualCases']=node_net_records(raw)
+        paused = [json.loads(line.removeprefix('TYPESCRIPT_NODE_NET_PAUSED_PAYLOAD '))
+                  for line in raw.decode().splitlines() if line.startswith('TYPESCRIPT_NODE_NET_PAUSED_PAYLOAD ')]
+        require(len(paused) == 1 and paused[0].get('guestResult') == 'node-net:paused-payload:pass',
+                'node-net-signed-paused-payload-required')
+        record['pausedPayload'] = paused[0]
         record['referenceProfile']=record['actualCases'][0]['referenceProfile']
         require(record['referenceProfile']['preparation']['componentDigest']==record['component']['sha256'],
                 'node-net-prepared-component-matches-normal-build')

@@ -46,6 +46,16 @@ Actual managed and NativeAOT compilation requires separate qualification.
 
 Use literal `EmbeddedResource Include="resources/prefix.txt" LogicalName="example.prefix"` declarations for captured application data. The maintained compiler preserves those bytes and ordinary managed assembly resource lookup. Resources inside captured managed package assemblies retain their assembly ownership. Embedding grants no host filesystem access. Resource names, bytes, selected package ownership and final component identity must remain consistent with signed package/resource evidence; inclusion alone does not establish every resource-reader implementation.
 
+For a resource shipped inside a private NuGet package, declare the
+`EmbeddedResource` in the library project before packing it. Open it through
+`typeof(Worker).Assembly.GetManifestResourceStream("outside.price-card")`
+inside that library. The signed example reads a UTF-8 price card, awaits
+`Task.Delay(10, token)`, fetches JSON with `new HttpClient()`, then compares
+the two documents. It runs after removing both private source projects and
+their feed. The same component also exercises Flurl.Http 4.0.2 and Refit
+16.4.0 through their ordinary factories.
+[Published and private client results](../testing/evidence/sdk-private-library-invocations-2026-11-23.json)
+
 `TrimmerRootDescriptor` items must refer to captured literal paths. The actual NativeAOT compiler performs reflection/trimming analysis; unsupported JIT, dynamic loading, native/PInvoke assets and missing runtime members remain concrete incompatibilities. An assembly's managed PE header is a capture preflight, not proof of its complete AOT compatibility. `Task`, `ThreadPool` or timer references do not imply blanket package rejection and do not establish their execution: #746 owns those runtime ports, and #693 owns ordinary `HttpClient`.
 
 The [descriptor reflection qualification](../testing/dotnet-reflection-qualification.md)
@@ -99,7 +109,10 @@ preflight does not establish authenticated private-feed execution qualification.
 
 Resolution holds a project-owned authoring lock and stages native restore locks, asset metadata and original archives privately. It rechecks sources, SDK, descriptor, resolver and hash helper before publication. Failed attempts preserve the accepted lock and roll back their own published native/manifest bytes while preserving concurrent user edits. A successful resolution remains a candidate until exact review; cache presence grants no trust. A frontend project stores the manifest, accepted lock and CAS at its outer project root, with native inputs bound to its selected application directory. An inner shadow capture is rejected.
 
-For a maintained frontend project, `test PROJECT --workspace WORKSPACE --select TEST` and `watch PROJECT --workspace WORKSPACE --select TEST` verify the same reviewed closure before delegating to normal `dev test` and `dev up --watch`. These commands preserve operator grants, recipe trust, package signing and admission; a changed lock or recipe requires normal fresh trust. `--frontend` requires its exact `--frontend-sha256`, or the owner delegates through its maintained source controller. Uncertain remote mutations retain their original exit code and are never retried automatically. The source controls exercise command delegation and transactional failure boundaries; actual signed .NET watch/update qualification remains a separate required gate.
+Use the [workspace approval commands](application-dependencies.md#review-a-compiler-execution-request)
+to inspect a refused installed build and select that generator request for build or watch.
+
+For a maintained frontend project, `test PROJECT --workspace WORKSPACE --select TEST` and `watch PROJECT --workspace WORKSPACE --select TEST` verify the same reviewed closure before delegating to normal `dev test` and `dev up --watch`. These commands preserve operator grants, recipe trust, package signing and admission; a changed lock or recipe requires normal fresh trust. `--frontend` requires its exact `--frontend-sha256`, or the owner delegates through its maintained source controller. Uncertain remote mutations retain their original exit code and are never retried automatically. An Ubuntu 24.04.5 run rebuilt and deployed a private NuGet library with an embedded resource, picked up its revised value, then rebuilt the application after removal. The selected tests returned `42/SDK/captured watch data`, `43/SDK/captured watch data` and `removed/SDK`. All three signed workspaces stopped cleanly. This source-built toolkit used the packaged frontend, an explicitly trusted source node and network-isolated compilers. [Ubuntu watch results and exact toolkit](../testing/evidence/dotnet-ubuntu-private-dependency-watch-2026-11-24.json)
 
 Selected usernames and passwords must be nonempty strings of at most 16384
 characters. ASCII controls and characters that cannot form valid XML are

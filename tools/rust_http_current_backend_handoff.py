@@ -142,7 +142,7 @@ def verify(prepared, controls):
         and record['cargoFeatureSelection'] == 'original-default-no-extra-feature-flags'
         and record['featureClosureBoundary'] == 'test targets may resolve different dev dependencies; identical full graphs are not claimed'
         and type(record['historicalCommandStages']) is int and record['historicalCommandStages'] == 34
-        and type(record['currentCodecControls']) is int and record['currentCodecControls'] == 254
+        and type(record['currentCodecControls']) is int and record['currentCodecControls'] == 262
         and type(record['elapsedSeconds']) in (int, float) and math.isfinite(record['elapsedSeconds'])
         and 0 <= record['elapsedSeconds'] < 1320 and record['nativeEvidence'] == native[0],
         'supplement-receipt')

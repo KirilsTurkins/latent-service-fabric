@@ -51,6 +51,15 @@ const exportTaskMetaPreimage = `async function _withGlobalCurrentTaskMetaAsync(a
   }
 }`;
 
+// The Socket binding also verifies this whole compiler-owned block before
+// placing its close drain immediately after the application call.
+export function inlinedExportTaskBlock(argumentsSource) {
+  const body = exportTaskMetaPreimage.slice(exportTaskMetaPreimage.indexOf('{') + 1, -1)
+    .replace('return await fn();', 'ret = await fn();');
+  return '{\n  const __lsfExportTaskMetaArgs = ' + argumentsSource +
+    ';\n  {\n    const args = __lsfExportTaskMetaArgs;\n' + body + '\n  }\n}';
+}
+
 // The generated export already awaits its application result. Execute the
 // private metadata wrapper in that frame instead of owning a second async
 // Promise and its adoption reactions while the application's graph is live.
@@ -89,8 +98,6 @@ export function inlineExportTaskMeta(source, parse) {
   const wrappers = entries.filter(({node}) => node.type === 'FunctionDeclaration' && id(node.id, '_withGlobalCurrentTaskMetaAsync'));
   if (wrappers.length !== 1 || source.slice(wrappers[0].node.start, wrappers[0].node.end) !== exportTaskMetaPreimage ||
       entries.filter(({node}) => id(node, '_withGlobalCurrentTaskMetaAsync')).length !== allCalls.length + 1) fail();
-  const body = exportTaskMetaPreimage.slice(exportTaskMetaPreimage.indexOf('{') + 1, -1)
-    .replace('return await fn();', 'ret = await fn();');
   const edits = [];
   for (const {node: call, parents} of calls) {
     const outer = enclosing(parents), awaited = parents.at(-1), assignment = parents.at(-2), statement = parents.at(-3);
@@ -127,9 +134,8 @@ export function inlineExportTaskMeta(source, parse) {
         creation.length !== 1 || creation[0].node.end >= enters[0].node.start) fail();
     // Capture the original callback outside the helper's lexical scope. This
     // preserves references named args/current/fn/etc. in generated arguments.
-    edits.push({start: statement.start, end: statement.end, text:
-      '{\n  const __lsfExportTaskMetaArgs = ' + source.slice(object.start, object.end) +
-      ';\n  {\n    const args = __lsfExportTaskMetaArgs;\n' + body + '\n  }\n}'});
+    edits.push({start: statement.start, end: statement.end,
+      text: inlinedExportTaskBlock(source.slice(object.start, object.end))});
   }
   edits.sort((a, b) => b.start - a.start);
   let previous = source.length;

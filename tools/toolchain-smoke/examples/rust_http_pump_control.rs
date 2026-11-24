@@ -73,7 +73,7 @@ async fn main() -> wasmtime::Result<()> {
     }
     let engine = Engine::new(&config)?;
     let component = Component::from_file(&engine, path)?;
-    let gates: Arc<[Arc<Gate>; 4]> = Arc::new(std::array::from_fn(|_| Arc::new(Gate::default())));
+    let gates: Arc<[Arc<Gate>; 5]> = Arc::new(std::array::from_fn(|_| Arc::new(Gate::default())));
     let host_gates = gates.clone();
     let mut linker = Linker::<()>::new(&engine);
     linker
@@ -93,6 +93,7 @@ async fn main() -> wasmtime::Result<()> {
     let instance = linker.instantiate_async(&mut store, &component).await?;
     let run = instance.get_typed_func::<(u32,), (u32,)>(&mut store, "run")?;
     let retire = instance.get_typed_func::<(u32,), ()>(&mut store, "retire")?;
+    let discard = instance.get_typed_func::<(u32,), ()>(&mut store, "discard-before-turn")?;
     let drain = instance.get_typed_func::<(), ()>(&mut store, "drain")?;
     let poke = instance.get_typed_func::<(), ()>(&mut store, "poke")?;
     tokio::time::timeout(
@@ -182,13 +183,17 @@ async fn main() -> wasmtime::Result<()> {
     assert!(!gates[3].ready.load(Ordering::SeqCst));
     assert_eq!(gates[3].live.load(Ordering::SeqCst), 1);
     assert_eq!(gates[3].drops.load(Ordering::SeqCst), 0);
+    tokio::time::timeout(Duration::from_secs(5), discard.call_async(&mut store, (4,))).await??;
+    assert_eq!(gates[4].polls.load(Ordering::SeqCst), 0);
     tokio::time::timeout(Duration::from_secs(5), drain.call_async(&mut store, ())).await??;
     assert_eq!(gates[3].live.load(Ordering::SeqCst), 0);
     assert_eq!(gates[3].drops.load(Ordering::SeqCst), 1);
+    assert_eq!(gates[4].polls.load(Ordering::SeqCst), 0);
+    assert_eq!(gates[4].drops.load(Ordering::SeqCst), 0);
     store.assert_concurrent_state_empty();
     assert!(store.get_fuel()? < 1_000_000_000);
     println!(
-        "actual compiled pump: two sequential siblings before held release; deferred cancellation; empty engine state"
+        "actual compiled pump: two sequential siblings before held release; deferred cancellation; discarded sibling never entered host; empty engine state"
     );
     Ok(())
 }

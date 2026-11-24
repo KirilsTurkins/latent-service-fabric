@@ -73,10 +73,33 @@
         "timeout-minutes": 5
       },
       {
+        "name": "Clean Java SDK outputs before restoring its locked dependencies",
+        "run": "gradle --no-daemon --console=plain -p sdk/java-client clean",
+        "timeout-minutes": 2
+      },
+      {
+        "id": "java-transport-deps",
+        "name": "Restore locked Java SDK transport dependencies",
+        "uses": "KirilsTurkins/lsf-cache/restore",
+        "with": {
+          "key": "java-client-transport-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('sdk/java-client/dependencies.lock.json') }}",
+          "path": "sdk/java-client/build/deps"
+        }
+      },
+      {
         "name": "Qualify the Java 25 Gradle build",
-        "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/java-sdk\"\ngit rev-parse HEAD | tee \"$RUNNER_TEMP/java-sdk/gradle.log\"\nuname -srm | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 sdk/java-client/tools/java_toolchain.py check | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ngradle --version | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 -m unittest tools.tests.test_check_tool_versions tools.tests.test_java_toolchain 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ntimeout 540 gradle --no-daemon --console=plain -p sdk/java-client clean check 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\necho 'Gradle qualification passed' | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\n",
+        "run": "set -euo pipefail\nmkdir -p \"$RUNNER_TEMP/java-sdk\"\ngit rev-parse HEAD | tee \"$RUNNER_TEMP/java-sdk/gradle.log\"\nuname -srm | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 sdk/java-client/tools/java_toolchain.py check | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ngradle --version | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\npython3 -m unittest tools.tests.test_check_tool_versions tools.tests.test_java_toolchain 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\ntimeout 540 gradle --no-daemon --console=plain -p sdk/java-client check 2>&1 | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\necho 'Gradle qualification passed' | tee -a \"$RUNNER_TEMP/java-sdk/gradle.log\"\n",
         "shell": "bash",
         "timeout-minutes": 10
+      },
+      {
+        "if": "github.ref == 'refs/heads/development' && github.event_name != 'pull_request' && steps.java-transport-deps.outputs.cache-hit != 'true'",
+        "name": "Save verified Java SDK transport dependencies from development",
+        "uses": "KirilsTurkins/lsf-cache/save",
+        "with": {
+          "key": "${{ steps.java-transport-deps.outputs.cache-primary-key }}",
+          "path": "sdk/java-client/build/deps"
+        }
       },
       {
         "env": {
@@ -105,7 +128,7 @@
   },
   "jobId": "sdks",
   "kind": "job",
-  "reviewReason": "Fix actual current CI failures: Go 1.27.4 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler. Replace only the failed Buf setup with the pinned, size- and digest-verified release asset; retain all existing checks.",
+  "reviewReason": "Fix actual current CI failures: Go 1.27.4 official security patch and archive digest; preserve every original test, command, guard, coverage and bound. All 27 pinned Go overlay files are byte-identical in the official source archive. Preserve historical diagnostics and compiler receipts. Retained entropy authenticates its old compiler before acquiring the separately pinned patched compiler. Replace only the failed Buf setup with the pinned, size- and digest-verified release asset; retain all existing checks. Keep the full Java clean and check tasks. Restore only the pinned transport dependencies between them and save them after verification on development.",
   "schemaVersion": "latent.ci.contracts.v1",
   "workflow": ".github/workflows/ci.yml"
 }

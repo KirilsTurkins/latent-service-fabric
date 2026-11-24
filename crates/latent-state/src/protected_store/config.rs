@@ -24,6 +24,55 @@ pub struct ProtectedStoreConfig {
 }
 
 impl ProtectedStoreConfig {
+    /// Inspect the original stopped store without repairing, upgrading or
+    /// creating its database. The descriptor and its root lock remain held
+    /// through logical validation and the final fence checks.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub fn check_retained(
+        &self,
+        memory: super::ProtectedStoreStartupMemory,
+        validator_bytes: u64,
+        validate: impl FnOnce(&crate::embedded::ReadView) -> Result<(), crate::embedded::StoreError>,
+    ) -> Result<(), ProtectedStoreError> {
+        use crate::embedded::{EmbeddedStore, StoreError};
+        use latent_protected_files::ProtectedRoot;
+
+        let memory = memory.prepare(&super::startup_memory::startup_memory_size(
+            self,
+            validator_bytes,
+        )?)?;
+        memory.initialization.check()?;
+        let unsafe_root = |_| ProtectedStoreError::UnsafeRoot;
+        let root = ProtectedRoot::open(&self.root).map_err(unsafe_root)?;
+        root.require_private_owner().map_err(unsafe_root)?;
+        if root.filesystem_type().map_err(unsafe_root)? != 0xef53 {
+            return Err(ProtectedStoreError::UnsupportedFilesystem);
+        }
+        let (lock, lock_fence) = root
+            .open_mutable_file("transaction-owner.lock", 1, false)
+            .map_err(unsafe_root)?;
+        lock.try_lock()
+            .map_err(|_| ProtectedStoreError::Store(StoreError::Unavailable))?;
+        let (file, file_fence) = root
+            .open_mutable_file(&self.file_name, self.maximum_file_bytes, false)
+            .map_err(unsafe_root)?;
+        EmbeddedStore::check_retained(
+            &file,
+            self.engine,
+            || {
+                memory
+                    .initialization
+                    .check()
+                    .map_err(|_| StoreError::Unavailable)
+            },
+            validate,
+        )
+        .map_err(ProtectedStoreError::Store)?;
+        root.check_mutable_file(&file_fence).map_err(unsafe_root)?;
+        root.check_mutable_file(&lock_fence).map_err(unsafe_root)?;
+        memory.initialization.check()
+    }
+
     /// Describes the validated selected engine configuration before opening it.
     /// This uses the same format and limits as the actual owner's observation;
     /// it establishes no physical owner, filesystem admission or authority.

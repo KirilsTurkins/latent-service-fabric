@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import platform
+import re
 import secrets
 import sys
 
@@ -10,6 +11,19 @@ from .common import PROTOCOL, HOST_ABI, members, require
 FEATURES = frozenset({"doctor", "install", "install-tools", "up", "status", "logs", "down", "purge", "snapshot",
                       "build", "build-status", "executable-approval-request", "cancel-build", "deploy", "recover", "invoke", "test", "prepare-test",
                       "asset-begin", "asset-chunk", "asset-finish", "capture-begin", "capture-chunk", "capture-finish", "preflight"})
+
+_ERROR_CODE = re.compile(r"[a-z][a-z0-9-]{0,100}")
+
+
+def installer_error_code(message: str) -> str:
+    # The installer uses dotted versions in these fixed host requirements.
+    # Keep the wire format readable by earlier developer frontends.
+    if message in {"supported-distribution-is-ubuntu-24.04", "kernel-6.8-or-newer-required",
+                   "glibc-2.39-or-newer-required", "python-3.12-or-newer-required"}:
+        return message.replace(".", "-")
+    if _ERROR_CODE.fullmatch(message):
+        return message
+    return "native-installer-input-or-host-check-failed"
 
 
 def hello() -> dict:
@@ -62,9 +76,8 @@ def result(value: dict, sent: dict) -> dict:
     require(type(value["uncertain"]) is bool and isinstance(value["result"], dict), "backend-response-format")
     if value["code"] != "success" or value["uncertain"]:
         # Only bounded static protocol codes are rendered; never arbitrary stderr.
-        import re
         code = value["code"]
-        require(isinstance(code, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,100}", code), "backend-response-code")
+        require(isinstance(code, str) and _ERROR_CODE.fullmatch(code), "backend-response-code")
         from .diagnostics import validate
         diagnostics = validate(value["result"].get("diagnostics", []))
         raise DevError(code, uncertain=value["uncertain"], diagnostics=diagnostics)
