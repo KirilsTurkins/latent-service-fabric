@@ -120,7 +120,8 @@ def invoke(client, target, which, url, activation):
     return row
 
 
-def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadline: float | None = None):
+def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadline: float | None = None,
+        private_handler: bool = False):
     expires = min(time.monotonic()+300, deadline) if deadline is not None else time.monotonic()+300
     require(expires > time.monotonic(), 'standard-java-original-deadline-expired')
     output = fresh(output)
@@ -215,11 +216,19 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
                      ('uncertain', 1, '/conformance/mutation/close', '1:transport:uncertain'),
                      ('alternate-denied', 0, f"http://{secondary['host']}:{secondary['port']}/conformance/denied-target",
                          '1:transport:permission-denied'),
-                     ('direct-factory', 4, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()),
-                     ('fresh', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode())]
+                     ('direct-factory', 4, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode())]
+            if private_handler:
+                denied_url = f"http://{secondary['host']}:{secondary['port']}/conformance/denied-target"
+                cases.extend([
+                    ('private-handler', 5, '/conformance/json', '1:handler:200:' + json_bytes(DOMAIN).decode()),
+                    ('private-handler-denied', 5, denied_url, '1:handler:transport:permission-denied')])
+            cases.append(('fresh', 0, '/conformance/json', '1:200:'+json_bytes(DOMAIN).decode()))
             for name, which, path, expected in cases:
                 row = invoke(client, target, which, path if path.startswith('http://') else url+path, 'standard-'+name)
                 require(row['exitCode'] == 0 and row['decoded'] == [expected], 'standard-java-'+name+'-result')
+                if name in ('private-handler', 'private-handler-denied'):
+                    requests = int(row['response']['data']['consumption']['outboundRequests'])
+                    require(requests == int(name == 'private-handler'), 'standard-java-handler-outbound-requests')
                 result['cases'].append(name)
                 # The shared outbound owner checks every activation-scoped and
                 # service-resident row. Ingress-only exchange rows are absent on
@@ -241,7 +250,7 @@ def run(artifact: Path, native: Path | dict[str, Path], output: Path, *, deadlin
             peer.stop()
             observation = json.loads(bytes(peer.buffers[0]).splitlines()[0])
             validate_peer(observation)
-            require(observation['startedRequests'] == 11 and observation['rejectedRequests'] == 0
+            require(observation['startedRequests'] == (12 if private_handler else 11) and observation['rejectedRequests'] == 0
                 and observation['committedMutations'] == 1
                 and all(row['role'] == 'primary' for row in observation['requests']),
                 'standard-java-peer-contact-count')

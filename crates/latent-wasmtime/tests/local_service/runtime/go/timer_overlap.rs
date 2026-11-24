@@ -52,6 +52,8 @@ async fn run_overlap(variable: &str, profile: &str) {
         ("reset-stop", "go-timer-overlap-reset-stop", 1, 2),
         ("gc-reset-reset", "go-timer-overlap-gc-reset-reset", 2, 3),
         ("gc-reset-stop", "go-timer-overlap-gc-reset-stop", 3, 4),
+        ("stop-reset", "go-timer-overlap-stop-reset", 4, 5),
+        ("stop-stop", "go-timer-overlap-stop-stop", 5, 6),
     ] {
         let result = f.manager.start(f.request(id, mode)).unwrap().await;
         let selected = result
@@ -89,7 +91,7 @@ async fn run_overlap(variable: &str, profile: &str) {
         .cancel_for(&TenantId("tenant-a".into()), &id, "go-timer-overlap-cancel")
         .unwrap();
     assert_eq!(failure(invocation.await).code, PlatformErrorCode::Cancelled);
-    retired(&f, "cancel-reset-reset", 0, "cancelled", 5).await;
+    retired(&f, "cancel-reset-reset", 0, "cancelled", 7).await;
 
     let mut deadline = f.request("go-timer-overlap-deadline-reset-stop", 1);
     deadline.budget.wall_time_limit_millis = Some(1_800);
@@ -97,7 +99,7 @@ async fn run_overlap(variable: &str, profile: &str) {
         failure(f.manager.start(deadline).unwrap().await).code,
         PlatformErrorCode::DeadlineExceeded
     );
-    retired(&f, "deadline-reset-stop", 1, "deadline-exceeded", 6).await;
+    retired(&f, "deadline-reset-stop", 1, "deadline-exceeded", 8).await;
 
     let result = f
         .manager
@@ -119,9 +121,9 @@ async fn run_overlap(variable: &str, profile: &str) {
         serde_json::from_slice::<Vec<u32>>(&success(result).output).unwrap(),
         [42]
     );
-    retired(&f, "fresh", 0, "success", 7).await;
+    retired(&f, "fresh", 0, "success", 9).await;
     // Each selected Store emits its own fixed-width causal record on drop.
-    // The owner independently requires six complete, ordered records and six
+    // The owner independently requires eight complete, ordered records and eight
     // original physical-wait drops, including both root-stop cases;
     // this test's success alone does not establish the overlap.
 }

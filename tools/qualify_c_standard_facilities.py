@@ -552,7 +552,8 @@ def qualify_http(args):
                 row['node'] = node.run_http(artifact, native_paths, output / ('node-outside-' + str(variant)),
                     deadline=node_deadline, runtime_profile=runtime_profile, client_kind='outside-card',
                     client_state=counters, client_deadline=client_deadline)
-                require(row['node']['status'] == 'passed' and len(row['node']['cases']) == 1
+                require(row['node']['status'] == 'passed'
+                        and [cell['case'] for cell in row['node']['cases']] == list(fixture.CARD_CASES)
                         and row['node']['client'] == 'outside-card' and row['node']['independentClientCount'] == 0,
                         'c-outside-current-domain-and-retirement-required')
             require(variants[0]['node']['native'] == variants[1]['node']['native'], 'c-outside-same-current-native')

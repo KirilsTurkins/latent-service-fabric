@@ -1,0 +1,169 @@
+{
+  "sourceCommit": "8761d24dd4cfa3abaf2ddc526ec610b472d6007c",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "target": "x86_64-unknown-linux-gnu",
+  "cargoArguments": [
+    "--config",
+    ".cargo/managed-guest.toml",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "latent-wasmtime",
+    "--test",
+    "local_service",
+    "--no-run",
+    "--message-format=json"
+  ],
+  "testBinarySha256": "792a1c2c9816c1ac4325abbc7ac2142d63ef3c6cdef765a331ebe4f580039697",
+  "tests": [
+    {
+      "name": "runtime::signed_parked_task_wakes_and_settles_after_owner_records_move",
+      "passed": 1,
+      "ignored": 0,
+      "logSha256": "fe6f6c887682f4320bc8949a61e401152375a0958565b50f82cf1ba0c5c6fe06"
+    },
+    {
+      "name": "runtime::signed_runtime_limits_closing_and_generation_fences_use_normal_node_admission",
+      "passed": 1,
+      "ignored": 0,
+      "logSha256": "3f698cce7151c5e3000268bb44100382e98a39c0b6e27bfd47f99e634a8206e9"
+    },
+    {
+      "name": "runtime::root_result_idle_worker_and_trap_never_skip_runtime_retirement",
+      "passed": 1,
+      "ignored": 0,
+      "logSha256": "e13bf82c665e089090db5d56812d91c832efd01dc940ccf5c0f51762b8794e79"
+    },
+    {
+      "name": "runtime::canonical_timer_allows_sibling_work_and_bounds_recurrence_cancellation_and_storms",
+      "passed": 1,
+      "ignored": 0,
+      "logSha256": "e904d82dbbf2429a9bd221439e6285a3d9b73d0fa365640695908336e2013c05"
+    },
+    {
+      "name": "runtime::narrower_timer_policy_deadline_preserves_root_and_allows_owner_settlement",
+      "passed": 1,
+      "ignored": 0,
+      "logSha256": "eaa3cc2f73b00ad32fa0640c579675c6e3016ae5043510336c3a4be64cd43418"
+    },
+    {
+      "name": "runtime::policy_revocation_at_real_timer_barrier_stops_original_work_and_reclaims_owners",
+      "passed": 1,
+      "ignored": 0,
+      "logSha256": "614208d9654086a776e3a895fc2b64f84214c92cc21f4a920da1b5b932850d11"
+    },
+    {
+      "name": "runtime::cancellation_at_actual_timer_barrier_reclaims_original_store_and_cell",
+      "passed": 1,
+      "ignored": 0,
+      "logSha256": "3e0fe0b37f0848f31290b04f81b52ac94945b32a4e2f1fc24f181b32e2d10014"
+    },
+    {
+      "name": "runtime::completed_fixed_results_release_original_calls_before_the_next_import",
+      "passed": 1,
+      "ignored": 0,
+      "logSha256": "913de751b0cbb39d724a2208ce70379e30185645ae9746e1cb4d12c6cdc49eac"
+    },
+    {
+      "name": "runtime::pending_fixed_results_retain_only_actual_original_calls_and_drop_cleanly",
+      "passed": 1,
+      "ignored": 0,
+      "logSha256": "05fb96cfb65cbb52329e83607da0e6ead04a235da9d15de17dcb02e842889731"
+    },
+    {
+      "name": "runtime::root_deadline_does_not_complete_long_timer_and_cpu_loop_remains_contained",
+      "passed": 1,
+      "ignored": 0,
+      "logSha256": "d69c617969123a59d8b51a7457ca88895eb3f6163417d922dd2d20a670afa0ab"
+    }
+  ],
+  "observedOn": "2026-11-24",
+  "scope": "Signed components admitted by the Linux local-node composition in the default latent-wasmtime integration test. Measurements use the original activation ledger.",
+  "componentDigest": "sha256:ee93e32805eb809864809f5fe756d1f8d84d13f533f0a55b40ab165b906f6d3d",
+  "testSourceSha256": "2f739ef9d107b5a9fd48b04a055dd9e6e85042e6e9d9888c34eaf9ab56969522",
+  "componentSourceSha256": "651f864429b8da7720db8b1d115dd691202c54bcf43bc095b324c62edab4a9ab",
+  "runtimeSourceSha256": "bb881c563efbdc1210f6da1c88bdc93b05a9b9f5fb28d6c4e79738370383b837",
+  "relocation": {
+    "observedGuestResult": 42,
+    "steps": [
+      {
+        "operation": "settle first registered task",
+        "tasks": 1,
+        "parked": 1
+      },
+      {
+        "operation": "register replacement and close independent admission",
+        "tasks": 2,
+        "parked": 1
+      },
+      {
+        "operation": "wake original surviving task",
+        "tasks": 2,
+        "parked": 0
+      },
+      {
+        "operation": "settle original surviving task",
+        "tasks": 1,
+        "parked": 0
+      }
+    ],
+    "consumption": {
+      "cpu_fuel": 2274,
+      "peak_memory_bytes": 292903,
+      "wall_time_micros": 43369,
+      "child_calls": 0,
+      "outbound_requests": 0,
+      "state_read_bytes": 0,
+      "state_write_bytes": 0,
+      "blob_read_bytes": 0,
+      "blob_write_bytes": 0,
+      "log_bytes": 0,
+      "effect_count": 0
+    },
+    "zeroAfterRetirement": [
+      "active activations",
+      "cancellation registrations",
+      "cell leases",
+      "scheduler queue depth",
+      "instance reservations",
+      "live Stores",
+      "broker calls",
+      "broker sessions",
+      "broker handles",
+      "broker results",
+      "broker buffer bytes"
+    ]
+  },
+  "comparison": {
+    "direct": {
+      "cpu_fuel": 6,
+      "peak_memory_bytes": 291461,
+      "wall_time_micros": 976,
+      "child_calls": 0,
+      "outbound_requests": 0,
+      "state_read_bytes": 0,
+      "state_write_bytes": 0,
+      "blob_read_bytes": 0,
+      "blob_write_bytes": 0,
+      "log_bytes": 0,
+      "effect_count": 0
+    },
+    "withRuntimeOwner": {
+      "cpu_fuel": 911,
+      "peak_memory_bytes": 292757,
+      "wall_time_micros": 1674,
+      "child_calls": 0,
+      "outbound_requests": 0,
+      "state_read_bytes": 0,
+      "state_write_bytes": 0,
+      "blob_read_bytes": 0,
+      "blob_write_bytes": 0,
+      "log_bytes": 0,
+      "effect_count": 0
+    },
+    "requestIdBytes": 19,
+    "additionalLedgerPeakBytes": 1296,
+    "additionalFuel": 905
+  }
+}

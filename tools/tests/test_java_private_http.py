@@ -93,6 +93,13 @@ class JavaPrivateHttpTests(unittest.TestCase):
             'peer': {'startedRequests': 11, 'rejectedRequests': 0, 'committedMutations': 1,
                      'requests': [{'role': 'primary'} for _ in range(11)]}}
         gate.verify_node(original)
+        extended = copy.deepcopy(original)
+        extended['cases'][-1:-1] = ['private-handler', 'private-handler-denied']
+        extended['peer']['requests'].append({'role': 'primary'})
+        extended['peer']['startedRequests'] += 1
+        gate.verify_node(extended, private_handler=True)
+        with self.assertRaisesRegex(RuntimeError, 'signed-provider-incomplete'):
+            gate.verify_node(original, private_handler=True)
         for kind in ('different-case', 'missing-case', 'unclean', 'unreaped', 'bool-as-int', 'bool-count', 'replay', 'alternate'):
             row = copy.deepcopy(original)
             if kind == 'different-case': row['cases'][-1] = 'invented'
