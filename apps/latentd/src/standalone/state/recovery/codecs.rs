@@ -7,6 +7,7 @@ use latent_effects::{
 use latent_state::{
     embedded::{Family, ReadView, RowKey, StoreError},
     namespace::{catalog::NamespaceCatalog, NamespaceRecord},
+    payload_references,
     recovery::{
         namespace_resume::NamespaceRecoveryView,
         snapshot::{RequiredArtifact, SnapshotClosure},
@@ -205,22 +206,15 @@ impl Codecs {
     }
     pub fn row(&self, key: &RowKey, bytes: &[u8]) -> Result<(), StoreError> {
         self.check()?;
-        if matches!(
-            self.action,
-            Action::Snapshot { .. } | Action::InspectRestore { .. } | Action::Restore { .. }
-        ) {
-            use latent_state::payload_references;
-            if payload_references::owns_row(key) {
-                return if self.payloads.is_some()
-                    && payload_references::row_tenant(key, bytes)? == self.namespace.tenant.0
-                {
-                    Ok(())
-                } else {
-                    Err(StoreError::Conflict)
-                };
+        if payload_references::owns_row(key) {
+            if self.payloads.is_none() {
+                super::super::validation::reject_unverified_payload(key, bytes)?;
             }
-        } else {
-            super::super::validation::reject_unverified_payload(key, bytes)?;
+            return if payload_references::row_tenant(key, bytes)? == self.namespace.tenant.0 {
+                Ok(())
+            } else {
+                Err(StoreError::Conflict)
+            };
         }
         match latent_state::inbox_scope::retained_scope(key, bytes) {
             Ok(scope) => {

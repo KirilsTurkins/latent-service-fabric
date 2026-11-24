@@ -20,7 +20,7 @@ pub fn describe_state_payload_owner(
         return Err(StoreError::UnsupportedFormat);
     }
     let bytes = view
-        .get_bounded(key, codec::CELL_BYTES)?
+        .get_typed_bounded(key, codec::CELL_BYTES)?
         .ok_or(StoreError::Corrupt)?;
     owner_from_cell(key, inspect_cell(view, key, &bytes)?)
 }
@@ -97,7 +97,7 @@ pub fn retained_state_payload_reference(
     view: &ReadView,
     cell_key: &RowKey,
 ) -> Result<Option<StatePayloadLink>, StoreError> {
-    let Some(bytes) = view.get_bounded(cell_key, codec::CELL_BYTES)? else {
+    let Some(bytes) = view.get_typed_bounded(cell_key, codec::CELL_BYTES)? else {
         return Ok(None);
     };
     if inspect_cell(view, cell_key, &bytes)?.value.is_none() {

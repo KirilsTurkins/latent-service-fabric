@@ -34,6 +34,7 @@ pub(crate) fn aggregate_v1_to_v2(
     if page.resume.is_some() || page.rows.len() != 1 || page.rows[0].0 != key {
         return Err(StoreError::UnsupportedFormat);
     }
+    super::require_no_state_payload_reference(view, &key)?;
     let original = &page.rows[0].1;
     let migrated = transform(original, namespace)?;
     let usage_key = usage_key(&scope).map_err(storage_error)?;

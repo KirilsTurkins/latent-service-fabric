@@ -399,6 +399,50 @@ fn unsupported_value_entity_or_second_key_refuses_before_durable_marker() {
 }
 
 #[test]
+fn fixed_migration_refuses_to_replace_a_count_with_a_retained_payload() {
+    use crate::payload_references::{
+        LocalPayloadIdentity, PayloadReference, PreparedPayloadReferences, StatePayloadLink,
+    };
+    use sha2::{Digest, Sha256};
+
+    let recipe = AggregateMigrationRecipe::Count;
+    let fixture = Fixture::new(recipe, true);
+    let namespace = fixture.current().namespace;
+    let key = fixture.state_row().key;
+    let view = fixture.store.snapshot().unwrap();
+    assert!(crate::session::migration::aggregate_v1_to_v2(&view, &namespace, recipe).is_ok());
+    let (owner, value) = crate::session::describe_state_payload_owner(&view, &key).unwrap();
+    let reference = PayloadReference {
+        payload: LocalPayloadIdentity {
+            tenant: owner.tenant.clone(),
+            provider: "local".into(),
+            provider_epoch: 1,
+            provider_configuration: [11; 32],
+            blob_namespace: "private".into(),
+            digest: Sha256::digest(&value.bytes).into(),
+            size: value.bytes.len() as u64,
+            media_type: value.media_type,
+        },
+        owner,
+    };
+    let link = StatePayloadLink {
+        reference: reference.clone(),
+        cell_key: key,
+    };
+    let mut plan = PreparedPayloadReferences::prepare(&view, &[(None, Some(reference))]).unwrap();
+    plan.replace_state_link(&view, None, Some(&link)).unwrap();
+    let mut batch = AtomicBatch::default();
+    plan.append_to(&mut batch).unwrap();
+    drop(view);
+    fixture.store.apply(batch).unwrap();
+    let view = fixture.store.snapshot().unwrap();
+    assert!(matches!(
+        crate::session::migration::aggregate_v1_to_v2(&view, &namespace, recipe),
+        Err(crate::embedded::StoreError::UnsupportedFormat)
+    ));
+}
+
+#[test]
 fn actual_schema_epoch_change_refuses_old_writer_and_preserves_historical_receipt() {
     let fixture = Fixture::new(AggregateMigrationRecipe::Count, true);
     fixture.apply(MigrationPhase::Stage);

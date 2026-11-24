@@ -84,8 +84,13 @@ for the source review. The destination uses its own directory identity and
 keeps the archived content and owner identities. An interrupted restore leaves
 the destination paused and requires fresh destination roots for another
 attempt. Adopt the verified destination state, data directory and checkpoint
-together, then review before enabling ingress. Schema migration currently
-requires an inline-only archive.
+together, then review before enabling ingress.
+
+The fixed aggregate migration accepts a checkpoint with verified linked work
+when its original provider and decoder profiles remain installed. It leaves
+those owners and their historical records in place. Drain unresolved work
+before migration. The count value transformed by this recipe must have no
+durable payload attachment.
 
 When the archive contains anchored inbox sources, restore inspection and
 staging report `inboxReplay` with the exact source inventory generation and
