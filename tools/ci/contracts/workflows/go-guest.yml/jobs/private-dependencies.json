@@ -1,0 +1,81 @@
+{
+  "definition": {
+    "if": "${{ !cancelled() && needs.upstream-probe.outputs.normal-qualification == 'success' }}",
+    "name": "Authenticated private Go dependencies and offline signed lifecycle",
+    "needs": "upstream-probe",
+    "runs-on": "ubuntu-24.04",
+    "steps": [
+      {
+        "uses": "KirilsTurkins/lsf-checkout",
+        "with": {
+          "persist-credentials": false
+        }
+      },
+      {
+        "uses": "KirilsTurkins/lsf-setup-python",
+        "with": {
+          "python-version": "3.13.5"
+        }
+      },
+      {
+        "env": {
+          "NATIVE_ID": "${{ needs.upstream-probe.outputs.native-artifact }}",
+          "TOOLS_ID": "${{ needs.upstream-probe.outputs.tools-artifact }}"
+        },
+        "name": "Require both artifact IDs from this run's ordinary Go build",
+        "run": "set -euo pipefail\n[[ \"$NATIVE_ID\" =~ ^[1-9][0-9]*$ && \"$TOOLS_ID\" =~ ^[1-9][0-9]*$ && \"$NATIVE_ID\" != \"$TOOLS_ID\" ]]\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Download the same run's frozen node, tools and companion packages",
+        "uses": "KirilsTurkins/lsf-download-artifact",
+        "with": {
+          "artifact-ids": "${{ needs.upstream-probe.outputs.native-artifact }}",
+          "digest-mismatch": "error",
+          "merge-multiple": true,
+          "path": "${{ runner.temp }}/go-native-transfer"
+        }
+      },
+      {
+        "name": "Download the same run's pinned Go compiler and generator",
+        "uses": "KirilsTurkins/lsf-download-artifact",
+        "with": {
+          "artifact-ids": "${{ needs.upstream-probe.outputs.tools-artifact }}",
+          "digest-mismatch": "error",
+          "merge-multiple": true,
+          "path": "${{ runner.temp }}/go-guest-tools"
+        }
+      },
+      {
+        "name": "Restore current-source Go tools and compiler isolation",
+        "run": "set -euo pipefail\npython3 -m pip install -r tools/requirements.lock\nsudo apt-get update\nsudo apt-get install --yes bubblewrap\nsudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0\nmv -- \"$RUNNER_TEMP/go-native-transfer/go-capsule-authoring\" \"$RUNNER_TEMP/go-capsule-authoring\"\npython3 -B - <<'PY'\nimport os\nfrom pathlib import Path\nfrom tools.qualify_go_entropy_retained import reproduction_tools\nfrom tools.qualify_go_private_dependencies import frozen\nroot = Path(os.environ['RUNNER_TEMP'])\nreproduction_tools(root / 'go-guest-tools')\n_, products, _ = frozen(root / 'go-capsule-authoring')\nfor product in products.values():\n    product.chmod(0o700)\nPY\nout=\"$RUNNER_TEMP/go-guest-tools\"\ntest \"$(\"$out/componentize-go\" --version)\" = 'componentize-go 0.4.3'\ntest \"$(\"$out/wasm-tools\" --version)\" = 'wasm-tools 1.254.0 (bb58fdf91 2026-07-20)'\ntar -xzf \"$out/go.tar.gz\" -C \"$out\"\npython3 -B tools/go_guest/runtime.py --prepare-compiler \"$out/go\" --output \"$out/go-async\"\necho \"$out\" >> \"$GITHUB_PATH\"\necho \"$out/go-async/bin\" >> \"$GITHUB_PATH\"\n",
+        "shell": "bash"
+      },
+      {
+        "name": "Check private proxy trust, native capture and signed campaign boundaries",
+        "run": "python3 -m unittest tools.tests.test_go_proxy_tls tools.tests.test_go_private_proxy -v"
+      },
+      {
+        "name": "Qualify authenticated private Go graphs and offline signed lifecycle",
+        "run": "python3 tools/qualify_go_private_dependencies.py --native-qualification \"$RUNNER_TEMP/go-capsule-authoring\" --output \"$RUNNER_TEMP/go-private-dependencies\""
+      },
+      {
+        "if": "always()",
+        "name": "Retain the private captures, rebuild evidence and signed node observations",
+        "uses": "KirilsTurkins/lsf-upload-artifact",
+        "with": {
+          "if-no-files-found": "error",
+          "name": "go-private-dependencies-${{ github.sha }}",
+          "path": "${{ runner.temp }}/go-private-dependencies/qualification.json\n${{ runner.temp }}/go-private-dependencies/FAILED.json\n${{ runner.temp }}/go-private-dependencies/capture.json\n${{ runner.temp }}/go-private-dependencies/*-native-reference.json\n${{ runner.temp }}/go-private-dependencies/build-*/BUILD-COMPLETE.json\n${{ runner.temp }}/go-private-dependencies/offline-rebuild/BUILD-COMPLETE.json\n${{ runner.temp }}/go-private-dependencies/offline-rebuild/build-observation.json\n${{ runner.temp }}/go-private-dependencies/offline-rebuild-evidence.json\n${{ runner.temp }}/go-private-dependencies/node-*/workflow.json\n${{ runner.temp }}/go-private-dependencies/node-*/FAILED.json\n",
+          "retention-days": 7
+        }
+      }
+    ],
+    "timeout-minutes": 30
+  },
+  "jobId": "private-dependencies",
+  "kind": "job",
+  "reviewReason": "Move both private Go dependency checks and their ten retained evidence selectors to the bounded downstream job. Two hosted one-hour runs finished all tests and were cancelled during finalization. The new job authenticates the original ordinary native products and both same-run artifacts before running the unchanged commands.",
+  "schemaVersion": "latent.ci.contracts.v1",
+  "workflow": ".github/workflows/go-guest.yml"
+}

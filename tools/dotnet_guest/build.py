@@ -42,7 +42,7 @@ RECIPE += ('tools/application_dependencies.py', 'tools/application_dependency_st
 RECIPE += guest_compatibility_build.RECIPE
 RECIPE += guest_compatibility_context_build.RECIPE
 RECIPE += guest_resources.RECIPE
-RECIPE += guest_dependency_inputs.RECIPE
+RECIPE += guest_dependency_inputs.RECIPE + ("tools/dev_workflow/executable_approval.py",)
 
 
 def build(project_path: Path, output: Path, contracts_tool: Path, packager: Path | None, repository: str,

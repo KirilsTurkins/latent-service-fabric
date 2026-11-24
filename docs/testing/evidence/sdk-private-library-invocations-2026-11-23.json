@@ -1,0 +1,2965 @@
+{
+  "schemaVersion": "latent.sdk.private-library-invocations.v1",
+  "issue": 694,
+  "observedOn": "2026-11-23",
+  "status": "passed",
+  "scope": "Developer-owned dependencies invoked through six signed greeting capsules on local Linux x86-64 nodes using demo signing.",
+  "guestBuilderRevision": "0f24bb56e90cdf797f33b2a3d8833eceb3c2a46d",
+  "nativeTuple": {
+    "sourceHead": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.9",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:5669d9660bb550f0347cdafc1a03a2a99547928e864eb87082f5c6c157760293",
+        "bytes": 78851920,
+        "actualFeatures": []
+      },
+      "latentd": {
+        "sha256": "sha256:b4bc0349c72b7fcce3a9aed476f989f4346d7e1ca157ba6e9203638ce1b858e9",
+        "bytes": 214257848,
+        "actualFeatures": []
+      },
+      "package": {
+        "sha256": "sha256:78ed627079f74622d6b07eb42f1e49ec264c6d2136d2bff56bb4a788cf36b695",
+        "bytes": 22183904,
+        "actualFeatures": []
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:556f9b3e47eb8270683d942580dccfead4c717b39080b0f87c2ec9594f7913dc",
+        "bytes": 15217168,
+        "actualFeatures": []
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:8d616dac1aee230330838bdb1048791c28ed8e08a9bfecb4698e9199ece88504",
+        "bytes": 28448736,
+        "actualFeatures": []
+      }
+    }
+  },
+  "calls": {
+    "export": "greeting.greet",
+    "arguments": [
+      "Ada",
+      " ",
+      "Fresh"
+    ],
+    "expectedExitCodes": [
+      0,
+      3,
+      0
+    ],
+    "declaredError": "Please enter a name."
+  },
+  "physicalObservations": {
+    "samplePhases": [
+      "empty",
+      "retired-0",
+      "retired-1",
+      "retired-2",
+      "deleted"
+    ],
+    "description": "Finite Linux process-tree samples with the node running. RSS includes prepared images and host memory. The final sample follows deployment deletion and precedes node shutdown."
+  },
+  "guests": [
+    {
+      "language": "rust",
+      "privateDependency": "outside-sdk-milestone-demo@1.0.0",
+      "lockDigest": "sha256:3733841b36128140c7e4e647ab0ee0b656f4ba2c97416d46c79bb3a0657c0e6b",
+      "sourceDigest": "sha256:87d67257514ff7dd963c7ef29e525af0989f2713bdf54f8c6421d5c84dc670b8",
+      "component": {
+        "sha256": "sha256:8ab9a015001270e736f511a8fbbf837a639dc5ccecef801029b57d590fb209b5",
+        "bytes": 20533
+      },
+      "buildSeconds": 117.841045,
+      "selection": {
+        "allFeatures": false,
+        "features": [],
+        "noDefaultFeatures": false,
+        "runtimeProfile": "wasm32-unknown-unknown-panic-abort-v1",
+        "target": "wasm32-unknown-unknown"
+      },
+      "captureArtifacts": 129,
+      "receiptDigest": "sha256:99a1ca7222c6ba4f33c57360abf471ba3c2608044b73b9106a793173e6c9a2c5",
+      "grantedRuntimeContracts": [],
+      "firstValue": "42",
+      "freshValue": "42",
+      "invocationsReaped": 3,
+      "nodeReaped": true,
+      "peerRequests": 0,
+      "idleSamplesWithZeroActiveOrQuarantinedCells": 5,
+      "emptyNode": {
+        "rssBytes": 75485184,
+        "highWaterRssBytes": 75485184,
+        "processes": 1,
+        "threads": 8,
+        "handles": 25,
+        "sockets": 3,
+        "tcpConnections": 0
+      },
+      "afterDeploymentDeletion": {
+        "rssBytes": 97959936,
+        "highWaterRssBytes": 97959936,
+        "processes": 1,
+        "threads": 8,
+        "handles": 26,
+        "sockets": 3,
+        "tcpConnections": 0
+      }
+    },
+    {
+      "language": "c",
+      "privateDependency": "milestone/outside-score/1.0.0",
+      "lockDigest": "sha256:a024a6a768cbf90a3a225d6be9f1db4c4ff24d5314dfc90fdb5f908b7a96e806",
+      "sourceDigest": "sha256:6806dbc2c80fcc76c73711e97e8cc32eb9aa5a4877eb48c7a7a5a374fffda823",
+      "component": {
+        "sha256": "sha256:9fa01a6b0eb7898e1b8f152454e43d1e667fbac6bfbfded6cd15efdebb523a69",
+        "bytes": 922395
+      },
+      "buildSeconds": 31.532912,
+      "selection": {
+        "target": "wasm32-wasi"
+      },
+      "captureArtifacts": 1,
+      "receiptDigest": "sha256:f8355ccf6721434964a3d27ea676fc1b91eaaacc4e5188d3d1a77961c80f6db1",
+      "grantedRuntimeContracts": [],
+      "firstValue": "42",
+      "freshValue": "42",
+      "invocationsReaped": 3,
+      "nodeReaped": true,
+      "peerRequests": 0,
+      "idleSamplesWithZeroActiveOrQuarantinedCells": 5,
+      "emptyNode": {
+        "rssBytes": 76689408,
+        "highWaterRssBytes": 76689408,
+        "processes": 1,
+        "threads": 8,
+        "handles": 25,
+        "sockets": 3,
+        "tcpConnections": 0
+      },
+      "afterDeploymentDeletion": {
+        "rssBytes": 105734144,
+        "highWaterRssBytes": 105734144,
+        "processes": 1,
+        "threads": 8,
+        "handles": 26,
+        "sockets": 3,
+        "tcpConnections": 0
+      }
+    },
+    {
+      "language": "typescript",
+      "privateDependency": "outside-sdk-milestone-demo@1.0.1",
+      "lockDigest": "sha256:9a9a3f3f1f257376ebed11650b98aecad4dea0c90ee142943854c316bf372a09",
+      "sourceDigest": "sha256:bd2df60d315f7f56a63f485d9df3014808ceda9bef68e79acbb9ed200e7e8ad6",
+      "component": {
+        "sha256": "sha256:5ce060d0aab2a3060f84ed47fbee1305ebd656a0be3d49ec84bd8bce7d1a7a15",
+        "bytes": 12473169
+      },
+      "buildSeconds": 27.723026,
+      "selection": {
+        "conditions": [],
+        "runtimeProfile": "spidermonkey-public-sync-v1",
+        "target": "wasm32-component"
+      },
+      "captureArtifacts": 2,
+      "receiptDigest": "sha256:23866efc77fb3a4a4806a29da150277cd02f751ea576da40f5b934d2ae1cb25f",
+      "grantedRuntimeContracts": [],
+      "firstValue": "42",
+      "freshValue": "42",
+      "invocationsReaped": 3,
+      "nodeReaped": true,
+      "peerRequests": 0,
+      "idleSamplesWithZeroActiveOrQuarantinedCells": 5,
+      "emptyNode": {
+        "rssBytes": 78143488,
+        "highWaterRssBytes": 78143488,
+        "processes": 1,
+        "threads": 8,
+        "handles": 25,
+        "sockets": 3,
+        "tcpConnections": 0
+      },
+      "afterDeploymentDeletion": {
+        "rssBytes": 442929152,
+        "highWaterRssBytes": 475443200,
+        "processes": 1,
+        "threads": 7,
+        "handles": 26,
+        "sockets": 3,
+        "tcpConnections": 0
+      }
+    },
+    {
+      "language": "go",
+      "privateDependency": "example.org/milestone/outside",
+      "lockDigest": "sha256:6143409f364882e6f7d19a9e2b0860874f1b11125cb638e91deae407abd63cfa",
+      "sourceDigest": "sha256:50d0c3e1228f671fbd450d98282d0038d908f1bafcdcc1447ed88d77d70165cb",
+      "component": {
+        "sha256": "sha256:55b92e42e3e406ea249c90ba78cac84622011ce31fd067e244996ac2eeffac6c",
+        "bytes": 2516827
+      },
+      "buildSeconds": 14.033921,
+      "selection": {
+        "runtimeProfile": "go-component-async-v1",
+        "tags": [],
+        "target": "wasip1/wasm"
+      },
+      "captureArtifacts": 4,
+      "receiptDigest": "sha256:53efea8954a00053154f2c470c7acce9c6cb3869fa7e09c1ffd5aa125c207f80",
+      "grantedRuntimeContracts": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0",
+        "latent:random/random@0.1.0"
+      ],
+      "withoutExplicitGrant": "permission-denied",
+      "firstValue": "Hello from my module, Ada!",
+      "freshValue": "Hello from my module, Fresh!",
+      "invocationsReaped": 3,
+      "nodeReaped": true,
+      "peerRequests": 0,
+      "idleSamplesWithZeroActiveOrQuarantinedCells": 5,
+      "emptyNode": {
+        "rssBytes": 75894784,
+        "highWaterRssBytes": 75894784,
+        "processes": 1,
+        "threads": 8,
+        "handles": 25,
+        "sockets": 3,
+        "tcpConnections": 0
+      },
+      "afterDeploymentDeletion": {
+        "rssBytes": 161726464,
+        "highWaterRssBytes": 162566144,
+        "processes": 1,
+        "threads": 8,
+        "handles": 26,
+        "sockets": 3,
+        "tcpConnections": 0
+      }
+    },
+    {
+      "language": "java",
+      "privateDependency": "outside-demo",
+      "lockDigest": "sha256:d81a48aa8ded4676de8e3d961b229952902b6890b18fcd0429723f1d494f2984",
+      "sourceDigest": "sha256:eac6318a4012ea45a5b0a6fb2cc21e99ec211e7911290b0f5f082799e7720456",
+      "component": {
+        "sha256": "sha256:fcff8ef11d7f0666a7294fa8981019c0608b8bf03f59db83a5853bea8444c82c",
+        "bytes": 502760
+      },
+      "buildSeconds": 53.075811,
+      "selection": {
+        "release": 25,
+        "runtimeProfile": "java-teavm-c"
+      },
+      "captureArtifacts": 1,
+      "receiptDigest": "sha256:fe8b1a2ba6b5282a2ba8ad193e4d72111ec79f322582de6a659b0540b2a137cc",
+      "grantedRuntimeContracts": [
+        "latent:clock/monotonic@0.1.0",
+        "latent:clock/wall@0.1.0"
+      ],
+      "withoutExplicitGrant": "permission-denied",
+      "firstValue": "42",
+      "freshValue": "42",
+      "invocationsReaped": 3,
+      "nodeReaped": true,
+      "peerRequests": 0,
+      "idleSamplesWithZeroActiveOrQuarantinedCells": 5,
+      "emptyNode": {
+        "rssBytes": 75530240,
+        "highWaterRssBytes": 75530240,
+        "processes": 1,
+        "threads": 8,
+        "handles": 25,
+        "sockets": 3,
+        "tcpConnections": 0
+      },
+      "afterDeploymentDeletion": {
+        "rssBytes": 107479040,
+        "highWaterRssBytes": 111575040,
+        "processes": 1,
+        "threads": 8,
+        "handles": 26,
+        "sockets": 3,
+        "tcpConnections": 0
+      }
+    },
+    {
+      "language": "dotnet",
+      "privateDependency": "Outside.Milestone.Local@1.0.0",
+      "lockDigest": "sha256:ac3de9dcd846ba18967bd21c38e5de4cdc44f3b8a1208a416d922aad9fccfe20",
+      "sourceDigest": "sha256:66979e62048020c11083b007794c4f282f13e0c81002e4bb2c7a7149ac475d11",
+      "component": {
+        "sha256": "sha256:c1861e51febf99c0188ea0a01d133ee4f325de95ab80be63bc7ab42f90646a6e",
+        "bytes": 1712295
+      },
+      "buildSeconds": 70.037193,
+      "selection": {
+        "framework": "net10.0",
+        "runtimeIdentifier": "wasi-wasm",
+        "runtimeProfile": "dotnet-native-aot-component-v1"
+      },
+      "captureArtifacts": 1,
+      "receiptDigest": "sha256:0065d7fc66e965aa14b4152baf50710d2f01e4067b5cfabe8d750b2993cccc8d",
+      "grantedRuntimeContracts": [
+        "latent:clock/monotonic@0.1.0"
+      ],
+      "withoutExplicitGrant": "permission-denied",
+      "firstValue": "Hello from my library, Ada!",
+      "freshValue": "Hello from my library, Fresh!",
+      "invocationsReaped": 3,
+      "nodeReaped": true,
+      "peerRequests": 0,
+      "idleSamplesWithZeroActiveOrQuarantinedCells": 5,
+      "emptyNode": {
+        "rssBytes": 75407360,
+        "highWaterRssBytes": 75407360,
+        "processes": 1,
+        "threads": 8,
+        "handles": 25,
+        "sockets": 3,
+        "tcpConnections": 0
+      },
+      "afterDeploymentDeletion": {
+        "rssBytes": 139849728,
+        "highWaterRssBytes": 190160896,
+        "processes": 1,
+        "threads": 8,
+        "handles": 27,
+        "sockets": 3,
+        "tcpConnections": 0
+      }
+    }
+  ],
+  "additionalCResourceAndHttp": {
+    "qualifier": "tools/qualify_c_standard_facilities.py --outside-capture",
+    "sourceRevision": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "receiptDigest": "sha256:c451c94b0d65e678b22d772bceb19da892d09fd29a8db31c1fd5ef4a773aa9bb",
+    "catalogueAbsent": true,
+    "variants": [
+      {
+        "dependencyIds": [
+          "shop-floor/price-card",
+          "shop-floor/card-policy"
+        ],
+        "resourceIndex": "sha256:d1d7f1ef0b8b34563216cb0316f0085f337ac287cadea24148eb43cfb402161a",
+        "component": {
+          "sha256": "sha256:8fb889eb4dd01bf3e12121387daaa3b82b7ca1467b06d54ed92c9d5b72ba716a",
+          "bytes": 128782
+        },
+        "originalsRemoved": true,
+        "completedHttpResponses": 1,
+        "openPeerConnections": 0,
+        "remainingPhysicalOwners": 0,
+        "remainingActiveProviderCounters": 0,
+        "nodeReaped": true
+      },
+      {
+        "dependencyIds": [
+          "warehouse/bin-label-reader",
+          "warehouse/label-policy"
+        ],
+        "resourceIndex": "sha256:5fe7938ca460fd11b823a06c4b4a9a01aeac60d1d3911cc94fce6284de4ec3f3",
+        "component": {
+          "sha256": "sha256:8fb889eb4dd01bf3e12121387daaa3b82b7ca1467b06d54ed92c9d5b72ba716a",
+          "bytes": 128782
+        },
+        "originalsRemoved": true,
+        "completedHttpResponses": 1,
+        "openPeerConnections": 0,
+        "remainingPhysicalOwners": 0,
+        "remainingActiveProviderCounters": 0,
+        "nodeReaped": true
+      }
+    ]
+  },
+  "additionalJavaResourceAndHttp": {
+    "qualifier": "tools/qualify_java_private_http.py",
+    "sourceRevision": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "receiptDigest": "sha256:05ae3895f4379c0fb77be21ff259b274565d45ee85f0e0ffbcacda4284c6db60",
+    "signedCalls": 26,
+    "casesPerVariant": [
+      "json",
+      "http404",
+      "http500",
+      "truncated",
+      "oversized",
+      "forbidden",
+      "early",
+      "redirect",
+      "post",
+      "uncertain",
+      "alternate-denied",
+      "direct-factory",
+      "fresh"
+    ],
+    "variants": [
+      {
+        "dependencyIds": [
+          "outside.http.primary/1.0.7",
+          "outside.http.child/1.0.7"
+        ],
+        "acceptedLockDigest": "sha256:806aae6886973ad272c1ade25968489486faee4ba74064f1325b75681cd9bdcd",
+        "resourceDigest": "sha256:dcd9ca838d0134810c6295cde2d9919a12519c9e3c145280ecac29a1f6f89853",
+        "component": {
+          "sha256": "sha256:39919fd1d2c7d93835c4f1fd522e970569eb732d520343d40e13398a704816b8",
+          "bytes": 1174774
+        },
+        "originalsRemoved": true,
+        "nodeReceiptDigest": "sha256:7abe24b8357e8a30f8e6a362e97f7f538a56072eb108f7d4fbef9b6d582fda54",
+        "peerRequests": 11,
+        "peerMutations": 1,
+        "openPeerConnections": 0,
+        "nodeReaped": true
+      },
+      {
+        "dependencyIds": [
+          "tenant.example.unlisted-client/2026.10.19",
+          "different.owner.helper/4.2.1"
+        ],
+        "acceptedLockDigest": "sha256:d04d2a2ed2a987414416450816a15b22217b903bbe57c192d02278726ec46f3a",
+        "resourceDigest": "sha256:dcd9ca838d0134810c6295cde2d9919a12519c9e3c145280ecac29a1f6f89853",
+        "component": {
+          "sha256": "sha256:39919fd1d2c7d93835c4f1fd522e970569eb732d520343d40e13398a704816b8",
+          "bytes": 1174774
+        },
+        "originalsRemoved": true,
+        "nodeReceiptDigest": "sha256:cfa38b0cb3927f6c07f66e1d74b082cf66394abe79e71730f315657fc73082dc",
+        "peerRequests": 11,
+        "peerMutations": 1,
+        "openPeerConnections": 0,
+        "nodeReaped": true
+      }
+    ]
+  },
+  "additionalPublishedCClients": {
+    "qualifier": "tools/qualify_c_standard_facilities.py --libucl-http --build-native",
+    "sourceRevision": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "receiptDigest": "sha256:07322de1c738600e9c26b55083972b03f8e06f2bdaaf824971601bc0692a27df",
+    "clients": [
+      {
+        "client": "libfetch",
+        "component": {
+          "sha256": "sha256:20060fa6e3a28c6002166fded2294f5c7901f0e35eca3b063f9e7e1426cb644b",
+          "bytes": 132882
+        },
+        "runtimeProfile": "c-libfetch-clock-entropy-v1",
+        "cases": [
+          "normal",
+          "not-found",
+          "denied",
+          "early-close",
+          "sibling"
+        ],
+        "retirementsWithZeroOwners": 5,
+        "nodeReaped": true,
+        "openPeerConnections": 0,
+        "siblingProgress": {
+          "sourceBoundFirstFreadPending": true,
+          "completedSiblingBeforeGateRelease": true,
+          "nativePollPendingObserved": false
+        }
+      },
+      {
+        "client": "libucl",
+        "component": {
+          "sha256": "sha256:ad04c83e6bddc2bb2d9116165c02521a5ac0e5c7266098612484a1525402a4d5",
+          "bytes": 336998
+        },
+        "runtimeProfile": "c-libfetch-clock-entropy-v1",
+        "cases": [
+          "normal",
+          "not-found",
+          "denied",
+          "file",
+          "glob"
+        ],
+        "retirementsWithZeroOwners": 5,
+        "nodeReaped": true,
+        "openPeerConnections": 0
+      }
+    ]
+  },
+  "additionalGoResourceAndHttp": {
+    "qualifier": "tools/qualify_go_http_libraries.py",
+    "sourceRevision": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+    "receiptDigest": "sha256:57a1f35af4e211c0854dd11a9e859b289b9a5dd66413944ac28552577104bac6",
+    "normalGoQualification": {
+      "qualifier": "tools/qualify_go_capsules.py",
+      "receiptDigest": "sha256:3db1600df3dd46b6f54903b25c98437f52d5f2cc372af93e40f7474b739f8ba0",
+      "nodeReceiptDigest": "sha256:e09162e331bd7bd7f3d66dc73caf66010eeaed927d3396513fcaffef578c76f3",
+      "signedInvocations": 27,
+      "templates": [
+        "greeting",
+        "word-count",
+        "shipping",
+        "http-status",
+        "recovery"
+      ],
+      "nodeReaped": true
+    },
+    "casesPerVariant": [
+      "sling-json",
+      "sling-http404",
+      "sling-http500",
+      "sling-truncated",
+      "sling-oversized",
+      "sling-malformed-json",
+      "sling-forbidden",
+      "sling-cancel-headers",
+      "sling-partial-context-cancel",
+      "sling-post",
+      "sling-uncertain",
+      "sling-alternate-denied",
+      "sling-pre-cancelled",
+      "sling-sibling-cancel",
+      "sling-fresh",
+      "requests-json",
+      "requests-http404",
+      "requests-http500",
+      "requests-truncated",
+      "requests-oversized",
+      "requests-malformed-json",
+      "requests-forbidden",
+      "requests-cancel-headers",
+      "requests-partial-context-cancel",
+      "requests-post",
+      "requests-uncertain",
+      "requests-alternate-denied",
+      "requests-pre-cancelled",
+      "requests-sibling-cancel",
+      "requests-fresh"
+    ],
+    "variants": [
+      {
+        "coordinate": "outside.example.test/http-library/original-coordinate",
+        "component": {
+          "sha256": "sha256:78ef8a3cec6d8c35b9c76e701f069007b1a9bd1e129c563b1ffe20d0a20518f2",
+          "bytes": 10521268
+        },
+        "sourceDigest": "sha256:c38c21864faeef83da2ea6b34bd939bc1b72959c0ff882d1581ba38e1ff9cf5c",
+        "nativeGraphDigest": "sha256:13b051b93d00d7844c0ea3069207bc937eda9f0dd633b76d6e583b3889f1643d",
+        "runtimeProfile": "go-component-activation-v4",
+        "clients": [
+          {
+            "module": "github.com/dghubble/sling",
+            "version": "v1.4.0",
+            "ordinaryApi": "sling.New/Request/Do with its default http.Client"
+          },
+          {
+            "module": "github.com/carlmjohnson/requests",
+            "version": "v0.24.3",
+            "ordinaryApi": "requests.URL/ToJSON/Fetch with its default http.Client"
+          },
+          {
+            "module": "outside.example.test/http-library/original-coordinate",
+            "version": "v0.0.0",
+            "ordinaryApi": "private.Marker ordinary goroutine/WaitGroup/time.Sleep/embed"
+          }
+        ],
+        "privateOriginUnavailable": true,
+        "originalLibrarySourcesChanged": false,
+        "catalogueDispatch": false,
+        "transportInjection": false,
+        "nodeReceiptDigest": "sha256:1b1b74a1fc7fe29b609bc1652c1f9588d7cc5b28ea585ce51026f26de46ce0a2",
+        "entryResults": [
+          "library-entered",
+          "private-marker-ready"
+        ],
+        "signedHttpCases": 30,
+        "casesWithSettledCellsAndQuotas": 30,
+        "peer": {
+          "startedRequests": 24,
+          "committedMutations": 2,
+          "openConnections": 0
+        },
+        "nodeReaped": true,
+        "peerReaped": true
+      },
+      {
+        "coordinate": "outside.example.test/http-library/renamed-coordinate",
+        "component": {
+          "sha256": "sha256:b73dc3ac3189405a8da29599b206d212c4e3c06f0cc1669301e3ed74f0446a1c",
+          "bytes": 10521227
+        },
+        "sourceDigest": "sha256:63a219cd9dec1d02ade6ce8707f73ce7b5c7eef02ccd533135bf56a91aa7d6df",
+        "nativeGraphDigest": "sha256:a2073241cf481ad50d1605055154f6b0ba586afef009d51d90a33ac78ab7edea",
+        "runtimeProfile": "go-component-activation-v4",
+        "clients": [
+          {
+            "module": "github.com/dghubble/sling",
+            "version": "v1.4.0",
+            "ordinaryApi": "sling.New/Request/Do with its default http.Client"
+          },
+          {
+            "module": "github.com/carlmjohnson/requests",
+            "version": "v0.24.3",
+            "ordinaryApi": "requests.URL/ToJSON/Fetch with its default http.Client"
+          },
+          {
+            "module": "outside.example.test/http-library/renamed-coordinate",
+            "version": "v0.0.0",
+            "ordinaryApi": "private.Marker ordinary goroutine/WaitGroup/time.Sleep/embed"
+          }
+        ],
+        "privateOriginUnavailable": true,
+        "originalLibrarySourcesChanged": false,
+        "catalogueDispatch": false,
+        "transportInjection": false,
+        "nodeReceiptDigest": "sha256:f2d21e22eb972649254f8409a5759f91d5d8ea34a53b67f2085d63547bec9670",
+        "entryResults": [
+          "library-entered",
+          "private-marker-ready"
+        ],
+        "signedHttpCases": 30,
+        "casesWithSettledCellsAndQuotas": 30,
+        "peer": {
+          "startedRequests": 24,
+          "committedMutations": 2,
+          "openConnections": 0
+        },
+        "nodeReaped": true,
+        "peerReaped": true
+      }
+    ]
+  },
+  "publishedClientReferences": {
+    "scope": "Each original signed programme retains its own compiler, component and native host identities in the referenced evidence. The workflow head identifies the successful job.",
+    "programmes": [
+      {
+        "language": "rust",
+        "clients": [
+          "waki@0.5.1",
+          "golem-wasi-http@0.2.0"
+        ],
+        "workflowHead": "407cac236c337b4cfae6d855d499717fd9ddce95",
+        "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39668260882/job/119458961583",
+        "evidencePath": "docs/testing/evidence/rust-wasi-http-signed-2026-10-21.json",
+        "evidenceDigest": "sha256:928969c9825b9f61cdc662354a98cb94c0f00011219e2b1bde6c3459c138d7a0"
+      },
+      {
+        "language": "c",
+        "clients": [
+          "FreeBSD libfetch@b319c3d6ac7cf408b56fe745f718de6a324ec180",
+          "libucl@1778e38ef06b75876cdd10d76f409954fea3869a"
+        ],
+        "workflowHead": "72fb8969352b37eb5c9f4f9cd0cfec9845fc9f1a",
+        "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/41204486731/job/124546680546",
+        "evidencePath": "docs/testing/evidence/c-http-pair-signed-2026-10-31.json",
+        "evidenceDigest": "sha256:0a776706e869555594a6182daee69a4f452e8b96bc185ef57a72cda60f78d3f5"
+      },
+      {
+        "language": "typescript",
+        "clients": [
+          "ky@2.2.0",
+          "wretch@3.0.9"
+        ],
+        "workflowHead": "10bd9cc728cdf2dc91264a6c18bdcc41f683725f",
+        "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39379234452/job/118484260198",
+        "evidencePath": "docs/testing/evidence/typescript-published-fetch-signed-2026-10-20.json",
+        "evidenceDigest": "sha256:1206b9b4ce458a5bd0da0e1c4b0f8d4801556649dbbdc9174a2d55f3268455b5"
+      },
+      {
+        "language": "go",
+        "clients": [
+          "github.com/dghubble/sling@v1.4.0",
+          "github.com/carlmjohnson/requests@v0.24.3"
+        ],
+        "workflowHead": "1ad058275522672ccd566d78ab718c5c6485a176",
+        "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39461611124/job/118762220036",
+        "evidencePath": "docs/testing/evidence/go-http-tenant-catalogue-signed-2026-10-20.json",
+        "evidenceDigest": "sha256:e981d36d15bfd097ad4b14178c7311f46bfde3498a057bf262866a33c35cc38e"
+      },
+      {
+        "language": "java",
+        "clients": [
+          "com.github.kevinsawicki:http-request:6.0",
+          "com.goebl:david-webb:1.3.0"
+        ],
+        "workflowHead": "d0bb3c9e8180659524ec4683e079b4b18a513fb4",
+        "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39351070454/job/118395099868",
+        "evidencePath": "docs/testing/java-published-http.md",
+        "evidenceDigest": "sha256:aa35351d3b4548881a3595f229451ffb174e1673ed9b02fddf75874e8fa8d68b"
+      },
+      {
+        "language": "dotnet",
+        "clients": [
+          "Flurl.Http@4.0.2",
+          "Refit@16.4.0"
+        ],
+        "workflowHead": "7ee022fe5305cb86b47d6e08eefaf65aac93e4ae",
+        "job": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39482018386/job/118833387604",
+        "evidencePath": "docs/testing/evidence/dotnet-published-http-signed-2026-10-20.json",
+        "evidenceDigest": "sha256:9ce3264081892a40051b54b626789246154b206693ee0ae2dae5d27630e36c80"
+      }
+    ]
+  },
+  "remainingQualification": [
+    "The common current-source six-language matrix for private resources and ordinary HTTP",
+    "Transitive scheduling, cancellation and in-flight physical measurements across the six runtime profiles",
+    "Cross-language authenticated clean-host authoring and frontend watch, including C publisher and release qualification"
+  ],
+  "additionalTypeScriptPublishedFetch": {
+    "sourceRevision": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+    "observedOn": "2026-11-24",
+    "executionEnvironment": "Local Linux x86_64",
+    "normalTemplates": {
+      "qualifier": "tools/qualify_typescript_capsules.py",
+      "receiptDigest": "sha256:25b7eedb5f0bd7824358e3b7245b76b8033bf504642de9739fae37d0a063320a",
+      "nodeReceiptDigest": "sha256:bbd51a1743d7b43725a61f809afd91bd9b2775c05cdda9ab4fc12f16889c53d6",
+      "templates": [
+        "greeting",
+        "word-count",
+        "shipping",
+        "http-status",
+        "recovery"
+      ],
+      "invocations": 30,
+      "nodeReaped": true
+    },
+    "sharedNativeSourceIdentity": "sha256:c839ec43b877991cb8e9ab6bbd8dc229d1e5fb938e459545ad0d4be7f53bb690",
+    "nativeProducts": {
+      "latent": {
+        "sha256": "sha256:91dca312633e7996e5dab6ee4e9eb60e76591314b9ad5b8831203e0e41bed6ea",
+        "bytes": 76442344
+      },
+      "latentd": {
+        "sha256": "sha256:9688674a173301527077b1c4221a37a06076f0b08d7c1530d3b45a46365ca492",
+        "bytes": 212359352
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:064df5c939093b2a14f3db4c5cb70b01aeb7dfeed317257237f45696af0554e8",
+        "bytes": 14401464
+      },
+      "package": {
+        "sha256": "sha256:7d39ae32d5c4be19480c800eac3041e0ca6de7f9fbe2cb3b0fb442f166a7f68c",
+        "bytes": 19685760
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:79e0622d0c3e0449e545720f6b31414d8324b111c151926f3cc424c38da24042",
+        "bytes": 26132920
+      }
+    },
+    "compilerSourceRevision": "ac7d99a419ede0e90793bb9076505bfc9ea44342",
+    "compilerProducer": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/45245284415",
+    "engine": {
+      "sha256": "sha256:2840798b8968e172d49157ec4ad5b77a092067bb735e6dc4b389973108e764de",
+      "bytes": 10192602
+    },
+    "splicerInputsDigest": "sha256:22f40d725035889628dee5d3897a4fd1844b4d86381e7d2796d81944a56e77b7",
+    "buffered": {
+      "receiptDigest": "sha256:e0ef0c9bb2a4ef450061252682b08ee4486c9756c269af577e2bbafa26d6e1e4",
+      "profile": "lsf-fetch-buffered-v1",
+      "variants": [
+        {
+          "privatePackage": {
+            "identity": "outside-fetch-alpha",
+            "version": "1.0.0",
+            "module": "sha256:c03b4a65b14bccfe79a9767547952320e3af0e1b16e2aff3b60c2d68e6525a1e",
+            "outsideOriginalRemoved": true
+          },
+          "lockedPackages": {
+            "ky": {
+              "version": "2.2.0",
+              "integrity": "sha512-4+B63kyZt+Y8snQiUGydK1vgY9xYQJZEh9K/nIAIEts+gYJzy1EiAw3BbK8xpWRuWUpN70SNCMjqRGTm75xxIA=="
+            },
+            "wretch": {
+              "version": "3.0.9",
+              "integrity": "sha512-RXJQp5aOBfHQaDCLRyFXQooWDBOHrQxVgCH/6OFaFPBKjeUiXMQ3NV1b8qqI7CR+v4meVBWYs242P8n+rWRjzA=="
+            }
+          },
+          "applicationSource": "sha256:8bf99bdf2967eec9ab384cfe7702384da909cc00bd1ac164c598fa2fd20f714b",
+          "component": {
+            "sha256": "sha256:bc0e2d7dd13bd62c10b32060da13ada361b82b8a2dd7657358815ef35ca01d02",
+            "bytes": 12668299
+          },
+          "nodeReceipt": "sha256:360c2db9ae0f925a4598f674f8de1687c4210e1517dc9eecb5658db5c17d9336",
+          "passedCases": [
+            "buffered-reader-probe",
+            "buffered-json-probe",
+            "ky-json",
+            "wretch-json",
+            "outside-json",
+            "wretch-http404-error",
+            "ky-fresh"
+          ],
+          "expectedUnsupported": [
+            "ky-http404-unsupported"
+          ],
+          "missingGrants": [
+            "runtime",
+            "http"
+          ],
+          "peer": {
+            "startedRequests": 6,
+            "completedResponseWrites": 6,
+            "committedMutations": 0,
+            "rejectedRequests": 0,
+            "openConnections": 0
+          },
+          "nodeReaped": true,
+          "shutdownUsage": {
+            "activeActivations": 0,
+            "quotaReservations": 0,
+            "reservedCpuFuel": 0,
+            "reservedMemoryBytes": 0,
+            "quarantinedCells": 0,
+            "instanceReservations": 0,
+            "liveStores": 0,
+            "liveHostStates": 0,
+            "liveInstances": 0
+          }
+        },
+        {
+          "privatePackage": {
+            "identity": "outside-fetch-delta",
+            "version": "2.4.0",
+            "module": "sha256:c03b4a65b14bccfe79a9767547952320e3af0e1b16e2aff3b60c2d68e6525a1e",
+            "outsideOriginalRemoved": true
+          },
+          "lockedPackages": {
+            "ky": {
+              "version": "2.2.0",
+              "integrity": "sha512-4+B63kyZt+Y8snQiUGydK1vgY9xYQJZEh9K/nIAIEts+gYJzy1EiAw3BbK8xpWRuWUpN70SNCMjqRGTm75xxIA=="
+            },
+            "wretch": {
+              "version": "3.0.9",
+              "integrity": "sha512-RXJQp5aOBfHQaDCLRyFXQooWDBOHrQxVgCH/6OFaFPBKjeUiXMQ3NV1b8qqI7CR+v4meVBWYs242P8n+rWRjzA=="
+            }
+          },
+          "applicationSource": "sha256:703437024c58da01564fac31c48eb2f32bbf5a1d5b3d13af03651d634a7f30ea",
+          "component": {
+            "sha256": "sha256:14abb737478fe15ad4f86e99b96b1435ab1932e618e27d413bac65e456dee045",
+            "bytes": 12668336
+          },
+          "nodeReceipt": "sha256:30113ba9d6c495c0a0e6031b910ebf89931313a32971cdcd477afa8e5467525e",
+          "passedCases": [
+            "buffered-reader-probe",
+            "buffered-json-probe",
+            "ky-json",
+            "wretch-json",
+            "outside-json",
+            "wretch-http404-error",
+            "ky-fresh"
+          ],
+          "expectedUnsupported": [
+            "ky-http404-unsupported"
+          ],
+          "missingGrants": [
+            "runtime",
+            "http"
+          ],
+          "peer": {
+            "startedRequests": 6,
+            "completedResponseWrites": 6,
+            "committedMutations": 0,
+            "rejectedRequests": 0,
+            "openConnections": 0
+          },
+          "nodeReaped": true,
+          "shutdownUsage": {
+            "activeActivations": 0,
+            "quotaReservations": 0,
+            "reservedCpuFuel": 0,
+            "reservedMemoryBytes": 0,
+            "quarantinedCells": 0,
+            "instanceReservations": 0,
+            "liveStores": 0,
+            "liveHostStates": 0,
+            "liveInstances": 0
+          }
+        }
+      ]
+    },
+    "phaseTiming": {
+      "receiptDigest": "sha256:8c9b6130679052617b59a68767fa9f7f9df14f21e695a05775b4ac27ce209f69",
+      "privatePackage": {
+        "identity": "outside-fetch-phase",
+        "version": "1.0.0",
+        "module": "sha256:c03b4a65b14bccfe79a9767547952320e3af0e1b16e2aff3b60c2d68e6525a1e",
+        "outsideOriginalRemoved": true
+      },
+      "component": {
+        "sha256": "sha256:3bef48f799b902f3e276cb9bc0d5a51a69fb249697c3b4b6c836dbc53b8336da",
+        "bytes": 12674206
+      },
+      "profile": "lsf-fetch-phase-buffered-v2",
+      "executionFuel": 2000000000,
+      "caseNames": [
+        "ky-json",
+        "wretch-json",
+        "outside-json",
+        "ky-http404",
+        "wretch-http404",
+        "observed-empty-clone",
+        "latin1-clone",
+        "abort-headers",
+        "abort-body",
+        "uncertain-post",
+        "denied-target",
+        "public-guest-extension",
+        "public-extension-denied",
+        "root-cancel",
+        "root-deadline",
+        "fresh"
+      ],
+      "outcomes": 31,
+      "guestExecutions": 27,
+      "preIoRefusals": 4,
+      "ky404": [
+        "1|ky:error:404"
+      ],
+      "wretch404": [
+        "1|wretch:error:404"
+      ],
+      "directPeer": {
+        "startedRequests": 14,
+        "completedResponseWrites": 11,
+        "committedMutations": 1,
+        "rejectedRequests": 0,
+        "openConnections": 0
+      },
+      "missingProviderContacts": 0,
+      "tenantCases": [
+        {
+          "tenant": "foreign",
+          "case": "ungranted"
+        },
+        {
+          "tenant": "examples",
+          "case": "fetch-ky-examples"
+        },
+        {
+          "tenant": "foreign",
+          "case": "fetch-ky-foreign"
+        },
+        {
+          "tenant": "examples",
+          "case": "fetch-outside-examples"
+        },
+        {
+          "tenant": "foreign",
+          "case": "fetch-outside-foreign"
+        },
+        {
+          "tenant": "examples",
+          "case": "fetch-tenant-public-abort"
+        },
+        {
+          "tenant": "foreign",
+          "case": "fetch-foreign-after-public-abort"
+        },
+        {
+          "tenant": "examples",
+          "case": "root-cancel"
+        },
+        {
+          "tenant": "foreign",
+          "case": "fetch-foreign-after-root-cancel"
+        },
+        {
+          "tenant": "foreign",
+          "case": "fetch-foreign-denied-first-origin"
+        },
+        {
+          "tenant": "foreign",
+          "case": "fetch-foreign-extension-own-origin"
+        },
+        {
+          "tenant": "examples",
+          "case": "fetch-first-final-fresh"
+        }
+      ],
+      "tenantPeers": {
+        "examples": {
+          "startedRequests": 5,
+          "completedResponseWrites": 4,
+          "committedMutations": 0,
+          "rejectedRequests": 0,
+          "openConnections": 0
+        },
+        "foreign": {
+          "startedRequests": 5,
+          "completedResponseWrites": 5,
+          "committedMutations": 0,
+          "rejectedRequests": 0,
+          "openConnections": 0
+        }
+      },
+      "shutdownUsage": {
+        "primary": {
+          "activeActivations": 0,
+          "quotaReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "quarantinedCells": 0,
+          "instanceReservations": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0
+        },
+        "missingProvider": {
+          "activeActivations": 0,
+          "quotaReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "quarantinedCells": 0,
+          "instanceReservations": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0
+        },
+        "tenantIsolation": {
+          "activeActivations": 0,
+          "quotaReservations": 0,
+          "reservedCpuFuel": 0,
+          "reservedMemoryBytes": 0,
+          "quarantinedCells": 0,
+          "instanceReservations": 0,
+          "liveStores": 0,
+          "liveHostStates": 0,
+          "liveInstances": 0
+        }
+      }
+    },
+    "privateResourceAndTimer": {
+      "receiptDigest": "sha256:a5e39b1d47d8b1cbfaf18e9b72f8a1c51082e722d779788b9e3deafa7ffc537b",
+      "sourceRevision": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+      "applicationSource": "sha256:79ea5628f4811df91eb4683128ec878f591c68a264af4ef994c27049b7a28e04",
+      "package": {
+        "name": "outside-fetch-toolkit-resource",
+        "version": "1.7.1",
+        "files": {
+          "index.d.ts": {
+            "digest": "sha256:02d7329042b54cc04ea153b879fafd85251bc24530f92f622a00412afe23f9a8",
+            "size": 53
+          },
+          "index.mjs": {
+            "digest": "sha256:3f971af0a4d848ad47caeb7a8977e35b40b939a06b1c4f3560bef9dc081ee4fa",
+            "size": 457
+          },
+          "package.json": {
+            "digest": "sha256:d050c8290b94c8216d82bad7d2b18fbb2184077aaae08a7e1bc27879d21738b3",
+            "size": 240
+          },
+          "price-card.txt": {
+            "digest": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+            "size": 57
+          }
+        },
+        "acceptedIdentity": "sha256:539d777f70d39139113e7420072ab8f9bf32be1f96ba7dc3d01e5907bd605ac9",
+        "sourceAbsentDuringBuild": true
+      },
+      "component": {
+        "sha256": "sha256:1f826d5dd5924a684ee409880ef1c4603e7f31f505282a2fd73ab0f354509d01",
+        "bytes": 12671284
+      },
+      "privateModuleBehavior": "Parse a static .txt import as JSON, await the ordinary one-millisecond setTimeout, fetch using Wretch, compare the parsed domain response with the resource and return the result.",
+      "invocationOutcomes": 31,
+      "guestExecutions": 27,
+      "preIoRefusals": 4,
+      "privateCallsOnSameNode": [
+        "fetch-outside-examples",
+        "fetch-outside-foreign"
+      ],
+      "primaryPeerContacts": 14,
+      "primaryPeerCommits": 1,
+      "tenantPeerContacts": {
+        "examples": 5,
+        "foreign": 5
+      },
+      "nodesReaped": 3,
+      "missingProviderContacts": 0
+    }
+  },
+  "additionalDotnetPrivateResourceHttp": {
+    "sourceRevision": "815d94ac535a86dea46203e33c42bfd50dd760b4",
+    "observedOn": "2026-11-24",
+    "environment": "Local Linux x86_64",
+    "qualification": "tools/qualify_dotnet_published_http.py --native-qualification",
+    "receipt": "sha256:48cc99bf936d0c2b4822705305bbdf70e8d00442828a75cdc6b141f5d7ce3280",
+    "captureReceipt": "sha256:5a496887304bb738ec476652b03dc389deca1a680935a55fd6725107a9bf4d5c",
+    "nodeReceipt": "sha256:1e30d4fc76053484a8b4d8d5b0f8e2b47c37525a72914a388ac5ec59790ad7ae",
+    "verifiedTemplateQualification": {
+      "sha256": "sha256:956494b5328de021aafc05ef74fb3b1db49bf892896acd552150b1aa50c26a4f",
+      "bytes": 31161
+    },
+    "nativeSource": {
+      "sha256": "sha256:c071acafd05ff2855166281917a3b3b4f0a6127b13a0c161cea3c4428b75b490",
+      "bytes": 56654
+    },
+    "packages": {
+      "Flurl.Http": "4.0.2",
+      "Refit": "16.4.0"
+    },
+    "privatePackages": [
+      {
+        "identity": "Outside.Http.bad80257feff00271cb2.Alpha",
+        "version": "1.0.0",
+        "source": "sha256:24a0eacc2721bfe7d167a85f7e2eca42401a719e9cf59692af9ed80311127347",
+        "assembly": "sha256:f3b7364a52b1ae3cdd9ff9a3076dd653eb45838fa595e0f2044facf59a1b90b2",
+        "archive": "sha256:173f9742036736d296b8ae3cd4b24495c406d905f097c07cc51cda181d0b4d04",
+        "embeddedResource": {
+          "name": "outside.price-card",
+          "sha256": "sha256:5f285194401591a1e0a89af16ec2b875f3d68fa6c76b6817f88e34357c6d1d75",
+          "bytes": 58
+        }
+      },
+      {
+        "identity": "Outside.Http.bad80257feff00271cb2.Delta",
+        "version": "1.0.0",
+        "source": "sha256:b4ad88f7aab8a3d8817b7492806a2da50d6997a8059c44408ac21a5a407c7e28",
+        "assembly": "sha256:7330d3e82e93658d34ab80ff65bc9103de2182600a9e5b1e271d9d011c27195f",
+        "archive": "sha256:7899fd09f4a384e80dd703882cfd3ecda80a6a2bb43f1366d2ef14b97d08232d",
+        "embeddedResource": {
+          "name": "outside.price-card",
+          "sha256": "sha256:5f285194401591a1e0a89af16ec2b875f3d68fa6c76b6817f88e34357c6d1d75",
+          "bytes": 58
+        }
+      }
+    ],
+    "acceptedDependencyLock": "sha256:f555992ec8247c9b93c221d1054005b3647c85a161029d5dd231fc8a1c797bdf",
+    "originalSourcesRemoved": true,
+    "catalogueDataPresent": false,
+    "applicationHandlerInjection": false,
+    "unapprovedGeneratorRefused": true,
+    "generatorOutputs": {
+      "sha256": "sha256:95198133f7a5e19c1b0cb4390e489c701fdaa000c10012b3bb16a7c1d22a6d0a",
+      "bytes": 2207
+    },
+    "component": {
+      "sha256": "sha256:6e50e566d95708590f65b3dd6b8e5f671f38e5de8ebfb99d40e3ee75125ecb74",
+      "bytes": 10813979
+    },
+    "buildSeconds": 130.30509,
+    "signedGuestExecutions": 20,
+    "preEntryRefusals": [
+      {
+        "case": "runtime-missing",
+        "code": "permission-denied",
+        "fuel": 0,
+        "outboundRequests": 0
+      },
+      {
+        "case": "http-missing",
+        "code": "permission-denied",
+        "fuel": 0,
+        "outboundRequests": 0
+      }
+    ],
+    "cases": [
+      {
+        "case": "flurl-json",
+        "result": "1:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "cpuFuel": "53903898",
+        "peakMemoryBytes": "58904928"
+      },
+      {
+        "case": "refit-json",
+        "result": "1:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "cpuFuel": "54690331",
+        "peakMemoryBytes": "58904928"
+      },
+      {
+        "case": "outside-alpha",
+        "result": "1:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "cpuFuel": "53371685",
+        "peakMemoryBytes": "58839392"
+      },
+      {
+        "case": "outside-delta",
+        "result": "1:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "cpuFuel": "53371086",
+        "peakMemoryBytes": "58839392"
+      },
+      {
+        "case": "flurl-404",
+        "result": "1:404:error:domain-error",
+        "outboundRequests": 1,
+        "cpuFuel": "53916442",
+        "peakMemoryBytes": "58904916"
+      },
+      {
+        "case": "refit-404",
+        "result": "1:404:error:domain-error",
+        "outboundRequests": 1,
+        "cpuFuel": "53433822",
+        "peakMemoryBytes": "58904916"
+      },
+      {
+        "case": "flurl-500",
+        "result": "1:500:error:domain-error",
+        "outboundRequests": 1,
+        "cpuFuel": "53915990",
+        "peakMemoryBytes": "58485060"
+      },
+      {
+        "case": "refit-500",
+        "result": "1:500:error:domain-error",
+        "outboundRequests": 1,
+        "cpuFuel": "53432410",
+        "peakMemoryBytes": "58904916"
+      },
+      {
+        "case": "flurl-pending-cancel",
+        "result": "1:cancelled",
+        "outboundRequests": 1,
+        "cpuFuel": "53860878",
+        "peakMemoryBytes": "58485034"
+      },
+      {
+        "case": "refit-pending-cancel",
+        "result": "1:cancelled",
+        "outboundRequests": 1,
+        "cpuFuel": "53320607",
+        "peakMemoryBytes": "58485034"
+      },
+      {
+        "case": "reserved-header",
+        "result": "1:transport-error",
+        "outboundRequests": 0,
+        "cpuFuel": "53687898",
+        "peakMemoryBytes": "58904902"
+      },
+      {
+        "case": "foreign-target",
+        "result": "1:transport-error",
+        "outboundRequests": 0,
+        "cpuFuel": "53699659",
+        "peakMemoryBytes": "58485046"
+      },
+      {
+        "case": "flurl-post",
+        "result": "1:200:echo:AAECAw==",
+        "outboundRequests": 1,
+        "cpuFuel": "54006443",
+        "peakMemoryBytes": "58904906"
+      },
+      {
+        "case": "uncertain-post",
+        "result": "1:transport-error",
+        "outboundRequests": 1,
+        "cpuFuel": "53868429",
+        "peakMemoryBytes": "58485046"
+      },
+      {
+        "case": "flurl-pre-cancelled",
+        "result": "1:cancelled",
+        "outboundRequests": 0,
+        "cpuFuel": "53545784",
+        "peakMemoryBytes": "58904890"
+      },
+      {
+        "case": "refit-pre-cancelled",
+        "result": "1:cancelled",
+        "outboundRequests": 0,
+        "cpuFuel": "52985805",
+        "peakMemoryBytes": "58485034"
+      },
+      {
+        "case": "early-body-dispose",
+        "result": "1:early:4",
+        "outboundRequests": 1,
+        "cpuFuel": "53720436",
+        "peakMemoryBytes": "58904886"
+      },
+      {
+        "case": "guest-extension",
+        "result": "1:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "cpuFuel": "52809031",
+        "peakMemoryBytes": "58419536"
+      },
+      {
+        "case": "guest-extension-denied",
+        "result": "1:transport-error",
+        "outboundRequests": 0,
+        "cpuFuel": "52525532",
+        "peakMemoryBytes": "58839366"
+      },
+      {
+        "case": "fresh-default",
+        "result": "1:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "cpuFuel": "53903878",
+        "peakMemoryBytes": "58904928"
+      }
+    ],
+    "peer": {
+      "contacts": 15,
+      "completedWrites": 11,
+      "mutations": 1,
+      "heldGatesReleased": 0,
+      "allClosed": true,
+      "exactVectors": [
+        "domain-json",
+        "domain-json",
+        "domain-json",
+        "domain-json",
+        "http-404",
+        "http-404",
+        "http-500",
+        "http-500",
+        "pending-headers",
+        "pending-headers",
+        "method-bytes",
+        "commit-close",
+        "partial-body",
+        "domain-json",
+        "domain-json"
+      ]
+    },
+    "reapedCleanNode": true,
+    "shutdown": {
+      "liveStores": 0,
+      "liveInstances": 0,
+      "reservedCpuFuel": 0,
+      "reservedMemoryBytes": 0,
+      "quarantinedCells": 0,
+      "queuedActivations": 0
+    },
+    "publisherAuthenticated": false,
+    "hermetic": false
+  },
+  "additionalRustPrivateResourceHttp": {
+    "observedOn": "2026-11-24",
+    "nativeAndBackendSource": "9f75d2d8a5e0c19243da1f97f19b089cfd8043e5",
+    "nativeProductReceipt": "sha256:74cd8e0373c99dca02b302b0f6dfd8605cc44a0e01a13855e96f08ece227dfb6",
+    "backendReceipt": {
+      "sha256": "sha256:8a522e39e282f6bcd2a877edcb2b570da8196d4ff9cefb27bea2a6f075276086",
+      "bytes": 4443
+    },
+    "environment": "Local Linux x86_64 on WSL. The standalone run used the source-built HTTP adapter and native products from the same revision.",
+    "qualification": "Outside crates generated for this run. Their captured src/lib.rs, Cargo.toml and price-card.json inventories were compared with the maintained fixture generated with the same nonce.",
+    "localBuildReceipt": "sha256:f6e1f143a74123b7584498165f110f5d9e488d3b2fc7d7788342608908d42bb0",
+    "captureReceipt": "sha256:7c662109e833b620279b54ad5061d6ae57f88ae2f4a1aebfcd49d43eacf324e7",
+    "nodeReceipt": "sha256:a7b0a65c45c485e116fdb429fb1174816194836e5eb505aed7f988b25b4521bf",
+    "privatePackages": [
+      {
+        "package": {
+          "package": "outside-wasi-http-alpha-a2a9169dc8a9deaf",
+          "version": "1.41642.5790",
+          "alias": "alpha"
+        },
+        "includeBytes": {
+          "sha256": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+          "bytes": 57
+        },
+        "sourceInventory": "sha256:0beb956fde9baa7b2c3f3cb41aa5b3d4c8feb447c2042690ed6c1ffd9c8051ef"
+      },
+      {
+        "package": {
+          "package": "outside-wasi-http-delta-a2a9169dc8a9deaf",
+          "version": "2.41642.5790",
+          "alias": "delta"
+        },
+        "includeBytes": {
+          "sha256": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+          "bytes": 57
+        },
+        "sourceInventory": "sha256:51a9276c537b49317a7705950b09cb6ed9ae8a68cb4ef01be2c903b536d953c2"
+      }
+    ],
+    "clients": [
+      {
+        "package": "waki",
+        "version": "0.5.1",
+        "artifact": "waki/0.5.1/ac90bfd6cc544efa",
+        "archiveSha256": "sha256:6e2db2daf1dfbadf228fd8b3c22b96a359135fd673b3d2c203274ee6a0df9c77",
+        "capturedOriginal": {
+          "digest": "sha256:e197211d80e8d66faa724fb8e255588a2078f290aa127f04c021cf4cbf3d2158",
+          "size": 7146
+        },
+        "selectedFeatures": [
+          "json"
+        ]
+      },
+      {
+        "package": "golem-wasi-http",
+        "version": "0.2.0",
+        "artifact": "golem-wasi-http/0.2.0/9cc6ac8d6b6c6b0f",
+        "archiveSha256": "sha256:6e80794383f6d363e1f756c5ec9fa6ca0459824e54f9eef53b6b03491fb9d166",
+        "capturedOriginal": {
+          "digest": "sha256:8aa3f291ea1c35aeb569e08c457b6e7b53946c9af06c59f84e651885ee52feb4",
+          "size": 2593
+        },
+        "selectedFeatures": [
+          "default",
+          "json"
+        ]
+      }
+    ],
+    "originalLibrariesRemoved": true,
+    "implicitExecutableApproval": false,
+    "catalogueRegistration": false,
+    "applicationTransportInjected": false,
+    "libraryCodePatched": false,
+    "beforePin": {
+      "candidateDigest": "sha256:4e9717b3f9eabf4f18678c0b3a2eecea1256506cbee50505c69a68e16cca0aba",
+      "ahash": "0.8.13",
+      "executableInputs": 21,
+      "additionalBuildInputs": [
+        {
+          "package": "getrandom",
+          "version": "0.4.3"
+        },
+        {
+          "package": "rustversion",
+          "version": "1.0.23"
+        },
+        {
+          "package": "wasm-bindgen",
+          "version": "0.2.130"
+        },
+        {
+          "package": "wasm-bindgen-macro",
+          "version": "0.2.130"
+        },
+        {
+          "package": "wasm-bindgen-shared",
+          "version": "0.2.130"
+        }
+      ],
+      "result": "Fixture refused the changed executable set during capture."
+    },
+    "acceptedCandidate": "sha256:b4dc28093860953823bfb9ae64df3a65286f1bfaf153f6b6b7db5d734c50e21a",
+    "sdkLockDigest": "sha256:e3575b78c98e77794f2461f990795c635d560d91bab63c477ed9125bbb66906c",
+    "explicitlyApprovedBuildInputs": [
+      {
+        "package": "ahash",
+        "version": "0.8.12",
+        "archiveSha256": "5a15f179cd60c4584b8a8c596927aadc462e27f2ca70c04e0071964a73ba7a75"
+      },
+      {
+        "package": "displaydoc",
+        "version": "0.2.7",
+        "archiveSha256": "c6232dd377dcc64799954cbd3a9bb882e9cdc1308ccd87b1c098f1fb2eaf82a8"
+      },
+      {
+        "package": "icu_normalizer_data",
+        "version": "2.4.0",
+        "archiveSha256": "20f0088bfb7441f7a37fa0c9e20cb1e9cba1cac6b9ce8cd2a6dc44294f8e8cbc"
+      },
+      {
+        "package": "icu_properties_data",
+        "version": "2.4.0",
+        "archiveSha256": "b98f29af82d02b163fe50161388350e743bb3107cc8e8c2f7314cb505faddfcf"
+      },
+      {
+        "package": "prettyplease",
+        "version": "0.2.37",
+        "archiveSha256": "479ca8adacdd7ce8f1fb39ce9ecccbfe93a3f1344b3d0d97f20bc0196208f62b"
+      },
+      {
+        "package": "serde_json",
+        "version": "1.0.149",
+        "archiveSha256": "83fc039473c5595ace860d8c4fafa220ff474b3fc6bfdb4293327f1a37e94d86"
+      },
+      {
+        "package": "waki-macros",
+        "version": "0.5.1",
+        "archiveSha256": "a061143f321cc5eeb523f60bdbcd45cfc3ee8851f8cf24f7a4b963bddc5642eb"
+      },
+      {
+        "package": "wit-bindgen-rt",
+        "version": "0.34.0",
+        "archiveSha256": "744845cde309b8fa32408d6fb67456449278c66ea4dcd96de29797b302721f02"
+      },
+      {
+        "package": "wit-bindgen-rust-macro",
+        "version": "0.34.0",
+        "archiveSha256": "c967731fc5d50244d7241ecfc9302a8929db508eea3c601fbc5371b196ba38a5"
+      },
+      {
+        "package": "wit-bindgen-rust",
+        "version": "0.34.0",
+        "archiveSha256": "f6919521fc7807f927a739181db93100ca7ed03c29509b84d5f96b27b2e49a9a"
+      },
+      {
+        "package": "wit-bindgen",
+        "version": "0.57.1",
+        "archiveSha256": "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
+      },
+      {
+        "package": "yoke-derive",
+        "version": "0.8.4",
+        "archiveSha256": "ec8ebde2db3681e8c9980cc27822030e68752690ddfa9473e739aeb4dbde6d71"
+      },
+      {
+        "package": "zerocopy-derive",
+        "version": "0.8.64",
+        "archiveSha256": "a5cbd820fe3e35fb38c83b6dc7e6b1618bc46e0cd10073ae94e8d52dc468d8b9"
+      },
+      {
+        "package": "zerocopy",
+        "version": "0.8.64",
+        "archiveSha256": "ed43f3060383c64b000f3c630550aebdfa9d3b76d48de32390483dd2cc7e0865"
+      },
+      {
+        "package": "zerofrom-derive",
+        "version": "0.1.8",
+        "archiveSha256": "f75b4683f6c7f45248d4d64056a24298c6281e0993356d7d1b4a1a962ef10d4a"
+      },
+      {
+        "package": "zerovec-derive",
+        "version": "0.11.7",
+        "archiveSha256": "c3743ddbf47738d929cd1ae2e199d40d0162979dfe31aef8ae646d2bf00bf97a"
+      }
+    ],
+    "offlineBuildMarker": "sha256:327d5b342121abca3f47ba9397c95eaa18135797bde2d4931bebe51a7f7a89b3",
+    "component": {
+      "sha256": "sha256:2b9e5e34865f5e6fa45c193ef5b0f3805faf1c1413da977d0ea00c1ab349cad3",
+      "bytes": 964369
+    },
+    "signedDeployments": 2,
+    "signedGuestExecutions": 16,
+    "invocationBudget": {
+      "blobReadBytes": 0,
+      "blobWriteBytes": 0,
+      "childCalls": 0,
+      "cpuFuel": 1000000000,
+      "effectCount": 0,
+      "logBytes": 0,
+      "memoryBytes": 16777216,
+      "outboundRequests": 8,
+      "stateReadBytes": 0,
+      "stateWriteBytes": 0,
+      "wallTimeLimitMillis": 5000
+    },
+    "preEntryRefusals": [
+      {
+        "tenant": "examples",
+        "exitCode": 4,
+        "code": "permission-denied",
+        "guestFuel": 0,
+        "outboundRequests": 0,
+        "peerContacts": 0
+      },
+      {
+        "tenant": "foreign",
+        "exitCode": 4,
+        "code": "permission-denied",
+        "guestFuel": 0,
+        "outboundRequests": 0,
+        "peerContacts": 0
+      }
+    ],
+    "cases": [
+      {
+        "case": "examples-private-0-json",
+        "tenant": "examples",
+        "client": "waki",
+        "privateCrate": "alpha",
+        "reply": "fresh:waki:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "109984",
+        "peakMemoryBytes": "8044850"
+      },
+      {
+        "case": "foreign-private-0-json",
+        "tenant": "foreign",
+        "client": "waki",
+        "privateCrate": "alpha",
+        "reply": "fresh:waki:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "109984",
+        "peakMemoryBytes": "8044870"
+      },
+      {
+        "case": "examples-private-1-json",
+        "tenant": "examples",
+        "client": "waki",
+        "privateCrate": "delta",
+        "reply": "fresh:waki:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "109995",
+        "peakMemoryBytes": "8044850"
+      },
+      {
+        "case": "foreign-private-1-json",
+        "tenant": "foreign",
+        "client": "waki",
+        "privateCrate": "delta",
+        "reply": "fresh:waki:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "109995",
+        "peakMemoryBytes": "8044870"
+      },
+      {
+        "case": "examples-private-2-json",
+        "tenant": "examples",
+        "client": "golem",
+        "privateCrate": "alpha",
+        "reply": "fresh:golem:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "140892",
+        "peakMemoryBytes": "10129042"
+      },
+      {
+        "case": "foreign-private-2-json",
+        "tenant": "foreign",
+        "client": "golem",
+        "privateCrate": "alpha",
+        "reply": "fresh:golem:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "140892",
+        "peakMemoryBytes": "10129061"
+      },
+      {
+        "case": "examples-private-3-json",
+        "tenant": "examples",
+        "client": "golem",
+        "privateCrate": "delta",
+        "reply": "fresh:golem:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "140903",
+        "peakMemoryBytes": "10129044"
+      },
+      {
+        "case": "foreign-private-3-json",
+        "tenant": "foreign",
+        "client": "golem",
+        "privateCrate": "delta",
+        "reply": "fresh:golem:200:domain:7:café:first|λ:",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "140903",
+        "peakMemoryBytes": "10129061"
+      },
+      {
+        "case": "examples-private-4-http404",
+        "tenant": "examples",
+        "client": "waki",
+        "privateCrate": "alpha",
+        "reply": "fresh:waki:404:domain-error",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "92398",
+        "peakMemoryBytes": "8044900"
+      },
+      {
+        "case": "foreign-private-4-http404",
+        "tenant": "foreign",
+        "client": "waki",
+        "privateCrate": "alpha",
+        "reply": "fresh:waki:404:domain-error",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "92398",
+        "peakMemoryBytes": "8044920"
+      },
+      {
+        "case": "examples-private-5-http404",
+        "tenant": "examples",
+        "client": "golem",
+        "privateCrate": "alpha",
+        "reply": "fresh:golem:404:domain-error",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "124739",
+        "peakMemoryBytes": "10129113"
+      },
+      {
+        "case": "foreign-private-5-http404",
+        "tenant": "foreign",
+        "client": "golem",
+        "privateCrate": "alpha",
+        "reply": "fresh:golem:404:domain-error",
+        "outboundRequests": 1,
+        "peerContacts": 1,
+        "fuel": "124739",
+        "peakMemoryBytes": "10129117"
+      },
+      {
+        "case": "examples-private-6-repeat",
+        "tenant": "examples",
+        "client": "waki",
+        "privateCrate": "delta",
+        "reply": "fresh:waki:repeat:200:domain:7:café:first|λ:",
+        "outboundRequests": 2,
+        "peerContacts": 2,
+        "fuel": "210429",
+        "peakMemoryBytes": "8045273"
+      },
+      {
+        "case": "foreign-private-6-repeat",
+        "tenant": "foreign",
+        "client": "waki",
+        "privateCrate": "delta",
+        "reply": "fresh:waki:repeat:200:domain:7:café:first|λ:",
+        "outboundRequests": 2,
+        "peerContacts": 2,
+        "fuel": "210429",
+        "peakMemoryBytes": "8045293"
+      },
+      {
+        "case": "examples-private-7-repeat",
+        "tenant": "examples",
+        "client": "golem",
+        "privateCrate": "delta",
+        "reply": "fresh:golem:repeat:200:domain:7:café:first|λ:",
+        "outboundRequests": 2,
+        "peerContacts": 2,
+        "fuel": "272698",
+        "peakMemoryBytes": "10139843"
+      },
+      {
+        "case": "foreign-private-7-repeat",
+        "tenant": "foreign",
+        "client": "golem",
+        "privateCrate": "delta",
+        "reply": "fresh:golem:repeat:200:domain:7:café:first|λ:",
+        "outboundRequests": 2,
+        "peerContacts": 2,
+        "fuel": "272698",
+        "peakMemoryBytes": "10139849"
+      }
+    ],
+    "tenantPeers": {
+      "examples": {
+        "contacts": 10,
+        "mutations": 0,
+        "completedWrites": 10,
+        "allClosed": true
+      },
+      "foreign": {
+        "contacts": 10,
+        "mutations": 0,
+        "completedWrites": 10,
+        "allClosed": true
+      }
+    },
+    "reaped": true,
+    "shutdown": {
+      "clean": true,
+      "activeConnections": 0,
+      "activeActivations": 0,
+      "liveStores": 0,
+      "liveInstances": 0,
+      "liveHostStates": 0,
+      "instanceReservations": 0
+    },
+    "scope": "Ordinary typed HTTP and crate-owned resources. The signed invocations did not combine this client with standard threads."
+  },
+  "installedCPrivateDependencies": {
+    "observedOn": "2026-11-24",
+    "status": "passed",
+    "candidateSource": "baa2c984d880c1726b78f57ef68f9e229e7c43a1",
+    "nativeSource": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "pythonImage": "python@sha256:4c2cf9917bd1cbacc5e9b07320025bdb7cdf2df7b0ceaccb55e9dd7e30987419",
+    "candidateBuilder": "tools/build_dev_guest_tools.py --language c",
+    "installedEntry": "recipe/tools/dev_guest_recipe.py",
+    "packageEntry": "tools.dev_workflow.build_artifacts.package and tools.dev_workflow.build_provenance.complete",
+    "signedNodeEntry": "tools.c_thread_runtime_node.run_http",
+    "publisherAuthenticated": false,
+    "publicRelease": false,
+    "fullFrontendWatchExercised": false,
+    "archive": {
+      "name": "latent-dev-linux-x86_64-c-tools.zip",
+      "sha256": "sha256:87c86a50cda32a37ee1370b6810eef0bba7293250e87ab4cf5544c23ca284a47",
+      "size": 83535101
+    },
+    "manifest": {
+      "sha256": "sha256:6a888792ca754a01bc30b55d731c24f2cbb4b8c1c3e2c7d2d9c710492d6ee136",
+      "bytes": 219259
+    },
+    "helper": {
+      "sha256": "sha256:c7ae0c2f926c37c048abcf72bb2aac4402606fdd3cbd11b9cbb27aa039440ba9",
+      "bytes": 334967
+    },
+    "qualifier": {
+      "sha256": "sha256:aee46ddaabce9721f766ca2d801fb4276b01c28b1f665bad2aa3be457f54d9de",
+      "bytes": 8661
+    },
+    "environment": {
+      "uid": 1000,
+      "interfaces": [
+        "lo"
+      ],
+      "checkoutMounted": false,
+      "readonlyCandidate": true,
+      "readonlyCapture": true,
+      "outerPython": "3.13.5"
+    },
+    "component": {
+      "sha256": "sha256:8fb889eb4dd01bf3e12121387daaa3b82b7ca1467b06d54ed92c9d5b72ba716a",
+      "bytes": 128782
+    },
+    "commands": {
+      "create-greeting": 0,
+      "create-word-count": 0,
+      "create-shipping": 0,
+      "create-http-status": 0,
+      "create-recovery": 0,
+      "create-transactional-aggregate": 0,
+      "verify-capture": 0,
+      "offline-build": 0,
+      "update": 0,
+      "update-requires-review": 1,
+      "remove": 0,
+      "remove-requires-review": 1,
+      "add-original": 0,
+      "reordered-add-requires-review": 1,
+      "verify-original-reviewed-bytes": 0
+    },
+    "variants": [
+      {
+        "dependencyIds": [
+          "shop-floor/price-card",
+          "shop-floor/card-policy"
+        ],
+        "capturedInputIdentity": "sha256:d96f4c4c0547387b1788a486b4774226e585cc0004b37541913e3cbc374f4238",
+        "resourceIndex": {
+          "sha256": "sha256:d1d7f1ef0b8b34563216cb0316f0085f337ac287cadea24148eb43cfb402161a",
+          "bytes": 944
+        },
+        "compilerRun": {
+          "sha256": "sha256:479aa54c016dacf0650820f46450078855d8a21111706c7490885a9d3e2e43b9",
+          "bytes": 7934
+        },
+        "compilerElapsedSeconds": 37.844,
+        "compilerObservation": {
+          "sha256": "sha256:a17ac319915c9c13c5a3b28e3533651f81a0fd8de557cb953133d9a6c8721aac",
+          "bytes": 9700
+        },
+        "compilerCompletion": {
+          "sha256": "sha256:148af0ef5e1d1c9df01bade8acdf8c5ad96c4d6c52dfb7d8914cf4aa241dd8bc",
+          "bytes": 3111
+        },
+        "packageDigest": "sha256:df5960fc8de0639748a30f03baddb2a18037985317b51919aa6932dcfde0c44a",
+        "packaging": {
+          "sha256": "sha256:75fed472b34b4131b79b8c3abf564589199bae0faaa20b2a3bea3e6c2a980360",
+          "bytes": 474
+        },
+        "node": {
+          "sha256": "sha256:55c3e79ef2ccbb76f3a25810ccb0786f2e20d08d643c9b412f8502a91f0d06a0",
+          "bytes": 17785
+        },
+        "invocation": {
+          "sha256": "sha256:7bb23011838f4e49dbc2da98c1fa67bc459057e01851ca5138bd1c9189a7375b",
+          "bytes": 1259
+        },
+        "result": "card:7:5:57:1776131770",
+        "cpuFuel": "60491",
+        "peakMemoryBytes": "2839471",
+        "outboundRequests": 1,
+        "loopbackConnections": 1,
+        "completedResponses": 1,
+        "committedMutations": 0,
+        "remainingPhysicalOwners": 0,
+        "remainingActiveProviderCounters": 0,
+        "peerOpenConnectionsAtExit": 0,
+        "nodeReaped": true,
+        "cleanNodeStop": true,
+        "resource": {
+          "bytes": 16,
+          "sha256": "sha256:87e7eb9b1dc90aa65dcd1a84f2511fc515935c0dedca941cf47b2f1c45747f7a",
+          "mediaType": "text/plain"
+        }
+      },
+      {
+        "dependencyIds": [
+          "warehouse/bin-label-reader",
+          "warehouse/label-policy"
+        ],
+        "capturedInputIdentity": "sha256:f2ff76aa8cae923367b936faae02e954f2677040204a7404b1fba9c3d9e594e4",
+        "resourceIndex": {
+          "sha256": "sha256:5fe7938ca460fd11b823a06c4b4a9a01aeac60d1d3911cc94fce6284de4ec3f3",
+          "bytes": 944
+        },
+        "compilerRun": {
+          "sha256": "sha256:58b361587aaa12534cb5446636b384f99542824802d50da488e42df04f080d68",
+          "bytes": 7933
+        },
+        "compilerElapsedSeconds": 38.518,
+        "compilerObservation": {
+          "sha256": "sha256:e41dcec6214dff3f084f26ccbcf6e8eb35b2cdb0f807bf8b4fe2ca0909e61912",
+          "bytes": 9700
+        },
+        "compilerCompletion": {
+          "sha256": "sha256:41ac5a18e5a85a838f999bc2008d613c7f223dfb16fbdf62695244a766b53c84",
+          "bytes": 3113
+        },
+        "packageDigest": "sha256:73bb1ea8309c84baab639b2337994cfb4698a589ff215b65037191fb24d7001b",
+        "packaging": {
+          "sha256": "sha256:112c214d7cfe096ba17bc78bb4500096932208d1eb8e44683cd01cbca0261c69",
+          "bytes": 474
+        },
+        "node": {
+          "sha256": "sha256:4f5b14735395be44b06142903c8c7e08ae44fc3d709304fdb199b7fa6218c16c",
+          "bytes": 17794
+        },
+        "invocation": {
+          "sha256": "sha256:3bb16ed1e2880f1bb7ca6b03de346926f7754768b8ad0a849abb42e40b4195d9",
+          "bytes": 1259
+        },
+        "result": "card:7:5:57:1776131770",
+        "cpuFuel": "60491",
+        "peakMemoryBytes": "2839471",
+        "outboundRequests": 1,
+        "loopbackConnections": 1,
+        "completedResponses": 1,
+        "committedMutations": 0,
+        "remainingPhysicalOwners": 0,
+        "remainingActiveProviderCounters": 0,
+        "peerOpenConnectionsAtExit": 0,
+        "nodeReaped": true,
+        "cleanNodeStop": true,
+        "resource": {
+          "bytes": 16,
+          "sha256": "sha256:87e7eb9b1dc90aa65dcd1a84f2511fc515935c0dedca941cf47b2f1c45747f7a",
+          "mediaType": "text/plain"
+        }
+      }
+    ]
+  },
+  "installedJavaPrivateDependencies": {
+    "observedOn": "2026-11-24",
+    "status": "passed",
+    "candidateSource": "baa2c984d880c1726b78f57ef68f9e229e7c43a1",
+    "nativeSource": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+    "archive": {
+      "sha256": "sha256:367553268ccb923f6e46435129322cbb4485c50978d0ecaa1e19c02334d3a461",
+      "bytes": 586424161
+    },
+    "manifest": {
+      "sha256": "sha256:633c651d23806a4b10ca23187a895aaba059cf84d559135976fa2362782e90e7",
+      "bytes": 510739
+    },
+    "target": "linux-x86_64",
+    "hostAbi": "lsf-host-abi-phase3-v5",
+    "candidateBuilder": "tools/build_dev_guest_tools.py --language java --java-compiler-input <verified-carrier>",
+    "captureCommand": "recipe/tools/java_capsule.py dependencies",
+    "buildCommand": "recipe/tools/dev_guest_recipe.py --language java",
+    "packageEntry": "tools.dev_workflow.build_artifacts.package and tools.dev_workflow.build_provenance.complete",
+    "nodeEntry": "tools.qualify_java_private_http.provider_controls and verify_node",
+    "effectiveUser": 1000,
+    "interfaces": [
+      "lo"
+    ],
+    "checkoutMounted": false,
+    "readonlyInputs": true,
+    "publicRelease": false,
+    "publisherAuthenticated": false,
+    "fullFrontendWatchExercised": false,
+    "variants": [
+      {
+        "dependencyIds": [
+          "outside.http.primary/1.0.7",
+          "outside.http.child/1.0.7"
+        ],
+        "acceptedLock": "sha256:806aae6886973ad272c1ade25968489486faee4ba74064f1325b75681cd9bdcd",
+        "capturedInputIdentity": "sha256:307ca9f5fe7f38f5095d9bda52a159cc8451939d67b321c2467b95e471c2ef0d",
+        "jars": {
+          "child": {
+            "sha256": "sha256:4a3f783791c10fc33fe30034a848f25a23dc6625493ac9e4d8db0f27b30646a6",
+            "bytes": 1339
+          },
+          "primary": {
+            "sha256": "sha256:61d12b75b0a1a0a497fef8f1d349633d08790875b802723625b2517396a1b5ab",
+            "bytes": 2600
+          }
+        },
+        "resourceDigest": "sha256:dcd9ca838d0134810c6295cde2d9919a12519c9e3c145280ecac29a1f6f89853",
+        "originalCompilerMaterials": {
+          "component.wasm": {
+            "sha256": "sha256:57923ebc3cdb2d88acf512b3e0345a506877cff855c9bbae6ee39779c12d4a3a",
+            "bytes": 1077424
+          },
+          "build-observation.json": {
+            "sha256": "sha256:dd4c3140a86d7d730438f5608f66498b6def71e88111ffed0422e9bc2ed84381",
+            "bytes": 3826
+          },
+          "BUILD-COMPLETE.json": {
+            "sha256": "sha256:3ab2a2b7fc5fcbf1d3e87e9a62c17992b9bec53bc494c04c8f28af269589b428",
+            "bytes": 9272
+          },
+          "java-classpath.json": {
+            "sha256": "sha256:a2de88053bd7b8e0a4ccd56546615b037bf55ecb1f092860cea28f941386d53b",
+            "bytes": 2085
+          }
+        },
+        "packageDigest": "sha256:5afb7b3688460039f4086d2159b90294244fd30da8a9617a18be93dff2e312cb",
+        "offlineRecord": {
+          "sha256": "sha256:aa45aa750470c5d7aa120edc5847134c462d922e9af285c61d2647a74d16fa2a",
+          "bytes": 284
+        },
+        "nodeRecord": {
+          "sha256": "sha256:3f8cc3e8e4d8f82c7cc369499f90587ac66a7c7347b4818511df99e6028d57bc",
+          "bytes": 1126
+        },
+        "signedCases": [
+          "json",
+          "http404",
+          "http500",
+          "truncated",
+          "oversized",
+          "forbidden",
+          "early",
+          "redirect",
+          "post",
+          "uncertain",
+          "alternate-denied",
+          "direct-factory",
+          "fresh"
+        ],
+        "peerRequests": 11,
+        "peerMutations": 1,
+        "peerReaped": true,
+        "cleanNodeStop": true,
+        "nodeReaped": true
+      },
+      {
+        "dependencyIds": [
+          "tenant.example.unlisted-client/2026.10.19",
+          "different.owner.helper/4.2.1"
+        ],
+        "acceptedLock": "sha256:d04d2a2ed2a987414416450816a15b22217b903bbe57c192d02278726ec46f3a",
+        "capturedInputIdentity": "sha256:39656694d4eddfed3e53ddaba65055485272b07add65c700bc5b9c452dd8aa01",
+        "jars": {
+          "child": {
+            "sha256": "sha256:4a3f783791c10fc33fe30034a848f25a23dc6625493ac9e4d8db0f27b30646a6",
+            "bytes": 1339
+          },
+          "primary": {
+            "sha256": "sha256:61d12b75b0a1a0a497fef8f1d349633d08790875b802723625b2517396a1b5ab",
+            "bytes": 2600
+          }
+        },
+        "resourceDigest": "sha256:dcd9ca838d0134810c6295cde2d9919a12519c9e3c145280ecac29a1f6f89853",
+        "originalCompilerMaterials": {
+          "component.wasm": {
+            "sha256": "sha256:57923ebc3cdb2d88acf512b3e0345a506877cff855c9bbae6ee39779c12d4a3a",
+            "bytes": 1077424
+          },
+          "build-observation.json": {
+            "sha256": "sha256:6dd1b670f478c13a3c8a1298cb099063abb68ca2370bf4daf495b13bd60ae8e6",
+            "bytes": 3826
+          },
+          "BUILD-COMPLETE.json": {
+            "sha256": "sha256:19d954b4c703f1cf7f99b5d512bc6d0dd4fef22dc06ea2e1dd7b4d69efefa299",
+            "bytes": 9267
+          },
+          "java-classpath.json": {
+            "sha256": "sha256:01f5c04ad1a03c671280b82b1c4a809a3a0153aebfcc048726c50c9d770c15fc",
+            "bytes": 2108
+          }
+        },
+        "packageDigest": "sha256:71546b18a715f54dcf79bcfffafa22b0ae38d42b277bd709301907c5370ef798",
+        "offlineRecord": {
+          "sha256": "sha256:c5a3271236052cd9ac70c0a70bd6dd768964b95d057bd1a41e12e6db079b9f08",
+          "bytes": 284
+        },
+        "nodeRecord": {
+          "sha256": "sha256:0eb81ee4f1ea3251aee5c7bacd477e9d660fa7c7c2919fd985da81a7b102b9e0",
+          "bytes": 1126
+        },
+        "signedCases": [
+          "json",
+          "http404",
+          "http500",
+          "truncated",
+          "oversized",
+          "forbidden",
+          "early",
+          "redirect",
+          "post",
+          "uncertain",
+          "alternate-denied",
+          "direct-factory",
+          "fresh"
+        ],
+        "peerRequests": 11,
+        "peerMutations": 1,
+        "peerReaped": true,
+        "cleanNodeStop": true,
+        "nodeReaped": true
+      }
+    ]
+  },
+  "installedRustPrivateDependencies": {
+    "observedOn": "2026-11-24",
+    "status": "passed",
+    "candidateSource": "9f75d2d8a5e0c19243da1f97f19b089cfd8043e5",
+    "archive": {
+      "sha256": "sha256:1cba9a5c5d8d963dee1351d23eb90519baea77739b2bc1ff706413e57c5a8c27",
+      "bytes": 378884511
+    },
+    "manifest": {
+      "sha256": "sha256:47bc83b53e08de9f15d069efd58d84b00abe6dd2fb1da57e1f9054d51b70d4ac",
+      "bytes": 350728
+    },
+    "target": "linux-x86_64",
+    "hostAbi": "lsf-host-abi-phase3-v5",
+    "nativeSource": "9f75d2d8a5e0c19243da1f97f19b089cfd8043e5",
+    "preparedBackend": {
+      "sha256": "sha256:8a522e39e282f6bcd2a877edcb2b570da8196d4ff9cefb27bea2a6f075276086",
+      "bytes": 4443
+    },
+    "compilerInventory": {
+      "sha256": "sha256:654e834b80b3cb0100587ab3ed5c1893e999eaeb182ea25be16e77a61ac3f392",
+      "bytes": 211215
+    },
+    "capturedSourceDigest": "sha256:1654366c7c14692a6e5f487010081cefafa91ad72df2a7b2e35279eafe6d0cc9",
+    "privatePackages": [
+      {
+        "package": {
+          "package": "outside-wasi-http-alpha-a2a9169dc8a9deaf",
+          "version": "1.41642.5790",
+          "alias": "alpha"
+        },
+        "includeBytes": {
+          "sha256": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+          "bytes": 57
+        },
+        "sourceInventory": "sha256:0beb956fde9baa7b2c3f3cb41aa5b3d4c8feb447c2042690ed6c1ffd9c8051ef"
+      },
+      {
+        "package": {
+          "package": "outside-wasi-http-delta-a2a9169dc8a9deaf",
+          "version": "2.41642.5790",
+          "alias": "delta"
+        },
+        "includeBytes": {
+          "sha256": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+          "bytes": 57
+        },
+        "sourceInventory": "sha256:51a9276c537b49317a7705950b09cb6ed9ae8a68cb4ef01be2c903b536d953c2"
+      }
+    ],
+    "clients": [
+      {
+        "package": "waki",
+        "version": "0.5.1",
+        "artifact": "waki/0.5.1/ac90bfd6cc544efa",
+        "archiveSha256": "sha256:6e2db2daf1dfbadf228fd8b3c22b96a359135fd673b3d2c203274ee6a0df9c77",
+        "capturedOriginal": {
+          "digest": "sha256:e197211d80e8d66faa724fb8e255588a2078f290aa127f04c021cf4cbf3d2158",
+          "size": 7146
+        },
+        "selectedFeatures": [
+          "json"
+        ]
+      },
+      {
+        "package": "golem-wasi-http",
+        "version": "0.2.0",
+        "artifact": "golem-wasi-http/0.2.0/9cc6ac8d6b6c6b0f",
+        "archiveSha256": "sha256:6e80794383f6d363e1f756c5ec9fa6ca0459824e54f9eef53b6b03491fb9d166",
+        "capturedOriginal": {
+          "digest": "sha256:8aa3f291ea1c35aeb569e08c457b6e7b53946c9af06c59f84e651885ee52feb4",
+          "size": 2593
+        },
+        "selectedFeatures": [
+          "default",
+          "json"
+        ]
+      }
+    ],
+    "approvedExecutableIdentity": "sha256:67867095d931b83e7ed6fbb2e0241b2e6340a5876af63645ec17e2ee2c8435d8",
+    "approvedExecutables": 16,
+    "buildCommands": [
+      {
+        "name": "unapproved",
+        "exitCode": 1
+      },
+      {
+        "name": "approved",
+        "exitCode": 0
+      }
+    ],
+    "compilerNetwork": "denied",
+    "checkoutMounted": false,
+    "guestComponentsCompiled": 1,
+    "compilerElapsedSeconds": 180.996,
+    "component": {
+      "sha256": "sha256:ead72f1b0f2c5b9b1f75ec81f2b42ef568b74402757b534536f133cb73b912b4",
+      "bytes": 966033
+    },
+    "packageDigest": "sha256:125870f6979bf2218de31ef99690d8705ea7e50791f4c030c843e046a1f6e4a3",
+    "packageEntry": "tools/dev_workflow/build_artifacts.package +tools/dev_workflow/build_provenance.complete",
+    "originalCompiler": {
+      "build-observation.json": {
+        "sha256": "sha256:0ed9eb4d059044109a9d9b57ea28c5fdda1eccaea6c587a48428913ebcbeb577",
+        "bytes": 4484
+      },
+      "BUILD-COMPLETE.json": {
+        "sha256": "sha256:a747e3ed80f4eb608434c7321a5a8fb0ef9f0a5f4da1827c626193d54afb6b98",
+        "bytes": 3801
+      },
+      "component.wasm": {
+        "sha256": "sha256:ead72f1b0f2c5b9b1f75ec81f2b42ef568b74402757b534536f133cb73b912b4",
+        "bytes": 966033
+      }
+    },
+    "joinedBuildObservation": {
+      "sha256": "sha256:a5f76c994dee5a47dc14a5428b85590fa0a4ffbe39652f72b4245421568e1242",
+      "bytes": 3725
+    },
+    "installedBuildRecord": {
+      "sha256": "sha256:ef55ab045d27ae2f5c1be44ba66d866b89548c870888e0e9057e0d4c01a98c0c",
+      "bytes": 226733
+    },
+    "fullReleasedFrontendQualified": false,
+    "publisherAuthenticated": false,
+    "installedNode": {
+      "entry": "tools.rust_wasi_http_installed_node.run",
+      "record": {
+        "sha256": "sha256:c1b107adb5e2388c3e9784dc76e0f79d3738802259a6f8f1ce3624d518999a28",
+        "bytes": 225767
+      },
+      "signedGuestCalls": 4,
+      "preEntryRefusals": 2,
+      "peerContacts": 4,
+      "cases": [
+        {
+          "tenant": "examples",
+          "client": "waki",
+          "crateAlias": "alpha",
+          "case": "installed-json",
+          "result": "fresh:waki:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "golem",
+          "crateAlias": "delta",
+          "case": "installed-json",
+          "result": "fresh:golem:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "golem",
+          "crateAlias": "delta",
+          "case": "installed-json",
+          "result": "fresh:golem:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "waki",
+          "crateAlias": "alpha",
+          "case": "installed-json",
+          "result": "fresh:waki:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        }
+      ],
+      "peers": {
+        "examples": {
+          "contacts": 2,
+          "mutations": 0,
+          "completedWrites": 2,
+          "allClosed": true,
+          "vectors": [
+            "domain-json",
+            "domain-json"
+          ]
+        },
+        "foreign": {
+          "contacts": 2,
+          "mutations": 0,
+          "completedWrites": 2,
+          "allClosed": true,
+          "vectors": [
+            "domain-json",
+            "domain-json"
+          ]
+        }
+      },
+      "nodeReaped": true,
+      "cleanNodeStop": true
+    },
+    "extendedNode": {
+      "record": {
+        "sha256": "sha256:2cf3a4a16ea9ab764991aebc5c68af73b88199471022e9937e7d76be146f70a0",
+        "bytes": 1005536
+      },
+      "signedGuestCalls": 16,
+      "preEntryRefusals": 2,
+      "cases": [
+        {
+          "tenant": "examples",
+          "client": "waki",
+          "crateAlias": "alpha",
+          "case": "json",
+          "result": "fresh:waki:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "waki",
+          "crateAlias": "alpha",
+          "case": "json",
+          "result": "fresh:waki:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "waki",
+          "crateAlias": "delta",
+          "case": "json",
+          "result": "fresh:waki:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "waki",
+          "crateAlias": "delta",
+          "case": "json",
+          "result": "fresh:waki:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "golem",
+          "crateAlias": "alpha",
+          "case": "json",
+          "result": "fresh:golem:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "golem",
+          "crateAlias": "alpha",
+          "case": "json",
+          "result": "fresh:golem:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "golem",
+          "crateAlias": "delta",
+          "case": "json",
+          "result": "fresh:golem:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "golem",
+          "crateAlias": "delta",
+          "case": "json",
+          "result": "fresh:golem:200:domain:7:café:first|λ:",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "waki",
+          "crateAlias": "alpha",
+          "case": "http404",
+          "result": "fresh:waki:404:domain-error",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "waki",
+          "crateAlias": "alpha",
+          "case": "http404",
+          "result": "fresh:waki:404:domain-error",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "golem",
+          "crateAlias": "alpha",
+          "case": "http404",
+          "result": "fresh:golem:404:domain-error",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "foreign",
+          "client": "golem",
+          "crateAlias": "alpha",
+          "case": "http404",
+          "result": "fresh:golem:404:domain-error",
+          "peerContacts": 1
+        },
+        {
+          "tenant": "examples",
+          "client": "waki",
+          "crateAlias": "delta",
+          "case": "repeat",
+          "result": "fresh:waki:repeat:200:domain:7:café:first|λ:",
+          "peerContacts": 2
+        },
+        {
+          "tenant": "foreign",
+          "client": "waki",
+          "crateAlias": "delta",
+          "case": "repeat",
+          "result": "fresh:waki:repeat:200:domain:7:café:first|λ:",
+          "peerContacts": 2
+        },
+        {
+          "tenant": "examples",
+          "client": "golem",
+          "crateAlias": "delta",
+          "case": "repeat",
+          "result": "fresh:golem:repeat:200:domain:7:café:first|λ:",
+          "peerContacts": 2
+        },
+        {
+          "tenant": "foreign",
+          "client": "golem",
+          "crateAlias": "delta",
+          "case": "repeat",
+          "result": "fresh:golem:repeat:200:domain:7:café:first|λ:",
+          "peerContacts": 2
+        }
+      ],
+      "peers": {
+        "examples": {
+          "contacts": 10,
+          "mutations": 0,
+          "completedWrites": 10,
+          "allClosed": true,
+          "vectors": [
+            "domain-json",
+            "domain-json",
+            "domain-json",
+            "domain-json",
+            "http-404",
+            "http-404",
+            "domain-json",
+            "domain-json",
+            "domain-json",
+            "domain-json"
+          ]
+        },
+        "foreign": {
+          "contacts": 10,
+          "mutations": 0,
+          "completedWrites": 10,
+          "allClosed": true,
+          "vectors": [
+            "domain-json",
+            "domain-json",
+            "domain-json",
+            "domain-json",
+            "http-404",
+            "http-404",
+            "domain-json",
+            "domain-json",
+            "domain-json",
+            "domain-json"
+          ]
+        }
+      },
+      "nodeReaped": true,
+      "cleanNodeStop": true
+    }
+  },
+  "installedGoPrivateDependencies": {
+    "observedOn": "2026-11-24",
+    "status": "passed",
+    "candidateSource": "bc4320049800976505730bbe64e8060c7df2967a",
+    "nativeSource": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+    "archive": {
+      "sha256": "sha256:ac50cd704972aefe79a1ccb2b3dd17b7c4833bf07afdfb1e80468aa754c14c3e",
+      "bytes": 96186731
+    },
+    "manifest": {
+      "sha256": "sha256:34b2a588578321eb5e1fd7afcb273a787cc196d2dcb28ad2ff873b6cae674b71",
+      "bytes": 313806
+    },
+    "hostAbi": "lsf-host-abi-phase3-v5",
+    "target": "linux-x86_64",
+    "candidateBuilder": "tools/build_dev_guest_tools.py --language go",
+    "captureCommand": "recipe/tools/go_capsule.py dependencies",
+    "buildCommand": "recipe/tools/dev_guest_recipe.py --language go",
+    "nodeEntry": "tools.go_standard_http_node.run (libraries)",
+    "packageEntry": "tools.dev_workflow.build_artifacts.package and tools.dev_workflow.build_provenance.complete",
+    "compilerNetwork": "denied",
+    "effectiveUser": 1000,
+    "checkoutMounted": false,
+    "readOnlyInputs": true,
+    "publicRelease": false,
+    "publisherAuthenticated": false,
+    "fullFrontendWatchExercised": false,
+    "variants": [
+      {
+        "coordinate": "outside.example.test/http-library/original-coordinate",
+        "capturedInputIdentity": "sha256:0aedfacacd899e4018ddfe012cdd7fb800cbfdc40c39c934efbdb1f419819ee9",
+        "nativeGraphDigest": "sha256:13b051b93d00d7844c0ea3069207bc937eda9f0dd633b76d6e583b3889f1643d",
+        "runtimeSelection": {
+          "runtimeProfile": "go-component-activation-v4",
+          "tags": [],
+          "target": "wasip1/wasm"
+        },
+        "libraries": [
+          {
+            "artifact": "go-module/41e189b48c35a1d7fa6a1363",
+            "module": "github.com/dghubble/sling",
+            "version": "v1.4.0",
+            "ordinaryApi": "sling.New/Request/Do with its default http.Client",
+            "selection": "application-root-direct"
+          },
+          {
+            "artifact": "go-module/dade53f75779eeed50589de8",
+            "module": "github.com/carlmjohnson/requests",
+            "version": "v0.24.3",
+            "ordinaryApi": "requests.URL/ToJSON/Fetch with its default http.Client",
+            "selection": "application-root-direct"
+          },
+          {
+            "artifact": "go-module/68ca3c29ba08f6d3b757fe7d",
+            "module": "outside.example.test/http-library/original-coordinate",
+            "version": "v0.0.0",
+            "ordinaryApi": "private.Marker ordinary goroutine/WaitGroup/time.Sleep/embed",
+            "selection": "application-root-direct"
+          }
+        ],
+        "component": {
+          "sha256": "sha256:4c60284a913296e42ae7b405fc0ff7da48795981d1d29f5e9f3dae099f65b3f5",
+          "bytes": 10517405
+        },
+        "compilerObservation": {
+          "sha256": "sha256:0e9c79a2e21495d2bd80d8fb3557d0d3971a4bdc6ffc06601b86e93c560dfb68",
+          "bytes": 3518
+        },
+        "compilerCompletion": {
+          "sha256": "sha256:3d035d55e9ebef45e0f62c5a044d66e40bafcd8c6be0d85735f5ce1d829e03a6",
+          "bytes": 2416
+        },
+        "packageDigest": "sha256:d199ed1c6a541b12f1f9549287c99e13651c0cb378a3a945d2c5fd9a53110a49",
+        "installedBuild": {
+          "sha256": "sha256:9aadbffd9497dc75754eeabcce7cf52c127eca60266689a6e102ada95ec7b562",
+          "bytes": 284
+        },
+        "signedExecution": {
+          "sha256": "sha256:c6bef8f27507f154850dc86aca62cd4e00d17ba1b7f10204dd5611d84c34638f",
+          "bytes": 5339
+        },
+        "signedCases": [
+          "sling-json",
+          "sling-http404",
+          "sling-http500",
+          "sling-truncated",
+          "sling-oversized",
+          "sling-malformed-json",
+          "sling-forbidden",
+          "sling-cancel-headers",
+          "sling-partial-context-cancel",
+          "sling-post",
+          "sling-uncertain",
+          "sling-alternate-denied",
+          "sling-pre-cancelled",
+          "sling-sibling-cancel",
+          "sling-fresh",
+          "requests-json",
+          "requests-http404",
+          "requests-http500",
+          "requests-truncated",
+          "requests-oversized",
+          "requests-malformed-json",
+          "requests-forbidden",
+          "requests-cancel-headers",
+          "requests-partial-context-cancel",
+          "requests-post",
+          "requests-uncertain",
+          "requests-alternate-denied",
+          "requests-pre-cancelled",
+          "requests-sibling-cancel",
+          "requests-fresh"
+        ],
+        "peerRequests": 24,
+        "peerMutations": 2,
+        "rejectedPeerRequests": 0,
+        "peerReaped": true,
+        "nodeReaped": true,
+        "cleanNodeStop": true
+      },
+      {
+        "coordinate": "outside.example.test/http-library/renamed-coordinate",
+        "capturedInputIdentity": "sha256:27ad50508c5a2199e8e721bedcdeddafdb376a3e02853723f097fe927944a2b9",
+        "nativeGraphDigest": "sha256:a2073241cf481ad50d1605055154f6b0ba586afef009d51d90a33ac78ab7edea",
+        "runtimeSelection": {
+          "runtimeProfile": "go-component-activation-v4",
+          "tags": [],
+          "target": "wasip1/wasm"
+        },
+        "libraries": [
+          {
+            "artifact": "go-module/41e189b48c35a1d7fa6a1363",
+            "module": "github.com/dghubble/sling",
+            "version": "v1.4.0",
+            "ordinaryApi": "sling.New/Request/Do with its default http.Client",
+            "selection": "application-root-direct"
+          },
+          {
+            "artifact": "go-module/dade53f75779eeed50589de8",
+            "module": "github.com/carlmjohnson/requests",
+            "version": "v0.24.3",
+            "ordinaryApi": "requests.URL/ToJSON/Fetch with its default http.Client",
+            "selection": "application-root-direct"
+          },
+          {
+            "artifact": "go-module/b95ab61ed04ae016fbcfdba0",
+            "module": "outside.example.test/http-library/renamed-coordinate",
+            "version": "v0.0.0",
+            "ordinaryApi": "private.Marker ordinary goroutine/WaitGroup/time.Sleep/embed",
+            "selection": "application-root-direct"
+          }
+        ],
+        "component": {
+          "sha256": "sha256:984d9f8dce7c3b77010c471e248d153660154321d9f7ce63b17408af781423d2",
+          "bytes": 10517403
+        },
+        "compilerObservation": {
+          "sha256": "sha256:265c3ed9f8a1f0f76e41b467842dbc9ed584a1bdd9d24d0b92401115726fcac8",
+          "bytes": 3518
+        },
+        "compilerCompletion": {
+          "sha256": "sha256:081413246df2352f23e3db3207a9db02bfe62d0ac2b164f3e932f11c8db2dc62",
+          "bytes": 2415
+        },
+        "packageDigest": "sha256:9b6d1b5cc95d6cbe3550dabd87eba984a51e7ca166e70a862615412e90715e31",
+        "installedBuild": {
+          "sha256": "sha256:37f69582192ce9083f894869642b3e6dfe9dbc6ed4a536d85c344851a0ee083d",
+          "bytes": 284
+        },
+        "signedExecution": {
+          "sha256": "sha256:23cadf63fe49ca9ca4f40e45bfd17385880aff7f58be2ca11334d72a0261c342",
+          "bytes": 5337
+        },
+        "signedCases": [
+          "sling-json",
+          "sling-http404",
+          "sling-http500",
+          "sling-truncated",
+          "sling-oversized",
+          "sling-malformed-json",
+          "sling-forbidden",
+          "sling-cancel-headers",
+          "sling-partial-context-cancel",
+          "sling-post",
+          "sling-uncertain",
+          "sling-alternate-denied",
+          "sling-pre-cancelled",
+          "sling-sibling-cancel",
+          "sling-fresh",
+          "requests-json",
+          "requests-http404",
+          "requests-http500",
+          "requests-truncated",
+          "requests-oversized",
+          "requests-malformed-json",
+          "requests-forbidden",
+          "requests-cancel-headers",
+          "requests-partial-context-cancel",
+          "requests-post",
+          "requests-uncertain",
+          "requests-alternate-denied",
+          "requests-pre-cancelled",
+          "requests-sibling-cancel",
+          "requests-fresh"
+        ],
+        "peerRequests": 24,
+        "peerMutations": 2,
+        "rejectedPeerRequests": 0,
+        "peerReaped": true,
+        "nodeReaped": true,
+        "cleanNodeStop": true
+      }
+    ]
+  },
+  "installedTypeScriptPrivateDependencies": {
+    "observedOn": "2026-11-24",
+    "status": "passed",
+    "candidateSource": "1b2f7ac3d27603f7b5310f3bad2f09d3c6b19b5b",
+    "archive": {
+      "sha256": "sha256:8dc6465c7b3b463a4fd66c36bf14b73ca7ed83df14ec8311cbecd84e003a66fd",
+      "bytes": 193239443
+    },
+    "manifest": {
+      "sha256": "sha256:71b21f2d8dd71a66b7a016258af8eba7368847fd97d46144af25f4823d3396e0",
+      "bytes": 218001
+    },
+    "target": "linux-x86_64",
+    "toolkitHostAbi": "lsf-host-abi-phase3-v5",
+    "candidateBuilder": "tools/build_dev_guest_tools.py --language typescript",
+    "captureCommand": "recipe/tools/typescript_capsule.py dependencies",
+    "buildCommand": "recipe/tools/dev_guest_recipe.py --language typescript",
+    "packageEntry": "tools.dev_workflow.build_artifacts.package and tools.dev_workflow.build_provenance.complete",
+    "captureIdentity": "sha256:539d777f70d39139113e7420072ab8f9bf32be1f96ba7dc3d01e5907bd605ac9",
+    "commandOutcomes": [
+      {
+        "name": "verify-capture",
+        "exitCode": 0
+      },
+      {
+        "name": "offline-build",
+        "exitCode": 0
+      }
+    ],
+    "compilerNetwork": "denied",
+    "effectiveUser": 1000,
+    "readOnlyInputs": true,
+    "checkoutMounted": false,
+    "publicRelease": false,
+    "publisherAuthenticated": false,
+    "fullFrontendWatchExercised": false,
+    "component": {
+      "sha256": "sha256:cd4f316836675ee10597f63f7e3a3058e791204c5f32a068edc7fd5840ddb9d9",
+      "bytes": 12681663
+    },
+    "packageDigest": "sha256:d15a5c6ce5e204d241f86589fe1b2b1c6f0ba07b8d977968bd8b53b2285cffdb",
+    "compilerEvidence": {
+      "component.wasm": {
+        "sha256": "sha256:cd4f316836675ee10597f63f7e3a3058e791204c5f32a068edc7fd5840ddb9d9",
+        "bytes": 12681663
+      },
+      "build-observation.json": {
+        "sha256": "sha256:50b373d7f57f806d45746ef144b81ae6f22d9cb37200c840cd6b568fd7b34c43",
+        "bytes": 4359
+      },
+      "BUILD-COMPLETE.json": {
+        "sha256": "sha256:16e35dcf84074d42c8b503e58f1247a8ba112a676dd49ae32155615cd944aeca",
+        "bytes": 2770
+      },
+      "bundle-selected-inputs.json": {
+        "sha256": "sha256:f7511cb2fef873a47dfba73f04e5845ac2890153d58ecce4860732bf6f78a92c",
+        "bytes": 28641
+      },
+      "typescript-runtime-selection.json": {
+        "sha256": "sha256:c07306ac83c2a882b90a2d6f62bef14eaadd487d4b5b5b2ebecc0612c696a129",
+        "bytes": 15690
+      }
+    },
+    "capturedBuild": {
+      "sha256": "sha256:a59f2817f97ac21e782ed735d38373c3fbb12cb341b393584781baa46f6a3450",
+      "bytes": 284
+    },
+    "signedExecution": {
+      "sha256": "sha256:4c4e248dabae8d3677a82fc370f1ba4e96ba6ab2bae53e29f820c98393736978",
+      "bytes": 117991
+    },
+    "signedGuestExecutions": 27,
+    "preIoRefusals": 4,
+    "nodeReaped": true,
+    "cleanShutdown": true,
+    "nodeEntry": "tools.qualify_typescript_fetch_phases.execute",
+    "componentHttpContract": "latent:http/phase-timing@0.4.0",
+    "compatibilityHostManifest": "wit/host-abi-phase3-v7.json",
+    "compilerSourceRevision": "ac7d99a419ede0e90793bb9076505bfc9ea44342",
+    "nativeSourceRevision": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+    "nativeSourceIdentity": "sha256:c839ec43b877991cb8e9ab6bbd8dc229d1e5fb938e459545ad0d4be7f53bb690",
+    "nativeQualification": {
+      "sha256": "sha256:25b7eedb5f0bd7824358e3b7245b76b8033bf504642de9739fae37d0a063320a",
+      "bytes": 25175
+    },
+    "runtimeInputs": {
+      "sha256": "sha256:5bb7a2104e69a09787c314fa0ef78969e2d310abcca5f14e4f1a0d73b2e7c187",
+      "bytes": 7548
+    },
+    "privatePackage": {
+      "name": "outside-fetch-toolkit-resource",
+      "version": "1.7.1",
+      "files": {
+        "index.d.ts": {
+          "digest": "sha256:02d7329042b54cc04ea153b879fafd85251bc24530f92f622a00412afe23f9a8",
+          "size": 53
+        },
+        "index.mjs": {
+          "digest": "sha256:3f971af0a4d848ad47caeb7a8977e35b40b939a06b1c4f3560bef9dc081ee4fa",
+          "size": 457
+        },
+        "package.json": {
+          "digest": "sha256:d050c8290b94c8216d82bad7d2b18fbb2184077aaae08a7e1bc27879d21738b3",
+          "size": 240
+        },
+        "price-card.txt": {
+          "digest": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+          "size": 57
+        }
+      },
+      "acceptedIdentity": "sha256:539d777f70d39139113e7420072ab8f9bf32be1f96ba7dc3d01e5907bd605ac9",
+      "sourceAbsentDuringBuild": true
+    },
+    "clients": [
+      "Ky 2.2.0",
+      "Wretch 3.0.9"
+    ],
+    "invocationOutcomes": 31,
+    "mainCases": [
+      "ky-json",
+      "wretch-json",
+      "outside-json",
+      "ky-http404",
+      "wretch-http404",
+      "observed-empty-clone",
+      "latin1-clone",
+      "abort-headers",
+      "abort-body",
+      "uncertain-post",
+      "denied-target",
+      "public-guest-extension",
+      "public-extension-denied",
+      "root-cancel",
+      "root-deadline",
+      "fresh"
+    ],
+    "mainPeer": {
+      "startedRequests": 14,
+      "committedMutations": 1,
+      "completedResponseWrites": 11,
+      "rejectedRequests": 0,
+      "openConnections": 0
+    },
+    "crossTenantQualified": true,
+    "twoTenantsOnSameNode": true,
+    "componentEqualsEarlierSourceCandidate": false
+  },
+  "installedDotnetPrivateDependencies": {
+    "observedOn": "2026-11-24",
+    "status": "passed",
+    "candidateSource": "410648ba301a9c47a1fb7fa38d413ac20f45d642",
+    "archive": {
+      "sha256": "sha256:8dd398300186c9ec79f6c47f4e8b52abaf64350608d3fbcab74274491d44e5e8",
+      "bytes": 871611117
+    },
+    "manifest": {
+      "sha256": "sha256:30682e3d09d3bf7d1ba1b41e0100de90204c947121c130b48645e32f5cb647db",
+      "bytes": 263618
+    },
+    "target": "linux-x86_64",
+    "toolkitHostAbi": "lsf-host-abi-phase3-v5",
+    "candidateBuilder": "tools/build_dev_guest_tools.py --language dotnet",
+    "captureCommand": "recipe/tools/dotnet_capsule.py dependencies",
+    "buildCommand": "recipe/tools/dev_guest_recipe.py --language dotnet",
+    "packageEntry": "tools.dev_workflow.build_artifacts.package and tools.dev_workflow.build_provenance.complete",
+    "captureIdentity": "sha256:d1648d6ee466791fd0c410523768d06f77b811956e8ceb72b8a6ae3680cb42c4",
+    "commandOutcomes": [
+      {
+        "name": "verify-capture",
+        "exitCode": 0
+      },
+      {
+        "name": "unapproved",
+        "exitCode": 1
+      },
+      {
+        "name": "approved-build",
+        "exitCode": 0
+      }
+    ],
+    "compilerNetwork": "denied",
+    "effectiveUser": 1000,
+    "readOnlyInputs": true,
+    "checkoutMounted": false,
+    "publicRelease": false,
+    "publisherAuthenticated": false,
+    "fullFrontendWatchExercised": false,
+    "component": {
+      "sha256": "sha256:af0657ef1865b76a8bc577b56cbce784c07ce1366c61354b2afd6e71db488838",
+      "bytes": 10813463
+    },
+    "packageDigest": "sha256:e09bf3ee6419199f5b4994ee9efc6fcd4e53dc3a289a24f1da4a142b0acba940",
+    "compilerEvidence": {
+      "component.wasm": {
+        "sha256": "sha256:af0657ef1865b76a8bc577b56cbce784c07ce1366c61354b2afd6e71db488838",
+        "bytes": 10813463
+      },
+      "build-observation.json": {
+        "sha256": "sha256:441e01282d8d390b5ef42f071c732d4f318e26b88fb42ee679118783fb98a02e",
+        "bytes": 8979
+      },
+      "BUILD-COMPLETE.json": {
+        "sha256": "sha256:3892d09cfd191f26e38076c4f90b3b8596f6f569fa5ac9a851514576ff305591",
+        "bytes": 5734
+      },
+      "executable-input-outputs.json": {
+        "sha256": "sha256:58bc599aeecbda641a206bc2234e6a35a7f72646a42e8fa5dfddd8416b023fc9",
+        "bytes": 2207
+      }
+    },
+    "capturedBuild": {
+      "sha256": "sha256:84c10be725d7cea09b88756ae528d5dfc572748243e69a5ce1b401ab4335defb",
+      "bytes": 445
+    },
+    "signedExecution": {
+      "sha256": "sha256:5458d77a5663a63d5c6329552d9c046f2d7ebee37902b74cadfa04e710aa747a",
+      "bytes": 48917
+    },
+    "signedGuestExecutions": 20,
+    "preIoRefusals": 2,
+    "nodeReaped": true,
+    "cleanShutdown": true,
+    "nodeEntry": "tools.dotnet_published_http_node.run",
+    "nativeSourceInputs": {
+      "sha256": "sha256:c071acafd05ff2855166281917a3b3b4f0a6127b13a0c161cea3c4428b75b490",
+      "bytes": 56654
+    },
+    "nativeQualification": {
+      "sha256": "sha256:956494b5328de021aafc05ef74fb3b1db49bf892896acd552150b1aa50c26a4f",
+      "bytes": 31161
+    },
+    "privatePackages": [
+      {
+        "identity": "Outside.Http.bad80257feff00271cb2.Alpha",
+        "version": "1.0.0"
+      },
+      {
+        "identity": "Outside.Http.bad80257feff00271cb2.Delta",
+        "version": "1.0.0"
+      }
+    ],
+    "clients": [
+      "Flurl.Http 4.0.2",
+      "Refit 16.4.0"
+    ],
+    "defaultFactories": [
+      "FlurlClient()",
+      "RestService.CreateHttpClient(endpoint, settings)",
+      "RestService.ForGenerated<IDomainApi>(client, settings)"
+    ],
+    "refusedStage": "executable-input-approval",
+    "approvedRequest": "sha256:425acf1e55f03bc396b60f7de4f26852666513de4bb4251e8a9051b23a01ff21",
+    "reviewedExecutables": 1,
+    "signedCases": [
+      "flurl-json",
+      "refit-json",
+      "outside-alpha",
+      "outside-delta",
+      "flurl-404",
+      "refit-404",
+      "flurl-500",
+      "refit-500",
+      "flurl-pending-cancel",
+      "refit-pending-cancel",
+      "reserved-header",
+      "foreign-target",
+      "flurl-post",
+      "uncertain-post",
+      "flurl-pre-cancelled",
+      "refit-pre-cancelled",
+      "early-body-dispose",
+      "guest-extension",
+      "guest-extension-denied",
+      "fresh-default"
+    ],
+    "preEntryRefusals": [
+      "runtime-missing",
+      "http-missing"
+    ],
+    "physicalRetirementVerifiedCases": 20,
+    "peer": {
+      "contacts": 15,
+      "completedWrites": 11,
+      "mutations": 1,
+      "allClosed": true
+    }
+  }
+}

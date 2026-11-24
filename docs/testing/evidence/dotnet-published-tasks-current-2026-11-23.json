@@ -1,0 +1,216 @@
+{
+  "schemaVersion": "latent.dotnet.published-tasks.current-observation.v1",
+  "source": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+  "environment": "local Linux, x86_64, signed standalone latentd",
+  "profile": "dotnet-stackful-task-wait-v1",
+  "nativeProducts": {
+    "latent": {
+      "sha256": "sha256:91dca312633e7996e5dab6ee4e9eb60e76591314b9ad5b8831203e0e41bed6ea",
+      "bytes": 76442344
+    },
+    "latentd": {
+      "sha256": "sha256:9688674a173301527077b1c4221a37a06076f0b08d7c1530d3b45a46365ca492",
+      "bytes": 212359352
+    },
+    "examples/package": {
+      "sha256": "sha256:7d39ae32d5c4be19480c800eac3041e0ca6de7f9fbe2cb3b0fb442f166a7f68c",
+      "bytes": 19685760
+    },
+    "examples/capsule_contracts": {
+      "sha256": "sha256:064df5c939093b2a14f3db4c5cb70b01aeb7dfeed317257237f45696af0554e8",
+      "bytes": 14401464
+    },
+    "examples/capsule_authoring": {
+      "sha256": "sha256:79e0622d0c3e0449e545720f6b31414d8324b111c151926f3cc424c38da24042",
+      "bytes": 26132920
+    }
+  },
+  "templateQualification": {
+    "receipt": {
+      "sha256": "sha256:956494b5328de021aafc05ef74fb3b1db49bf892896acd552150b1aa50c26a4f",
+      "bytes": 31161
+    },
+    "sourceIdentityDigest": "sha256:c071acafd05ff2855166281917a3b3b4f0a6127b13a0c161cea3c4428b75b490",
+    "templates": {
+      "greeting": "sha256:f7ee021cd2aeec2081ef097bcd79e28b42567d181a27df68d50794b64bc2b335",
+      "word-count": "sha256:33813569133784cc71dfe9b3bd21ce380eb203495b1a82ae3ac2c62e604843be",
+      "shipping": "sha256:3ed5ecfea2a58ee30caf83815125caf078e6ef8fcb4d8557c19826c6b0f8171d",
+      "http-status": "sha256:97674081753040d865faf82cdcab1c2970ad5d8bee1c92c101ab9f05f522b645",
+      "recovery": "sha256:6c468891ca6b7aa1ef5118633178efc14dbaa54fd79ac2d8b3721ab642a03ca2"
+    },
+    "invocations": 27,
+    "allOutcomesKnownAndReaped": true,
+    "cleanNodeShutdown": true
+  },
+  "publishedTasks": {
+    "receipt": {
+      "sha256": "sha256:057d09a3bc8caffdba3966aed5f72060bd2f92e932ee215328bd9a81941a3f4b",
+      "bytes": 43371
+    },
+    "publicWorkflow": {
+      "sha256": "sha256:851c7a7a6c52d939a8a390abfcaa4877e6064d9b964267a2b900c07e1261dcf6",
+      "bytes": 645688
+    },
+    "originalWorkflow": {
+      "sha256": "sha256:4da3e92352bb4a46a1d52bce3a5400f191bbffd5564830d2c1cdf9b0deadb004",
+      "bytes": 394615
+    },
+    "packages": {
+      "polly.core/8.6.3": {
+        "archive": {
+          "digest": "sha256:e972912ebc10f2760bc14361c3cfbfe59e84bdf20b860b9bd939fa07a5d2c48c",
+          "size": 826595
+        },
+        "dependencies": []
+      },
+      "polly/8.6.3": {
+        "archive": {
+          "digest": "sha256:922a22762e8f2968147bbba3fab4fc93907a13bae8da220ca3ad1c2eb68524bd",
+          "size": 766807
+        },
+        "dependencies": [
+          "polly.core/8.6.3"
+        ]
+      }
+    },
+    "acceptedLockDigest": "sha256:73e3ef988964a337d8d8353ada8ae8f4ae7dd40b04e6f89164df24e08bc97469",
+    "runtimeInputsDigest": "sha256:7b60353ff286fb3242484a30f90126d84d135528ebb5042c3f7429abac09fe11",
+    "taskWaitPort": {
+      "patch": "latent.dotnet.stackful-task-wait.v1",
+      "sourceDigest": "sha256:29e4bd3f70bfb0e0ea00fb2511e28ee9832b56caf9ddb5cd60906fe3bcaad735",
+      "outputDigest": "sha256:dc3796bcae94269d41e399cce253e6acc1d8198b4cffbb1ea4473b05690251e8",
+      "profile": "dotnet-stackful-task-wait-v1"
+    },
+    "component": {
+      "sha256": "sha256:1c2b4cf4a255040473f24d59f5a5a7e9ef4d1e65452917ab25f12736b527c6ee",
+      "bytes": 7576738
+    },
+    "invocations": 36,
+    "allOutcomesKnownAndReaped": true,
+    "physicalSamples": 28,
+    "providerIdleObservations": 10,
+    "providerTaskLimit": 8,
+    "providerTimerLimit": 8,
+    "individualGrantDenials": [
+      {
+        "capability": "latent:clock/monotonic@0.1.0",
+        "category": "platform-failure"
+      },
+      {
+        "capability": "latent:clock/wall@0.1.0",
+        "category": "platform-failure"
+      },
+      {
+        "capability": "latent:runtime/activation@0.1.0",
+        "category": "platform-failure"
+      },
+      {
+        "capability": "latent:random/random@0.1.0",
+        "category": "platform-failure"
+      }
+    ],
+    "cases": [
+      {
+        "mode": "legacy",
+        "decoded": "published-tasks:legacy|attempts=3|callbacks=2|value=41",
+        "consumption": {
+          "cpuFuel": 52087115,
+          "peakMemoryBytes": 58577308,
+          "outboundRequests": 0,
+          "effectCount": 0,
+          "logBytes": 0
+        },
+        "activeCellsAfter": 0,
+        "quarantinedCellsAfter": 0,
+        "queueDepthAfter": 0,
+        "reservedQuotasAfter": {
+          "activeActivations": 0,
+          "queuedActivations": 0,
+          "reservedCpuFuel": "0",
+          "reservedMemoryBytes": "0"
+        },
+        "nodeRssAfterBytes": 304742400
+      },
+      {
+        "mode": "modern",
+        "decoded": "published-tasks:modern|attempts=3|callbacks=2|value=43",
+        "consumption": {
+          "cpuFuel": 58311527,
+          "peakMemoryBytes": 58577308,
+          "outboundRequests": 0,
+          "effectCount": 0,
+          "logBytes": 0
+        },
+        "activeCellsAfter": 0,
+        "quarantinedCellsAfter": 0,
+        "queueDepthAfter": 0,
+        "reservedQuotasAfter": {
+          "activeActivations": 0,
+          "queuedActivations": 0,
+          "reservedCpuFuel": "0",
+          "reservedMemoryBytes": "0"
+        },
+        "nodeRssAfterBytes": 304885760
+      },
+      {
+        "mode": "error",
+        "decoded": "published-tasks:error|attempts=2|callbacks=1|value=47",
+        "consumption": {
+          "cpuFuel": 52014412,
+          "peakMemoryBytes": 58577306,
+          "outboundRequests": 0,
+          "effectCount": 0,
+          "logBytes": 0
+        },
+        "activeCellsAfter": 0,
+        "quarantinedCellsAfter": 0,
+        "queueDepthAfter": 0,
+        "reservedQuotasAfter": {
+          "activeActivations": 0,
+          "queuedActivations": 0,
+          "reservedCpuFuel": "0",
+          "reservedMemoryBytes": "0"
+        },
+        "nodeRssAfterBytes": 304939008
+      },
+      {
+        "mode": "cancel",
+        "decoded": "published-tasks:cancel|attempts=1|callbacks=1|value=53",
+        "consumption": {
+          "cpuFuel": 51982063,
+          "peakMemoryBytes": 58577308,
+          "outboundRequests": 0,
+          "effectCount": 0,
+          "logBytes": 0
+        },
+        "activeCellsAfter": 0,
+        "quarantinedCellsAfter": 0,
+        "queueDepthAfter": 0,
+        "reservedQuotasAfter": {
+          "activeActivations": 0,
+          "queuedActivations": 0,
+          "reservedCpuFuel": "0",
+          "reservedMemoryBytes": "0"
+        },
+        "nodeRssAfterBytes": 304971776
+      }
+    ],
+    "cleanNodeShutdown": true,
+    "peerShutdown": {
+      "requests": 8,
+      "authorized": 8,
+      "unexpected": 0,
+      "holds": 3,
+      "closedHolds": 3
+    }
+  },
+  "scope": {
+    "applicationSchedulerReplacement": false,
+    "httpAuthorityAdded": false,
+    "cpuPreemptionQualified": false,
+    "monitorWaitQualified": false,
+    "threadLocalLogicalIsolationQualified": false,
+    "transactionalReplayQualified": false,
+    "fullTicketQualification": false
+  }
+}

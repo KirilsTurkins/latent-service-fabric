@@ -14,6 +14,7 @@ mod persistence;
 mod publication;
 mod recovery_admission;
 pub(crate) mod rollouts;
+mod schema_apply;
 mod scoped_routes;
 mod transaction_selection;
 pub use transaction_selection::{CapturedTransactionSelection, InstalledTransactionSelection};
@@ -26,7 +27,7 @@ use std::collections::BTreeMap;
 use std::fs::File;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, RwLock, RwLockReadGuard, TryLockError};
+use std::sync::{Arc, Mutex, OnceLock, RwLock, RwLockReadGuard, TryLockError};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use latent_artifacts::{AdmissionAuthority, ArtifactRepository, ReleaseUseRecheck};
@@ -54,6 +55,7 @@ pub use observation::{
 };
 pub use pagination::{DeploymentPage, DeploymentPageRequest};
 use publication::{PublicationView, PublishedCatalog};
+use schema_apply::PreparedSchemas;
 
 fn next_rollout_cursor_epoch() -> Result<u64, PlatformError> {
     static NEXT: AtomicU64 = AtomicU64::new(1);
@@ -130,6 +132,7 @@ pub struct DirectoryDeploymentRepository {
     admission: Option<Arc<dyn AdmissionAuthority>>,
     runtime_profile: Option<Arc<latent_manifest::RuntimeCompatibilityProfile>>,
     lifecycle: Option<latent_artifacts::LifecycleAuthorityHandle>,
+    schema_owner: OnceLock<schema_apply::Owner>,
     current: Arc<RwLock<PublishedCatalog>>,
     binding_generations: bindings::Generations,
     rollout_limits: crate::rollouts::RolloutLimits,
@@ -561,6 +564,7 @@ impl DirectoryDeploymentRepository {
                 admission,
                 runtime_profile,
                 lifecycle,
+                schema_owner: OnceLock::new(),
                 generation: AtomicU64::new(generation.0),
                 current: Arc::new(RwLock::new(PublishedCatalog {
                     transaction,
@@ -675,7 +679,7 @@ impl DirectoryDeploymentRepository {
         next: impl Into<persistence::PublicationCandidate>,
         work: &mut Work,
     ) -> Result<(), PlatformError> {
-        self.commit_checked(expected, transaction, next, None, work)?
+        self.commit_checked(expected, transaction, next, None, None, work)?
             .durability
     }
     #[cfg(test)]
@@ -694,6 +698,7 @@ impl DirectoryDeploymentRepository {
         expected_transaction: u64,
         next: impl Into<persistence::PublicationCandidate>,
         precondition: Option<&ObjectPrecondition>,
+        schemas: Option<&PreparedSchemas>,
         work: &mut Work,
     ) -> Result<CommitOutcome, PlatformError> {
         let (next, encoded_bytes) = next.into().into_parts();
@@ -746,6 +751,7 @@ impl DirectoryDeploymentRepository {
                 Arc::clone(&next),
                 &bytes,
                 precondition,
+                schemas,
                 work,
                 checker,
             )?);
@@ -772,6 +778,7 @@ impl DirectoryDeploymentRepository {
         next: Arc<CompiledCatalog>,
         bytes: &[u8],
         precondition: Option<&ObjectPrecondition>,
+        schemas: Option<&PreparedSchemas>,
         work: &mut Work,
         checker: Option<&dyn ReleaseUseRecheck>,
     ) -> Result<CommitOutcome, PlatformError> {
@@ -808,7 +815,7 @@ impl DirectoryDeploymentRepository {
         if let Some(checker) = checker {
             checker.check()?;
         }
-        persistence::replace(&self.root)?;
+        PreparedSchemas::replace(schemas, || persistence::replace(&self.root))?;
         // Rename is the visibility commit point. Even an uncertain directory fsync must
         // install the same complete state in memory, rather than continuing on the old state.
         let durable = self.sync_parent();

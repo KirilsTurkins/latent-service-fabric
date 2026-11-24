@@ -80,8 +80,11 @@ def python(payload: Path, prefix: Path) -> set[str]:
     copy(prefix / "bin/python3.13", payload / "sdk/python/bin/python3.13")
     for name in ("libpython3.so", "libpython3.13.so.1.0"):
         copy(prefix / "lib" / name, payload / "sdk/python/lib" / name)
+    # The CLI omits Tk. Its native extension would still make a captured
+    # compiler resolve desktop libraries when inventorying the delivered ELF files.
     shutil.copytree(prefix / "lib/python3.13", payload / "sdk/python/lib/python3.13",
-        ignore=shutil.ignore_patterns("site-packages", "__pycache__", "test", "tests", "idlelib", "tkinter", "turtledemo", "ensurepip"))
+        ignore=shutil.ignore_patterns("site-packages", "__pycache__", "test", "tests", "idlelib",
+                                      "tkinter", "_tkinter.so", "_tkinter.*.so", "turtledemo", "ensurepip"))
     copy(prefix / "lib/python3.13/LICENSE.txt", payload / "licenses/CPython-3.13.5.txt")
     launcher = payload / "sdk/bin/python"
     launcher.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
@@ -123,7 +126,9 @@ def recipe(payload: Path, language: str, *, rust_http_runtime: bool = False) -> 
              "tools/dev_workflow/__init__.py", "tools/dev_workflow/common.py", "tools/dev_workflow/paths.py",
              "tools/dev_workflow/transaction_binding.py",
              "examples/echo-contract/capsule.json", "examples/echo-contract/deployment.json"}
-    names.add(guest_compatibility_build.HOST_MANIFESTS[HOST_ABI])
+    # The guest compiler selects a frozen manifest from the WIT imports. Its
+    # compatibility report must work for each supported surface after install.
+    names.update(guest_compatibility_build.HOST_MANIFESTS.values())
     if rust_http_runtime:
         from tools.rust_wasi_http_inputs import consumer_files
         names.update(consumer_files(ROOT))
@@ -133,12 +138,19 @@ def recipe(payload: Path, language: str, *, rust_http_runtime: bool = False) -> 
         from tools.c_guest.threading_compatibility import RECIPE as C_THREADING_COMPATIBILITY_RECIPE
         names.update(C_THREADING_RECIPE)
         names.update(C_THREADING_COMPATIBILITY_RECIPE)
-        names.add(guest_compatibility_build.HOST_MANIFESTS['lsf-host-abi-phase3-v5'])
         names.update(c_capsule_project.authoring_inputs(ROOT))
     if language in {"java", "dotnet", "go", "typescript"}:
         names.add("tools/dev_managed_tools.py")
     if language == "typescript":
-        names.add("tools/dev_workflow/diagnostics.py")
+        from tools.typescript_guest import runtime_profile, splicer_input
+        from tools.typescript_guest.activation_engine import engine_input_paths
+
+        # The installed recipe revalidates the captured engine and splicer
+        # against its own source tree before it runs the compiler.
+        for profile in runtime_profile.NATIVE_PROFILES:
+            names.update(engine_input_paths(profile))
+        names.update(splicer_input.input_paths())
+        names.update({"tools/dev_workflow/diagnostics.py", "wit/platform/activation-runtime/package.wit"})
     if language == "java":
         names.update(java_capsule_project.authoring_inputs(ROOT))
         # Server builds already emit declarations. Ship their existing scoped
@@ -242,7 +254,7 @@ def templates(payload: Path, commit: str, language: str, *, host_abi: str = HOST
             "service": owner["service"], "language": language, "hostAbi": host_abi,
             "template": {"ownerIssue": project.LANGUAGES[language], "revision": commit, "sha256": record["identity"]},
             "inputRoots": ["app", "tests"], "exclude": [],
-            "build": {"argv": ["python", "-I", "-B", "@tool:recipe", "--language", language, "--project", ".", "--output", "../output"],
+            "build": {"argv": project.guest_recipe_arguments(language),
                 "workingDirectory": "app", "outputRoot": "output", "target": "wasm-component",
                 "hostTargets": ["linux-x86_64"], "timeoutSeconds": 900, "maximumOutputBytes": 262144,
                 "tools": pins, "inventory": selected, "adapter": {"language": language, "ownerIssue": project.LANGUAGES[language], "version": "1"}},

@@ -7,6 +7,16 @@ transitive edge remain captured. Offline compilation uses reviewed objects after
 the temporary resolver workspace has been removed. There is no package-name
 eligibility branch, application scheduler or transport injection.
 
+The 23 November rerun built all five normal templates and their native tools
+from development `fc82effe057c99e278646010a3b7f1e0a1cfef80`. The baseline
+completed 27 signed invocations. The separate Polly run completed 36,
+including legacy and modern retries, terminal error and cancellation on the
+same 7,576,738-byte NativeAOT component. After each Polly case the node
+reported zero active or quarantined cells, queued work and reserved quota.
+The [current signed receipt](../testing/evidence/dotnet-published-tasks-current-2026-11-23.json) records
+the exact package archives, runtime and native products, per-case costs and
+four individually missing runtime grants. Both nodes shut down cleanly.
+
 All four ordinary factory cases passed signed NativeAOT execution in
 [run39362050200](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39362050200/job/118430228859).
 The [bounded observation](../testing/evidence/dotnet-published-tasks-signed-2026-10-20.json)

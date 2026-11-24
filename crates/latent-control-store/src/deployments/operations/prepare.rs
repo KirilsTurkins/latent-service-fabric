@@ -76,6 +76,7 @@ impl DirectoryDeploymentRepository {
                 previous,
                 receipt,
                 apply_result,
+                schemas: None,
                 bytes: Vec::new(),
                 replayed: true,
                 reply,
@@ -176,6 +177,12 @@ impl DirectoryDeploymentRepository {
         if let Some(result) = &mut apply_result {
             result.publication.clone_from(&publication);
         }
+        let schemas = if apply_result.is_some() {
+            self.prepare_apply_schemas(&next_routes, &[&id], Some(&previous.routes))
+                .await?
+        } else {
+            None
+        };
         let mut receipt = DeploymentOperationReceipt {
             publication: publication.clone(),
             format_version: 1,
@@ -237,6 +244,7 @@ impl DirectoryDeploymentRepository {
             next_operations,
             receipt,
             apply_result,
+            schemas,
             bytes,
             replayed: false,
             reply,

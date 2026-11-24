@@ -1,0 +1,257 @@
+{
+  "schemaVersion": "latent.c.libfetch.chunked-range.signed-summary.v1",
+  "issue": 690,
+  "observedOn": "2026-11-24",
+  "status": "passed",
+  "entry": "tools/c_http_stat_qualification.py",
+  "sourceHead": "915274d94cdb82e00c2b2892751459e8f5c68bef",
+  "sourceTree": "9255379952654d1c2fce8e051c02269a8f581528",
+  "nativeTuple": {
+    "receipt": {
+      "sha256": "sha256:a4a4ff0e7f37613b970f4a7be8f959eacd655c96e72638e479f33fcd5075e0e6",
+      "bytes": 1495
+    },
+    "sourceHead": "915274d94cdb82e00c2b2892751459e8f5c68bef",
+    "sourceTree": "9255379952654d1c2fce8e051c02269a8f581528",
+    "tupleRole": "ordinary-defaults",
+    "hostAbiProfile": "lsf-host-abi-phase3-v5",
+    "wasmtimeVersion": "48.0.9",
+    "binaries": {
+      "latent": {
+        "sha256": "sha256:99717cf72d3f46d956485499504f9fad927a757bb38a8ddce0eda09c917b634b",
+        "bytes": 78851920,
+        "actualFeatures": []
+      },
+      "latentd": {
+        "sha256": "sha256:93fe6d6576214cf8e51a8f917e919ed296341e2ee6e1c50c76448d22f2328bee",
+        "bytes": 214257848,
+        "actualFeatures": []
+      },
+      "package": {
+        "sha256": "sha256:78ed627079f74622d6b07eb42f1e49ec264c6d2136d2bff56bb4a788cf36b695",
+        "bytes": 22183904,
+        "actualFeatures": []
+      },
+      "capsule_contracts": {
+        "sha256": "sha256:556f9b3e47eb8270683d942580dccfead4c717b39080b0f87c2ec9594f7913dc",
+        "bytes": 15217168,
+        "actualFeatures": []
+      },
+      "capsule_authoring": {
+        "sha256": "sha256:8d616dac1aee230330838bdb1048791c28ed8e08a9bfecb4698e9199ece88504",
+        "bytes": 28448736,
+        "actualFeatures": []
+      }
+    }
+  },
+  "component": {
+    "sha256": "sha256:eeb23bfa12df85dfca46e640455565cbc7c32475e707f7857823ac8e5338a37f",
+    "bytes": 126864
+  },
+  "limits": {
+    "parentSeconds": 1320,
+    "commandSeconds": 900,
+    "cleanupReserveSeconds": 5,
+    "jobs": 2,
+    "components": 1,
+    "cells": 16,
+    "clientCalls": 384,
+    "invocationProcesses": 16
+  },
+  "linuxSourceTests": 47,
+  "controls": [
+    "native HEAD metadata and failure controls",
+    "native Range and Content-Range controls",
+    "native real-guest fixture controls",
+    "wasm32 metadata conversion"
+  ],
+  "providerBackedCases": [
+    {
+      "case": "missing-grant",
+      "exitCode": 4,
+      "peerRequests": 0,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "normal",
+      "exitCode": 0,
+      "peerRequests": 1,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "denied",
+      "exitCode": 3,
+      "peerRequests": 0,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "not-found",
+      "exitCode": 3,
+      "peerRequests": 1,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "redirect",
+      "exitCode": 3,
+      "peerRequests": 1,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "oversized",
+      "exitCode": 3,
+      "peerRequests": 1,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "fresh",
+      "exitCode": 0,
+      "peerRequests": 1,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "range",
+      "exitCode": 0,
+      "peerRequests": 1,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "range-ignored",
+      "exitCode": 0,
+      "peerRequests": 1,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "range-denied",
+      "exitCode": 3,
+      "peerRequests": 0,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "range-unsolicited",
+      "exitCode": 3,
+      "peerRequests": 1,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "range-before",
+      "exitCode": 3,
+      "peerRequests": 1,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0
+    },
+    {
+      "case": "range-chunked",
+      "exitCode": 0,
+      "peerRequests": 1,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0,
+      "guestResult": {
+        "ok": "6:51:57:51:3431935986"
+      },
+      "outboundRequests": 1
+    },
+    {
+      "case": "range-short-body",
+      "exitCode": 3,
+      "peerRequests": 1,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0,
+      "guestResult": {
+        "err": "range-body-length:49:3522055996"
+      },
+      "outboundRequests": 1
+    },
+    {
+      "case": "range-long-body",
+      "exitCode": 3,
+      "peerRequests": 1,
+      "peerMutations": 0,
+      "physicalOwnersAfter": 0,
+      "activeProviderCountersAfter": 0,
+      "guestResult": {
+        "err": "range-body-length:49:2035197655"
+      },
+      "outboundRequests": 1
+    }
+  ],
+  "chunkedRangeRequestsByOffset": {
+    "6": 1,
+    "7": 1,
+    "8": 1
+  },
+  "peer": {
+    "startedRequests": 12,
+    "completedResponseWrites": 11,
+    "committedMutations": 0,
+    "rejectedRequests": 0,
+    "openConnections": 0
+  },
+  "cleanNodeShutdowns": 2,
+  "separateMissingProvider": {
+    "exitCode": 4,
+    "outboundRequests": 0,
+    "httpProviderInstalled": false,
+    "unavailableCountersCountedAsZero": false
+  },
+  "originals": {
+    "node-invocation-c-stat-range-chunked.json": {
+      "bytes": 1649,
+      "sha256": "sha256:710c815a568125540a77572cee8ebe24bb3208bd411e44e549685cd150dab9c0"
+    },
+    "node-invocation-c-stat-range-short-body.json": {
+      "bytes": 1652,
+      "sha256": "sha256:c4ecfb190c8d4a21394cae84dc5a5c6c7979a6870f53e129902636b9260e92d9"
+    },
+    "node-invocation-c-stat-range-long-body.json": {
+      "bytes": 1650,
+      "sha256": "sha256:dac77067f6adae1458835e46ecdb51e053f521e5143459312c7d164c3c1a4831"
+    },
+    "qualified.json": {
+      "bytes": 127285,
+      "sha256": "sha256:1a21f2c10fa7cb06e0a152f91f8f90a36636a4b0ea45f2c160a5102eb6c9f6c6"
+    },
+    "node-qualified.json": {
+      "bytes": 93645,
+      "sha256": "sha256:a85d59ebad9a2d33ef739d46e7f8a8fc8eca0be815a10cb1fe85b8282c551ab7"
+    },
+    "node-missing-provider-qualified.json": {
+      "bytes": 24329,
+      "sha256": "sha256:a4b5c9ef00d0b7a0c32536c90fbbf641751e51033ba9d7ad97a7405bb03e5682"
+    },
+    "source-tests.log": {
+      "bytes": 147,
+      "sha256": "sha256:6af2a56acfd598eb9de90a6246e3f3aeafe708af624c914a3eccc648b74a86a9"
+    },
+    "gcc-range-and-wasm-metadata.log": {
+      "bytes": 290,
+      "sha256": "sha256:6887ad80eac0b7f7de6c9660b8a4463dfde44e3a31cd8ec7baa8ad04ef69edfd"
+    }
+  },
+  "fullTicketQualified": false,
+  "publisherAuthenticated": false
+}

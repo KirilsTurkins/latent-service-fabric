@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 
 from tools import java_standard_http_library as owner
 from tools import qualify_java_dependency_suite as suite
-from tools.java_guest import compiler as production
+from tools.java_guest import compiler as production, compiler_acquisition as acquisition
 
 COORDINATE = 'org.teavm:teavm-gradle-plugin:0.15.0'
 POM = 'https://repo.maven.apache.org/maven2/org/teavm/teavm-gradle-plugin/0.15.0/teavm-gradle-plugin-0.15.0.pom'
@@ -27,6 +27,16 @@ A problem occurred configuring root project 'lsf-java-guest-feasibility'.
 
 BUILD FAILED in 5s
 '''
+
+
+RATE_LIMIT = LOG.replace(
+    f'   > Could not find {COORDINATE}.\n     Searched in the following locations:\n       - {POM}\n',
+    f'   > Could not resolve {COORDINATE}.\n'
+).replace("         buildscript of root project 'lsf-java-guest-feasibility'\n",
+          "         buildscript of root project 'lsf-java-guest-feasibility'\n"
+          f"      > Could not resolve {COORDINATE}.\n"
+          f"         > Could not get resource '{POM}'.\n"
+          f"            > Could not GET '{POM}'. Received status code 429 from server: Too Many Requests\n")
 
 
 class AcquisitionRetryTests(unittest.TestCase):
@@ -58,7 +68,7 @@ class AcquisitionRetryTests(unittest.TestCase):
     def test_first_success_keeps_the_original_command(self):
         self.outcomes(None)
         self.assertEqual(self.run_compiler(), 'GENERATED\n')
-        self.assertEqual(self.process.call_args.args[0], ['/tools/gradle', '--no-daemon', 'generateC'])
+        self.assertEqual(self.process.call_args.args[0], [str(self.compiler.paths['gradle']), '--no-daemon', 'generateC'])
         self.sleep.assert_not_called()
         self.compiler.check_unchanged.assert_not_called()
 
@@ -66,8 +76,8 @@ class AcquisitionRetryTests(unittest.TestCase):
         self.outcomes(LOG, None)
         self.assertEqual(self.run_compiler(), 'GENERATED\n')
         self.assertEqual([call.args[0] for call in self.process.call_args_list], [
-            ['/tools/gradle', '--no-daemon', 'generateC'],
-            ['/tools/gradle', '--no-daemon', '--refresh-dependencies', 'generateC']])
+            [str(self.compiler.paths['gradle']), '--no-daemon', 'generateC'],
+            [str(self.compiler.paths['gradle']), '--no-daemon', '--refresh-dependencies', 'generateC']])
         self.assertEqual([row['exitCode'] for row in self.compiler.records], [1, 0])
         self.assertEqual(self.compiler.deadline, 100.0)
         self.assertIn('Could not find', (self.compiler.directory / '0-java-to-c.log').read_text())
@@ -75,6 +85,31 @@ class AcquisitionRetryTests(unittest.TestCase):
         self.assertEqual(json.loads((self.compiler.directory / '1-java-to-c.command.json').read_text())['exitCode'], 0)
         self.sleep.assert_called_once_with(2)
         self.compiler.check_unchanged.assert_called_once_with()
+
+    def test_rate_limited_locked_plugin_can_recover_within_the_original_deadline(self):
+        self.outcomes(RATE_LIMIT, RATE_LIMIT, None)
+        self.assertEqual(self.run_compiler(), 'GENERATED\n')
+        self.assertEqual([call.args for call in self.sleep.call_args_list], [(15,), (30,)])
+        self.assertEqual([row['exitCode'] for row in self.compiler.records], [1, 1, 0])
+        self.assertIn('--refresh-dependencies', self.process.call_args.args[0])
+
+    def test_rate_limit_recognition_requires_the_exact_locked_metadata_request(self):
+        variants = (RATE_LIMIT.replace(POM, POM.replace('repo.maven.apache.org', 'other.example')),
+            RATE_LIMIT.replace(POM, POM.replace('.pom', '.jar')),
+            RATE_LIMIT.replace('Could not GET', 'Could not HEAD'),
+            RATE_LIMIT.replace('429', '403'),
+            RATE_LIMIT.replace(COORDINATE, 'org.teavm:unreviewed:0.15.0', 1),
+            RATE_LIMIT + 'Could not download a transitive dependency\n',
+            RATE_LIMIT + 'Dependency verification failed\n')
+        for log in variants:
+            with self.subTest(log=log):
+                self.assertEqual(owner.compiler_metadata_retry_delay(log, LOCK), 0)
+        self.compiler.deadline = 24.0
+        self.outcomes(RATE_LIMIT, None)
+        with self.assertRaises(ValueError):
+            self.run_compiler()
+        self.sleep.assert_not_called()
+        self.assertEqual(self.process.call_count, 1)
 
     def test_multiple_missing_locked_poms_are_retryable_but_unknowns_are_not(self):
         other = 'teavm-metaprogramming-api'
@@ -145,11 +180,11 @@ class AcquisitionRetryTests(unittest.TestCase):
                 self.outcomes(LOG, None)
                 with ExitStack() as context:
                     if mutation == 'missing':
-                        context.enter_context(patch.object(owner.paths, 'read', side_effect=OSError('missing')))
+                        context.enter_context(patch.object(acquisition.paths, 'read', side_effect=OSError('missing')))
                     elif mutation == 'overbound':
                         self.outcomes(LOG + 'x' * (4 * 1024 * 1024), None)
                     elif mutation == 'bad-encoding':
-                        context.enter_context(patch.object(owner.paths, 'read', return_value=b'\xff'))
+                        context.enter_context(patch.object(acquisition.paths, 'read', return_value=b'\xff'))
                     with self.assertRaises(ValueError):
                         self.run_compiler()
                 self.assertEqual(self.process.call_count, 1)
@@ -199,6 +234,42 @@ class AcquisitionRetryTests(unittest.TestCase):
         self.assertIs(caught.exception, changed)
         self.assertEqual(self.process.call_count, 1)
         self.sleep.assert_not_called()
+
+    def test_developer_tool_bundle_acquires_the_maintained_greeting_through_the_shared_compiler(self):
+        from tools import dev_managed_distribution as distribution
+
+        root = self.compiler.directory
+        capture = root / 'bundle'
+        capture.mkdir()
+        source = {name: {} for name in ('jdk', 'gradle', 'wasi-sdk')}
+        project = root / 'greeting'
+        self.stack.enter_context(patch('tools.java_guest.compiler_profile.pin', return_value=None))
+        self.stack.enter_context(patch.object(distribution, 'sources', return_value=source))
+        self.stack.enter_context(patch.object(distribution, 'extract', side_effect=lambda archive, dest, name: dest))
+        creator = self.stack.enter_context(patch('tools.java_capsule_project.create', return_value=project))
+        compiler = self.stack.enter_context(patch.object(acquisition, 'AcquisitionCompiler', autospec=True))
+        compiler.return_value.compile.side_effect = ValueError('end of acquisition probe')
+        with self.assertRaisesRegex(ValueError, 'end of acquisition probe'):
+            distribution.prepare(root / 'payload', capture, 'java', Mock())
+        creator.assert_called_once_with(capture / 'managed-dependency-project', 'greeting')
+        compiler.assert_called_once_with(capture / 'managed-dependencies', capture / 'managed-source/wasi-sdk',
+                                         gradle=str(capture / 'managed-source/gradle/bin/gradle'))
+        compiler.return_value.compile.assert_called_once_with(project / 'src', project / 'wit',
+            'examples:greeting/service@1.0.0', capture / 'managed-dependency-build')
+
+    def test_shared_contract_compiler_acquires_pinned_inputs_within_its_parent_deadline(self):
+        from tools import qualify_transaction_contracts as contracts
+
+        output = self.compiler.directory
+        wasi_sdk = output / 'wasi-sdk'
+        commands = Mock(deadline=130.0)
+        with patch.object(acquisition, 'AcquisitionCompiler', autospec=True) as compiler:
+            compiler.return_value.compile.side_effect = ValueError('contract compiler probe')
+            with self.assertRaisesRegex(ValueError, 'contract compiler probe'):
+                contracts.compile_contract('java', output, commands, tools=None, wasi_sdk=wasi_sdk)
+        compiler.assert_called_once_with(output / 'compiler', wasi_sdk, _deadline=commands.deadline)
+        compiler.return_value.compile.assert_called_once_with(contracts.FIXTURE / 'java',
+            contracts.FIXTURE / 'wit', contracts.WORLD, output / 'compiled')
 
     def test_ordinary_application_compiler_remains_single_attempt(self):
         application = production.Compiler.__new__(production.Compiler)

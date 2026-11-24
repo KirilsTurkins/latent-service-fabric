@@ -31,6 +31,54 @@ python tools/rust_capsule.py dependencies ./my-rust
 python tools/rust_capsule.py build ./my-rust --offline --output ./my-rust/target/build-1 --repository https://github.com/example/application
 ```
 
+## Ship a JSON resource with an HTTP client
+
+Place `price-card.json` next to the outside crate's `src/lib.rs`. The Rust
+compiler embeds its bytes, so the application can read the resource after the
+original crate directory has been removed. In the HTTP example, each private
+crate uses `serde_json::from_slice(include_bytes!("price-card.json"))` to parse
+the expected price card. It fetches a card with `waki::Client::new()` or
+`golem_wasi_http::Client::new()` and compares the two parsed values. Both
+clients also handle a JSON error body from a real HTTP 404 response.
+
+The example pins the existing transitive `ahash` dependency to `0.8.12` in
+the outside crate's `Cargo.toml`. This keeps the offline build within the
+sixteen executable inputs reviewed for this example. The capture and signed
+results include both tenant deployments and their peer observations.
+[Private library evidence](../testing/evidence/sdk-private-library-invocations-2026-11-23.json)
+
+## Call a local crate from the greeting handler
+
+Create a crate outside the capsule project. In its `Cargo.toml`, set the
+package name to `outside-sdk-milestone-demo`, the version to `1.0.0` and the
+edition to `2021`. Give it this `src/lib.rs`.
+
+```rust
+pub fn calculate(value: u32) -> u32 {
+    value + 17
+}
+```
+
+Set `$privateCrate` to the absolute path of the crate and add it.
+
+```powershell
+python tools/rust_capsule.py add ./my-rust outside-sdk-milestone-demo --version 1.0.0 --path $privateCrate --cargo ./reviewed-rust/bin/cargo
+```
+
+Run `lock`, `resolve`, `review-lock` and `dependencies` as above. Omit
+`--features pure` for this crate. In the greeting capsule's `src/lib.rs`, keep
+its input validation and replace the final success expression with this call.
+
+```rust
+Ok(outside_sdk_milestone_demo::calculate(25).to_string())
+```
+
+Build with `--offline`. After signing and deploying the package, call `greet`
+with `Ada`. The success value is the string `42`. A blank name still returns
+the handler's declared error, `Please enter a name.`.
+
+## What capture and build verify
+
 The separate fetch stage runs native `cargo metadata` and `cargo vendor --locked` from an owned working directory and empty Cargo home. It records the complete resolver graph, selected target graph, enabled/default features, native lock, package/source/target/license metadata and tool bytes in `cargo-resolved.lock.json`. Private registry tokens are read only by this explicit resolver and are absent from compilation environments and public evidence. Private registry endpoint configuration must be explicitly supplied to the resolver; ambient home/project Cargo configurations are not consumed.
 
 Before vendoring or publishing a candidate, capture checks both native metadata
@@ -213,8 +261,9 @@ a source or bound-tool change refuses the build and retains the prior deployment
 without automatic reapproval, promotion or mutation replay. Stop watch, review the
 new failed request and explicitly choose another identity before restarting it.
 Approval is not inherited from capture, package names, a prior source snapshot,
-test-fixture consent or ordinary recipe trust. Other languages, custom recipes,
-duplicate options and malformed digests reject this selection before dispatch.
+test-fixture consent or ordinary recipe trust. The Java and .NET maintained adapters also consume explicitly selected processor
+and generator approvals. Custom recipes, other language adapters, duplicate
+options and malformed digests reject the selection before dispatch.
 The detached route's source controls do not establish a successful current hosted
 watch or identify the unretained executable package in an earlier refusal.
 

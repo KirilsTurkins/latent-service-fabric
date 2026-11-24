@@ -741,8 +741,11 @@ class StreamOperator:
                 "--provider", PROFILE, "--contract-prefix", CAPABILITY, *usage, "--page-size", "1")
             self._owned()
             value = successful(result)
-            require(not tenant_only or value.get("nodeUsage") is None,
-                    "stream-operator-inspection-scope-changed")
+            if tenant_only:
+                tenant_usage = value.get("tenantUsage")
+                require("nodeUsage" in value and value["nodeUsage"] is None
+                        and isinstance(tenant_usage, dict) and tenant_usage.get("scope") == "tenant",
+                        "stream-operator-inspection-scope-changed")
             revision = value.get("revision")
             require(value.get("executionPermission") is False
                     and isinstance(revision, dict) and revision.get("deploymentId") == deployment,

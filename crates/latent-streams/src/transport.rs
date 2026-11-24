@@ -250,9 +250,8 @@ impl Transport {
             }
         }
     }
-    /// A zero-time readiness observation for an already admitted plain TCP
-    /// owner. It never reads or writes bytes, creates no descriptor and never
-    /// waits for an event. TLS and protected transports retain their old path.
+    /// Sample the admitted TCP descriptor without reading or writing. For TLS,
+    /// the caller checks already decrypted bytes and close-notify first.
     #[cfg(target_os = "linux")]
     pub fn ready_now(&self, interest: Interest) -> io::Result<Option<Readiness>> {
         use rustix::event::{poll, PollFd, PollFlags, Timespec};
@@ -261,9 +260,6 @@ impl Transport {
             #[cfg(any(test, feature = "development-outbound"))]
             Wire::Protected(_) => return Err(io::ErrorKind::Unsupported.into()),
         };
-        if self.tls.is_some() {
-            return Err(io::ErrorKind::Unsupported.into());
-        }
         let mut events = PollFlags::empty();
         if interest.is_readable() {
             events |= PollFlags::IN | PollFlags::RDHUP;
@@ -544,11 +540,14 @@ impl Transport {
             return Ok(false);
         };
         let mut state = tls.lock().map_err(|_| failure())?;
-        let observed = state
-            .connection
-            .process_new_packets()
-            .map_err(|_| failure())?;
-        Ok(observed.plaintext_bytes_to_read() != 0 || observed.peer_has_closed())
+        match state.connection.reader().into_first_chunk() {
+            // The reader borrows its first plaintext chunk. An empty slice is clean EOF.
+            Ok(_) => Ok(true),
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => Ok(false),
+            // Wake the reader to report a known truncated TLS stream.
+            Err(error) if error.kind() == io::ErrorKind::UnexpectedEof => Ok(true),
+            Err(_) => Err(failure()),
+        }
     }
 }
 

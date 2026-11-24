@@ -487,9 +487,10 @@ def signed_node(native, artifact, output, commands, record):
     require(len(record['cases']) == 11 and len(record['grantDenials']) == 4, 'root-return-finite-invocations')
 
 
-def public_admission(output):
+def public_admission(output, *, parent_deadline=None):
     """Only bounded public source/results; never signing keys or node credentials."""
-    parent_deadline = float(os.environ['LSF_ROOT_RETURN_DEADLINE'])
+    if parent_deadline is None:
+        parent_deadline = float(os.environ['LSF_ROOT_RETURN_DEADLINE'])
     public = output/'public'; public.mkdir(mode=0o700)
     candidates = list(output.glob('*.json')) + list(output.glob('node.stderr.txt'))
     for folder in ('logs', 'examples-controls', 'foreign-controls', 'build/logs', 'build/probe-inputs',
@@ -571,35 +572,29 @@ def qualify(output, tools, archive):
 
 def current_managed_port(artifact):
     """Require the actual current producer; a dated v2 receipt is not its proof."""
-    from tools.dotnet_guest import managed_work, task_wait
+    from tools.qualify_dotnet_task_runtime import require_current_task_wait_binding
     port = read_json(artifact / 'task-wait-port.json', 128 * 1024)
-    managed_work.validate_rewrite(port.get('managedAcceptedWork'))
-    require(port.get('profile') == task_wait.PROFILE
-        and port['managedAcceptedWork']['patch'] == 'latent.dotnet.managed-accepted-work.v15'
-        and type(port.get('generatedHelperCount')) is int and port['generatedHelperCount'] == 109
-        and port.get('completion') == 'actual-task-only'
-        and port.get('finiteAndCancellableWaits') == 'original-Task-WhenAny-Delay'
-        and port.get('finiteWaitObservation') == task_wait.FINITE_OBSERVATION
-        and port.get('completeOriginalWaitRemainderPreserved') is True
-        and type(port.get('nativeAotReferenceBinding')) is dict
-        and type(port['nativeAotReferenceBinding'].get('responseFiles')) is list
-        and len(port['nativeAotReferenceBinding']['responseFiles']) == 1,
-        'root-return-current-v5-normal-corelib-binding')
+    require(type(port) is dict and 'managedAcceptedWork' in port,
+            'root-return-current-managed-work-required')
+    require_current_task_wait_binding(port)
     return port
 
 
-def qualify_current_products(output, tools, source_commit):
+def qualify_current_products(output, tools, source_commit, *, local=False):
     """One fresh normal v3 component, current default products and original calls."""
     from tools.build_observation import resolve_tools, file_identity as tool_identity
     from tools.qualify_java_server_lifecycle_suite import native as build_native
     import tomllib
-    require(os.environ.get('GITHUB_EVENT_NAME') == 'push'
-        and os.environ.get('GITHUB_REF') == 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028',
-        'root-return-current-closed-push')
+    if local:
+        deadline = time.monotonic() + 1320
+    else:
+        require(os.environ.get('GITHUB_EVENT_NAME') == 'push'
+            and os.environ.get('GITHUB_REF') == 'refs/heads/feat/sdk-dotnet-prefetched-readiness-review-20261028',
+            'root-return-current-closed-push')
+        deadline = float(os.environ['LSF_ROOT_RETURN_DEADLINE'])
     require(sys.platform == 'linux' and sys.version_info >= (3, 13), 'root-return-current-linux-python313')
     require(output != ROOT and ROOT not in output.parents and output not in ROOT.parents,
         'root-return-current-output-ownership')
-    deadline = float(os.environ['LSF_ROOT_RETURN_DEADLINE'])
     require(math.isfinite(deadline) and time.monotonic() < deadline <= time.monotonic() + 1320,
         'root-return-current-original-deadline')
     require(re.fullmatch(r'[0-9a-f]{40}', source_commit)
@@ -615,7 +610,8 @@ def qualify_current_products(output, tools, source_commit):
         CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true', RUSTUP_TOOLCHAIN='1.97.1', RUSTUP_AUTO_INSTALL='0')
     commands = JoinCauseCommands(ROOT, output, environment, shared, deadline)
     record = {'schemaVersion': 'latent.dotnet.root-return.current-products.v1', 'status': 'in-progress',
-        'sourceCommit': source_commit, 'full746Qualified': False, 'fullAC7Qualified': False,
+        'sourceCommit': source_commit, 'executionOrigin': 'local' if local else 'github-push',
+        'full746Qualified': False, 'fullAC7Qualified': False,
         'originalFaultCauseQualified': False, 'opaqueCauseQualified': False, 'lateGenerationQualified': False,
         'deadlineCancellationQualified': False, 'nativeAccountingComplete': False,
         'diagnosticRewritePerformed': False, 'nativeBuildCount': 0, 'normalComponentBuildCount': 0,
@@ -673,7 +669,7 @@ def qualify_current_products(output, tools, source_commit):
     finally:
         write_json(output / 'commands.json', shared['records'])
         try:
-            public_admission(output)
+            public_admission(output, parent_deadline=deadline)
         except BaseException:
             if record['status'] == 'passed':
                 raise

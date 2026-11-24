@@ -2,6 +2,15 @@
 
 The shared implementation remains restricted to explicit development features.
 
+On Linux, the native host-TLS qualification provider accepts a zero-millisecond
+readiness observation on its admitted TCP socket. It first checks the TLS
+reader for buffered plaintext or an observed close. It then samples the
+descriptor if necessary. A timeout leaves the connection available for a later
+read. The loopback TLS regression reads two bytes from a three-byte record,
+observes its third byte twice, and delivers all six application bytes exactly
+once. It also checks an idle peer, writability, and graceful TLS shutdown.
+[Native TLS test](../../crates/latent-streams/src/tests/tls.rs)
+
 The [October 12 review packet](outbound-stream-review-2026-10-12.md) records
 fresh bounded TCP/component/owner controls, the captured TLS parser allocation
 reference and its remaining independent approval and full TLS accounting gates.

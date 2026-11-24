@@ -6,7 +6,7 @@ pub use crate::deployment_operations::{
     DeploymentOperationRead as TriggerRead, DeploymentReadLease as TriggerReadLease,
 };
 pub use crate::deployments::http::{
-    AcceptedHttpRoute, AcceptedHttpTarget, PreparedTriggerOperation,
+    AcceptedHttpRoute, AcceptedHttpTarget, AcceptedTransactionRoute, PreparedTriggerOperation,
 };
 use latent_core::{PlatformError, PlatformErrorCode};
 pub use model::*;
