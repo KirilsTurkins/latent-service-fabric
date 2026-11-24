@@ -102,7 +102,7 @@ class GoWriteProgressTests(unittest.TestCase):
         deadline.contract((ROOT/q.TEMPLATE).read_bytes(),materials)
         for name, marker in ((deadline.MATERIALS[0],b'self.limits.absolute_timeout_millis > 10_000'),
                              (deadline.MATERIALS[2],b'value > 10_000 || (value == 0 && direction != 2)'),
-                             (deadline.MATERIALS[2],b'direction == 2 && !socket.host_tls() && !socket.protected_owner()'),
+                             (deadline.MATERIALS[2],b'(!socket.host_tls() || timeout == Some(0))'),
                              (deadline.MATERIALS[2],b'let mut deadline = self.deadline.min(state.last_progress + self.idle);'),
                              (deadline.MATERIALS[2],b'now + Duration::from_millis(u64::from(value))'),
                              (deadline.MATERIALS[2],b'if !observation {'),

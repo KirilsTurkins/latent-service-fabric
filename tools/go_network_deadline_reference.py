@@ -92,7 +92,8 @@ def pending_deadline_contract(connection: bytes) -> None:
 
     These source controls complement the live provider tests; they do not prove
     physical timing. Read/write deadlines still narrow the original lifetime.
-    Only plain-TCP readiness has a separate, non-renewing observation deadline.
+    Plain TCP readiness and an immediate Linux TLS poll have a separate
+    observation deadline. Timed TLS waits still use the original I/O deadline.
     """
     rows = re.findall(rb'(?ms)^    fn pending\([^\n]*\n.*?^    \}', connection)
     if len(rows) != 1:
@@ -102,7 +103,12 @@ def pending_deadline_contract(connection: bytes) -> None:
         b'if timeout.is_some_and(|value| value > 10_000 || (value == 0 && direction != 2)) { '
         b'return Err(error(StreamErrorCode::InvalidInput)); }',
         b'let mut deadline = self.deadline.min(state.last_progress + self.idle);',
-        b'let observation = direction == 2 && !socket.host_tls() && !socket.protected_owner();',
+        b'if timeout == Some(0) { let immediate = cfg!(target_os = "linux") '
+        b'&& state.socket.as_mut().is_some_and(|physical| { '
+        b'physical .resource() .stream .as_ref() .is_some_and(|socket| !socket.protected_owner()) }); '
+        b'if !immediate { return Err(error(StreamErrorCode::InvalidInput)); } }',
+        b'let observation = direction == 2 && !socket.protected_owner() '
+        b'&& (!socket.host_tls() || timeout == Some(0));',
         b'let requested = timeout.map(|value| now + Duration::from_millis(u64::from(value))); '
         b'if !observation { if let Some(requested) = requested { '
         b'deadline = deadline.min(requested); } } '
