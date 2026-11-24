@@ -231,7 +231,8 @@ def install(layout: Layout, release: VerifiedRelease, *, profile: str, policy: P
             status, _output = systemctl("is-active", "--quiet", "lsf.service")
             require(status != 0 or start, "running-service-upgrade-requires-explicit-start")
             stop_service(stateful=node.get("state") is not None)
-            if profile != LOCAL:
+            if node.get("supplyChain", {}).get("mode") == "enforced":
+                # Preserve the stopped node's existing admission lease interval.
                 time.sleep(6)
         if state and state["currentVersion"] != selected and node.get("state") is not None:
             preflight = child_check(layout, identity, "preflight", candidate=selected, retained_state=True)

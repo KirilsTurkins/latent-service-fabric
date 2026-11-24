@@ -43,7 +43,10 @@ the service explicitly after preflight succeeds. After first initialization,
 set `state.createIfMissing` to `false` and preserve both roots for reinstall or
 upgrade. If you manage a separate checkpoint path, prepare it with the same
 ownership and permissions and run preflight as the service account. Snapshot
-and restore destinations use the authenticated transaction recovery workflow.
+and restore destinations use the authenticated transaction recovery workflow. For
+foreground operation with enforced admission, allow six seconds after the
+node has stopped cleanly before starting it again so the original admission
+lease can expire.
 
 For a version upgrade with state enabled, the installer runs the candidate's
 retained-state check against the stopped original store before selecting the
