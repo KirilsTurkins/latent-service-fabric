@@ -117,6 +117,23 @@ async function revision(page) {
   assert.ok(value < (1n << 64n));
   return value;
 }
+async function readCurrent(page, expectedRevision) {
+  const [response] = await Promise.all([
+    page.waitForResponse(response => {
+      const target = new URL(response.url());
+      return target.origin === config.origin && target.pathname === '/drafts/alice/query' &&
+        response.request().method() === 'GET';
+    }, {timeout: 15000}),
+    page.locator('#query-draft').click(),
+  ]);
+  assert.equal(response.status(), 200);
+  assert.equal((await response.json()).disposition, 'query');
+  await page.waitForFunction(expected =>
+    document.querySelector('#draft-revision')?.textContent === expected,
+  'Revision ' + expectedRevision, {timeout: 15000});
+  await idle(page);
+}
+
 async function idle(page) {
   await page.waitForFunction(() => !document.querySelector('#query-draft').disabled, undefined, {timeout: 15000});
 }
@@ -252,7 +269,7 @@ try {
     await a.page.locator('#finish-original-draft').click();
     await submit(a.page, 5); await status(a.page, 'committed');
     assert.equal(await revision(a.page), a.original + 2n);
-    await b.page.locator('#query-draft').click(); await idle(b.page);
+    await readCurrent(b.page, a.original + 2n);
     assert.equal(await revision(b.page), a.original + 2n);
     await recover(b.page, lostRejection.observed, 'rejected');
     assert.equal(await b.page.locator('#application-message').textContent(), 'stale-edit');
@@ -264,7 +281,7 @@ try {
     await first.setExtraHTTPHeaders({Authorization: 'Bearer ' + alice.rotatedToken});
     await recover(a.page, lostCommit.observed, 'committed');
     const originalEffectDispositions = await readOriginalEffects(a.page, lostCommit.observed);
-    await a.page.locator('#query-draft').click(); await idle(a.page);
+    await readCurrent(a.page, a.original + 3n);
     assert.equal(await revision(a.page), a.original + 3n);
     assert.equal(await a.page.locator('#draft-units').textContent(), 'Units 6');
     assert.equal(commandPosts, 4);
