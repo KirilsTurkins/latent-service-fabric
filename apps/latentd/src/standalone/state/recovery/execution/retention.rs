@@ -3,7 +3,7 @@ use super::{awaited, failure, protected, Codecs};
 use latent_commit::atomic::{
     retention::ScopedResultBody, AtomicError, Identity, MaintenanceProgress, ResultMaintenanceOwner,
 };
-use latent_core::{native_capacity::NativeBufferClass, PlatformError};
+use latent_core::{native_capacity::NativeBufferClass, PlatformError, PlatformErrorCode};
 use latent_state::{
     embedded::{ReadView, StoreError},
     protected_store::ProtectedStoreOwner,
@@ -157,21 +157,21 @@ pub(super) async fn sweep(
     awaited(job, codecs)
         .await?
         .map_err(protected)?
-        .map_err(|error| {
-            if command.is_some() {
-                let code = match error {
-                    AtomicError::NotFound => latent_core::PlatformErrorCode::NotFound,
-                    AtomicError::Conflict => latent_core::PlatformErrorCode::StateConflict,
-                    AtomicError::PermissionDenied => {
-                        latent_core::PlatformErrorCode::PermissionDenied
-                    }
-                    AtomicError::Limit => latent_core::PlatformErrorCode::ResourceExhausted,
-                    _ => latent_core::PlatformErrorCode::Unavailable,
-                };
-                return crate::standalone::error(code, "protected-result-maintenance");
-            }
-            failure(format!("protected-result-maintenance:{error:?}"))
-        })
+        .map_err(|error| maintenance_error(error, command.is_some()))
+}
+
+fn maintenance_error(error: AtomicError, selected_command: bool) -> PlatformError {
+    if !selected_command {
+        return failure(format!("protected-result-maintenance:{error:?}"));
+    }
+    let code = match error {
+        AtomicError::NotFound => PlatformErrorCode::NotFound,
+        AtomicError::Conflict => PlatformErrorCode::StateConflict,
+        AtomicError::PermissionDenied => PlatformErrorCode::PermissionDenied,
+        AtomicError::Limit => PlatformErrorCode::ResourceExhausted,
+        _ => PlatformErrorCode::Unavailable,
+    };
+    crate::standalone::error(code, "protected-result-maintenance")
 }
 
 fn describe(progress: &MaintenanceProgress) -> serde_json::Value {
