@@ -809,6 +809,30 @@ async fn malformed_fixed_result_destinations_reclaim_original_calls() {
 }
 
 #[tokio::test]
+async fn signed_parked_task_wakes_and_settles_after_owner_records_move() {
+    let root = tempfile::tempdir().unwrap();
+    let bytes = component::bytes();
+    let digest = latent_artifacts::package::artifact_blob_digest(&bytes);
+    let f = signed_runtime(
+        root.path(),
+        1,
+        5000,
+        packages::activation_runtime(bytes),
+        include_bytes!("runtime/component.rs"),
+    )
+    .await;
+    let request = f.request("parked-task-relocation", component::PARKED_OWNER_RELOCATION);
+    let receipt = success(f.manager.start(request).unwrap().await);
+    assert_eq!(receipt.output.as_ref(), b"[42]");
+    f.idle().await;
+    eprintln!(
+        "parked-task-relocation component={} consumption={:?}",
+        digest.as_str(),
+        receipt.consumption
+    );
+}
+
+#[tokio::test]
 async fn signed_runtime_limits_closing_and_generation_fences_use_normal_node_admission() {
     let root = tempfile::tempdir().unwrap();
     let f = configured(root.path(), 1).await;
