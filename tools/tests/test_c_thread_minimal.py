@@ -26,6 +26,33 @@ HTTP_STATUS_PRIORITY_SHA256 = '5933ea76e8e752b75526d3369ac0b32101d3a1b1c3097923f
 CHUNKED_RANGE_SHA256 = '4d3c4d9b854f34687575639f88b18e80759eb93aaa08c2144766a88a9d93ca0e'
 
 
+FILE_TIME_SHA256 = 'ca0fbc99f0d45dc36a66e29dbfc6f58e0778b3c2d1fc6c6f937c3954604c6618'
+
+
+def before_file_times(raw):
+ header_name_check = (
+  b"        if (header->name.len != sizeof(name) - 1) continue;\n"
+  b"        bool match = true;\n"
+  b"        for (size_t at = 0; at < sizeof(name) - 1; ++at) {\n"
+  b"            uint8_t value = header->name.ptr[at];\n"
+  b"            if (value >= 'A' && value <= 'Z') value += 'a' - 'A';\n"
+  b"            if (value != (uint8_t)name[at]) match = false;\n"
+  b"        }\n"
+  b"        if (!match) continue;\n"
+ )
+ lines = raw.splitlines(keepends=True)
+ for start, end, original in (
+  (495, 496, b'        stat->atime = stat->mtime = 0;\n'),
+  (493, 494, b'         * Keep a valid maximum-size header distinct from missing length.\n         * This profile does not interpret Last-Modified; both times are the\n         * original unknown sentinel, never a fabricated local clock value. */\n'),
+  (465, 466, b''),
+  (338, 340, header_name_check),
+  (295, 297, header_name_check),
+  (228, 286, b''),
+ ):
+  lines[start:end] = original.splitlines(keepends=True)
+ return b''.join(lines)
+
+
 def before_chunked_range(raw):
  # The caller has authenticated the entire new file. Undo only its line edits,
  # in reverse order, then independently authenticate the previous backend.
@@ -46,8 +73,11 @@ def before_chunked_range(raw):
 
 def before_body_media(raw):
  import hashlib
- if hashlib.sha256(raw).hexdigest() != CHUNKED_RANGE_SHA256:
+ if hashlib.sha256(raw).hexdigest() != FILE_TIME_SHA256:
   raise AssertionError('libfetch-body-media-exact-source')
+ raw = before_file_times(raw)
+ if hashlib.sha256(raw).hexdigest() != CHUNKED_RANGE_SHA256:
+  raise AssertionError('libfetch-body-media-prior-source')
  raw = before_chunked_range(raw)
  if hashlib.sha256(raw).hexdigest() != HTTP_STATUS_PRIORITY_SHA256:
   raise AssertionError('libfetch-body-media-exact-source')
@@ -74,6 +104,11 @@ def before_body_media(raw):
 def before_head_metadata(path, raw):
  import hashlib
  if path.rsplit('/', 1)[-1] == 'http.c': raw = before_body_media(raw)
+ elif path.rsplit('/', 1)[-1] == 'UPSTREAM.json':
+  if hashlib.sha256(raw).hexdigest() != '06af1b0ebb2166115cd675cebddd45bc9871db48635b5e1212a1b01f25ae3233':
+   raise AssertionError('libfetch-head-metadata-exact-source')
+  raw = raw.replace(b'    "atimeAndMtime": "A single Last-Modified IMF-fixdate supplies both UTC timestamps. UTC is also accepted in place of GMT. Missing, repeated or invalid dates yield 0.",',
+                    b'    "atimeAndMtime": "0: unknown; Last-Modified is not interpreted, and no local clock authority is acquired.",', 1)
  changes = {'http.c': ('b757ebb3ec8633b1f792333fef598a10bc6d724cfe340e2d45415ed2385cd96a', '14f71c8141d2170f757b9c78a6b206095cb3d0ad86958de501f5e2a3663bc70e', ((b'static bool content_length(const latent_http_streaming_list_header_t *headers, size_t *length, bool *known) {\n    bool found = false;\n    *length = SIZE_MAX; /* The original libfetch unknown-length sentinel. */\n    *known = false;\n    for (size_t i = 0; i < headers->len; ++i) {\n        const latent_http_streaming_header_t *header = &headers->ptr[i];\n        static const char name[] = "content-length";\n        if (header->name.len != sizeof(name) - 1) continue;\n        bool match = true;\n        for (size_t at = 0; at < sizeof(name) - 1; ++at) {\n            uint8_t value = header->name.ptr[at];\n            if (value >= \'A\' && value <= \'Z\') value += \'a\' - \'A\';\n            if (value != (uint8_t)name[at]) match = false;\n        }\n        if (!match) continue;\n        if (found || !header->value.len) return false;\n        found = true;\n        size_t value = 0;\n        for (size_t at = 0; at < header->value.len; ++at) {\n            uint8_t digit = header->value.ptr[at];\n            if (digit < \'0\' || digit > \'9\' || value > (SIZE_MAX - (digit - \'0\')) / 10) return false;\n            value = value * 10 + digit - \'0\';\n        }\n        *length = value;\n    }\n    *known = found;\n    return true;\n}\n', b'static bool content_length(const latent_http_streaming_list_header_t *headers, bool head,\n                           size_t *length, off_t *representation_size, bool *known) {\n    bool found = false;\n    *length = SIZE_MAX; /* The original libfetch unknown-length sentinel. */\n    *representation_size = (off_t)-1;\n    *known = false;\n    for (size_t i = 0; i < headers->len; ++i) {\n        const latent_http_streaming_header_t *header = &headers->ptr[i];\n        static const char name[] = "content-length";\n        if (header->name.len != sizeof(name) - 1) continue;\n        bool match = true;\n        for (size_t at = 0; at < sizeof(name) - 1; ++at) {\n            uint8_t value = header->name.ptr[at];\n            if (value >= \'A\' && value <= \'Z\') value += \'a\' - \'A\';\n            if (value != (uint8_t)name[at]) match = false;\n        }\n        if (!match) continue;\n        if (found || !header->value.len) return false;\n        found = true;\n        uint64_t value = 0;\n        for (size_t at = 0; at < header->value.len; ++at) {\n            uint8_t digit = header->value.ptr[at];\n            if (digit < \'0\' || digit > \'9\' || value > ((uint64_t)INT64_MAX - (digit - \'0\')) / 10) return false;\n            value = value * 10 + digit - \'0\';\n        }\n        /* HEAD describes a representation, not bytes to buffer. The stat\n         * size can therefore exceed wasm32 size_t. Keep URL.length at its\n         * unknown sentinel when that field cannot represent the value. */\n        if (value > SIZE_MAX && !head) return false;\n        *length = value > SIZE_MAX ? SIZE_MAX : (size_t)value;\n        *representation_size = (off_t)value;\n    }\n    *known = found;\n    return true;\n}\n'), (b'    const bool valid_length = content_length(&completed.val.ok.headers, &length, &known_length);\n    off_t actual_offset = 0, representation_size = known_length ? (off_t)length : (off_t)-1;\n', b'    off_t representation_size;\n    const bool valid_length = content_length(&completed.val.ok.headers,\n        operation == LATENT_HTTP_STREAMING_METHOD_HEAD, &length, &representation_size, &known_length);\n    off_t actual_offset = 0;\n'))), 'UPSTREAM.json': ('117a3dfa1f5be24be75496362dd2aa7757888afda4c02cf101b1cd6ba6881085', '5f7795e7318f9e931aa0fef5f8e05368e69d24b26fca22471ec4302bdb245237', ((b'Validated Content-Length, or signed off_t -1 if absent. No buffering/replay to invent length.', b'Validated Content-Length up to the signed off_t maximum, or signed off_t -1 if absent. For HEAD, a value larger than size_t is reported in url_stat while URL.length remains the SIZE_MAX unknown sentinel. Other methods require a size_t-representable length. No buffering/replay to invent length.'),))}
  digest, previous_digest, replacements = changes[path.rsplit('/', 1)[-1]]
  if hashlib.sha256(raw).hexdigest() != digest:
@@ -88,7 +123,7 @@ def before_head_metadata(path, raw):
 
 def before_host_boundary(raw):
  import hashlib
- if hashlib.sha256(raw).hexdigest() != CHUNKED_RANGE_SHA256:
+ if hashlib.sha256(raw).hexdigest() != FILE_TIME_SHA256:
   raise AssertionError('libfetch-host-boundary-exact-source')
  raw = before_head_metadata('http.c', raw)
  if hashlib.sha256(raw).hexdigest() != '14f71c8141d2170f757b9c78a6b206095cb3d0ad86958de501f5e2a3663bc70e':
