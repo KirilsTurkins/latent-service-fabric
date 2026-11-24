@@ -42,6 +42,12 @@ independent private library declarations offline. Each signed package fetched
 a price card, read its own immutable resource and returned the same result.
 [Installed C commands and results](../testing/c-installed-library.md)
 
+The private C worker example calls libfetch on a transitive library's pthread,
+joins it and returns the parsed card to the caller. Two distinct sets of
+package names and a fresh project built from the guide each passed signed
+execution with the same component bytes.
+[Build the private C worker example](../../examples/guides/c-private-card/README.md)
+
 The installed Java toolkit built two local-JAR dependency graphs offline. Each signed
 application read the transitive JAR resource and passed 13 HTTP cases. The
 installed Rust toolkit ran Waki and Golem with two outside crates in two tenants.

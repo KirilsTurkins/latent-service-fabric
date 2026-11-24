@@ -1,0 +1,24 @@
+{
+  "formatVersion": 1,
+  "languageStandard": "c23",
+  "limits": {
+    "blobReadBytes": 0,
+    "blobWriteBytes": 0,
+    "childCalls": 0,
+    "cpuFuel": 1000000000,
+    "effectCount": 0,
+    "logBytes": 0,
+    "memoryBytes": 33554432,
+    "outboundRequests": 3,
+    "stateReadBytes": 0,
+    "stateWriteBytes": 0,
+    "wallTimeLimitMillis": 5000
+  },
+  "name": "c-thread-runtime",
+  "runtimeProfile": "c-libfetch-clock-entropy-v1",
+  "service": "examples/c-thread-runtime",
+  "tenant": "examples",
+  "threadingProfile": "c-context144-sync-cooperative-v1",
+  "version": "1.0.0",
+  "world": "examples:libfetch/probe@0.1.0"
+}
