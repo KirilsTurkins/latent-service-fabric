@@ -226,7 +226,8 @@ INSPECT_CASES = (
     'ordinary-signed-publication-and-deployment', 'unfiltered-ordinary-clock',
     'provider-filter-excludes-clock', 'contract-filter-excludes-clock',
     'packaged-unavailable-stream-inspection', 'different-publication-refused',
-    'authenticated-tenant-admin-node-scope-refused', 'unchanged-inputs-and-clean-shutdown')
+    'authenticated-tenant-admin-node-scope-refused', 'packaged-tenant-only-inspection',
+    'unchanged-inputs-and-clean-shutdown')
 CLOCK = 'latent:clock/monotonic@0.1.0'
 CLOCK_PROFILE = 'activation-monotonic-v1'
 FIXTURE_CONTROL = 'supply_chain::tests::support::operator_fixture::export_publication_workflow_fixture'
@@ -439,16 +440,17 @@ def inspect_live(cli, node_binary, frontend, fixture, output, deadline, cancella
                     'view': inspection_view(listing(*filters)['data'], publications['blue'])})
 
             frontend_calls = []
-            def packaged(label, publication, credential, refusal=None):
+            def packaged(label, publication, credential, refusal=None, *, tenant_only=False):
                 state_root = work / label
                 state_root.mkdir(mode=0o700)
                 spec = state_root / 'specification.json'
                 private_json(spec, inspect_specification(publication))
                 remaining = deadline - time.monotonic()
-                require(remaining > 0 and len(frontend_calls) < 3, 'stream-inspect-frontend-bound')
+                require(remaining > 0 and len(frontend_calls) < 4, 'stream-inspect-frontend-bound')
                 result = process.run([str(frontend), 'stream-operator', 'inspect', '--cli', str(cli),
                     '--client-config', str(credential), '--state-dir', str(state_root),
-                    '--specification', str(spec), '--deployment', 'blue'], work,
+                    '--specification', str(spec), '--deployment', 'blue',
+                    *(('--tenant-only',) if tenant_only else ())], work,
                     timeout=min(45, remaining), maximum=65536, graceful=10, check=node.drain)
                 clean_output(result, TOKEN, work)
                 observed = inspection_frontend(result, refusal=refusal)
@@ -481,10 +483,17 @@ def inspect_live(cli, node_binary, frontend, fixture, output, deadline, cancella
                         'stream-inspect-authenticated-node-scope-denial')
                 packaged_denial = packaged('tenant-admin', publications['blue'], admin_config,
                     'operator-request-rejected-last-deployment-retained')
+                scoped = packaged('tenant-only', publications['blue'], admin_config, tenant_only=True)
+                scoped_view = inspection_view(scoped, publications['blue'], node_usage=False)
+                require('nodeUsage' in scoped and isinstance(scoped.get('tenantUsage'), dict)
+                        and scoped['tenantUsage'].get('scope') == 'tenant',
+                        'stream-inspect-packaged-tenant-usage')
             finally:
                 client.config = operator_config
             record['cases'].append({'case': INSPECT_CASES[6], 'tenantReadSucceeded': True,
                 'nodeUsageDenied': True, 'packaged': packaged_denial})
+            record['cases'].append({'case': INSPECT_CASES[7], 'view': scoped_view,
+                'tenantUsageScope': scoped['tenantUsage']['scope'], 'nodeUsage': scoped['nodeUsage']})
             require(client.call('deployment', 'get', 'blue')['data']['deployment'] == selected,
                     'stream-inspect-deployment-changed')
             for (kind, identity), expected in policies.items():
@@ -496,10 +505,10 @@ def inspect_live(cli, node_binary, frontend, fixture, output, deadline, cancella
             require(TOKEN.encode() not in bytes(node.buffers[0]) + bytes(node.buffers[1])
                     and str(work).encode() not in bytes(node.buffers[0]) + bytes(node.buffers[1]),
                     'stream-inspect-node-private-input-disclosed')
-            record['cases'].append({'case': INSPECT_CASES[7], 'configurationAndPoliciesUnchanged': True,
+            record['cases'].append({'case': INSPECT_CASES[8], 'configurationAndPoliciesUnchanged': True,
                 'nodeReapedCleanly': True})
             record.update(status='passed', cliProcesses=client.calls,
-                packagedFrontendProcesses=frontend_calls, nestedInspectionCliProcesses=3)
+                packagedFrontendProcesses=frontend_calls, nestedInspectionCliProcesses=len(frontend_calls))
             return record
         except BaseException:
             primary = True
@@ -594,7 +603,7 @@ def qualify_inspect(output, revision):
         require(stages.run(stage, 'git', '-c', 'core.fsmonitor=false', 'diff', '--no-ext-diff',
                 '--exit-code', 'HEAD', '--') == b'', 'stream-inspect-clean-source')
         require(tuple(row['case'] for row in observed['cases']) == INSPECT_CASES,
-                'stream-inspect-exact-eight-cases')
+                'stream-inspect-exact-nine-cases')
         require(inputs() == before and fixture_identity == inventory(fixture, maximum_files=128,
                 maximum_bytes=16 * 1024**2, deadline=stages.commands.deadline)
                 and frontend_record['files'] == frontend_files(frontend_output)
