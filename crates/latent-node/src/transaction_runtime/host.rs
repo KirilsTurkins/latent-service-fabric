@@ -369,12 +369,12 @@ impl TransactionHost for StateTransactionHost {
                 return Err(IntentFailure::InvalidExpiry);
             }
             self.authorization
-                .authorize("stage", bytes, 0, || {
+                .authorize_intent(&intent.binding, &intent.operation, bytes, || {
                     captured = Some(context.capture(
                         sequence,
                         latent_commit::atomic::StagedIntent {
-                            binding: intent.binding,
-                            operation: intent.operation,
+                            binding: intent.binding.clone(),
+                            operation: intent.operation.clone(),
                             payload: intent.payload,
                             expires_at_millis: intent.expires_at_unix_millis,
                         },

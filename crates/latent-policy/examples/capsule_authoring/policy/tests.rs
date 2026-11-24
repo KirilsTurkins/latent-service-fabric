@@ -264,8 +264,18 @@ fn separated_builders_verify_only_their_exact_source_under_permuted_policy() {
     }
     assert_ne!(builders[0].1, builders[1].1);
     let assignments = [
-        (builders[0].0, &builders[0].1, &first),
-        (builders[1].0, &builders[1].1, &second),
+        (
+            builders[0].0,
+            &builders[0].1,
+            first.build_type.as_str(),
+            &first.source,
+        ),
+        (
+            builders[1].0,
+            &builders[1].1,
+            second.build_type.as_str(),
+            &second.source,
+        ),
     ];
     let (_, document) = create_for_builders(NOW, publisher.public_key(), &assignments).unwrap();
     let mut policy: Value = serde_json::from_slice(&document).unwrap();

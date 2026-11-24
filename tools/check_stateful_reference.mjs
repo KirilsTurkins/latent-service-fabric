@@ -12,7 +12,7 @@ const bytes = await readFile(process.argv[2]);
 assert.ok(bytes.length <= 32768);
 const config = JSON.parse(bytes);
 assert.equal(config.schemaVersion, 'latent.stateful-reference.browser-input.v1');
-assert.match(config.origin, /^http:\/\/stateful\.test:19092$/);
+assert.match(config.origin, /^http:\/\/stateful\.localhost:19092$/);
 assert.ok(['single-backend', 'six-backend-matrix'].includes(config.scope));
 const languages = ['rust', 'c', 'typescript', 'go', 'java', 'dotnet'];
 assert.ok(Array.isArray(config.backends) && [1, 6].includes(config.backends.length));
@@ -26,8 +26,8 @@ for (const row of config.backends) {
   assert.match(row.publication, /^publication:sha256:[0-9a-f]{64}$/);
 }
 assert.match(config.frontend.publication, /^publication:sha256:[0-9a-f]{64}$/);
-assert.match(config.frontend.client.path, /^\/client\/[a-zA-Z0-9._-]+\.js$/);
 assert.match(config.frontend.client.digest, /^sha256:[0-9a-f]{64}$/);
+assert.equal(config.frontend.client.path, '/client/' + config.frontend.client.digest.slice(7) + '/main.js');
 assert.ok(Number.isInteger(config.frontend.client.bytes) && config.frontend.client.bytes > 0 && config.frontend.client.bytes <= 8 * 1024 * 1024);
 assert.equal(config.users.length, 2);
 assert.deepEqual(config.users.map(user => user.subject).sort(), ['alice', 'bob']);
@@ -37,7 +37,7 @@ assert.ok(typeof alice.rotatedToken === 'string' && /^[A-Za-z0-9._~-]{16,512}$/.
 const forbidden = [...config.users.map(user => user.token), alice.rotatedToken];
 const {chromium} = createRequire(path.join(path.resolve(config.toolchain), 'package.json'))('playwright-core');
 const browser = await chromium.launch({executablePath: config.chrome, headless: true,
-  args: ['--host-resolver-rules=MAP stateful.test 127.0.0.1', '--no-proxy-server']});
+  args: ['--host-resolver-rules=MAP stateful.localhost 127.0.0.1', '--no-proxy-server']});
 const deadline = setTimeout(() => { process.exitCode = 1; void browser.close(); }, 240000);
 const observations = [], failures = [], assets = [], contexts = [];
 let requests = 0;
@@ -72,36 +72,43 @@ async function context(user) {
 }
 async function hydrate(selected, subject) {
   const page = await selected.newPage();
-  let release;
-  const gate = new Promise(resolve => { release = resolve; });
-  const timeout = setTimeout(() => release(), 15000);
+  // Capture the parser-created element before the deferred client module runs.
+  // Every document and asset request still traverses the real ingress.
+  await page.addInitScript(() => {
+    const observer = new MutationObserver(() => {
+      const draft = document.querySelector('#draft-revision');
+      if (!draft || document.documentElement.dataset.orderDraftHydrated === 'true') return;
+      globalThis.orderDraftBeforeHydration = draft;
+      observer.disconnect();
+    });
+    observer.observe(document, {childList: true, subtree: true});
+  });
   const script = config.origin + '/_lsf/assets/' + config.frontend.publication + config.frontend.client.path;
-  await page.route(script, async route => { await gate; await route.continue(); });
-  try {
-    const response = await page.goto(config.origin + '/drafts/' + subject, {waitUntil: 'commit', timeout: 15000});
-    assert.equal(response.status(), 200);
-    await page.locator('#draft-revision').waitFor({state: 'visible', timeout: 15000});
-    const html = await response.body();
-    assert.ok(html.length <= 131072 && html.includes(Buffer.from('ngh=')));
-    assert.ok(forbidden.every(value => !html.includes(Buffer.from(value))));
-    assert.ok(!/public|immutable/.test(response.headers()['cache-control'] ?? ''));
-    assert.ok(/no-store/.test(response.headers()['cache-control'] ?? ''));
-    assert.equal(response.headers()['set-cookie'], undefined);
-    await page.evaluate(() => { globalThis.orderDraftBeforeHydration = document.querySelector('#draft-revision'); });
-    const original = await revision(page);
-    const assetResponse = page.waitForResponse(script, {timeout: 15000});
-    release();
-    await page.waitForFunction(() => document.documentElement.dataset.orderDraftHydrated === 'true', undefined, {timeout: 15000});
-    assert.equal(await page.evaluate(() => globalThis.orderDraftBeforeHydration === document.querySelector('#draft-revision')), true);
-    const actualAsset = await assetResponse;
-    assert.equal(actualAsset.status(), 200);
-    const actualBytes = await actualAsset.body();
-    assert.equal(actualBytes.length, config.frontend.client.bytes);
-    assert.equal(digest(actualBytes), config.frontend.client.digest);
-    assert.ok(forbidden.every(value => !actualBytes.includes(Buffer.from(value))));
-    assets.push(digest(actualBytes));
-    return {page, original, ssrDigest: digest(html)};
-  } finally { clearTimeout(timeout); release(); await page.unroute(script); }
+  const [actualAsset, response] = await Promise.all([
+    page.waitForResponse(script, {timeout: 15000}),
+    page.goto(config.origin + '/drafts/' + subject, {waitUntil: 'commit', timeout: 15000}),
+  ]);
+  assert.equal(response.status(), 200);
+  assert.ok(await page.evaluate(() => isSecureContext && typeof crypto.randomUUID === 'function'),
+    'the loopback fixture must support browser-generated command identities');
+  const html = await response.body();
+  assert.ok(html.length <= 131072 && html.includes(Buffer.from('ngh=')));
+  assert.ok(forbidden.every(value => !html.includes(Buffer.from(value))));
+  assert.ok(!/public|immutable/.test(response.headers()['cache-control'] ?? ''));
+  assert.ok(/no-store/.test(response.headers()['cache-control'] ?? ''));
+  assert.equal(response.headers()['set-cookie'], undefined);
+  await page.waitForFunction(() => document.documentElement.dataset.orderDraftHydrated === 'true', undefined, {timeout: 15000});
+  assert.equal(await page.evaluate(() =>
+    globalThis.orderDraftBeforeHydration === document.querySelector('#draft-revision')), true);
+  await page.locator('#draft-revision').waitFor({state: 'visible', timeout: 15000});
+  const original = await revision(page);
+  assert.equal(actualAsset.status(), 200);
+  const actualBytes = await actualAsset.body();
+  assert.equal(actualBytes.length, config.frontend.client.bytes);
+  assert.equal(digest(actualBytes), config.frontend.client.digest);
+  assert.ok(forbidden.every(value => !actualBytes.includes(Buffer.from(value))));
+  assets.push(digest(actualBytes));
+  return {page, original, ssrDigest: digest(html)};
 }
 async function revision(page) {
   const text = await page.locator('#draft-revision').textContent();
@@ -110,11 +117,35 @@ async function revision(page) {
   assert.ok(value < (1n << 64n));
   return value;
 }
+async function readCurrent(page, expectedRevision) {
+  const [response] = await Promise.all([
+    page.waitForResponse(response => {
+      const target = new URL(response.url());
+      return target.origin === config.origin && target.pathname === '/drafts/alice/query' &&
+        response.request().method() === 'GET';
+    }, {timeout: 15000}),
+    page.locator('#query-draft').click(),
+  ]);
+  assert.equal(response.status(), 200);
+  assert.equal((await response.json()).disposition, 'query');
+  await page.waitForFunction(expected =>
+    document.querySelector('#draft-revision')?.textContent === expected,
+  'Revision ' + expectedRevision, {timeout: 15000});
+  await idle(page);
+}
+
 async function idle(page) {
   await page.waitForFunction(() => !document.querySelector('#query-draft').disabled, undefined, {timeout: 15000});
 }
 async function status(page, expected) {
-  await page.waitForFunction(value => document.querySelector('#command-status').textContent === value, expected, {timeout: 15000});
+  try {
+    await page.waitForFunction(value => document.querySelector('#command-status').textContent === value,
+      expected, {timeout: 15000});
+  } catch (error) {
+    const actual = page.isClosed() ? null : await page.locator('#command-status').textContent({timeout: 1000}).catch(() => null);
+    const known = ['idle', 'prepared', 'pending', 'committed', 'rejected', 'permission-denied', 'uncertain', 'aborted'];
+    throw new Error('expected command status ' + expected + ', received ' + (known.includes(actual) ? actual : 'unavailable'), {cause: error});
+  }
   await idle(page);
 }
 async function submit(page, units) {
@@ -158,6 +189,11 @@ async function responseLoss(page, expectedDisposition) {
 async function recover(page, observed, expectedDisposition) {
   const url = config.origin + '/drafts/alice/result';
   const arrived = page.waitForResponse(url, {timeout: 15000});
+  const refreshed = expectedDisposition === 'committed' ? page.waitForResponse(response => {
+    const target = new URL(response.url());
+    return target.origin === config.origin && target.pathname === '/drafts/alice/query' &&
+      response.request().method() === 'GET';
+  }, {timeout: 15000}) : undefined;
   await page.locator('#recover-draft').click();
   const response = await arrived;
   assert.equal(response.request().method(), 'GET');
@@ -168,6 +204,12 @@ async function recover(page, observed, expectedDisposition) {
   assert.equal(value['command-id'], observed.commandId);
   assert.deepEqual(value['effect-ids'], observed.effectIds);
   assert.deepEqual(value.result, observed.result);
+  if (refreshed) {
+    const query = await refreshed;
+    assert.equal(query.status(), 200);
+    assert.match(query.request().headers()['if-state-view'], /^[A-Za-z0-9+/]{90}==$/);
+    assert.equal((await query.json()).disposition, 'query');
+  }
   await status(page, expectedDisposition);
   return value;
 }
@@ -227,7 +269,7 @@ try {
     await a.page.locator('#finish-original-draft').click();
     await submit(a.page, 5); await status(a.page, 'committed');
     assert.equal(await revision(a.page), a.original + 2n);
-    await b.page.locator('#query-draft').click(); await idle(b.page);
+    await readCurrent(b.page, a.original + 2n);
     assert.equal(await revision(b.page), a.original + 2n);
     await recover(b.page, lostRejection.observed, 'rejected');
     assert.equal(await b.page.locator('#application-message').textContent(), 'stale-edit');
@@ -239,7 +281,7 @@ try {
     await first.setExtraHTTPHeaders({Authorization: 'Bearer ' + alice.rotatedToken});
     await recover(a.page, lostCommit.observed, 'committed');
     const originalEffectDispositions = await readOriginalEffects(a.page, lostCommit.observed);
-    await a.page.locator('#query-draft').click(); await idle(a.page);
+    await readCurrent(a.page, a.original + 3n);
     assert.equal(await revision(a.page), a.original + 3n);
     assert.equal(await a.page.locator('#draft-units').textContent(), 'Units 6');
     assert.equal(commandPosts, 4);

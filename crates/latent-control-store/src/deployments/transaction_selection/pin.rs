@@ -19,7 +19,6 @@ use std::sync::{Arc, RwLock, Weak};
 pub(super) struct SelectionPin {
     current: Weak<RwLock<PublishedCatalog>>,
     catalog: Weak<CompiledCatalog>,
-    transaction: u64,
     target: InvocationTarget,
     routing_key: Option<String>,
     pub(super) deployment: DeploymentId,
@@ -98,7 +97,6 @@ impl SelectionPin {
         Ok(Self {
             current: Arc::downgrade(&store.current),
             catalog: Arc::downgrade(&current.routes),
-            transaction: current.transaction,
             target: target.clone(),
             routing_key: routing_key.map(str::to_owned),
             deployment: record.deployment.id.clone(),
@@ -129,8 +127,9 @@ impl SelectionPin {
     ) -> Result<(), PlatformError> {
         let owner = self.current.upgrade().ok_or_else(denied)?;
         let current = owner.try_read().map_err(|_| unavailable())?;
+        // HTTP trigger publication changes the shared control transaction only.
+        // The original compiled deployment owner and generation remain pinned.
         if !current.confirmed
-            || current.transaction != self.transaction
             || current.generation != self.generation
             || !self.catalog.ptr_eq(&Arc::downgrade(&current.routes))
             || publication.release() != self.publication.release()
