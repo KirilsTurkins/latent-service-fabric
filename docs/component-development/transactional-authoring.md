@@ -43,6 +43,22 @@ Each facade retains the generated WIT types and the activation's host-issued own
 
 The runtime's narrow clock, entropy, logging and GC imports remain separately authorized. Application HTTP calls and synchronous child calls are immediate effects and require explicit rejection inside strict commands. Exercise them through separately authored negative components, without adding those imports to the transaction profile.
 
+Before applying the deployment, compare its grants with the interfaces in the
+built package's `surface.json`. For example, the Go aggregate needs
+`latent:clock/monotonic@0.1.0`, `latent:clock/wall@0.1.0` and
+`latent:random/random@0.1.0` in addition to state and intent staging. Install
+the matching node providers and bind them to this service. Use
+`latentd inspect-transaction-hosts --config "$NodeConfig"` to obtain each
+configured provider's profile, configuration digest and epoch before applying
+the provider-binding and policy. Grant only `now-nanos`, `now-unix-millis` and
+`u64-value` respectively for the caller and signed publication. Keep those
+runtime grants separate from the event staging and dispatcher grants.
+
+Fix missing runtime bindings on the staged deployment before sending a business
+command. If a command was already sent, preserve its original identity and
+recover its outcome before choosing another attempt. See
+[Recover a transaction and inspect deferred work](../operations/transaction-recovery.md).
+
 The controlled `forbidden-http` variant adds an actual buffered HTTP import and call to `update`. It uses the same maintained creator, captured SDK, business API and transaction companion. Create it with `python tools/transaction_guest_variants.py --language rust --variant forbidden-http --project ../aggregate-forbidden-http`, substituting `c`, `typescript`, `go`, `java` or `dotnet` as needed. The guest stages its aggregate value and intent before the call. Its declared `rejected` result requires the exact typed HTTP `permission-denied` error; success or another error traps. The original input can keep `reject=false`, and its outbound HTTP budget remains zero.
 
 The frozen Phase 4 ABI remains unchanged. Its native transaction validator separately recognizes the existing buffered HTTP signature for preparation while requiring a zero outbound-request budget; the compatibility inspection records that descriptive exception without granting the capability. The Rust variant can capture an event profile with `--rust-event-profile`. Execution qualification must still verify the typed denial and lack of provider contact, durable rejection, no committed aggregate or outbox row, a fresh zero query and physical retirement. The loopback URL is a controlled fixture input; source capture or compilation does not establish those outcomes.
