@@ -18,6 +18,21 @@ from tools import rust_wasi_http_installed_inputs as inputs
 
 
 class InstalledRustHttp(unittest.TestCase):
+    def test_guest_reader_runs_under_both_publications_before_fresh_default_clients(self):
+        ordinary = list(node.programme(False))
+        expanded = list(node.programme(True))
+        self.assertEqual(len(ordinary), 4)
+        self.assertEqual([row for row in expanded if row[3][0] == 'installed-json'], ordinary)
+        self.assertEqual([(row[0], row[3][3]) for row in expanded if row[3][0] == 'default-get-denied'],
+            [('examples', 'error:request-denied'), ('foreign', 'error:request-denied')])
+        self.assertEqual(expanded[-2:], ordinary[-2:])
+        reader = [(tenant, client, alias, spec[0], spec[3], spec[4]) for tenant, client, alias, spec
+            in expanded if spec[1] == 'reader-post']
+        self.assertEqual(reader, [(tenant, 'golem', alias, name, result, contacts)
+            for tenant, alias in [('examples', 'alpha'), ('foreign', 'delta')]
+            for name, result, contacts in [('guest-reader-post', 'reader:5:200:echo:POST:AAECAw==', 1),
+                ('guest-reader-denied', 'error:guest-reader-stream', 0)]])
+
     def test_real_controller_packaging_joins_actual_tool_and_preserves_original_compiler_records(self):
         from unittest.mock import patch
         from tools.dev_workflow import build_artifacts,build_provenance

@@ -686,7 +686,7 @@ impl NativeTransactionAdmission {
             },
             lifecycle,
         )?);
-        let authorization = StateAuthorization::new(
+        let authorization = StateAuthorization::new_with_intents(
             Arc::clone(&self.owners.policy),
             authority,
             namespace,

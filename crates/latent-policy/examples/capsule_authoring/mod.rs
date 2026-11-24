@@ -3,6 +3,7 @@ mod early_http;
 mod freshness;
 mod inputs;
 mod policy;
+mod reference;
 mod resource_neutral;
 
 pub(super) use current_java::sign_captured_event_java;
@@ -88,47 +89,75 @@ pub(super) fn sign_rust_transaction(output: &Path, input: &Path) -> Result<()> {
     sign_checked(output, vec![build], false, None)
 }
 
-/// Explicit demo trust for one completed maintained transaction build.
-pub(super) fn sign_transaction(output: &Path, input: &Path) -> Result<()> {
-    if !output.is_absolute() || output.exists() {
-        return Err("choose a fresh absolute transaction demo output".into());
+/// One short-lived local trust policy for a set of maintained transaction builds.
+pub(super) fn sign_transaction(output: &Path, paths: &[OsString]) -> Result<()> {
+    sign(output, paths, false, inputs::load_transaction)
+}
+
+pub(super) fn sign_stateful_reference(
+    output: &Path,
+    angular: &Path,
+    paths: &[OsString],
+) -> Result<()> {
+    if !output.is_absolute() || output.exists() || !(1..=15).contains(&paths.len()) {
+        return Err("choose a fresh absolute reference output and one to fifteen backends".into());
     }
-    let build = inputs::load_transaction(input)?;
-    sign_checked(output, vec![build], false, None)
+    let web = reference::WebBuild::load(angular)?;
+    let builds = load_unique(paths, inputs::load_transaction)?;
+    if builds
+        .iter()
+        .any(|build| build.bundle.layout().config().name == web.name())
+    {
+        return Err("duplicate demo package name".into());
+    }
+    sign_checked_scoped(output, builds, false, None, false, false, Some(web))
 }
 
 pub(super) fn sign_demo(output: &Path, paths: &[OsString]) -> Result<()> {
-    sign(output, paths, false)
+    sign(output, paths, false, inputs::load)
 }
 
 pub(super) fn sign_shared_server(output: &Path, input: &Path) -> Result<()> {
     let build = inputs::load_shared_server(input)?;
-    sign_checked_scoped(output, vec![build], false, None, true, false)
+    sign_checked_scoped(output, vec![build], false, None, true, false, None)
 }
 
 pub(super) fn sign_neutral_resources(output: &Path, input: &Path) -> Result<()> {
     let build = resource_neutral::load(input)?;
-    sign_checked_scoped(output, vec![build], false, None, false, true)
+    sign_checked_scoped(output, vec![build], false, None, false, true, None)
 }
 
 pub(super) fn sign_demo_separated(output: &Path, paths: &[OsString]) -> Result<()> {
-    sign(output, paths, true)
+    sign(output, paths, true, inputs::load)
 }
 
-fn sign(output: &Path, paths: &[OsString], separate_builders: bool) -> Result<()> {
+fn sign(
+    output: &Path,
+    paths: &[OsString],
+    separate_builders: bool,
+    load: fn(&Path) -> Result<inputs::Build>,
+) -> Result<()> {
     if !output.is_absolute() || output.exists() || !(1..=16).contains(&paths.len()) {
         return Err("choose a fresh absolute output and one to sixteen completed builds".into());
     }
+    let builds = load_unique(paths, load)?;
+    sign_checked(output, builds, separate_builders, None)
+}
+
+fn load_unique(
+    paths: &[OsString],
+    load: fn(&Path) -> Result<inputs::Build>,
+) -> Result<Vec<inputs::Build>> {
     let mut builds = Vec::new();
     let mut names = BTreeSet::new();
     for path in paths {
-        let build = inputs::load(Path::new(path))?;
+        let build = load(Path::new(path))?;
         if !names.insert(build.bundle.layout().config().name.clone()) {
             return Err("duplicate demo package name".into());
         }
         builds.push(build);
     }
-    sign_checked(output, builds, separate_builders, None)
+    Ok(builds)
 }
 
 fn sign_checked(
@@ -144,6 +173,7 @@ fn sign_checked(
         compiler_source,
         false,
         false,
+        None,
     )
 }
 
@@ -154,6 +184,7 @@ fn sign_checked_scoped(
     compiler_source: Option<&str>,
     shared_server: bool,
     neutral_resources: bool,
+    web: Option<reference::WebBuild>,
 ) -> Result<()> {
     if !output.is_absolute() || output.exists() || builds.is_empty() || builds.len() > 16 {
         return Err("choose a fresh absolute fixture output and bounded checked builds".into());
@@ -185,14 +216,28 @@ fn sign_checked_scoped(
             Ok((id, public, signer))
         })
         .collect::<Result<Vec<_>>>()?;
-    let assignments = builds
+    let mut assignments = builds
         .iter()
         .enumerate()
         .map(|(ordinal, build)| {
             let builder = &builders[if separate_builders { ordinal } else { 0 }];
-            (builder.0.as_str(), &builder.1, &build.observation)
+            (
+                builder.0.as_str(),
+                &builder.1,
+                build.observation.build_type.as_str(),
+                &build.observation.source,
+            )
         })
         .collect::<Vec<_>>();
+    if let Some(frontend) = &web {
+        let builder = &builders[0];
+        assignments.push((
+            builder.0.as_str(),
+            &builder.1,
+            frontend.observation.build_type.as_str(),
+            &frontend.observation.source,
+        ));
+    }
     let (mut policy, mut policy_document) =
         policy::create_for_builders(now, &publisher_public, &assignments)?;
     if shared_server || neutral_resources {
@@ -287,10 +332,16 @@ fn sign_checked_scoped(
         }
         releases.push(release);
     }
+    let frontend = web
+        .map(|build| build.sign(output, &publisher, &builders[0].2, &policy, validity))
+        .transpose()?;
     // Written last; failed/partial signing attempts have no success marker.
     let mut record = json!({"schemaVersion":"latent.capsule.demo.v1", "tenant":TENANT,
         "trust":"isolated-short-lived-demo-only", "expiresAtUnixSeconds": validity.expires_at,
         "policyDigest": artifact_blob_digest(&policy_document).to_string(), "releases": releases});
+    if let Some(frontend) = frontend {
+        record["frontend"] = frontend;
+    }
     if shared_server {
         record["tenant"] = serde_json::Value::Null;
         record["tenants"] = json!([TENANT, "foreign"]);

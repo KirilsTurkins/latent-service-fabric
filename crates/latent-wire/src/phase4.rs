@@ -33,6 +33,9 @@ pub use lease::Phase4ResponseService;
 use std::sync::Arc;
 use tonic::{Request, Response, Status};
 
+/// Maximum original transport allowance for Phase 4 management and recovery.
+pub const MAX_MANAGEMENT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+
 /// Constructed by the adapter after authentication, tenant comparison and finite
 /// structural validation. The original context/deadline and preconditions survive
 /// unchanged. The domain owner still seals current publication/data permissions.

@@ -109,10 +109,21 @@ the exact signed publication selected for the consumer:
   "publication": "publication:sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
   "principal": {"kind": "administrator", "subject": "workflow-operator"},
   "destination": {"host": "127.0.0.1", "port": 32123, "transport": "tcp"},
+  "operations": ["connect", "read", "ready", "inspect", "close", "chunk-bytes"],
   "bindingId": "stream-installed",
   "policyId": "stream-allow"
 }
 ```
+
+The example limits the application to receiving data. It may open the
+connection, wait for readiness, read and inspect chunks, and close. Both
+the provider binding and the publication policy carry the same operations.
+A library that sends bytes needs `write` in its reviewed selection.
+
+The field accepts a nonempty set of distinct operation names. Their order has
+no effect. Omitting it retains the existing eight-operation TCP policy. Reopen
+a restricted operator with the same selection when inspecting, revoking,
+recovering or adopting a generation. Its durable owner binds that selection.
 
 The digests above are placeholders. A publication identifier must use the
 canonical `publication:sha256:` prefix followed by 64 lowercase hexadecimal

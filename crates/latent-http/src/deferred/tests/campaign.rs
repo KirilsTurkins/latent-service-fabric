@@ -562,6 +562,34 @@ async fn original_shutdown_cutoff_retains_real_request_root_role_and_buffers_unt
 }
 
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn qualified_effect_uses_its_original_profile_and_credential_with_an_adjacent_read_origin() {
+    use sha2::{Digest, Sha256};
+
+    let fixture = Fixture::with_adjacent_read_origin(Fault::Normal).await;
+    let original = fixture.proxy.config();
+    let endpoint = qualification(&original);
+    let mut digest = Sha256::new();
+    digest.update(b"lsf-qualified-http-effect-v1\0");
+    digest.update(serde_json::to_vec(&(&original, &endpoint, "tests", "http-auth")).unwrap());
+    assert_eq!(
+        fixture.adapter.profile().idempotency_profile,
+        format!(
+            "qualified-http-v1:{:x}",
+            latent_core::digest::HexDigest(digest.finalize())
+        )
+    );
+    assert_eq!(fixture.rule.protected_credential_reference, "http-auth");
+    let effect = fixture.commit("same-qualified-effect").await;
+    fixture.owner.as_ref().unwrap().resume().unwrap();
+    fixture
+        .settled(&effect, Disposition::ProviderAcknowledged)
+        .await;
+    assert_eq!(fixture.endpoint.counter().await, 1);
+    assert_eq!(fixture.proxy.posts.load(Ordering::Acquire), 1);
+    fixture.finish().await;
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn unsafe_or_generic_endpoint_profiles_cannot_open_a_provider_connection() {
     let fixture = Fixture::new(Fault::Normal).await;
     let valid = qualification(&fixture.proxy.config());

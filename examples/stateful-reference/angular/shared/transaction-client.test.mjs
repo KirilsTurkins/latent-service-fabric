@@ -8,13 +8,13 @@ const routes = {command: '/draft/edit', query: '/draft/query', result: '/draft/r
 const commandId = 'a'.repeat(64), attemptId = '1';
 const namespaceToken = [78,86,2,...new Array(64).fill(0)], keyToken = [83,86,2,...new Array(64).fill(0)];
 const view = Buffer.from(namespaceToken).toString('base64');
-function response(disposition, {error, revision = '1', units = 3} = {}) {
+function response(disposition, {error, revision = '1', units = 3, token = namespaceToken} = {}) {
   const draft = '{"draft-id":"demo","revision":' + revision + ',"units":' + units
-    + ',"namespace-view":' + JSON.stringify(namespaceToken) + ',"key-version":{"some":' + JSON.stringify(keyToken) + '}}';
+    + ',"namespace-view":' + JSON.stringify(token) + ',"key-version":{"some":' + JSON.stringify(keyToken) + '}}';
   const result = error ? '[{"err":' + JSON.stringify(error) + '}]' : '[{"ok":' + draft + '}]';
   const envelope = {profile: 'transaction-http-v1', disposition, representation: 'application-result',
     'command-id': disposition === 'query' ? null : commandId, 'attempt-id': disposition === 'query' ? null : attemptId,
-    'state-view': view, 'effect-ids': ['event-original', 'http-original'],
+    'state-view': Buffer.from(token).toString('base64'), 'effect-ids': ['event-original', 'http-original'],
     result: {'media-type': 'application/vnd.latent.wit-values.v1+json', 'body-base64': Buffer.from(result).toString('base64')}};
   if (disposition === 'aborted') {
     envelope.result = null;
@@ -23,6 +23,17 @@ function response(disposition, {error, revision = '1', units = 3} = {}) {
   return new Response(JSON.stringify(envelope), {status: error ? 422 : disposition === 'aborted' ? 409 : 200});
 }
 function client(fetcher) { return new DraftClient(routes, {origin: 'https://node.example', fetcher}); }
+
+test('the default fetch transport retains its browser receiver', async (context) => {
+  context.mock.method(globalThis, 'fetch', function (url) {
+    assert.equal(this, globalThis);
+    assert.equal(url, 'https://node.example/draft/query?input=WyJkZW1vIl0');
+    return response('query');
+  });
+  const app = new DraftClient(routes, {origin: 'https://node.example'});
+  const result = await app.query('demo');
+  assert.equal(result.value.revision, '1');
+});
 
 test('unavailable query is reported without discarding the original command', async () => {
   const app = client(async () => new Response(JSON.stringify({profile: 'transaction-http-v1',
@@ -40,6 +51,14 @@ test('failed query cannot install an application body from an error response', a
   });
   await assert.rejects(app.query('demo'), /query-unavailable/);
   assert.equal(app.view, undefined);
+});
+
+test('the native query revision remains exact when the WIT codec sends a decimal string', async () => {
+  const revision = '18446744073709551615';
+  const app = client(async () => response('query', {revision: JSON.stringify(revision)}));
+  const result = await app.query('demo');
+  assert.equal(result.value.revision, revision);
+  assert.equal(result.value.namespaceView, view);
 });
 
 test('fragmented query bodies remain bounded and decode correctly', async () => {
@@ -220,6 +239,45 @@ test('fresh query after acknowledgement uses the committed view without replacin
   assert.equal(app.pending, undefined);
 });
 
+test('hydration and fresh queries keep their view across recovery of an older original result', async () => {
+  const newerToken = namespaceToken.slice();
+  newerToken[43] = 2;
+  const newerView = Buffer.from(newerToken).toString('base64');
+  const queryFloors = [];
+  const app = new DraftClient(routes, {
+    origin: 'https://node.example',
+    initialView: {draftId: 'demo', revision: '0', units: 3, namespaceView: view},
+    fetcher: async (url, options) => {
+      if (url.includes('/edit')) throw new Error('lost original result');
+      if (url.includes('/result')) return response('committed');
+      queryFloors.push(options.headers.get('if-state-view'));
+      return response('query', {token: newerToken, revision: '2', units: 7});
+    },
+  });
+  const key = app.prepare('demo', '0', 3);
+  await assert.rejects(app.submit(), /lost original result/);
+  await app.query('demo');
+  assert.equal((await app.recover()).value.revision, '1');
+  assert.equal(app.pending.key, key);
+  assert.equal(app.view.revision, '2');
+  await app.query('demo');
+  assert.deepEqual(queryFloors, [view, newerView]);
+});
+
+test('a delayed query cannot replace a later observed view', async () => {
+  let release, calls = 0;
+  const newerToken = namespaceToken.slice();
+  newerToken[43] = 2;
+  const app = client(async () => ++calls === 1
+    ? new Promise(resolve => { release = resolve; })
+    : response('query', {token: newerToken, revision: '2'}));
+  const delayed = app.query('demo');
+  await app.query('demo');
+  release(response('query'));
+  await assert.rejects(delayed, /stale-query-response/);
+  assert.equal(app.view.revision, '2');
+});
+
 test('business rejection recovery does not refresh expected revision or retry a changed business value', async () => {
   let calls = 0;
   const app = client(async () => { calls++; return response('rejected', {error: 'stale-edit'}); });
@@ -282,7 +340,7 @@ test('u64 business revisions retain every original bit in requests and decoded r
   const app = client(async (url, options) => { body = options.body; return response('committed', {revision: maximum}); });
   app.prepare('demo', maximum, 3);
   const result = await app.submit();
-  assert.ok(body.includes('"expected-revision":' + maximum));
+  assert.equal(JSON.parse(body)[0]['expected-revision'], maximum);
   assert.equal(result.value.revision, maximum);
   assert.throws(() => revisionOverflow(), /invalid-business-revision/);
   function revisionOverflow() { client(async () => response('query')).prepare('demo', '18446744073709551616', 3); }

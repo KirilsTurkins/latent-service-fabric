@@ -107,6 +107,14 @@ impl Session {
         self.dispatched.load(Ordering::Acquire)
     }
     pub fn request<T: Message>(&self, value: T) -> Result<Request<T>, Failure> {
+        self.request_with_timeout_limit(value, Duration::MAX)
+    }
+
+    pub(crate) fn request_with_timeout_limit<T: Message>(
+        &self,
+        value: T,
+        limit: Duration,
+    ) -> Result<Request<T>, Failure> {
         if value.encoded_len() > self.maximum_request {
             return Err(Failure::local(
                 "request-limit",
@@ -127,7 +135,7 @@ impl Session {
         request
             .metadata_mut()
             .insert("authorization", self.authorization.clone());
-        request.set_timeout(remaining);
+        request.set_timeout(remaining.min(limit));
         Ok(request)
     }
     pub async fn call<T, F>(&self, future: F) -> Result<Response<T>, Failure>

@@ -260,11 +260,11 @@ async fn prepare(
                     }
                     let mut profiles = Vec::new();
                     for source in &sources {
-                        if let Some(profile) =
-                            super::selection::profile(source, &adapters, &event_adapters)?
-                        {
-                            profiles.push(profile);
-                        }
+                        profiles.extend(super::selection::profiles(
+                            source,
+                            &adapters,
+                            &event_adapters,
+                        )?);
                     }
                     let catalog =
                         Catalog::capture(&repository, &sources, profiles, &request.publication)?;

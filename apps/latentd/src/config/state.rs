@@ -302,9 +302,6 @@ fn derive_operations(
         if let Some(effect) = &input.deferred_event {
             effect.validate()?;
         }
-        if input.deferred_http.is_some() && input.deferred_event.is_some() {
-            return Err(super::invalid("state.deferredEffects"));
-        }
         if input.incarnation == 0
             || input.state_policies.is_empty()
             || input.state_policies.len() > 8

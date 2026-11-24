@@ -33,7 +33,7 @@ from tools.standard_http.vectors import DOMAIN, head, json_bytes
 from tools.static_api.node import policy
 
 CASES = ('missing-grant', 'normal', 'denied', 'not-found', 'redirect', 'oversized', 'fresh', 'range', 'range-ignored', 'range-denied',
-         'range-unsolicited', 'range-before', 'range-chunked', 'range-short-body', 'range-long-body')
+         'range-unsolicited', 'range-before', 'range-chunked', 'range-short-body', 'range-long-body', 'modified')
 PROBE = 'sdk/c-guest/runtime-fixtures/libfetch/stat-probe.c'
 SELF = 'tools/c_http_stat_qualification.py'
 WORKFLOW = '.github/workflows/c-http-stat-qualification.yml'
@@ -108,13 +108,16 @@ class RangePeer(Peer):
     def _complete_request(self, stream, record):
         wide_error = record.parser.method == b'HEAD' and record.vector.identity == 'http-404'
         range_result = record.parser.method == b'GET' and record.vector.identity in ('domain-json', 'method-bytes')
-        if not (wide_error or range_result):
+        dated_head = record.parser.method == b'HEAD' and record.vector.identity == 'response-boundary'
+        if not (wide_error or range_result or dated_head):
             return super()._complete_request(stream, record)
         body = record.parser.body
         record.observation.update(state='request-complete', bodyBytes=len(body),
                                   bodySha256='sha256:' + hashlib.sha256(body).hexdigest())
         self._event('request-complete', record, bodyBytes=len(body))
-        if wide_error:
+        if dated_head:
+            output = head(200, 8192, headers=((b'Last-Modified', b'Fri, 01 Jan 2100 00:00:00 GMT'),))
+        elif wide_error:
             # HEAD carries representation metadata but sends no response body.
             output = head(404, 1 << 63)
             self.wide_error_responses += 1
@@ -143,7 +146,8 @@ def install(client, node, target, origin):
         'configurationDigest': descriptor['configurationDigest'], 'configurationEpoch': 1,
         'restriction': {'operations': []}})
     rules = []
-    for method, paths in [('HEAD', ['/conformance/json', '/conformance/status/404', '/conformance/redirect']),
+    for method, paths in [('HEAD', ['/conformance/json', '/conformance/status/404', '/conformance/redirect',
+                                   '/conformance/body/boundary']),
                           ('GET', ['/conformance/echo', '/conformance/json', '/conformance/body/boundary',
                                    '/conformance/body/oversized'])]:
         rules.append({'id': 'ordinary-libfetch-' + method.lower(), 'effect': 'allow',
@@ -161,7 +165,7 @@ def install(client, node, target, origin):
 def cell(client, probe, target, peer, output, case):
     vectors = {'missing-grant': 'domain-json', 'normal': 'domain-json', 'denied': 'method-bytes',
                'not-found': 'http-404', 'redirect': 'redirect', 'oversized': 'oversized-body',
-               'fresh': 'domain-json', 'range': 'domain-json',
+               'fresh': 'domain-json', 'modified': 'response-boundary', 'range': 'domain-json',
                'range-ignored': 'response-boundary', 'range-denied': 'http-404',
                'range-unsolicited': 'domain-json', 'range-before': 'method-bytes',
                'range-chunked': 'domain-json', 'range-short-body': 'domain-json', 'range-long-body': 'domain-json'}
@@ -201,6 +205,7 @@ def cell(client, probe, target, peer, output, case):
             'not-found': (3, [{'err': 'unavailable'}]),
             'redirect': (3, [{'err': 'redirect-unsupported'}]),
             'oversized': (3, [{'err': 'response-too-large'}]),
+            'modified': (0, [{'ok': '8192:4102444800:4102444800'}]),
             'range': range_result(5, len(domain), domain[5:]),
             'range-ignored': range_result(0, 8192, b'x' * 8192),
             'range-denied': (3, [{'err': 'permission-denied'}]),
@@ -491,12 +496,12 @@ def run_node(artifact, native, output, deadline):
                     'c-stat-all-primary-invocations')
             final_peer = peer.observation()
             validate(final_peer)
-            require(final_peer['acceptedConnections'] == final_peer['startedRequests'] == 12
+            require(final_peer['acceptedConnections'] == final_peer['startedRequests'] == 13
                     and all(row['role'] == 'primary' for row in final_peer['requests'])
                     and peer.range_requests == 3 and peer.unsolicited_requests == 1
                     and peer.early_range_requests == 1 and peer.oversized_requests == 1
                     and peer.chunked_range_requests == {6: 1, 7: 1, 8: 1},
-                    'c-stat-twelve-primary-contacts-including-three-chunked-ranges')
+                    'c-stat-thirteen-primary-contacts-including-dated-head')
             record['chunkedRangeRequests'] = {str(offset): count for offset, count in peer.chunked_range_requests.items()}
             record['exactRangeRequests'] = peer.range_requests
             record['unsolicitedRequests'] = peer.unsolicited_requests

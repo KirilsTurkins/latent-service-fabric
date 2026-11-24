@@ -45,20 +45,31 @@ python tools/stateful_reference_project.py --language dotnet --draft-id alice --
 ```
 
 These commands create editable sources without selecting an HTTP provider.
-To capture the installed adapter requirements, add
-`--http-profile "qualified-http-v1:<configured endpoint digest>"` at creation.
-Use the actual configured adapter's profile; a project creator cannot invent it.
-The closed signed document selects `qualified-http-effect-v1`, operation `http`
-and `http-body-value-v1`, with a 22,528-byte response allowance. Without the
-profile, no obsolete put-once descriptor is emitted. Staging and dispatch still
-need independently installed current rules and grants.
+For a deployment that accepts edits, select both installed provider profiles
+at creation with `--http-profile "qualified-http-v1:<configured endpoint digest>"`
+and `--event-profile "js-window-v1:<configured event digest>"`. The package
+carries each exact requirements document with the same signed transaction
+companion. The node's strict edit operation installs `deferredHttp` and
+`deferredEvent` with their own current staging and dispatch policies. Fresh
+query operations need neither provider setting.
+
+For a disposable node with separate Alice and Bob publications, sign both
+completed builds together with
+`capsule_authoring demo-sign-transaction <private-output> <alice-build> <bob-build>`.
+For the browser workflow, build `angular` with `tools/build_angular_package.py`
+and include its assembled output with
+`capsule_authoring demo-sign-stateful-reference <private-output> <angular-build> <alice-build> <bob-build>`.
+Use the resulting short-lived policy on the disposable node and publish each
+package using its own evidence directory. The Angular frontend uses
+`latent web publish` and the two guests use `latent release publish-package`.
 
 The captured SDK and original template lock remain unchanged. The ordinary
 language build captures the edited application source and binding inputs.
 `order-draft-source.json` identifies the selected source/WIT/schema; the
 transaction companion declares only strict `edit` and fresh read-only `query`.
-Application state allowances narrow to 4 KiB reads, 1 KiB writes and two intents;
-the selected language's existing compiler/runtime/watchdog limits remain intact.
+The app budgets 1 MiB for the host's bounded value reads, 64 KiB of write and
+intent accounting, and two intents.
+The selected language keeps its existing compiler, runtime and watchdog limits.
 
 The shared browser client uses the existing `transaction-http-v1` routes,
 `idempotency-key`, explicit abort-fence retry and minimum-view query headers.
@@ -95,6 +106,18 @@ lookup, retaining both existing buffered and static profiles. These declarations
 confer no namespace, result-read or effect grants. Their policy identities,
 provider installations and current-user access must be applied independently
 through the maintained operator workflow.
+
+Deploy the signed frontend as `stateful-reference` with the approved Angular
+renderer limits and one outbound request. Use the ordinary two control workers
+so the covered clock can renew during package verification. Keep two execution
+cells available so a renderer can fetch a fresh query through the same listener.
+Pass `--renderer-selection ../renderer-selection.json` to the deployment helper
+with the frontend's current `publication`, `revision` and `deploymentGeneration`.
+Apply the emitted exact GET and HEAD document triggers alongside the draft API
+triggers.
+The local browser fixture uses the loopback origin
+`http://stateful.localhost:19092` so Chromium can generate command identities
+with Web Crypto. Configure that exact origin in the node's browser ingress.
 
 For an incoming edit, pass `--inbox-binding ../protected-inbox-binding.json` to
 the deployment helper and install its `transactionalTrigger` in the node's

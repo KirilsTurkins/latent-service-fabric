@@ -29,14 +29,15 @@ def package(cli: Path, source: Path, artifacts: dict, deadline: float, check, *,
     capsule = decode(paths.read(source, artifacts["capsule"], MAX_DOCUMENT))
     require(capsule.get("component", {}).get("digest") == digest(component), "built-component-digest-mismatch")
     transaction_binding.check_package(source, artifacts, capsule)
-    invoke(cli, source, ["validate", "capsule", str(source / artifacts["capsule"])], deadline, check)
+    profile = ["--phase4"] if "transactionBinding" in artifacts else []
+    invoke(cli, source, [*profile, "validate", "capsule", str(source / artifacts["capsule"])], deadline, check)
     destination = source / artifacts["packageRoot"]
     if not cached:
         require(not destination.exists(), "compiler-must-not-assemble-package")
         manifest = source / artifacts["packageSource"]
-        invoke(cli, source, ["package", "build", "--source", str(manifest), "--input-root", str(manifest.parent),
+        invoke(cli, source, [*profile, "package", "build", "--source", str(manifest), "--input-root", str(manifest.parent),
                             "--output-dir", str(destination)], deadline, check)
-    result = invoke(cli, source, ["package", "inspect", str(destination)], deadline, check)
+    result = invoke(cli, source, [*profile, "package", "inspect", str(destination)], deadline, check)
     sha(result.get("packageDigest"))
     require(result.get("componentDigest") == digest(component) and result.get("trustEvaluated") is False
             and result.get("executionAuthorized") is False, "assembled-package-identity-mismatch")
