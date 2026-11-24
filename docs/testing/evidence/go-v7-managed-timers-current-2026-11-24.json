@@ -1,0 +1,597 @@
+{
+  "issue": 742,
+  "sourceRevision": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+  "platform": "linux-x86_64",
+  "profile": "go-component-activation-v7",
+  "compilerCommand": "python tools/qualify_go_activation.py --runtime-profile go-component-activation-v7 --fixture <fixture> --output <fresh-directory>",
+  "signedCommand": "python tools/qualify_go_synchronization.py --campaign <campaign> --source-commit <sourceRevision> --fixture <compiled-fixture> --output <fresh-directory>",
+  "components": {
+    "zero-clock": {
+      "compileReceiptDigest": "sha256:dac2e2de22384fd6398165916f0654bc74177df8d4e1c7da00ccb881b38e8a6c",
+      "sourceDigest": "sha256:dd4fc96a59c7b7a49653dadbc080ebca4503e1f07a69fbe187e7909eebd24726",
+      "componentDigest": "sha256:14900ed59e78b2cd77bdcfa2db4e7d846a7775c381af7816e764599bb37752be",
+      "bindingDigest": "sha256:82a839378608abf8dbd8b9ba4ee59055da630c38051786d8416f560387535c1b"
+    },
+    "timers": {
+      "compileReceiptDigest": "sha256:54eb095e76f69b80950afd14eae8722ed6700c45685470c3b5726d0d6db97407",
+      "sourceDigest": "sha256:f3c8a6cb826ea9f9f9e5b482ddcfd85dd8cdfc82adbd817ce1ad5f64ec8fb6dc",
+      "componentDigest": "sha256:6d27517ac9eb8ef6a1e4ac6860ee88f3e7388539f2500717a2254d976faae532",
+      "bindingDigest": "sha256:82a839378608abf8dbd8b9ba4ee59055da630c38051786d8416f560387535c1b"
+    },
+    "timer-fired": {
+      "compileReceiptDigest": "sha256:f361988b761981b4d749ec616a4085bb444164d21862e46b8ea66dc8a4132522",
+      "sourceDigest": "sha256:f701a19631e1cc36ebafd1971a44acff45db3008e8c1f261ee7ccb4ad2021cdb",
+      "componentDigest": "sha256:a756052c572b0d4dfa38487be992402448f3dfd2fd4f697d07d8ccb2c79d23eb",
+      "bindingDigest": "sha256:82a839378608abf8dbd8b9ba4ee59055da630c38051786d8416f560387535c1b"
+    }
+  },
+  "campaigns": [
+    {
+      "campaign": "zero-clock-v7",
+      "fixture": "zero-clock",
+      "receiptDigest": "sha256:66f1aab5f190a873b9646e93986a353dacdabfc2c98d7981b2da542b3fc8ab72",
+      "case": "runtime::go::zero_clock::signed_zero_origin_five_nanosecond_timer_retires_original_wait",
+      "signedCases": [
+        {
+          "case": "zero-to-five-nanoseconds",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "outcome": "success",
+          "pendingOriginalWait": true,
+          "pendingProviderWaits": 0,
+          "rawAfter": 5,
+          "rawBefore": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0
+        }
+      ],
+      "signedInvocations": 1,
+      "guestTaskCeiling": 16,
+      "managedCapacity": 8,
+      "queuedWorkCeiling": 16,
+      "waitCeiling": 4,
+      "timerCeiling": 2,
+      "providerObservations": [
+        "one-timer-accepted",
+        "one-original-wait-admitted",
+        "wait-polled-pending-at-zero",
+        "same-clock-advanced-five",
+        "root-closed-with-no-wait-or-timer"
+      ],
+      "manualClockAndWaitAreTestInfrastructure": true,
+      "fullTimerRaceMatrixQualified": false,
+      "kernelRetirementQualified": false,
+      "fullGoRuntimeQualified": false
+    },
+    {
+      "campaign": "ticker-clock-v7",
+      "fixture": "zero-clock",
+      "receiptDigest": "sha256:225693574d7c748747e4955a2a11f98d3a87d8c5bfff7208439d7cfb76c600ee",
+      "case": "runtime::go::zero_clock::signed_zero_clock_ticker_coalesces_missed_periods",
+      "signedCases": [
+        {
+          "advances": [
+            5,
+            29,
+            30
+          ],
+          "case": "zero-clock-ticker-coalescing",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "nominalMissedPeriods": 3,
+          "outcome": "success",
+          "pendingDeadlines": [
+            5,
+            10,
+            30
+          ],
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0
+        }
+      ],
+      "signedInvocations": 1,
+      "guestTaskCeiling": 16,
+      "managedCapacity": 8,
+      "queuedWorkCeiling": 16,
+      "waitCeiling": 4,
+      "timerCeiling": 2,
+      "providerObservations": [
+        "one-timer-admitted",
+        "three-original-waits-admitted",
+        "pending-at-five-ten-thirty",
+        "no-immediate-catchup-at-twenty-nine",
+        "root-closed-with-no-wait-or-timer"
+      ],
+      "manualClockAndWaitAreTestInfrastructure": true,
+      "fullTimerRaceMatrixQualified": false,
+      "kernelRetirementQualified": false,
+      "fullGoRuntimeQualified": false
+    },
+    {
+      "campaign": "wall-clock-v7",
+      "fixture": "zero-clock",
+      "receiptDigest": "sha256:5c919bea7e85b8defd370cc43e1676cd8dd36ac0fafeae03472f960e8fcc8d0a",
+      "case": "runtime::go::zero_clock::signed_zero_clock_timer_survives_wall_jumps",
+      "signedCases": [
+        {
+          "case": "pending-timer-wall-jumps",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "monotonicAfter": 5,
+          "monotonicBefore": 0,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "sameWaitRepolls": 2,
+          "wallOffsetsMillis": [
+            60000,
+            -60000
+          ]
+        }
+      ],
+      "signedInvocations": 1,
+      "guestTaskCeiling": 16,
+      "managedCapacity": 8,
+      "queuedWorkCeiling": 16,
+      "waitCeiling": 4,
+      "timerCeiling": 2,
+      "providerObservations": [
+        "one-timer-accepted",
+        "one-original-wait-admitted",
+        "wait-polled-pending-at-zero",
+        "original-wait-repolled-pending-after-each-wall-jump",
+        "same-monotonic-clock-advanced-five",
+        "root-closed-with-no-wait-or-timer"
+      ],
+      "manualClockAndWaitAreTestInfrastructure": true,
+      "fullTimerRaceMatrixQualified": false,
+      "kernelRetirementQualified": false,
+      "fullGoRuntimeQualified": false
+    },
+    {
+      "campaign": "sleep-cancel-v7",
+      "fixture": "zero-clock",
+      "receiptDigest": "sha256:649671f6535e30faed5769e14040780f2132741ee738fc849a06069cad885936",
+      "case": "runtime::go::zero_clock::signed_sleep_cancellation_precedes_elapsed_edge",
+      "signedCases": [
+        {
+          "case": "accepted-before-sleep-edge",
+          "fresh": "success",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "monotonicAfter": 5,
+          "monotonicAtCancel": 0,
+          "outcome": "cancelled",
+          "pendingOriginalWait": true,
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0
+        }
+      ],
+      "signedInvocations": 2,
+      "guestTaskCeiling": 16,
+      "managedCapacity": 8,
+      "queuedWorkCeiling": 16,
+      "waitCeiling": 4,
+      "timerCeiling": 2,
+      "providerObservations": [
+        "sleep-host-wait-polled-pending",
+        "root-cancellation-accepted-before-monotonic-edge",
+        "original-wait-retired",
+        "fresh-activation-succeeded"
+      ],
+      "manualClockAndWaitAreTestInfrastructure": true,
+      "fullTimerRaceMatrixQualified": false,
+      "kernelRetirementQualified": false,
+      "fullGoRuntimeQualified": false
+    },
+    {
+      "campaign": "managed-v7-timers",
+      "fixture": "timers",
+      "receiptDigest": "sha256:af8eae2768db777c85564dfdbf27a74a0c0504ae97aaa34144af6d7ca471b77a",
+      "case": "runtime::go::managed_timers::signed_managed_v7_timers_gc_callbacks_and_stop_reset_preserve_original_owners",
+      "signedCases": [
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 0,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 1,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 2,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 3,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 4,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 5,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 6,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 18,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 19,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 20,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 9,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 11,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 12,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 13,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 14,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 15,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 16,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 0,
+          "mode": 17,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 0,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 1,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 2,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 3,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 4,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 5,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 6,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 18,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 19,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 20,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 9,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 11,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 12,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 13,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 14,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 15,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 16,
+          "outcome": "success"
+        },
+        {
+          "case": "ordinary",
+          "iteration": 1,
+          "mode": 17,
+          "outcome": "success"
+        },
+        {
+          "case": "timer-capacity",
+          "iteration": 0,
+          "mode": 8,
+          "outcome": "guest-trap"
+        },
+        {
+          "case": "fresh-after-timer-capacity",
+          "iteration": 0,
+          "mode": 0,
+          "outcome": "success"
+        },
+        {
+          "case": "callback-failure",
+          "iteration": 0,
+          "mode": 10,
+          "outcome": "guest-trap"
+        },
+        {
+          "case": "fresh-after-callback-failure",
+          "iteration": 0,
+          "mode": 0,
+          "outcome": "success"
+        },
+        {
+          "case": "cancel-original-root",
+          "iteration": 0,
+          "mode": 7,
+          "outcome": "cancelled"
+        },
+        {
+          "case": "deadline-original-root",
+          "iteration": 0,
+          "mode": 7,
+          "outcome": "deadline-exceeded"
+        },
+        {
+          "case": "fresh-after-cancel-deadline",
+          "iteration": 0,
+          "mode": 0,
+          "outcome": "success"
+        }
+      ],
+      "signedInvocations": 43,
+      "guestTaskCeiling": 16,
+      "managedCapacity": 8,
+      "queuedWorkCeiling": 16,
+      "waitCeiling": 4,
+      "timerCeiling": 2,
+      "nativeReferenceModes": [
+        0,
+        1,
+        2,
+        3,
+        5,
+        6,
+        18,
+        19,
+        20,
+        9,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ],
+      "signedObservationCount": 43,
+      "fullTimerRaceMatrixQualified": false,
+      "fullAggregateGoCostsQualified": false,
+      "fullGoRuntimeQualified": false
+    },
+    {
+      "campaign": "timer-fired-v7",
+      "fixture": "timer-fired",
+      "receiptDigest": "sha256:253dc1e65ba7bca5e562b5ff02b7ae12a35d700999b40b43b22baf986d0d73e1",
+      "case": "runtime::go::timer_overlap::signed_fired_one_shot_public_stop_and_reset_wait_for_original_next",
+      "signedCases": [
+        {
+          "case": "stop",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 0,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 1
+        },
+        {
+          "case": "reset",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 1,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 2
+        },
+        {
+          "case": "returned-stop",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 2,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 3
+        },
+        {
+          "case": "returned-reset",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 3,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 4
+        },
+        {
+          "case": "returned-cancel",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 4,
+          "outcome": "cancelled",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 5
+        },
+        {
+          "case": "fresh",
+          "liveInstances": 0,
+          "liveStores": 0,
+          "mode": 0,
+          "outcome": "success",
+          "pendingProviderWaits": 0,
+          "reservations": 0,
+          "reservedFuel": 0,
+          "reservedMemory": 0,
+          "storesCreated": 6
+        }
+      ],
+      "signedInvocations": 6,
+      "guestTaskCeiling": 16,
+      "managedCapacity": 8,
+      "queuedWorkCeiling": 16,
+      "waitCeiling": 4,
+      "timerCeiling": 2,
+      "returnedTimerWitnesses": [
+        {
+          "activation": "go-timer-returned-stop",
+          "modeledWitnessBytes": 608
+        },
+        {
+          "activation": "go-timer-returned-reset",
+          "modeledWitnessBytes": 608
+        }
+      ],
+      "returnedCancellationWitness": {
+        "activation": "go-timer-returned-cancel",
+        "modeledWitnessBytes": 608
+      },
+      "diagnosticGuestOverlay": true,
+      "byteIdenticalProductionGuest": false,
+      "fullTimerRaceMatrixQualified": false,
+      "kernelRetirementQualified": false,
+      "fullAggregateGoCostsQualified": false,
+      "fullGoRuntimeQualified": false
+    }
+  ],
+  "signedInvocations": 54
+}

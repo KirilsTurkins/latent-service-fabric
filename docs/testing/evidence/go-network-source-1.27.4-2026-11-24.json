@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "issue": 742,
+  "observedOn": "2026-11-24",
+  "runtimeProfile": "go-net-declared-streams-v1",
+  "goVersion": "1.27.4",
+  "sourceArchive": {
+    "url": "https://dl.google.com/go/go1.27.4.linux-amd64.tar.gz",
+    "bytes": 70680823,
+    "sha256": "7226736c2339719cda28fbf3a54d71aa63bcefe376e98cef00034268dab24840"
+  },
+  "previousSource": {
+    "version": "1.27.3",
+    "url": "https://raw.githubusercontent.com/golang/go/go1.27.3/src/net/dial.go",
+    "sha256": "1ea8719962e33747db841fae362a339c29315fde2c5554a344b2935aa6f803b5"
+  },
+  "acquisition": "The archive digest and each of the four selected source members matched the official and the maintained compiler installations.",
+  "inputAndProjection": {
+    "crypto/tls/cache.go": {
+      "sourceSha256": "553ad7a40a9b198bea838833e3e5ed5660ec9b031ad75f58a9ea119e44bd3bfb",
+      "projectedSha256": "22b814966b7b64ab962c581c8216702158e5c7e9e9ad20359fa3fae6235de959"
+    },
+    "net/dial.go": {
+      "sourceSha256": "b1213168e51f9daa3ad11c8e1612144dc430d681b62c9a4c3e3292136d8997fd",
+      "projectedSha256": "815d340bbc0ed3a04517561c2a3c660e75fdd878373fe7e678dcab2834fa246b"
+    },
+    "net/lookup.go": {
+      "sourceSha256": "e8b6b0a0dc7ca0715fe14e6599b1784dc85ce59689e0cb3f9a7fe3eea26ada19",
+      "projectedSha256": "2f67a1df1cf15a9826ea03e6dcce6fe4f6662fc2542d192929843f36ea937e57"
+    },
+    "net/tcpsock.go": {
+      "sourceSha256": "0c3392bd7c2966f894e01ea27514623cf09dc2660e426049219f7e5ee3ec0f74",
+      "projectedSha256": "dcb7eb9eb8fcdaf082f1582a41c1be1916ca51a5b7a4052653d558f5457607eb"
+    }
+  },
+  "changedUpstreamMethods": [
+    "DialIP",
+    "DialTCP",
+    "DialUDP"
+  ],
+  "completeSourceComparison": "Replacing just the three changed method bodies with their authenticated 1.27.3 preimages reconstructed the complete older file byte for byte.",
+  "dialContextSourceChanged": false,
+  "directTcpDialSupported": false,
+  "retainedUpstreamMethods": [
+    "DialUDP",
+    "DialIP"
+  ],
+  "upstreamChange": "The three direct methods now convert local and remote netip addresses only when valid. The maintained ordinary DialContext entry delegates to the declared-stream provider. Its direct DialTCP entry returns the existing unsupported error.",
+  "originalCompilerResult": "The signed SMTP programme stopped before guest compilation with go-runtime-source-drift:net/dial.go. No signed call occurred in that attempt.",
+  "scope": "Exact compiler source and generated projection. Runtime and production stream-provider qualification have separate receipts."
+}
