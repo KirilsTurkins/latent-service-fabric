@@ -118,6 +118,20 @@ class CThreadingCompatibility(unittest.TestCase):
                 self.inspection['hostAbiDigest'] = digest(encode(self.host))
         self.commands.run.assert_not_called()
 
+    def test_thread_proof_cannot_hide_a_separate_interface_or_surface_failure(self):
+        other = "outside:weather/forecast@1.0.0"
+        port = self.inspection["findings"][0]
+        for differences, findings, kind in (({}, [port, {**port, "operation": other}], "unsupported-import"),
+                ({"missing-declared-export": [other]}, [port], "missing-declared-export")):
+            refusal = supplement.base.FinalComponentIncompatible(self.host["id"], differences, findings)
+            with self.subTest(kind=kind), patch.object(supplement.base, "inspect", side_effect=refusal), \
+                    self.assertRaises(supplement.base.FinalComponentIncompatible) as error:
+                supplement.inspect(self.commands, self.tool, self.output, self.surface, profile=threading.PROFILE,
+                                   proof=self.proof, transformer=self.tool)
+            self.assertEqual(error.exception.diagnostic, {"hostAbiProfile": self.host["id"], "kind": kind, "interface": other})
+            self.assertFalse((self.output / supplement.NAME).exists())
+            self.commands.run.assert_not_called()
+
     def test_full_recomputed_component_mismatch_refuses_without_a_supplement(self):
         self.commands.run.side_effect = lambda *args: args[-1].write_bytes(b'foreign recomputed component')
         with self.assertRaisesRegex(Exception, 'full-recomputed-component-proof'): self.invoke()

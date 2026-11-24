@@ -254,6 +254,8 @@ class FinalComponentIncompatible(ValueError):
 
     def __init__(self, profile, differences, findings):
         super().__init__("final-component-compatibility-failed; inspect compatibility-inspection.json")
+        self.differences = differences
+        self.findings = findings
         unknown = next((item["operation"] for item in findings if item["classification"] == "unknown-import"), None)
         self.diagnostic = None
         if unknown is not None or differences:
