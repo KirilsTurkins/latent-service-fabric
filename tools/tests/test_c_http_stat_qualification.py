@@ -25,7 +25,8 @@ class StatQualificationControls(unittest.TestCase):
             self.assertEqual(read_json(project / 'capsule-project.json')['runtimeProfile'], FETCH_PROFILE)
             self.assertEqual(stat.CASES, ('missing-grant', 'normal', 'denied', 'not-found', 'redirect', 'oversized', 'fresh',
                                           'range', 'range-ignored', 'range-denied',
-                                          'range-unsolicited', 'range-before'))
+                                          'range-unsolicited', 'range-before', 'range-chunked',
+                                          'range-short-body', 'range-long-body'))
 
     def test_policy_separates_head_and_get_and_refuses_wrong_provider(self):
         descriptor = {'capability': stat.owner.HTTP, 'profile': 'bounded-streaming-http-identity-v1',

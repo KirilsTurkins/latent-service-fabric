@@ -33,7 +33,7 @@ from tools.standard_http.vectors import DOMAIN, head, json_bytes
 from tools.static_api.node import policy
 
 CASES = ('missing-grant', 'normal', 'denied', 'not-found', 'redirect', 'oversized', 'fresh', 'range', 'range-ignored', 'range-denied',
-         'range-unsolicited', 'range-before')
+         'range-unsolicited', 'range-before', 'range-chunked', 'range-short-body', 'range-long-body')
 PROBE = 'sdk/c-guest/runtime-fixtures/libfetch/stat-probe.c'
 SELF = 'tools/c_http_stat_qualification.py'
 WORKFLOW = '.github/workflows/c-http-stat-qualification.yml'
@@ -59,11 +59,31 @@ def invalid_partial_response(request, *, unsolicited):
     return head(206, 4, headers=((b'Content-Range', value),)) + b'abcd'
 
 
+# The three declared offsets select complete, shorter and longer HTTP bodies.
+CHUNKED_RANGES = {b'bytes=6-': 6, b'bytes=7-': 7, b'bytes=8-': 8}
+
+
+def chunked_range_response(offset):
+    full = json_bytes(DOMAIN)
+    body = full[offset:]
+    if offset == 7:
+        body = body[:-1]
+    elif offset == 8:
+        body += b'!'
+    middle = len(body) // 2
+    parts = (body[:middle], body[middle:])
+    chunks = b''.join(f'{len(part):x}'.encode() + b'\r\n' + part + b'\r\n' for part in parts)
+    return (b'HTTP/1.1 206 Partial Content\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n'
+            + f'Content-Range: bytes {offset}-{len(full) - 1}/{len(full)}\r\n\r\n'.encode()
+            + chunks + b'0\r\n\r\n')
+
+
 class RangePeer(Peer):
     """Serve the selected valid and invalid ranges on existing fixture paths."""
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.range_requests = 0
+        self.chunked_range_requests = {offset: 0 for offset in CHUNKED_RANGES.values()}
         self.unsolicited_requests = 0
         self.early_range_requests = 0
         self.oversized_requests = 0
@@ -75,6 +95,8 @@ class RangePeer(Peer):
             if record.vector.identity == 'oversized-body':
                 require(b'range' not in record.parser.headers, 'c-oversized-unexpected-range')
                 self.oversized_requests += 1
+            elif record.vector.identity == 'domain-json' and record.parser.headers.get(b'range') in CHUNKED_RANGES:
+                self.chunked_range_requests[CHUNKED_RANGES[record.parser.headers[b'range']]] += 1
             elif record.vector.identity == 'domain-json' and b'range' not in record.parser.headers:
                 self.unsolicited_requests += 1
             else:
@@ -96,6 +118,8 @@ class RangePeer(Peer):
             # HEAD carries representation metadata but sends no response body.
             output = head(404, 1 << 63)
             self.wide_error_responses += 1
+        elif record.vector.identity == 'domain-json' and record.parser.headers.get(b'range') in CHUNKED_RANGES:
+            output = chunked_range_response(CHUNKED_RANGES[record.parser.headers[b'range']])
         elif record.vector.identity == 'method-bytes':
             output = invalid_partial_response(record.parser, unsolicited=False)
         elif b'range' not in record.parser.headers:
@@ -139,7 +163,8 @@ def cell(client, probe, target, peer, output, case):
                'not-found': 'http-404', 'redirect': 'redirect', 'oversized': 'oversized-body',
                'fresh': 'domain-json', 'range': 'domain-json',
                'range-ignored': 'response-boundary', 'range-denied': 'http-404',
-               'range-unsolicited': 'domain-json', 'range-before': 'method-bytes'}
+               'range-unsolicited': 'domain-json', 'range-before': 'method-bytes',
+               'range-chunked': 'domain-json', 'range-short-body': 'domain-json', 'range-long-body': 'domain-json'}
     require(case in CASES, 'c-stat-closed-case-set')
     before, revision = peer.observation(), owner.selected_revision(client, target)
     validate(before)
@@ -160,10 +185,14 @@ def cell(client, probe, target, peer, output, case):
         if case != 'missing-grant':
             require(response['requestDispatched'] is True
                     and response['data']['resolvedRevision'] == revision, 'c-stat-known-current-invocation')
+        def checksum(data):
+            value = 0
+            for byte in data: value = (value * 33 + byte) & 0xffffffff
+            return value
         def range_result(offset, total, data):
-            checksum = 0
-            for byte in data: checksum = (checksum * 33 + byte) & 0xffffffff
-            return (0, [{'ok': f'{offset}:{len(data)}:{total}:{len(data)}:{checksum}'}])
+            return (0, [{'ok': f'{offset}:{len(data)}:{total}:{len(data)}:{checksum(data)}'}])
+        def length_error(exposed):
+            return (3, [{'err': f'range-body-length:{len(exposed)}:{checksum(exposed)}'}])
         domain = json_bytes(DOMAIN)
         expected = {
             'normal': (0, [{'ok': f'{len(json_bytes(DOMAIN))}:0:0'}]),
@@ -177,6 +206,9 @@ def cell(client, probe, target, peer, output, case):
             'range-denied': (3, [{'err': 'permission-denied'}]),
             'range-unsolicited': (3, [{'err': 'invalid-content-range'}]),
             'range-before': (3, [{'err': 'invalid-content-range'}]),
+            'range-chunked': range_result(6, len(domain), domain[6:]),
+            'range-short-body': length_error(domain[7:-1]),
+            'range-long-body': length_error(domain[8:]),
         }
         consumed = response['data']['consumption']
         if case == 'missing-grant':
@@ -453,17 +485,19 @@ def run_node(artifact, native, output, deadline):
                     'c-stat-signed-admission')
             target = deploy(client, source / 'deployment.json', published['data']['operation']['publication']['id'])
             require(target['grants'] == [], 'c-stat-no-ambient-grants')
-            stage = 'twelve-signed-head-range-redirect-and-oversized-cells'
+            stage = 'signed-head-range-redirect-and-oversized-cells'
             target, record['cases'] = exercise_cells(client, node, probe, source, target, peer, output)
-            require(len(CASES) == 12 and [row['case'] for row in record['cases']] == list(CASES),
-                    'c-stat-twelve-primary-invocations')
+            require([row['case'] for row in record['cases']] == list(CASES),
+                    'c-stat-all-primary-invocations')
             final_peer = peer.observation()
             validate(final_peer)
-            require(final_peer['acceptedConnections'] == final_peer['startedRequests'] == 9
+            require(final_peer['acceptedConnections'] == final_peer['startedRequests'] == 12
                     and all(row['role'] == 'primary' for row in final_peer['requests'])
                     and peer.range_requests == 3 and peer.unsolicited_requests == 1
-                    and peer.early_range_requests == 1 and peer.oversized_requests == 1,
-                    'c-stat-nine-primary-contacts-three-ranges-one-unsolicited-one-early-one-oversized')
+                    and peer.early_range_requests == 1 and peer.oversized_requests == 1
+                    and peer.chunked_range_requests == {6: 1, 7: 1, 8: 1},
+                    'c-stat-twelve-primary-contacts-including-three-chunked-ranges')
+            record['chunkedRangeRequests'] = {str(offset): count for offset, count in peer.chunked_range_requests.items()}
             record['exactRangeRequests'] = peer.range_requests
             record['unsolicitedRequests'] = peer.unsolicited_requests
             record['earlyRangeRequests'] = peer.early_range_requests
@@ -528,7 +562,7 @@ def qualify(args):
               'full690Qualified': False, 'fullCCostModelQualified': False,
               'publisherAuthenticated': False, 'releasePublished': False,
               'limits': {'parentSeconds': 1320, 'commandSeconds': 900, 'cleanupReserveSeconds': 5,
-                         'jobs': 2, 'components': 1, 'cells': 13, 'clientCalls': 384, 'invocationProcesses': 13}}
+                         'jobs': 2, 'components': 1, 'cells': len(CASES) + 1, 'clientCalls': 384, 'invocationProcesses': len(CASES) + 1}}
     stage = 'source'
     def source_inputs(capture=False):
         rows = http_sources(commands, output, capture=capture, runtime_profile=FETCH_PROFILE)
@@ -565,11 +599,11 @@ def qualify(args):
         c_capsule_build.build(project, artifact, native['capsule_contracts'], native['package'],
             'https://github.com/KirilsTurkins/latent-service-fabric', installed=installed, _deadline=commands.deadline)
         result['build'] = http_build_evidence(artifact, original, runtime_profile=FETCH_PROFILE)
-        stage = 'twelve-signed-head-range-redirect-and-oversized-cells'
+        stage = 'signed-head-range-redirect-and-oversized-cells'
         result['node'] = run_node(artifact, native, output / 'node', commands.deadline)
         require(result['node']['status'] == 'passed'
                 and [row['case'] for row in result['node']['cases']] == list(CASES)
-                and result['node']['missingProvider']['status'] == 'passed', 'c-stat-exact-thirteen-outcomes')
+                and result['node']['missingProvider']['status'] == 'passed', 'c-stat-complete-primary-and-missing-provider-outcomes')
         require(helpers == source_inputs() and source_identity(ROOT) == source
                 and sdk == inventory(c_capsule_project.sdk_inputs(ROOT, threading=True))
                 and original == inventory(snapshot(project))

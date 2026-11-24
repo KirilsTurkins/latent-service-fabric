@@ -136,8 +136,11 @@ local-node result is not a release-publication or complete C runtime qualificati
 For an ordinary GET with a positive `url->offset`, the backend sends a single
 open-ended byte `Range`; the HTTP destination must explicitly allow the `range`
 request header as well as the GET path. A valid 206 must include a single
-well-formed `Content-Range` and matching `Content-Length`. Its actual start and
-body length are reported in the URL, and a known complete size in `url_stat`.
+well-formed `Content-Range`. A supplied `Content-Length` must agree with it.
+For a chunked response the stream checks the decoded bytes against the range.
+Truncated or excess data sets `ferror` and preserves the valid prefix for the
+caller. The URL reports the actual start and range length, and `url_stat`
+reports the complete representation size when known.
 The start may be earlier than requested; a known complete size must end at the
 last returned byte.
 If the server ignores the request and returns 200, the actual offset is zero.
