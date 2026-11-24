@@ -2,15 +2,83 @@ use super::*;
 use crate::transaction_runtime::tests::fixture::Fixture;
 use crate::transaction_runtime::CommandCompletion;
 use crate::TransactionActivationAdmission;
-use latent_activation::ActivationOutcome;
+use latent_activation::{ActivationOutcome, ActivationSuccess};
 use latent_core::{ActivationTerminalState, PlatformError, PlatformErrorCode};
 use latent_executor::transaction::{Mode, TransactionHost};
+use latent_state::embedded::Family;
 
 struct Original {
     admission: Arc<NativeTransactionAdmission>,
     host: Arc<StateTransactionHost>,
     guest: Arc<dyn TransactionHost>,
     disposition: CommandCompletionDisposition,
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn exhausted_precommit_limit_persists_the_original_physical_abort() {
+    let fixture = Fixture::new().await;
+    let (admission, envelope, budget) = fixture.invocation(false, "exhausted-precommit");
+    let guest = admission.admit(&envelope, &budget).await.unwrap();
+    guest.acquire(Mode::Command).unwrap();
+    guest
+        .put(
+            b"counter".to_vec(),
+            latent_core::transaction_contract::Value {
+                bytes: b"uncommitted".to_vec(),
+                media_type: "application/octet-stream".into(),
+                metadata: Vec::new(),
+            },
+        )
+        .await
+        .unwrap();
+    let super::super::TransactionAdmissionResult::Command { claim, host } =
+        admission.take_result().unwrap().unwrap()
+    else {
+        panic!("original command host absent");
+    };
+    let original = claim.record().clone();
+    host.finish_guest_access();
+    let finalized = budget.finalize_at(None, std::time::Instant::now());
+    let control = fixture.commit_control(&envelope, &budget);
+    let outcome = ActivationOutcome::Succeeded(ActivationSuccess {
+        output: vec![0; latent_core::transaction_contract::VALUE_BYTES + 1].into(),
+        output_media_type: "application/octet-stream".into(),
+        metadata: Default::default(),
+        consumption: finalized.consumption().clone(),
+        committed_state_version: None,
+        effect_ids: Vec::new(),
+    });
+    let retired = CommandCompletion::new(
+        claim,
+        host.clone(),
+        fixture.effects.clone(),
+        fixture.time.clone(),
+        control.clone(),
+    )
+    .unwrap()
+    .finish(outcome)
+    .await;
+    let confirmed = admission
+        .persist_terminal_abort(retired, &host, None, &control, None, None)
+        .await;
+    let CommandCompletionDisposition::Durable {
+        command, result, ..
+    } = confirmed
+    else {
+        panic!("precommit resource exhaustion did not produce a durable abort");
+    };
+    assert_eq!(command.id(), original.id());
+    assert_eq!(command.attempt(), original.attempt());
+    assert_eq!(command.fingerprint(), original.fingerprint());
+    assert!(command.abort_proof().is_some());
+    assert_eq!(
+        result.code(),
+        Some(PlatformErrorCode::ResourceExhausted.wire_code())
+    );
+    assert_eq!(fixture.rows(Family::State).await, 0);
+    assert_eq!(fixture.rows(Family::Outbox).await, 0);
+    drop((result, guest, host, admission));
+    fixture.shutdown().await;
 }
 
 async fn retired_original(fixture: &Fixture) -> Original {

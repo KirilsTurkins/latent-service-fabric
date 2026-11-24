@@ -68,6 +68,7 @@ impl NativeTransactionAdmission {
         };
         let code = match (reason, failure_code) {
             (AtomicError::Conflict, _) => latent_core::PlatformErrorCode::StateConflict,
+            (AtomicError::Limit, None) => latent_core::PlatformErrorCode::ResourceExhausted,
             (AtomicError::Unavailable, Some(code)) => code,
             _ => {
                 return CommandCompletionDisposition::Retired {
