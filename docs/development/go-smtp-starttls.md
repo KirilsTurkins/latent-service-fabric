@@ -103,9 +103,15 @@ effect-free retry before the client is constructed. This is not a retry policy
 of the SMTP library, and no network call or effect is retried by the fixture.
 The selected module graph and original ZIPs are captured and checked before the
 maintained offline Go authoring build, which uses its existing compiler namespace.
-This route requires its own signed result and does not inherit the earlier v5
-or v7 standard-library observation. It does not qualify the normal provider,
-host TLS accounting or final kernel retirement.
+
+The signed Go 1.27.4 component completed seven calls on the reference provider.
+The peer received one connection per call. For the delivery case, the client
+upgraded the connection to TLS 1.3 and called `Client.SendMail`. The loopback
+peer accepted one complete message, sent the `250` reply and observed `QUIT`.
+The guest returned `published-smtp-delivery-acknowledged`. Each of the seven
+calls ended with zero live Stores, instances, stream owners and I/O owners.
+The production provider, host TLS accounting and final kernel retirement remain
+open. [Signed delivery record](../testing/evidence/go-published-smtp-acknowledged-2026-11-24.json)
 
 The separately selected `published-lost-reply` owner captures the same published
 SMTP dependency graph for a different fixture. Its controlled local peer reads
