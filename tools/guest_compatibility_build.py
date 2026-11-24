@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from tools import guest_compatibility as compatibility
-from tools.dev_workflow.common import decode, encode, digest, require
+from tools.dev_workflow.common import DevError, decode, encode, digest, require, validate_link_diagnostic
 from tools.rust_capsule_project import ROOT, inventory, read_file, read_json, write_json
 
 RECIPE = ("tools/guest_compatibility.py", "tools/guest_compatibility_build.py",
@@ -249,6 +249,27 @@ def interface_names(graph: dict, world: str | None = None, *, host_interfaces=()
     return result
 
 
+class FinalComponentIncompatible(ValueError):
+    """Keep the existing machine error and explain the first observed link failure."""
+
+    def __init__(self, profile, differences, findings):
+        super().__init__("final-component-compatibility-failed; inspect compatibility-inspection.json")
+        unknown = next((item["operation"] for item in findings if item["classification"] == "unknown-import"), None)
+        self.diagnostic = None
+        if unknown is not None or differences:
+            kind, names = ("unsupported-import", [unknown]) if unknown is not None else next(iter(differences.items()))
+            reason = kind.replace("-", " ")
+            try:
+                self.diagnostic = validate_link_diagnostic({"hostAbiProfile": profile, "kind": kind, "interface": names[0]})
+            except DevError:
+                pass  # Keep the original link refusal when a name cannot be displayed on the frontend.
+            else:
+                reason += " " + names[0]
+        else:
+            reason = next(item["classification"] for item in findings if item["classification"] in compatibility.BLOCKERS)
+        self.detail = f"{profile} cannot link the component ({reason}). See compatibility-inspection.json."
+
+
 def inspect(commands, wasm: Path, output: Path, declared: dict,
             *, host_abi_profile: str = DEFAULT_PROFILE, files: dict[str, bytes] | None = None) -> dict:
     host = host_manifest(host_abi_profile)
@@ -262,7 +283,8 @@ def inspect(commands, wasm: Path, output: Path, declared: dict,
     names = interface_names(decode(raw, 4 * 1024 * 1024),
                             host_interfaces={row["interface"] for row in preparation["interfaces"]})
     findings = compatibility.import_findings(names["imports"], list(declared["imports"]), preparation)
-    expected_exports = list(declared["exports"])
+    require(isinstance(declared["exports"], (list, dict)) and len(declared["exports"]) <= 128, "compatibility-export-count")
+    expected_exports = [compatibility.token(name) for name in declared["exports"]]
     if set(names["exports"]) != set(expected_exports):
         findings.append(compatibility.finding("surface-mismatch", "link", "final-component"))
     result = {"componentDigest": digest(read_file(output / "component.wasm", 64 * 1024 * 1024)),
@@ -274,9 +296,21 @@ def inspect(commands, wasm: Path, output: Path, declared: dict,
         result["descriptivePreparationImports"] = supplemental
     if host_abi_profile != DEFAULT_PROFILE:
         result["hostAbiProfile"] = host_abi_profile
-    write_json(output / "compatibility-inspection.json", result)
+    failure = None
     if any(item["classification"] in compatibility.BLOCKERS for item in findings):
-        raise ValueError("final-component-compatibility-failed; inspect compatibility-inspection.json")
+        differences = {}
+        for key, kind in (("imports", "import"), ("exports", "export")):
+            expected = {compatibility.token(name) for name in declared[key]}
+            actual = set(names[key])
+            for label, absent in (("missing-declared", expected - actual), ("undeclared", actual - expected)):
+                if absent:
+                    differences[f"{label}-{kind}"] = sorted(absent)
+        if differences:
+            result["surfaceDifferences"] = differences
+        failure = FinalComponentIncompatible(host_abi_profile, differences, findings)
+    write_json(output / "compatibility-inspection.json", result)
+    if failure is not None:
+        raise failure
     return result
 
 

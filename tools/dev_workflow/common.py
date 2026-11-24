@@ -26,11 +26,15 @@ def guest_host_abi(value: object) -> str:
 
 
 class DevError(ValueError):
-    def __init__(self, code: str, *, uncertain: bool = False, diagnostics: list | None = None):
+    def __init__(self, code: str, *, uncertain: bool = False, diagnostics: list | None = None, link_diagnostic: dict | None = None):
         self.code = code
         self.uncertain = uncertain
         self.diagnostics = diagnostics or []
+        self.link_diagnostic = link_diagnostic
         super().__init__(code)
+
+    def link_fields(self) -> dict:
+        return {"linkDiagnostic": self.link_diagnostic} if self.link_diagnostic is not None else {}
 
 
 def require(condition: object, code: str) -> None:
@@ -41,6 +45,21 @@ def require(condition: object, code: str) -> None:
 def members(value: object, required: set[str], optional: set[str] | None = None) -> dict:
     require(isinstance(value, dict), "document-object-required")
     require(required <= value.keys() <= required | (optional or set()), "unknown-or-missing-field")
+    return value
+
+
+def validate_link_diagnostic(value: dict) -> dict:
+    members(value, {"kind", "interface", "hostAbiProfile"})
+    require(isinstance(value["kind"], str) and value["kind"] in {
+        "unsupported-import", "missing-declared-import", "undeclared-import",
+        "missing-declared-export", "undeclared-export"}, "link-diagnostic-kind")
+    require(isinstance(value["hostAbiProfile"], str) and re.fullmatch(
+        r"lsf-host-abi-phase[1-9][0-9]{0,2}-v[1-9][0-9]{0,2}", value["hostAbiProfile"]), "link-diagnostic-profile")
+    name = value["interface"]
+    ident = r"[A-Za-z][A-Za-z0-9-]*"
+    version = r"[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?"
+    require(isinstance(name, str) and len(name) <= 192 and ".." not in name and
+            re.fullmatch(rf"{ident}:{ident}/{ident}(?:@{version})?", name), "link-diagnostic-interface")
     return value
 
 

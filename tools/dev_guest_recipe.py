@@ -188,7 +188,13 @@ def main() -> int:
         result["code"] = "compiler-cancelled"
     except (ValueError, OSError, RuntimeError) as error:
         result["code"] = "compiler-input-or-build-failed"
-        detail = "".join(character if 32 <= ord(character) != 127 else " " for character in str(error))[:512]
+        from tools.guest_compatibility_build import FinalComponentIncompatible
+        message = str(error)
+        if isinstance(error, FinalComponentIncompatible):
+            message = error.detail
+            if os.environ.get("LSF_DEV_LINK_DIAGNOSTIC") == "1" and error.diagnostic is not None:
+                result["linkDiagnostic"] = error.diagnostic
+        detail = "".join(character if 32 <= ord(character) != 127 else " " for character in message)[:512]
         sys.stderr.write("Maintained " + args.language + " recipe: " + detail + "\n")
     finally:
         diagnostics(output, args.language)

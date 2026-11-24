@@ -396,6 +396,35 @@ class WslOwnership(unittest.TestCase):
 
 
 class EditorDiagnostics(unittest.TestCase):
+    def test_maintained_build_negotiates_link_failure_and_preserves_old_adapters(self):
+        import subprocess
+        import time
+        from tools.dev_workflow import build
+
+        detail = {"kind": "missing-declared-import", "interface": "outside:weather/forecast@1.0.0",
+                  "hostAbiProfile": "lsf-host-abi-phase3-v5"}
+        value = descriptor()
+        value["language"] = "go"
+        value["template"]["ownerIssue"] = project.LANGUAGES["go"]
+        value["build"].update(argv=project.guest_recipe_arguments("go"), workingDirectory="app", outputRoot="output",
+                              adapter={"language": "go", "ownerIssue": project.LANGUAGES["go"], "version": "1"})
+        for fields in ({}, {"linkDiagnostic": detail}):
+            with self.subTest(fields=fields), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                source = root / "source"
+                (source / "app").mkdir(parents=True)
+                tools = {"python": root / "python", "recipe": root / "recipe.py"}
+                response = {"schemaVersion": "latent.dev.compiler-result.v1", "language": "go",
+                            "ownerIssue": project.LANGUAGES["go"], "cleanup": "reaped",
+                            "code": "compiler-input-or-build-failed", **fields}
+                result = subprocess.CompletedProcess([], 1, common.encode(response), b"")
+                with patch.object(build.process, "run", return_value=result) as run, self.assertRaises(common.DevError) as error:
+                    build.compile_recipe(root, source, value, {"files": [], "identity": common.digest(b"input")},
+                                         tools, time.monotonic() + 20, lambda: None)
+                self.assertEqual(run.call_args.kwargs["env"]["LSF_DEV_LINK_DIAGNOSTIC"], "1")
+                self.assertEqual(error.exception.code, "guest-build-failed-last-deployment-retained")
+                self.assertEqual(error.exception.link_fields(), fields)
+
     def test_watch_diagnostic_batches_finish_on_failure_success_and_untrusted_input(self):
         from contextlib import redirect_stderr
         import io

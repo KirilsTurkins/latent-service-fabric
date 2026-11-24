@@ -8,7 +8,7 @@ import platform
 import time
 
 from . import build_artifacts, build_cache, dependencies, diagnostics, paths, process, project, resource_inputs, snapshot, state, tool_inventory
-from .common import DevError, decode, digest, encode, members, require
+from .common import DevError, decode, digest, encode, members, require, validate_link_diagnostic
 
 
 def unchanged(source: Path, descriptor: dict, record: dict) -> None:
@@ -27,6 +27,9 @@ def compile_recipe(root: Path, source: Path, descriptor: dict, record: dict, too
     require(not output.exists(), "stale-build-output-rejected")
     working = source / recipe["workingDirectory"]
     environment = process.environment(source)
+    if "adapter" in recipe:
+        # Older adapters ignore this. Older frontends continue to receive the original response shape.
+        environment["LSF_DEV_LINK_DIAGNOSTIC"] = "1"
     environment["PATH"] = os.pathsep.join(sorted({str(path.parent) for path in tools.values()})) + os.pathsep + os.defpath
     # No inherited compiler wrappers, production keys or developer HOME.
     environment.update({"CARGO_HOME": str(source / "build-cache/cargo"), "CARGO_TARGET_DIR": str(output / "cargo"),
@@ -47,15 +50,21 @@ def compile_recipe(root: Path, source: Path, descriptor: dict, record: dict, too
     paths.write_new(source / "build-cache/compiler-stderr.log", result.stderr)
     observed = diagnostics.collect(result.stdout, result.stderr, source, working, {item["path"] for item in record["files"]})
     state.atomic(root, "build-diagnostics.json", {"source": record["identity"], "diagnostics": observed})
+    link_diagnostic = None
     if "adapter" in recipe:
         try:
-            response = members(decode(result.stdout), {"schemaVersion", "language", "ownerIssue", "cleanup", "code"})
+            response = members(decode(result.stdout), {"schemaVersion", "language", "ownerIssue", "cleanup", "code"},
+                               {"linkDiagnostic"})
             require(response["schemaVersion"] == "latent.dev.compiler-result.v1"
                     and response["language"] == descriptor["language"]
                     and response["ownerIssue"] == descriptor["template"]["ownerIssue"], "language-adapter-response")
             require(response["code"] in {"success", "compiler-process-failed", "compiler-cleanup-unconfirmed",
                     "compiler-cancelled", "compiler-input-or-build-failed"}, "language-adapter-code")
             require((result.returncode == 0) == (response["code"] == "success"), "language-adapter-exit-mismatch")
+            if "linkDiagnostic" in response:
+                require(response["code"] == "compiler-input-or-build-failed" and response["cleanup"] == "reaped",
+                        "language-adapter-link-diagnostic-outcome")
+                link_diagnostic = validate_link_diagnostic(response["linkDiagnostic"])
         except DevError as error:
             raise DevError("language-adapter-result-invalid", uncertain=True, diagnostics=observed) from error
         if response["cleanup"] != "reaped":
@@ -64,7 +73,7 @@ def compile_recipe(root: Path, source: Path, descriptor: dict, record: dict, too
             from .executable_approval_request import retain_managed_refusal
             retain_managed_refusal(source, descriptor)
     if result.returncode != 0:
-        raise DevError("guest-build-failed-last-deployment-retained", diagnostics=observed)
+        raise DevError("guest-build-failed-last-deployment-retained", diagnostics=observed, link_diagnostic=link_diagnostic)
     return observed
 
 
