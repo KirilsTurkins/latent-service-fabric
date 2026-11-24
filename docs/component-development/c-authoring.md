@@ -142,12 +142,14 @@ The start may be earlier than requested; a known complete size must end at the
 last returned byte.
 If the server ignores the request and returns 200, the actual offset is zero.
 Malformed or inconsistent partial responses and 416 are errors, with no retry.
-The HEAD receipt above does not qualify signed Range execution. The maintained
-[Stat/Range owner](../../.github/workflows/c-http-stat-qualification.yml) now
-requires seven signed cells: the four HEAD cases plus actual 206, ignored-Range
-200 and a denied alternate path with zero peer contact. Its exact peer-header,
-offset/length/size/checksum assertions must pass before claiming signed Range
-support; adding the owner is not that result. Conditional requests remain unsupported.
+The signed Stat/Range run exercised a valid 206, an ignored Range returning
+200, a denied alternate path, an unsolicited 206 and a response that ended
+before the requested offset. It also exercised HEAD 404 with a declared length
+of 2^63 bytes and preserved the HTTP error. The peer observed nine requests
+and no mutations across the twelve cases. The node retired all measured
+physical owners after each case. A separate node refused entry with its HTTP
+provider absent. Conditional requests remain unsupported.
+[Signed results](../testing/evidence/c-libfetch-stat-range-signed-2026-11-23.json)
 
 `fetchReqHTTP` supports bounded string request bodies for its declared HTTP
 methods. Only the empty flags string or `A` is supported. HTTP/HTTPS transport
