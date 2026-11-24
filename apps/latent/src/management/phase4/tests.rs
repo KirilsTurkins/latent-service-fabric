@@ -11,6 +11,7 @@ use serde_json::json;
 use std::time::Duration;
 mod dispatcher;
 mod effect_management;
+mod transaction_submission;
 
 fn publication() -> String {
     format!("publication:sha256:{}", "a".repeat(64))

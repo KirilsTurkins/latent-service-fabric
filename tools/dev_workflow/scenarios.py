@@ -8,7 +8,7 @@ from pathlib import Path
 import time
 import xml.etree.ElementTree as ET
 
-from . import paths
+from . import node_transaction_query, paths
 from .common import DevError, MAX_DOCUMENT, decode, digest, encode, identifier, integer, members, require
 
 OUTCOMES = {"success", "declared-error", "platform-failure", "transport-failure"}
@@ -51,7 +51,7 @@ def validate(value: dict, environment: str) -> dict:
     fixtures_by_id = {}
     for case in value["scenarios"]:
         members(case, {"id", "service", "contract", "function", "input", "mediaType", "expect", "requires",
-                       "timeoutMillis", "required", "fixtures"}, {"execution", "nodeTimeoutMillis"})
+                       "timeoutMillis", "required", "fixtures"}, {"execution", "nodeTimeoutMillis", "transactionQuery"})
         identifier(case["id"])
         require(case["id"] not in names, "duplicate-scenario")
         names.add(case["id"])
@@ -93,6 +93,8 @@ def validate(value: dict, environment: str) -> dict:
         require(isinstance(case["requires"], list) and len(case["requires"]) <= 32
                 and len(set(case["requires"])) == len(case["requires"])
                 and set(case["requires"]) <= NODE_ONLY | PORTABLE, "scenario-requirements")
+        if "transactionQuery" in case:
+            node_transaction_query.validate(case)
         require(isinstance(case["fixtures"], list) and len(case["fixtures"]) <= 8, "scenario-fixtures")
         for fixture in case["fixtures"]:
             members(fixture, {"id", "kind", "identity"}, {"configuration"})
@@ -125,6 +127,8 @@ def prepare(document: dict, root: Path, environment: str, selection: list[str], 
     unsupported = {}
     for case, raw, expected_payload in prepared:
         missing = set(case["requires"]) - supported
+        if "transactional-state" in supported and "transactionQuery" not in case:
+            missing.add("transaction-query-selector")
         if "execution" in case and not (execution_controls(case) if callable(execution_controls) else execution_controls):
             missing.add("per-invocation-execution-controls")
         if environment == "portable":
@@ -225,6 +229,8 @@ def run_prepared(prepared: list, unsupported: dict, environment: str, adapter, i
                         "execution": decode(encode(case["execution"])) if "execution" in case else None,
                         "resolvedRevision": revision, "targetMatches": target_matches,
                         "expectedRevision": dict(expected_target) if expected_target is not None else None})
+        if "transactionView" in result.get("data", {}):
+            results[-1]["transactionView"] = result["data"]["transactionView"]
         if environment == "node" and not matched:
             try:
                 from .node_diagnostics import original_result
