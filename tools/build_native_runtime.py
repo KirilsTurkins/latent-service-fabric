@@ -84,11 +84,23 @@ def build(arguments) -> dict:
     dependencies = sorted({dependency for path in assets.values() for dependency in elf_identity(path, run)})
     print(json.dumps({"nativeBuildStage": "observed-elf-dependencies", "dynamicDependencies": dependencies}), flush=True)
     abi = document(files.read(ROOT / "wit/host-abi-phase3-v5.json"))
+    transaction_abi_path = ROOT / verify.TRANSACTION_ABI_PATH
+    transaction_abi = document(files.read(transaction_abi_path))
+    require(transaction_abi["id"] == verify.TRANSACTION_ABI
+            and transaction_abi["wasmtimeVersion"] == abi["wasmtimeVersion"], "transaction-runtime-engine-mismatch")
+    lock = tomllib.loads((ROOT / "Cargo.lock").read_text())
+    redb = [item["version"] for item in lock["package"] if item["name"] == verify.TRANSACTION_STORE["engine"]]
+    require(len(redb) == 1, "one-native-transaction-engine-required")
     identity = {"version": arguments.version, "sourceCommit": commit, "target": verify.TARGET,
                 "toolchain": {"rust": toolchain, "lockSha256": files.digest(ROOT / "Cargo.lock")},
                 "engine": {"wasmtimeVersion": abi["wasmtimeVersion"], "hostAbiProfile": abi["id"],
                            "compilerSha256": files.digest(assets["bin/latent-aot-compiler"]),
-                           "dynamicDependencies": dependencies}}
+                           "dynamicDependencies": dependencies,
+                           "transactionState": {
+                               "hostAbiProfile": transaction_abi["id"], "hostAbiDigest": transaction_abi["digest"],
+                               "abiFileSha256": files.digest(transaction_abi_path),
+                               "store": {**verify.TRANSACTION_STORE, "engineVersion": redb[0]},
+                           }}}
     if arguments.development_test_node:
         identity["developmentTest"] = dict(verify.DEVELOPMENT_TEST)
     for name in ("echo-capsule.wasm", "capsule.json", "contracts.json", "deployment.json", "input.json"):
@@ -98,6 +110,8 @@ def build(arguments) -> dict:
         assets["examples/echo/wit/" + name + ".wit"] = ROOT / source
     for name in ("LICENSE", "NOTICE"):
         assets[name] = ROOT / name
+    for name in sorted(verify.TRANSACTION_SCHEMAS | {verify.TRANSACTION_ABI_PATH}):
+        assets[name] = ROOT / name
     assets.update({"systemd/lsf.service": ROOT / "packaging/linux/lsf.service",
                    "INSTALL.md": ROOT / "packaging/linux/INSTALL.md",
                    "config/local-experimental-v1.json": ROOT / "packaging/linux/local-experimental-v1.json",
@@ -106,12 +120,16 @@ def build(arguments) -> dict:
     metadata = json.loads(run(["cargo", "+" + toolchain, "metadata", "--locked", "--format-version", "1",
                                "--filter-platform", verify.TARGET, *feature_arguments], maximum=16_777_216, stdout_only=True))
     license_policy = document(files.read(ROOT / "packaging/linux/license-sources.json"))
-    sbom, licenses = dependency_inventory(metadata, tomllib.loads((ROOT / "Cargo.lock").read_text()), commit, epoch, license_policy)
+    sbom, licenses = dependency_inventory(metadata, lock, commit, epoch, license_policy)
+    require(any(package["name"] == "redb" and package["versionInfo"] == redb[0]
+                for package in sbom["packages"]), "transaction-engine-missing-from-native-sbom")
     assets.update(licenses)
     assets["licenses/sources.json"] = ROOT / "packaging/linux/license-sources.json"
     provenance = {"_type": "https://in-toto.io/Statement/v1", "predicateType": "https://slsa.dev/provenance/v1",
                   "subject": [{"name": name, "digest": {"sha256": files.digest(path)}}
-                              for name, path in sorted(assets.items()) if name.startswith(("bin/", "examples/echo/"))],
+                              for name, path in sorted(assets.items())
+                              if name.startswith(("bin/", "examples/echo/", "schemas/"))
+                              or name == verify.TRANSACTION_ABI_PATH],
                   "predicate": {"buildDefinition": {"buildType": "https://github.com/KirilsTurkins/latent-service-fabric/native-build/v1",
                   "externalParameters": {"version": arguments.version, "sourceCommit": commit, "target": verify.TARGET},
                   "internalParameters": {"rustc": compiler, "wasmTools": wasm_tools,

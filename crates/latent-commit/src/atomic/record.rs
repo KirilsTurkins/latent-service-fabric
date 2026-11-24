@@ -99,19 +99,14 @@ impl InboxIdentity {
     }
     pub fn row_key(&self, key: &CommandKey) -> Result<RowKey, AtomicError> {
         self.validate()?;
-        let inc = incarnation(key)?.to_le_bytes();
-        let identity = Identity::derive(
-            b"lsf-inbox-key-v1\0",
-            &[
-                key.tenant.as_bytes(),
-                key.namespace.as_bytes(),
-                &inc,
-                self.provider.as_bytes(),
-                self.binding.as_bytes(),
-                self.message.as_bytes(),
-            ],
-        );
-        Ok(row_key(Family::Inbox, b"inbox-v1\0", identity, None))
+        Ok(inbox_row_key(
+            &key.tenant,
+            &key.namespace,
+            incarnation(key)?,
+            &self.provider,
+            &self.binding,
+            &self.message,
+        ))
     }
     /// Stable command key for this already scoped input identity. The payload
     /// digest is deliberately excluded: changed bytes must conflict with the
@@ -145,6 +140,28 @@ impl InboxIdentity {
         inbox.validate().map_err(|_| AtomicError::Corrupt)?;
         Ok(inbox)
     }
+}
+
+pub(super) fn inbox_row_key(
+    tenant: &str,
+    namespace: &str,
+    incarnation: u64,
+    provider: &str,
+    binding: &str,
+    message: &str,
+) -> RowKey {
+    let identity = Identity::derive(
+        b"lsf-inbox-key-v1\0",
+        &[
+            tenant.as_bytes(),
+            namespace.as_bytes(),
+            &incarnation.to_le_bytes(),
+            provider.as_bytes(),
+            binding.as_bytes(),
+            message.as_bytes(),
+        ],
+    );
+    row_key(Family::Inbox, b"inbox-v1\0", identity, None)
 }
 
 /// Immutable original business scope/source and generation-checked disposition.

@@ -17,7 +17,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from tools.native_runtime import archive, configuration, files, lifecycle, verify
+from tools.native_runtime import archive, checks, configuration, files, lifecycle, verify
 from tools.native_runtime.common import InstallError, document, encode, execute
 from tools.native_runtime.layout import Layout
 from tools.native_runtime_build import assemble, bootstrap, dependency_inventory, shared_license
@@ -75,6 +75,30 @@ def selected(root: Path, version: str = "0.1.0-test.1", previous: dict | None = 
 
 
 class ManifestTests(unittest.TestCase):
+    def test_native_upgrade_preserves_the_approved_retained_transaction_profile(self):
+        from types import SimpleNamespace
+
+        old, _ = fixture()
+        new, _ = fixture("0.1.0-test.2")
+        previous = {"version": old["version"], "sourceCommit": old["sourceCommit"],
+                    "archiveSha256": old["archive"]["sha256"]}
+        new["compatibility"]["upgradeFrom"] = [previous]
+        state = {"profile": configuration.LOCAL, "releases": {
+            old["version"]: {"metadata": old, "publisher": "publisher"}}, "currentVersion": old["version"]}
+        release = SimpleNamespace(metadata=new, publisher="publisher")
+        profile = {"hostAbiProfile": verify.TRANSACTION_ABI, "hostAbiDigest": "sha256:" + "a" * 64,
+                   "abiFileSha256": "b" * 64, "store": {**verify.TRANSACTION_STORE, "engineVersion": "4.4.0"}}
+        new["engine"]["transactionState"] = copy.deepcopy(profile)
+        lifecycle.compatible(state, release, True, configuration.LOCAL)
+        old["engine"]["transactionState"] = profile
+        lifecycle.compatible(state, release, True, configuration.LOCAL)
+        new["engine"]["transactionState"]["store"]["engineVersion"] = "4.5.0"
+        with self.assertRaisesRegex(InstallError, "retained-transaction-format-change"):
+            lifecycle.compatible(state, release, True, configuration.LOCAL)
+        del new["engine"]["transactionState"]
+        with self.assertRaisesRegex(InstallError, "retained-transaction-format-change"):
+            lifecycle.compatible(state, release, True, configuration.LOCAL)
+
     def test_development_fixture_metadata_is_closed_and_never_release_authority(self):
         metadata, _payload = fixture()
         metadata["developmentTest"] = copy.deepcopy(verify.DEVELOPMENT_TEST)
@@ -354,6 +378,49 @@ class FileTests(unittest.TestCase):
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
 
+    def test_state_enabled_preflight_uses_the_abi_authenticated_with_the_native_release(self):
+        metadata, _payload = fixture()
+        engine = metadata["engine"]
+        abi_bytes = (ROOT / verify.TRANSACTION_ABI_PATH).read_bytes()
+        abi = document(abi_bytes)
+        profile = {"hostAbiProfile": abi["id"], "hostAbiDigest": abi["digest"],
+                   "abiFileSha256": hashlib.sha256(abi_bytes).hexdigest(),
+                   "store": {**verify.TRANSACTION_STORE, "engineVersion": "4.4.0"}}
+        self.assertEqual(checks.abi_profile(ROOT, {}, engine), engine["hostAbiProfile"])
+        with self.assertRaisesRegex(InstallError, "does-not-admit-transaction-state"):
+            checks.abi_profile(ROOT, {"state": {}}, engine)
+
+        engine["transactionState"] = profile
+        with self.assertRaisesRegex(InstallError, "transaction-runtime-files-missing"):
+            verify.manifest(metadata, metadata["version"])
+        for name in sorted(verify.TRANSACTION_SCHEMAS | {verify.TRANSACTION_ABI_PATH}):
+            payload = (ROOT / name).read_bytes()
+            metadata["files"].append({"path": name, "size": len(payload),
+                                      "sha256": hashlib.sha256(payload).hexdigest(), "mode": 0o644})
+        self.assertEqual(verify.manifest(metadata, metadata["version"]), metadata)
+        self.assertEqual(checks.abi_profile(ROOT, {"state": {}}, engine), verify.TRANSACTION_ABI)
+        self.assertEqual(checks.abi_profile(ROOT, {}, engine), engine["hostAbiProfile"])
+        profile["hostAbiDigest"] = "sha256:" + "0" * 64
+        with self.assertRaisesRegex(InstallError, "transaction-runtime-abi-mismatch"):
+            checks.abi_profile(ROOT, {"state": {}}, engine)
+        profile["store"]["filesystem"] = "nfs"
+        with self.assertRaisesRegex(InstallError, "unsupported-transaction-store-profile"):
+            verify.manifest(metadata, metadata["version"])
+
+    def test_packaged_preflight_refuses_a_stateless_start_over_original_transaction_storage(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            layout = Layout.local(Path(temporary) / "evaluation")
+            layout.data.mkdir(parents=True, mode=0o700)
+            checks.require_original_storage_profile(layout, {})
+            state = layout.data / "state"
+            state.mkdir(mode=0o700)
+            original = state / "transaction-state.redb"
+            original.write_bytes(b"original-transaction-data")
+            with self.assertRaisesRegex(InstallError, "existing-transaction-storage-requires-state"):
+                checks.require_original_storage_profile(layout, {})
+            checks.require_original_storage_profile(layout, {"state": {}})
+            self.assertEqual(original.read_bytes(), b"original-transaction-data")
+
     def test_single_link_protected_files_and_symlink_ancestors(self):
         leaf = self.root / "private"
         files.create(leaf, b"private")
@@ -625,6 +692,7 @@ class LifecycleTests(unittest.TestCase):
             node = self.layout.node.read_bytes()
             self.assertTrue(self.layout.transaction.exists())
             self.assertFalse(self.layout.state.exists())
+            self.assertFalse(os.path.lexists(self.layout.current))
             self.probe.side_effect = None
             with self.assertRaisesRegex(InstallError, "interrupted"):
                 self.install(release)
@@ -646,6 +714,28 @@ class LifecycleTests(unittest.TestCase):
                 self.assertEqual(lifecycle.read_state(self.layout)["currentVersion"], "0.1.0-test.2")
             with self.assertRaisesRegex(InstallError, "unsupported-upgrade"):
                 self.install(first, upgrade=True)
+
+    def test_retained_state_check_runs_before_upgraded_release_is_selected(self):
+        with selected(self.root) as first:
+            self.install(first)
+            original = self.layout.state.read_bytes()
+            node = document(self.layout.node.read_bytes())
+            node["state"] = {"createIfMissing": False}
+            self.layout.node.write_bytes(encode(node))
+
+            def preflight(*_, retained_state=False, **__):
+                self.assertEqual(os.readlink(self.layout.current), "releases/" + first.metadata["version"])
+                if retained_state:
+                    raise InstallError("retained-transaction-state-check-failed")
+                return {"syntheticCheck": True}
+
+            self.probe.side_effect = preflight
+            with selected(self.root, "0.1.0-test.2", first.metadata) as candidate:
+                with self.assertRaisesRegex(InstallError, "retained-transaction-state-check-failed"):
+                    self.install(candidate, upgrade=True)
+            self.assertEqual(self.layout.state.read_bytes(), original)
+            self.assertEqual(os.readlink(self.layout.current), "releases/" + first.metadata["version"])
+            self.assertTrue(self.layout.transaction.exists())
 
     def test_removal_retention_reinstallation_and_explicit_purge(self):
         with selected(self.root) as release:

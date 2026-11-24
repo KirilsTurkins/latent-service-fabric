@@ -201,6 +201,32 @@ pub(super) fn derive_optional(
         .transpose()
 }
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(super) fn check_protected_roots(store: &Path, checkpoint: &Path) -> Result<(), PlatformError> {
+    use latent_protected_files::ProtectedRoot;
+
+    const EXT4_MAGIC: u64 = 0xef53;
+    let store = ProtectedRoot::open(store)?;
+    let checkpoint = ProtectedRoot::open(checkpoint)?;
+    store.require_private_owner()?;
+    checkpoint.require_private_owner()?;
+    if store.filesystem_type()? != EXT4_MAGIC
+        || checkpoint.filesystem_type()? != EXT4_MAGIC
+        || !store.is_separate_from(&checkpoint)?
+    {
+        return Err(super::invalid("state.storageRoots"));
+    }
+    Ok(())
+}
+
+#[cfg(all(target_os = "linux", not(target_arch = "x86_64")))]
+pub(super) fn check_protected_roots(
+    _store: &Path,
+    _checkpoint: &Path,
+) -> Result<(), PlatformError> {
+    Err(super::invalid("state.storageRoots"))
+}
+
 pub(crate) fn derive(value: &StateConfig, data: &Path) -> Result<StateSettings, PlatformError> {
     let business_root = data.join("state");
     if value.format_version != 2

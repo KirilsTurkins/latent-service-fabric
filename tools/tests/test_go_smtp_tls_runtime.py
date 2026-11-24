@@ -184,7 +184,7 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
                   for name, version in versions.items()]
         edges = [{'owner': 'wit_component', 'selected': ids[name]}
                  for name in versions if name != published.SASL]
-        edges += [{'owner': 'github.com/emersion/go-smtp@v0.25.0',
+        edges += [{'owner': 'github.com/emersion/go-smtp@v0.25.1',
                    'dependency': published.SASL + '@' + published.SASL_VERSION,
                    'selected': ids[published.SASL]},
                   {'owner': 'github.com/reactivex/rxgo/v2@v2.5.0',
@@ -230,7 +230,7 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
         for forbidden in ('smtp.NewClient(', 'net.Conn', 'net.Pipe', 'InsecureSkipVerify', 'lsf/'):
             self.assertNotIn(forbidden, source)
         module = (root / 'go.mod').read_text()
-        for expected in ('github.com/emersion/go-smtp v0.25.0',
+        for expected in ('github.com/emersion/go-smtp v0.25.1',
                          'github.com/reactivex/rxgo/v2 v2.5.0',
                          'github.com/cenkalti/backoff/v4 v4.0.0',
                          'github.com/emersion/go-sasl v0.0.0-20241020182733-b788ff22d5a6'):

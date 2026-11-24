@@ -28,7 +28,7 @@ pub(super) enum Checkpoint {
     CurrentSchemaDurable,
 }
 
-pub(super) fn inspect(db: &Database) -> Result<State, StoreError> {
+pub(super) fn inspect(db: &impl ReadableDatabase) -> Result<State, StoreError> {
     let tx = db.begin_read().map_err(|_| StoreError::Unavailable)?;
     let meta = tx
         .open_table(META)

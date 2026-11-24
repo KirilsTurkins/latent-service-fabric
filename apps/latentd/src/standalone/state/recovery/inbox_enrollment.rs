@@ -10,6 +10,7 @@ use crate::{
     config::{state::StateSettings, NodeSettings},
     standalone::{effects::ProtectedEffectClock, state::StateBootstrap},
 };
+use latent_commit::atomic::{inspect_inbox_terminal, Outcome};
 use latent_control_store::DeploymentStore;
 use latent_core::{
     native_capacity::NativeReservation, DeploymentId, InvocationPrincipal, PlatformError,
@@ -20,8 +21,9 @@ use latent_manifest::TransactionOperationMode;
 use latent_state::{
     embedded::{ReadView, StoreError},
     inbox_scope::{InboxScope, PreparedInboxScope},
-    protected_store::{ProtectedStoreError, ProtectedStoreOwner},
+    protected_store::{ProtectedCheckpoint, ProtectedStoreError, ProtectedStoreOwner},
     recovery::namespace_resume::NamespaceRecoveryView,
+    store_identity::ExternalCheckpoint,
     store_io::StoreIoKind,
 };
 use std::sync::Arc;
@@ -61,7 +63,6 @@ impl ApprovedSource {
 
 #[expect(
     clippy::too_many_arguments,
-    clippy::too_many_lines,
     reason = "Use the original offline store owners"
 )]
 pub(super) async fn run(
@@ -91,31 +92,21 @@ pub(super) async fn run(
     let approved = Arc::new(approved);
     let scope_digest = approved.scope.input_binding().map_err(store_error)?;
     match &request.request {
-        Action::InspectInboxSource { .. } => {
-            let observed = Arc::clone(&approved);
-            let keeper = Arc::clone(original);
-            let job = store
-                .with_store_retaining(
-                    StoreIoKind::RecoveryRead,
-                    512 * 1024,
-                    keeper,
-                    move |engine| observed.observe(&engine.snapshot()?),
-                )
-                .map_err(protected_error)?;
-            let (view, existing) = job
-                .await
-                .map_err(|_| super::super::unavailable())?
-                .map_err(protected_error)?;
-            checkpoint.retire().await;
-            approved.check().map_err(store_error)?;
-            Ok(serde_json::json!({
-                "action": "inspect-inbox-source",
-                "binding": binding,
-                "inputBinding": scope_digest,
-                "checkpointGeneration": floor.generation(),
-                "view": view,
-                "enrolled": existing,
-            }))
+        Action::InspectInboxSource { .. } | Action::InspectInboxBroker { .. } => {
+            Box::pin(inspect_source(
+                settings,
+                &request.request,
+                owners,
+                store,
+                bootstrap,
+                original,
+                checkpoint,
+                &floor,
+                approved,
+                binding,
+                scope_digest,
+            ))
+            .await
         }
         Action::EnrollInboxSource {
             expected_scope,
@@ -180,6 +171,110 @@ pub(super) async fn run(
             }))
         }
         _ => Err(super::denied()),
+    }
+}
+
+#[expect(
+    clippy::too_many_arguments,
+    reason = "Carry the original offline owners"
+)]
+async fn inspect_source(
+    settings: &NodeSettings,
+    action: &Action,
+    owners: &RecoveryOwners<'_>,
+    store: &ProtectedStoreOwner,
+    bootstrap: &StateBootstrap,
+    original: &Arc<NativeReservation>,
+    checkpoint: ProtectedCheckpoint,
+    floor: &ExternalCheckpoint,
+    approved: Arc<ApprovedSource>,
+    binding: String,
+    scope_digest: String,
+) -> Result<serde_json::Value, PlatformError> {
+    let broker = if matches!(action, Action::InspectInboxBroker { .. }) {
+        approved.check().map_err(store_error)?;
+        let provider = owners.providers.ok_or_else(super::denied)?;
+        let installation = settings
+            .transactional_triggers
+            .as_ref()
+            .ok_or_else(super::denied)?;
+        Some(
+            provider
+                .inspect_incoming(
+                    installation,
+                    &approved.scope.tenant,
+                    &binding,
+                    bootstrap.deadline,
+                )
+                .await?,
+        )
+    } else {
+        None
+    };
+    let delivered = broker
+        .as_ref()
+        .map(latent_nats::triggers::BrokerInputProgress::delivered_stream_sequence);
+    let observed = Arc::clone(&approved);
+    let keeper = Arc::clone(original);
+    let job = store
+        .with_store_retaining(
+            StoreIoKind::RecoveryRead,
+            512 * 1024,
+            keeper,
+            move |engine| {
+                let view = engine.snapshot()?;
+                let (token, existing) = observed.observe(&view)?;
+                let history = delivered
+                    .map(|sequence| latest_delivery(&view, &observed, existing, sequence))
+                    .transpose()?;
+                Ok((token, existing, history))
+            },
+        )
+        .map_err(protected_error)?;
+    let result = job.await;
+    checkpoint.retire().await;
+    let (view, existing, history) = result
+        .map_err(|_| super::super::unavailable())?
+        .map_err(protected_error)?;
+    approved.check().map_err(store_error)?;
+    let mut report = serde_json::json!({
+        "action": "inspect-inbox-source",
+        "binding": binding,
+        "inputBinding": scope_digest,
+        "checkpointGeneration": floor.generation(),
+        "view": view,
+        "enrolled": existing,
+    });
+    if let Some(broker) = broker {
+        report["action"] = "inspect-inbox-broker".into();
+        report["brokerProgress"] = serde_json::to_value(broker).map_err(|_| super::denied())?;
+        report["latestDeliveryHistory"] = history.into();
+    }
+    Ok(report)
+}
+
+fn latest_delivery(
+    view: &ReadView,
+    approved: &ApprovedSource,
+    enrolled: bool,
+    sequence: u64,
+) -> Result<&'static str, StoreError> {
+    if !enrolled {
+        return Ok("not-enrolled");
+    }
+    if sequence == 0 {
+        return Ok("not-yet-delivered");
+    }
+    match inspect_inbox_terminal(
+        view,
+        &approved.scope,
+        &approved.source.target().function.0,
+        sequence,
+    )? {
+        Some(Outcome::Committed) => Ok("retained-commit"),
+        Some(Outcome::Rejected) => Ok("retained-rejection"),
+        None => Ok("unconfirmed"),
+        _ => Err(StoreError::Corrupt),
     }
 }
 
