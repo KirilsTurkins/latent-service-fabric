@@ -269,10 +269,13 @@ def assert_value(client, result, expected, code=0):
     require(matched, "authoring-application-result")
 
 
-def sample(client, probe: Probe, phase, population, *, active=False):
+def sample(client, probe: Probe, phase, population, *, active=False, first_inventory=None):
     deadline = min(client.deadline, time.monotonic() + 3)
     for attempt in range(64):
-        inventory = client.call("node", "get", NODE_ID)["data"]["inventory"]
+        if attempt == 0 and first_inventory is not None:
+            inventory = first_inventory
+        else:
+            inventory = client.call("node", "get", NODE_ID)["data"]["inventory"]
         require(inventory["topology"]["available"] and inventory["topology"]["complete"], "authoring-topology-unavailable")
         topology = inventory["topology"]["entries"]
         cells = inventory["cellCapacity"]
