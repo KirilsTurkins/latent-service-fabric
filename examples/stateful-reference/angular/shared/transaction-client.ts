@@ -35,6 +35,7 @@ interface Envelope {
 interface Original {key: string; body: string; draftId: string; ifMatch?: string}
 type RequestOptions = Omit<RequestInit, 'headers'> & {headers?: Record<string, string>};
 type FetchReply = {status: number; envelope: Envelope; authorityEpoch: number};
+type ResponseKind = 'command' | 'query' | 'recovery';
 
 const VALUE_MEDIA = 'application/vnd.latent.wit-values.v1+json';
 const PROFILE = 'transaction-http-v1';
@@ -87,9 +88,12 @@ function lossless(text: string): unknown {
     if (key !== 'revision' || text[next] !== ':') continue;
     next++;
     while (/\s/.test(text[next] ?? '') && next < text.length) next++;
+    if (++revisions !== 1) throw new Error('duplicate-business-revision');
+    // The native wire codec already emits u64 values as decimal strings.
+    // Only normalize a numeric spelling before the JSON parser can round it.
+    if (text[next] === '"') continue;
     let end = next;
     while (/[0-9.eE+-]/.test(text[end] ?? '') && end < text.length) end++;
-    if (++revisions !== 1) throw new Error('duplicate-business-revision');
     const exact = revision(text.slice(next, end));
     parts.push(text.slice(copied, next), JSON.stringify(exact));
     copied = end; cursor = end;
@@ -123,6 +127,9 @@ export function projection(result: unknown): DraftView | {error: string} {
   else if ('some' in optional) keyVersion = binary(optional['some'], 'SV');
   else throw new Error('invalid-key-observation');
   return {draftId, revision: exactRevision, units, namespaceView, keyVersion};
+}
+export function requireQueryView(draft: DraftView, hostView: unknown): void {
+  if (hostView !== draft.namespaceView) throw new Error('inconsistent-query-view');
 }
 async function limitedBody(response: Response): Promise<string> {
   if (!response.body) return '';
@@ -171,8 +178,8 @@ export class DraftClient {
   private last?: Envelope;
   private authorityEpoch = 0;
 
-  constructor(routes: Routes, {fetcher = globalThis.fetch, csrfHeaders = () => ({}), origin = globalThis.location?.origin}: {
-    fetcher?: typeof fetch; csrfHeaders?: () => Record<string, string>; origin?: string;
+  constructor(routes: Routes, {fetcher = globalThis.fetch?.bind(globalThis), csrfHeaders = () => ({}), origin = globalThis.location?.origin, initialView}: {
+    fetcher?: typeof fetch; csrfHeaders?: () => Record<string, string>; origin?: string; initialView?: DraftView;
   } = {}) {
     if (typeof origin !== 'string' || new URL(origin).origin !== origin || typeof fetcher !== 'function')
       throw new Error('invalid-application-origin');
@@ -183,14 +190,14 @@ export class DraftClient {
     };
     this.routes = {command: route('command'), query: route('query'), result: route('result')};
     this.fetcher = fetcher; this.csrfHeaders = csrfHeaders;
+    this.view = initialView; this.minimumView = initialView?.namespaceView;
   }
   prepare(draftId: string, expectedRevision: string, units: number, reject = false, ifMatch?: string): string {
     if (this.pending) throw new Error('original-command-still-retained');
     boundedId(draftId); revision(expectedRevision);
     if (!Number.isInteger(units) || units < 0 || units > 10000 || typeof reject !== 'boolean') throw new Error('invalid-draft-edit');
     if (ifMatch !== undefined && ifMatch !== '"absent"' && !/^"[A-Za-z0-9+/]+={0,2}"$/.test(ifMatch)) throw new Error('invalid-original-precondition');
-    const body = '[{"draft-id":' + JSON.stringify(draftId) + ',"expected-revision":' + expectedRevision
-      + ',"units":' + units + ',"reject":' + String(reject) + '}]';
+    const body = JSON.stringify([{'draft-id': draftId, 'expected-revision': expectedRevision, units, reject}]);
     const key = globalThis.crypto.randomUUID();
     this.pending = Object.freeze({key, body, draftId, ifMatch}); this.status = 'prepared';
     return key;
@@ -215,10 +222,10 @@ export class DraftClient {
       return {status: response.status, envelope: envelope(text ? lossless(text) : undefined), authorityEpoch};
     } finally { clearTimeout(timer); }
   }
-  private apply(reply: FetchReply, requestedDraft: string, query = false): Reply {
+  private apply(reply: FetchReply, requestedDraft: string, kind: ResponseKind, previousMinimum: string | undefined): Reply {
     if (reply.authorityEpoch !== this.authorityEpoch) throw new Error('permission-denied');
     const {status, envelope: response} = reply;
-    if (response.disposition === 'effect' || (response.disposition === 'query') !== query)
+    if (response.disposition === 'effect' || (response.disposition === 'query') !== (kind === 'query'))
       throw new Error('unexpected-transaction-response');
     const allowedStatus: Record<Exclude<Disposition, 'effect'>, number[]> = {
       query: [200, 422], 'in-progress': [202], 'recovery-required': [503],
@@ -227,30 +234,43 @@ export class DraftClient {
     if (!allowedStatus[response.disposition].includes(status)) throw new Error('inconsistent-transaction-status');
     const value = response.result ? projection(response.result) : undefined;
     if (value && !('error' in value) && value.draftId !== requestedDraft) throw new Error('foreign-draft-response');
-    if (response.disposition !== 'query') {
+    if (kind === 'query') {
+      if (previousMinimum !== this.minimumView) throw new Error('stale-query-response');
+      if (value && !('error' in value)) {
+        requireQueryView(value, response['state-view']);
+        this.view = value; this.minimumView = value.namespaceView;
+      }
+    } else {
       if (!response['command-id']) throw new Error('missing-command-identity');
       if (this.last?.['command-id'] && response['command-id'] !== this.last['command-id']) throw new Error('foreign-command-response');
       if (this.last && ['committed', 'rejected'].includes(this.last.disposition) &&
           response.disposition !== this.last.disposition) throw new Error('terminal-command-regression');
       this.status = response.disposition;
       this.last = response;
+      if (kind === 'command' && previousMinimum === this.minimumView) {
+        if (value && !('error' in value)) this.view = value;
+        if (response.disposition === 'committed' && response['state-view']) this.minimumView = response['state-view'];
+      } else if (kind === 'recovery' && response.disposition === 'committed') {
+        this.minimumView ??= response['state-view'];
+      }
     }
-    if (value && !('error' in value)) this.view = value;
-    if (response.disposition === 'committed' && response['state-view']) this.minimumView = response['state-view'];
     return {status, disposition: response.disposition, value, effectIds: response['effect-ids'] ?? []};
   }
-  private applyCommand(reply: FetchReply, original: Readonly<Original>): Reply {
+  private applyCommand(reply: FetchReply, original: Readonly<Original>, kind: 'command' | 'recovery',
+    previousMinimum: string | undefined): Reply {
     if (this.pending !== original) throw new Error('original-command-changed');
-    return this.apply(reply, original.draftId);
+    return this.apply(reply, original.draftId, kind, previousMinimum);
   }
   async submit(): Promise<Reply> {
     if (!this.pending || this.status !== 'prepared') throw new Error('command-must-be-explicitly-prepared');
     const original = this.pending;
     const {key, body, ifMatch} = original;
+    const previousMinimum = this.minimumView;
     this.status = 'pending';
     try {
       return this.applyCommand(await this.request(this.routes.command, {method: 'POST', body,
-        headers: {'content-type': VALUE_MEDIA, 'idempotency-key': key, ...(ifMatch ? {'if-match': ifMatch} : {})}}), original);
+        headers: {'content-type': VALUE_MEDIA, 'idempotency-key': key, ...(ifMatch ? {'if-match': ifMatch} : {})}}),
+        original, 'command', previousMinimum);
     } catch (error) {
       if (this.pending === original && this.status !== 'permission-denied' && !['committed', 'rejected'].includes(this.status)) this.status = 'uncertain';
       throw error;
@@ -259,19 +279,21 @@ export class DraftClient {
   async recover(): Promise<Reply> {
     if (!this.pending) throw new Error('no-original-command');
     const original = this.pending;
-    return this.applyCommand(await this.request(this.routes.result, {method: 'GET', headers: {'idempotency-key': original.key}}), original);
+    const reply = await this.request(this.routes.result, {method: 'GET', headers: {'idempotency-key': original.key}});
+    return this.applyCommand(reply, original, 'recovery', undefined);
   }
   async query(draftId: string): Promise<Reply> {
     boundedId(draftId);
     const input = encoder.encode(JSON.stringify([draftId]));
     const query = btoa(String.fromCharCode(...input)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const previousMinimum = this.minimumView;
     const reply = await this.request(this.routes.query + '?input=' + query, {method: 'GET',
-      headers: this.minimumView ? {'if-state-view': this.minimumView} : {}});
+      headers: previousMinimum ? {'if-state-view': previousMinimum} : {}});
     // A receipt-only failure is not a fresh draft. Keep any original command
     // for recovery and make the unavailable read visible to the application.
     if (reply.envelope.disposition !== 'query' || !reply.envelope.result ||
         (reply.status !== 200 && reply.status !== 422)) throw new Error('query-unavailable');
-    return this.apply(reply, draftId, true);
+    return this.apply(reply, draftId, 'query', previousMinimum);
   }
   async effectStatus(effectId: string): Promise<EffectStatus> {
     if (!this.pending || !/^[0-9a-f]{64}$/.test(effectId) || !this.last?.['effect-ids']?.includes(effectId))
@@ -314,11 +336,13 @@ export class DraftClient {
     const retryKey = globalThis.crypto.randomUUID();
     const original = this.pending;
     if (!original) throw new Error('no-original-command');
+    const previousMinimum = this.minimumView;
     this.status = 'pending';
     try {
       return this.applyCommand(await this.request(this.routes.command, {method: 'POST', body: original.body,
         headers: {'content-type': VALUE_MEDIA, 'idempotency-key': original.key, 'command-retry-key': retryKey,
-          'command-abort-fence': encoded, ...(original.ifMatch ? {'if-match': original.ifMatch} : {})}}), original);
+          'command-abort-fence': encoded, ...(original.ifMatch ? {'if-match': original.ifMatch} : {})}}),
+        original, 'command', previousMinimum);
     } catch (error) { if (this.pending === original && this.status !== 'permission-denied' && !['committed', 'rejected'].includes(this.status)) this.status = 'uncertain'; throw error; }
   }
   finishOriginal(): void {

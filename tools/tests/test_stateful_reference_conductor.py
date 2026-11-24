@@ -54,7 +54,7 @@ class StatefulReferenceConductor(unittest.TestCase):
                   "cli": "/private/latent", "node": "/public/node", "operatorConfiguration": "/private/operator.json",
                   "aliceConfiguration": "/private/alice.json", "backends": [{"language": "java",
                       "entities": {name: dict(entity) for name in ("alice", "bob")}}],
-                  "browser": {"origin": "http://stateful.test:19092", "toolchain": "/public/browser", "chrome": "/public/chrome",
+                  "browser": {"origin": "http://stateful.localhost:19092", "toolchain": "/public/browser", "chrome": "/public/chrome",
                               "frontend": {}, "users": []}}
         self.assertEqual(validate_inputs(source)[0], "single-backend")
         matrix = copy.deepcopy(source)

@@ -19,6 +19,7 @@ from tools.java_transaction_qualification.evidence import Evidence, RecordingCli
 from tools.phase2_operator_process import Process, require, write_json
 from tools.rust_capsule_project import fresh
 from tools.stateful_reference_conductor import Backend, attest_originals, decode, regular, select
+from tools.stateful_reference_deployment import HOST
 
 ROOT = Path(__file__).resolve().parents[1]
 LANGUAGES = ("rust", "c", "typescript", "go", "java", "dotnet")
@@ -50,6 +51,7 @@ def validate_inputs(inputs: dict) -> tuple[str, list[dict]]:
             and (scope != "six-backend-matrix" or set(languages) == set(LANGUAGES)), "exact-app-guest-matrix")
     require(isinstance(inputs["browser"], dict) and set(inputs["browser"]) == {
         "origin", "toolchain", "chrome", "frontend", "users"}, "closed-app-browser-configuration")
+    require(inputs["browser"]["origin"] == f"http://{HOST}", "local-app-browser-origin")
     return scope, plans
 
 
@@ -68,10 +70,12 @@ def run(source: Path, output: Path) -> dict:
               "source": [], "selections": [], "originals": [], "passed": False}
     browser = None
     with owned_cancellation() as cancellation:
-        operator = RecordingClient(Path(inputs["cli"]), output, cancellation, deadline, evidence)
+        operator = RecordingClient(Path(inputs["cli"]), output, cancellation, deadline, evidence,
+                                   phase4=True, profile=None)
         operator.environment = build_environment(output)
         operator.config = Path(inputs["operatorConfiguration"])
-        user = RecordingClient(Path(inputs["cli"]), output, cancellation, deadline, evidence)
+        user = RecordingClient(Path(inputs["cli"]), output, cancellation, deadline, evidence,
+                               phase4=True, profile=None)
         user.environment = build_environment(output)
         user.config = Path(inputs["aliceConfiguration"])
         # The observer does not derive or replace any credential. Existing

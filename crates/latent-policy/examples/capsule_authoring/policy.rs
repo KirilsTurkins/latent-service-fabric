@@ -1,7 +1,9 @@
 use base64::{engine::general_purpose::STANDARD, Engine};
 use latent_policy::supply_chain::SupplyChainPolicy;
+#[cfg(test)]
+use latent_signing::BuildObservation;
 use latent_signing::{
-    BuildObservation, BuilderPolicy, ProvenanceLimits, PublisherPolicy, SignatureLimits,
+    BuildSource, BuilderPolicy, ProvenanceLimits, PublisherPolicy, SignatureLimits,
 };
 use serde_json::json;
 
@@ -18,7 +20,14 @@ pub(super) fn create(
 ) -> Result<(SupplyChainPolicy, Vec<u8>)> {
     let assignments = builds
         .iter()
-        .map(|build| (BUILDER, builder_key, *build))
+        .map(|build| {
+            (
+                BUILDER,
+                builder_key,
+                build.build_type.as_str(),
+                &build.source,
+            )
+        })
         .collect::<Vec<_>>();
     create_for_builders(now, publisher_key, &assignments)
 }
@@ -26,26 +35,25 @@ pub(super) fn create(
 pub(super) fn create_for_builders(
     now: u64,
     publisher_key: &[u8; 32],
-    builds: &[(&str, &[u8; 32], &BuildObservation)],
+    builds: &[(&str, &[u8; 32], &str, &BuildSource)],
 ) -> Result<(SupplyChainPolicy, Vec<u8>)> {
     let publisher = json!({"formatVersion":1,"scope":TENANT,"generation":1,"validFrom":now-60,"validUntil":now+3600,
         "maxSignatureLifetimeSeconds":2000,"maxProofAgeSeconds":DEMO_VALIDITY_SECONDS,
         "keys":[{"publisherId":PUBLISHER,"publicKey":STANDARD.encode(publisher_key),"validFrom":now-60,"validUntil":now+3600}]});
     let mut requirements = std::collections::BTreeMap::new();
     let mut keys = std::collections::BTreeSet::new();
-    for (builder_id, builder_key, build) in builds {
+    for (builder_id, builder_key, build_type, source) in builds {
         keys.insert((builder_id, builder_key));
-        let source = &build.source;
         requirements.insert(
             (
                 (*builder_id).to_owned(),
                 source.repository.clone(),
                 source.revision.clone(),
                 source.snapshot_digest.clone(),
-                build.build_type.clone(),
+                (*build_type).to_owned(),
             ),
             json!({
-            "builderId":builder_id,"buildType":build.build_type,
+            "builderId":builder_id,"buildType":build_type,
             "sourceRepository":source.repository,"sourceRevision":source.revision,
             "sourceSnapshotDigest":source.snapshot_digest,"requireReproducible":false}),
         );

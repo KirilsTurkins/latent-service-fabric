@@ -11,6 +11,7 @@ from tools import stateful_reference_project as app
 from tools.rust_capsule_project import snapshot
 
 HTTP_PROFILE = "qualified-http-v1:" + "a" * 64
+EVENT_PROFILE = "js-window-v1:" + "b" * 64
 
 
 class StatefulReferenceProject(unittest.TestCase):
@@ -41,15 +42,15 @@ class StatefulReferenceProject(unittest.TestCase):
                     after = json.loads((project / "capsule-project.json").read_bytes())["limits"]
                     self.assertEqual({key: value for key, value in before.items() if key not in {"stateReadBytes", "stateWriteBytes", "effectCount"}},
                                      {key: value for key, value in after.items() if key not in {"stateReadBytes", "stateWriteBytes", "effectCount"}})
-                    self.assertEqual((after["stateReadBytes"], after["stateWriteBytes"], after["effectCount"]), (4096, 1024, 2))
+                    self.assertEqual((after["stateReadBytes"], after["stateWriteBytes"], after["effectCount"]), (1024 * 1024, 64 * 1024, 2))
 
     def test_six_notification_captures_package_exact_profile_bytes_without_grants(self):
-        from tools.transaction_guest_project import HTTP_REQUIREMENTS, package_effect_requirements
+        from tools.transaction_guest_project import EVENT_REQUIREMENTS, HTTP_REQUIREMENTS, package_effect_assets
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             for language in app.LANGUAGES:
                 with self.subTest(language=language):
-                    project = app.create(root / language, language, draft_id="alice", http_profile=HTTP_PROFILE)
+                    project = app.create(root / language, language, draft_id="alice", http_profile=HTTP_PROFILE, event_profile=EVENT_PROFILE)
                     files = snapshot(project)
                     model = json.loads(files["capsule-project.json"])
                     requirements = json.loads(files[HTTP_REQUIREMENTS])
@@ -58,13 +59,27 @@ class StatefulReferenceProject(unittest.TestCase):
                     self.assertEqual((requirements["binding"], requirements["operation"]), ("draft-http", "http"))
                     self.assertEqual((requirements["adapter"], requirements["payloadFormat"]), ("qualified-http-effect-v1", "http-body-value-v1"))
                     self.assertEqual(requirements["idempotencyProfile"], HTTP_PROFILE)
-                    self.assertEqual(requirements["ceiling"], {"maximum_payload_bytes": 1024, "maximum_response_bytes": 22528,
+                    self.assertEqual(requirements["ceiling"], {"maximum_payload_bytes": 48, "maximum_response_bytes": 22528,
                         "maximum_attempts": 3, "maximum_age_millis": 600000, "attempt_timeout_millis": 2000})
                     self.assertNotIn("authority", requirements)
                     output = root / (language + "-package"); output.mkdir()
-                    self.assertEqual(package_effect_requirements(output, model, files), (HTTP_REQUIREMENTS, "asset", "application/json"))
-                    self.assertEqual((output / HTTP_REQUIREMENTS).read_bytes(), files[HTTP_REQUIREMENTS])
+                    self.assertEqual(package_effect_assets(output, model, files), [
+                        (HTTP_REQUIREMENTS, "asset", "application/json"),
+                        (EVENT_REQUIREMENTS, "asset", "application/json"),
+                    ])
+                    event = json.loads(files[EVENT_REQUIREMENTS])
+                    self.assertEqual(event["companionDigest"], requirements["companionDigest"])
+                    self.assertEqual((event["binding"], event["operation"], event["idempotencyProfile"]),
+                                     ("draft-change", "event", EVENT_PROFILE))
+                    for name in (HTTP_REQUIREMENTS, EVENT_REQUIREMENTS):
+                        self.assertEqual((output / name).read_bytes(), files[name])
                     self.assertEqual(snapshot(project), files)
+                    altered = root / (language + "-wrong-event")
+                    altered.mkdir()
+                    event["companionDigest"] = "sha256:" + "0" * 64
+                    with self.assertRaisesRegex(ValueError, "deferred-event-requirements-drift"):
+                        package_effect_assets(altered, model, {**files, EVENT_REQUIREMENTS: json.dumps(event).encode()})
+                    self.assertEqual(list(altered.iterdir()), [])
 
     def test_notification_packaging_refuses_payload_scope_media_and_count_drift(self):
         import copy

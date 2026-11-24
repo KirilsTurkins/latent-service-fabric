@@ -1,3 +1,4 @@
+use super::super::authorization::IntentBindings;
 use super::{Arc, PlatformError, PolicyCallBinding, RecoverySelection, ResultPolicy};
 use latent_activation::ActivationEnvelope;
 use latent_artifacts::{ReleaseUseEligibility, VerifiedArtifactMetadata};
@@ -13,7 +14,7 @@ pub struct TransactionInstallation {
     pub(super) declaration: TransactionBinding,
     pub(super) publication: ReleaseUseEligibility,
     pub(super) state: Arc<PolicyCallBinding>,
-    pub(super) intents: Option<Arc<PolicyCallBinding>>,
+    pub(super) intents: IntentBindings,
     pub(super) recovery: RecoverySelection,
     pub(super) result_read_policy: String,
     pub(super) result_policy: ResultPolicy,
@@ -137,12 +138,31 @@ impl TransactionInstallation {
             declaration,
             publication,
             state,
-            intents,
+            intents: IntentBindings::Single(intents),
             recovery,
             result_read_policy,
             result_policy,
             selection: None,
         })
+    }
+
+    /// Install separate, exact current staging owners for an HTTP and an event
+    /// intent from the same signed transaction. Each route authorizes its own
+    /// provider profile; selecting one can never obtain the other's policy.
+    pub fn with_paired_intents(
+        mut self,
+        http: (String, Arc<PolicyCallBinding>),
+        event: (String, Arc<PolicyCallBinding>),
+    ) -> Result<Self, PlatformError> {
+        if !matches!(self.intents, IntentBindings::Single(None)) {
+            return Err(super::authorization::denied());
+        }
+        for name in [&http.0, &event.0] {
+            latent_core::transaction_contract::identity(name)
+                .map_err(|_| super::authorization::denied())?;
+        }
+        self.intents = IntentBindings::Paired { http, event };
+        Ok(self)
     }
 
     pub(super) fn source(
