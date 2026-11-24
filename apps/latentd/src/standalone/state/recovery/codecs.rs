@@ -39,14 +39,16 @@ pub(super) struct Codecs {
 impl Codecs {
     #[cfg(target_os = "linux")]
     pub fn payload_destination(&self) -> Result<std::path::PathBuf, StoreError> {
-        let destination = match &self.action {
-            Action::InspectRestore {
-                destination_root, ..
-            }
-            | Action::Restore {
-                destination_root, ..
-            } => destination_root,
-            _ => return Err(StoreError::Invalid),
+        let (Action::InspectRestore {
+            destination_root: destination,
+            ..
+        }
+        | Action::Restore {
+            destination_root: destination,
+            ..
+        }) = &self.action
+        else {
+            return Err(StoreError::Invalid);
         };
         let (_, provider) = self
             .payloads

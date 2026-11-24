@@ -121,7 +121,7 @@ impl SnapshotPayloadSink for PayloadWriter<'_> {
             tenant: TenantId(payload.tenant.clone()),
             size_bytes: payload.size,
             media_type: payload.media_type.clone(),
-            metadata: Default::default(),
+            metadata: latent_core::Metadata::new(),
         };
         let current = || checkpoint(self.codecs);
         self.pending = Some(

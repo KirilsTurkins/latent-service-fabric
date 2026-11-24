@@ -63,7 +63,8 @@ impl ApprovedSource {
 
 #[expect(
     clippy::too_many_arguments,
-    reason = "Use the original offline store owners"
+    clippy::too_many_lines,
+    reason = "The before and after inventory checks retain their original offline owners through enrollment"
 )]
 pub(super) async fn run(
     settings: &NodeSettings,

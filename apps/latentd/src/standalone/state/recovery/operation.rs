@@ -309,7 +309,7 @@ async fn prepare(
                         quotas: super::super::validation::quotas(&configuration),
                         payloads,
                         #[cfg(target_os = "linux")]
-                        restored_payloads: Default::default(),
+                        restored_payloads: super::restore::RestoredPayloads::default(),
                         checkpoint: floor,
                         original,
                         _metadata: metadata,

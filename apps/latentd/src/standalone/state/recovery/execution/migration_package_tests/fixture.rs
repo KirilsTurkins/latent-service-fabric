@@ -119,7 +119,7 @@ impl Fixture {
             quotas,
             payloads: None,
             #[cfg(target_os = "linux")]
-            restored_payloads: Default::default(),
+            restored_payloads: super::super::super::restore::RestoredPayloads::default(),
             checkpoint,
             original,
             _metadata: metadata,
