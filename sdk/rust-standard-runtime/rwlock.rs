@@ -11,6 +11,16 @@ pub struct RwLock {
     writer: Cell<Option<u32>>,
     readers_finished: WaitQueue,
 }
+
+struct PendingWriter<'a>(&'a Mutex);
+
+impl Drop for PendingWriter<'_> {
+    fn drop(&mut self) {
+        // The pending writer acquired the gate before trying to admit a Wait.
+        unsafe { self.0.unlock(); }
+    }
+}
+
 // Only the selected serial canonical-thread Store can use these Cell fields.
 // All shared transitions are nonsuspending; waits use the original ledger.
 unsafe impl Send for RwLock {}
@@ -40,6 +50,7 @@ impl RwLock {
     }
     pub fn write(&self) {
         self.gate.lock();
+        let pending = PendingWriter(&self.gate);
         // Keeping the gate closes admission to later readers. Existing readers
         // never need that gate to release; their final release wakes this wait.
         while self.readers.get() != 0 {
@@ -50,6 +61,8 @@ impl RwLock {
         assert!(self.writer.get().is_none(), "overlapping logical writers");
         self.writer.set(Some(runtime::current_index()));
         compiler_fence(Ordering::Acquire);
+        // The installed writer now owns the gate through write_unlock or downgrade.
+        core::mem::forget(pending);
     }
     pub fn try_write(&self) -> bool {
         if !self.gate.try_lock() { return false; }

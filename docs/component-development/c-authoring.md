@@ -120,9 +120,10 @@ ambient socket authority is installed.
 
 Include `<fetch.h>` and use `fetchGetURL(url, "A")`, then ordinary `fread`,
 `ferror` and `fclose` on the returned read-only `FILE *`. The URL parser and
-parsed-URL GET entrypoints accept optional `url_stat`: a validated Content-Length
-is reported as its size; absent length remains `-1`, and unknown timestamps are
-`0`. Standalone `fetchStat`/`fetchStatURL` use an independently authorized
+parsed-URL GET entrypoints accept an optional `url_stat`. Content-Length supplies
+the size when present. An absent length yields `-1`. Last-Modified supplies
+both times in seconds since the Unix epoch. The parser accepts an HTTP date
+with GMT or UTC. Missing, repeated or invalid dates yield `0`. Standalone `fetchStat`/`fetchStatURL` use an independently authorized
 HEAD and close the response body before returning metadata. They require a
 HEAD grant; a GET grant does not imply one. For a constructed URL, the backend
 omits a literal fragment from the request target without changing the caller's

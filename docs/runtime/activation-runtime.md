@@ -33,6 +33,17 @@ memory and delegated children. Failed preparation rolls back. Completed work
 settles its owner once; an abandoned waiter cannot release a physical provider
 owner's reservation.
 
+The first admitted owner prepays the full configured record capacity. The
+arena initializes one record per live owner. Settlement removes that record
+under the state lock. A surviving task keeps its generation, owner ID and
+pending wake even if its record moves. The backing stays charged until retirement.
+
+A signed guest parked its second task and settled the first. After it reused the
+free slot and closed admission, it observed two live tasks and one parked task.
+Waking the original token reduced the parked count to zero. Both surviving
+tasks settled and the node reclaimed the Store, cell and broker reservations.
+[Component, measured costs and ten signed runtime tests](../testing/evidence/activation-runtime-signed-parked-relocation-2026-11-24.json)
+
 The four closed, resource-free runtime result shapes retain the accepted broker
 call inside the actual Wasmtime return value until canonical lowering completes.
 Completed scalar, token and observation results then release their original call,

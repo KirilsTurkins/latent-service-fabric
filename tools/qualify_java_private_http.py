@@ -51,6 +51,10 @@ public final class Client implements AutoCloseable {
         URL url = new URL(endpoint);
         return new Client((HttpURLConnection) (direct ? url.openConnection(Proxy.NO_PROXY) : url.openConnection()));
     }
+    public static Client openWithHandler(String endpoint) throws IOException {
+        Child.beforeRequest();
+        return new Client(Child.connect(endpoint));
+    }
     public void post(byte[] bytes) throws IOException {
         connection.setRequestMethod("POST"); connection.setDoOutput(true);
         connection.setRequestProperty("Content-Type", "application/octet-stream");
@@ -71,8 +75,24 @@ public final class Client implements AutoCloseable {
 }
 '''
 CHILD = '''package outside.http;
-public final class Child {
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
+public final class Child extends URLStreamHandler {
     private Child() {}
+    private int opens;
+    public static HttpURLConnection connect(String endpoint) throws IOException {
+        Child handler = new Child();
+        URLConnection connection = new URL(null, endpoint, handler).openConnection();
+        if (handler.opens != 1) throw new IOException("private-handler-not-called-once");
+        return (HttpURLConnection) connection;
+    }
+    @Override protected URLConnection openConnection(URL url) throws IOException {
+        opens++;
+        return new URL(url.toExternalForm()).openConnection();
+    }
     public static void beforeRequest() throws java.io.IOException {
         try (var stream = Child.class.getResourceAsStream("badge.txt")) {
             if (stream == null || !new String(stream.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
@@ -91,16 +111,17 @@ public final class Capsule implements Bindings.Exports {
     private static int calls;
     public String run(Long which, String endpoint) {
         int invocation = ++calls;
-        try (Client request = Client.open(endpoint, which == 4)) {
+        String label = which == 5 ? invocation + ":handler" : String.valueOf(invocation);
+        try (Client request = which == 5 ? Client.openWithHandler(endpoint) : Client.open(endpoint, which == 4)) {
             if (which == 1) request.post(new byte[] {0, 1, 2, 3});
             if (which == 3) request.header("Authorization", "must-not-leave-guest");
             int status = request.status();
-            if (which != 2) return invocation + ":" + status + ":" + request.body();
+            if (which != 2) return label + ":" + status + ":" + request.body();
             try (var input = request.stream()) { return invocation + ":early:" + input.read(new byte[4]); }
         } catch (Exception failure) {
             Throwable cause = failure;
             for (int n = 0; n < 8; n++) {
-                if (cause instanceof HttpFailure typed) return invocation + ":transport:" + typed.code();
+                if (cause instanceof HttpFailure typed) return label + ":transport:" + typed.code();
                 if (cause.getCause() == null || cause.getCause() == cause) break;
                 cause = cause.getCause();
             }
@@ -190,13 +211,16 @@ def negative_inputs(app):
     return rows
 
 
-def verify_node(node):
-    require(node['status'] == 'passed' and node['cases'] == list(EXPECTED_CASES)
+def verify_node(node, *, private_handler=False):
+    expected = list(EXPECTED_CASES)
+    if private_handler:
+        expected[-1:-1] = ['private-handler', 'private-handler-denied']
+    require(node['status'] == 'passed' and node['cases'] == expected
             and node['shutdown']['reaped'] is True and node['shutdown']['record']['clean'] is True
             and node['peerReaped'] is True
             and all(type(node['peer'][key]) is int for key in
                     ('startedRequests', 'rejectedRequests', 'committedMutations'))
-            and node['peer']['startedRequests'] == 11 and node['peer']['rejectedRequests'] == 0
+            and node['peer']['startedRequests'] == (12 if private_handler else 11) and node['peer']['rejectedRequests'] == 0
             and node['peer']['committedMutations'] == 1
             and all(row['role'] == 'primary' for row in node['peer']['requests']),
             'java-private-http-signed-provider-incomplete')
@@ -268,8 +292,8 @@ def qualify(output, native, native_tuple, wasi_sdk, read_only_cache):
             compiler_inputs = actual_compiler
             phase = 'variant-' + str(ordinal) + '-signed-provider'
             node = provider_controls(artifact, {name: binaries[name] for name in
-                ('latent', 'latentd', 'capsule_authoring')}, root / 'node', deadline=deadline)
-            verify_node(node)
+                ('latent', 'latentd', 'capsule_authoring')}, root / 'node', deadline=deadline, private_handler=True)
+            verify_node(node, private_handler=True)
             rows.append({'ordinal': ordinal, 'capture': captured, 'originalsRemovedBeforeBuild': True,
                 'component': file_identity(artifact / 'component.wasm'),
                 'sourceInputs': file_identity(artifact / 'source-inputs.json'),
@@ -278,7 +302,8 @@ def qualify(output, native, native_tuple, wasi_sdk, read_only_cache):
                 'runtimeProfile': file_identity(artifact / 'http-client-profile.json'),
                 'providerReceipt': file_identity(root / 'node/qualification.json'),
                 'cases': node['cases'], 'shutdown': node['shutdown'], 'peer': node['peer'],
-                'catalogueDataInputs': [], 'applicationTransportInjected': False})
+                'catalogueDataInputs': [], 'defaultClientTransportInjected': False,
+                'optionalGuestHandlerCases': ['private-handler', 'private-handler-denied']})
         require(materials == {name: file_identity(ROOT / name) for name in materials}
                 and before == {name: file_identity(path) for name, path in binaries.items()}
                 and native_receipt == file_identity(native_tuple)
@@ -286,7 +311,7 @@ def qualify(output, native, native_tuple, wasi_sdk, read_only_cache):
         result = {'schemaVersion': 'latent.java.private-http.qualification.v1', 'status': 'passed',
             'materials': materials, 'nativeProducts': before, 'nativeSource': native_source,
             'variants': rows, 'negativeControls': negatives,
-            'privateHttpInvocations': 26, 'libraryStartupOnBuildHost': False,
+            'privateHttpInvocations': sum(len(row['cases']) for row in rows), 'libraryStartupOnBuildHost': False,
             'publishedSecondClientQualified': False, 'fullTicketQualification': False,
             'limitations': ['Plain HTTP synchronous URLConnection profile; no new HTTPS or phase-timeout semantics.',
                 'Historical native products stay source-attributed; no new native host compilation claim.',

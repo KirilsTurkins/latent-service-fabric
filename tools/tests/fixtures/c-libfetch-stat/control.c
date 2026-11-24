@@ -10,6 +10,7 @@ static int opens, finishes, aborts, expected_method, status = 200;
 static bool deny, abort_failure;
 static const char *length, *expected_media, *expected_body;
 static size_t written;
+static const char *modified, *second_modified;
 static const char *expected_url = "https://example.test/item";
 static bool validate_url;
 static char last_url[8193];
@@ -55,14 +56,16 @@ bool latent_http_streaming_finish(int upload, response *out, http_error *error) 
     (void)error; assert(upload == 17); finishes++;
     assert(written == (expected_body ? strlen(expected_body) : 0));
     out->status = status; out->body = 23;
-    if (length) {
-        out->headers.ptr = calloc(1, sizeof(*out->headers.ptr)); assert(out->headers.ptr);
-        out->headers.len = 1;
-        out->headers.ptr[0].name.ptr = (uint8_t *)strdup("Content-Length");
-        out->headers.ptr[0].name.len = strlen("Content-Length");
-        out->headers.ptr[0].value.ptr = (uint8_t *)strdup(length);
-        out->headers.ptr[0].value.len = strlen(length);
-        assert(out->headers.ptr[0].name.ptr && out->headers.ptr[0].value.ptr);
+    const char *names[] = {"Content-Length", "lAsT-mOdIfIeD", "Last-Modified"};
+    const char *values[] = {length, modified, second_modified};
+    out->headers.ptr = calloc(3, sizeof(*out->headers.ptr));
+    assert(out->headers.ptr);
+    for (size_t i = 0; i < 3; ++i) {
+        if (!values[i]) continue;
+        latent_http_streaming_header_t *field = &out->headers.ptr[out->headers.len++];
+        field->name = (probe_string_t){(uint8_t *)strdup(names[i]), strlen(names[i])};
+        field->value = (probe_string_t){(uint8_t *)strdup(values[i]), strlen(values[i])};
+        assert(field->name.ptr && field->value.ptr);
     }
     return true;
 }
@@ -81,7 +84,7 @@ bool latent_http_streaming_abort_body(int body, http_error *error) {
 static void reset(void) {
     opens = finishes = aborts = 0; expected_method = LATENT_HTTP_STREAMING_METHOD_HEAD;
     status = 200; deny = abort_failure = validate_url = false; length = NULL; errno = 0;
-    expected_media = expected_body = NULL; written = 0;
+    expected_media = expected_body = modified = second_modified = NULL; written = 0;
     expected_url = "https://example.test/item"; last_url[0] = 0;
 }
 
@@ -144,6 +147,24 @@ int main(void) {
     assert(fetchStatURL(url, &stat, "A") == 0);
     assert(stat.size == 12345 && stat.atime == 0 && stat.mtime == 0);
     assert(opens == 1 && finishes == 1 && aborts == 1);
+
+    reset(); modified = "Sun, 06 Nov 1994 08:49:37 GMT";
+    assert(fetchStatURL(url, &stat, "A") == 0 && stat.atime == INT64_C(784111777) && stat.mtime == stat.atime);
+    reset(); modified = "Tue, 29 Feb 2000 00:00:00 UTC";
+    expected_method = LATENT_HTTP_STREAMING_METHOD_GET;
+    FILE *dated = fetchXGetURL(url, &stat, "A");
+    assert(dated && stat.atime == INT64_C(951782400) && stat.mtime == stat.atime && fclose(dated) == 0);
+    reset(); modified = "Fri, 01 Jan 2100 00:00:00 GMT";
+    assert(fetchStatURL(url, &stat, "A") == 0 && stat.mtime == INT64_C(4102444800));
+    second_modified = modified;
+    assert(fetchStatURL(url, &stat, "A") == 0 && stat.mtime == 0 && stat.atime == 0);
+    const char *invalid_dates[] = {"Mon, 29 Feb 1900 00:00:00 GMT", "Sun, 06 Nov 1994 24:00:01 GMT",
+        "Sun, 06 Nuv 1994 08:49:37 GMT", "Sun, 06 Nov 1994 08:49:37 PST", "Sun, 06 Nov 1994 08:49:37 GMT.",
+        "Sun, 06 Nov 1994 08:49:3x GMT", "Sux, 06 Nov 1994 08:49:37 GMT", ""};
+    for (size_t i = 0; i < sizeof(invalid_dates) / sizeof(invalid_dates[0]); ++i) {
+        reset(); modified = invalid_dates[i]; length = "19";
+        assert(fetchStatURL(url, &stat, "A") == 0 && stat.size == 19 && stat.mtime == 0 && stat.atime == 0);
+    }
 
     /* HEAD metadata is 64-bit even when wasm32 URL.length is not. */
     reset(); length = "5000000000";

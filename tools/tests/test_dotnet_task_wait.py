@@ -223,13 +223,16 @@ class TaskRuntimeResetWitnessTests(unittest.TestCase):
         source, cases = fixture.selected_fixture(reset_notification=True)
         self.assertEqual(legacy_cases, fixture.CASES)
         self.assertEqual(cases, legacy_cases + (fixture.EVENT_WAIT_MODE,)
-                         + fixture.event_context.CASES + (fixture.RESET_NOTIFICATION_MODE,))
+                         + fixture.event_context.CASES + fixture.TIMER_CHANGE_CASES
+                         + (fixture.RESET_NOTIFICATION_MODE,))
         self.assertEqual(source.count(fixture.RESET_NOTIFICATION_CASE), 1)
         self.assertEqual(source.count(fixture.EVENT_WAIT_CASE), 1)
         self.assertEqual(source.replace(fixture.RESET_NOTIFICATION_CASE, '').replace(fixture.EVENT_WAIT_CASE, '')
-                         .replace(fixture.event_context.SOURCE, ''), legacy)
+                         .replace(fixture.event_context.SOURCE, '').replace(fixture.TIMER_CHANGE_SOURCE, ''), legacy)
         self.assertNotIn('case "reset-notification-refusal"', legacy)
         self.assertNotIn('case "manual-reset-sibling"', legacy)
+        for mode in fixture.TIMER_CHANGE_CASES:
+            self.assertNotIn(f'case "{mode}"', legacy)
         with self.assertRaises(WorkflowError):
             fixture.selected_fixture(reset_notification=1)
         with self.assertRaises(WorkflowError):
@@ -279,6 +282,14 @@ class TaskRuntimeResetWitnessTests(unittest.TestCase):
              'retirement': {'phase': 'dotnet-ordinary-tasks-' + mode + '-retired'}}
             for mode in fixture.QUALIFICATION_CASES]}}
         require_reset_notification_receipt(captured, observed)
+        for mode in fixture.TIMER_CHANGE_CASES:
+            index = fixture.QUALIFICATION_CASES.index(mode)
+            for field in ('changed', 'pending', 'callbacks', 'drained'):
+                wrong = copy.deepcopy(observed)
+                value = wrong['dotnetTaskRuntime']['cases'][index]['invocation']['decoded'][0]
+                value['ok'] = value['ok'].replace(field+'=', field+'=wrong-')
+                with self.subTest(mode=mode, field=field), self.assertRaises(WorkflowError):
+                    require_reset_notification_receipt(captured, wrong)
         wrong_event = copy.deepcopy(observed)
         wrong_event['dotnetTaskRuntime']['cases'][fixture.QUALIFICATION_CASES.index(fixture.EVENT_WAIT_MODE)]['invocation']['decoded'] = [{'ok': 'wrong'}]
         with self.assertRaises(WorkflowError): require_reset_notification_receipt(captured, wrong_event)

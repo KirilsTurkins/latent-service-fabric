@@ -68,7 +68,7 @@ def fixture_reference(output, commands, compiler, source, fixture):
     elif fixture == 'timer-overlap':
         # Native execution checks public return values; only the signed host
         # witness establishes that the operations actually overlapped.
-        modes = [0, 1, 2, 3]
+        modes = [0, 1, 2, 3, 4, 5]
     elif fixture == 'timer-fired':
         modes = [0, 1, 2, 3]
     elif fixture == 'synchronization':
@@ -93,7 +93,7 @@ def fixture_reference(output, commands, compiler, source, fixture):
         outputs = []
         for mode in modes:
             value = commands.run(fixture + '-native-' + str(mode), binary, str(mode)).strip()
-            allowed = {b'42', b'43'} if fixture == 'timer-overlap' and mode in (1, 3) else {b'42'}
+            allowed = {b'42', b'43'} if fixture == 'timer-overlap' and mode in (1, 3, 4, 5) else {b'42'}
             if value not in allowed:
                 raise ValueError('Go-native-reference-output')
             outputs.append(int(value))

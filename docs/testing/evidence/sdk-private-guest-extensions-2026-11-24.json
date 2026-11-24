@@ -1,0 +1,470 @@
+{
+  "schemaVersion": "latent.sdk.private-guest-extensions.v1",
+  "scope": "Optional guest extensions exercised under ordinary publication grants. The source-bound records identify their individual build and node tuples.",
+  "languages": {
+    "C": {
+      "extension": "order_run_request takes the application read_order callback on the captured worker thread.",
+      "observedCases": [
+        "denied",
+        "normal"
+      ],
+      "evidence": {
+        "path": "c-private-pthread-library-2026-11-24.json",
+        "sha256": "sha256:3725ae32cf72b5eb321119979a7c90463c28411dcbddce01f89f83a466b7b67b",
+        "bytes": 21544
+      }
+    },
+    "Go": {
+      "extension": "An application http.RoundTripper delegates to the standard transport.",
+      "observedCases": [
+        "delegating-extension",
+        "delegating-origin-denied"
+      ],
+      "evidence": {
+        "path": "go-http-tenant-catalogue-signed-2026-10-20.json",
+        "sha256": "sha256:e981d36d15bfd097ad4b14178c7311f46bfde3498a057bf262866a33c35cc38e",
+        "bytes": 67941
+      },
+      "hostedJob": "https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/39461611124/job/118762220036"
+    },
+    "TypeScript": {
+      "extension": "A guest-provided Fetch implementation delegates to global Fetch.",
+      "observedCases": [
+        "public-guest-extension",
+        "public-extension-denied"
+      ],
+      "evidence": {
+        "path": "typescript-private-npm-coordinates-2026-11-24.json",
+        "sha256": "sha256:7f7d68bf1a26018947fd37a63cb29088237dda208e21c82ec63c5c5a3bb94498",
+        "bytes": 10839
+      }
+    },
+    ".NET": {
+      "extension": "An application DelegatingHandler counts calls and delegates to the platform HttpClientHandler.",
+      "observedCases": [
+        "guest-extension",
+        "guest-extension-denied"
+      ],
+      "evidence": {
+        "path": "dotnet-installed-refit-approval-2026-11-24.json",
+        "sha256": "sha256:378c8bf474aef01eaa64e58ac42a708ffbac784066eee029c57a490d407903fd",
+        "bytes": 12920
+      }
+    },
+    "Java": {
+      "extension": "A captured transitive JAR supplies a java.net.URLStreamHandler for one URL construction. Its openConnection delegates to the platform URL connection.",
+      "qualificationSource": "4316ae05f34592f19413ea7c6de07ca665a1eca7",
+      "nativeSource": "477db95b5fb3dbd35ef442d1932245b29da5c2fe",
+      "nativeTuple": {
+        "sha256": "sha256:c49bee2f43e9e4112300ecdba33ec4c6d8a69005ed27d70a6d0e5cd6dc631b54",
+        "bytes": 1495
+      },
+      "originalQualification": {
+        "sha256": "sha256:4869af23cd3014b8656fc47aaa121e6616a1b5f3b7b42566d3d2ba10a559e0c4",
+        "bytes": 70743
+      },
+      "signedInvocations": 30,
+      "sourceTestsPassed": 17,
+      "variants": [
+        {
+          "packages": [
+            "outside.http.primary/1.0.7",
+            "outside.http.child/1.0.7"
+          ],
+          "acceptedLock": "sha256:d421691019989997da2fc0c5ed44108e3a5b3200a42dafeee52e1ff1b11df4db",
+          "originalJars": {
+            "child": {
+              "sha256": "sha256:6777053b044341201b0da17927707eaf57c8805db54072f14667b91b27d7d472",
+              "bytes": 1987
+            },
+            "primary": {
+              "sha256": "sha256:dff8da73d4e379ea2721fd15ab31f05ca639cee3f7e8cef9473f8a27657eebff",
+              "bytes": 2800
+            }
+          },
+          "component": {
+            "sha256": "sha256:e45df064ee4ec8e455cc45d51d7e34067a9d44cdaea8aca92de928b6f8736ee3",
+            "bytes": 1211294
+          },
+          "originalJarsRemovedBeforeBuild": true,
+          "ordinaryInvocations": 13,
+          "guestHandlerInvocations": 2,
+          "originalNodeQualification": {
+            "sha256": "sha256:9b5dbb105da6576b749ff967386c2dd89fe9f829f72cae15c30aa7cdc915343a",
+            "bytes": 18732
+          },
+          "peer": {
+            "startedRequests": 12,
+            "acceptedConnections": 12,
+            "openConnections": 0,
+            "rejectedRequests": 0,
+            "committedMutations": 1,
+            "state": "stopped"
+          },
+          "nodeReapedClean": true,
+          "observed": [
+            {
+              "case": "private-handler",
+              "decoded": [
+                "1:handler:200:{\"empty\":\"\",\"id\":7,\"items\":[\"first\",\"\u03bb\"],\"name\":\"caf\u00e9\"}"
+              ],
+              "chargedOutboundRequests": 1,
+              "originalInvocation": {
+                "sha256": "sha256:9bac292f55c445f8a8bd7f776187bb6f9f13afbb41c3610a64a1dbf19fbe7221",
+                "bytes": 1307
+              }
+            },
+            {
+              "case": "private-handler-denied",
+              "decoded": [
+                "1:handler:transport:permission-denied"
+              ],
+              "chargedOutboundRequests": 0,
+              "originalInvocation": {
+                "sha256": "sha256:86fe57540a41fab553c4c013653199cdd8d0a8cc5ce47ddc6c6807f2e84d6d5a",
+                "bytes": 1188
+              }
+            },
+            {
+              "case": "fresh",
+              "decoded": [
+                "1:200:{\"empty\":\"\",\"id\":7,\"items\":[\"first\",\"\u03bb\"],\"name\":\"caf\u00e9\"}"
+              ],
+              "chargedOutboundRequests": 1,
+              "originalInvocation": {
+                "sha256": "sha256:2c88874cc4e3801697f67635e48d203f9a366eec4e8fe4d38fb3c31e1df101ea",
+                "bytes": 1277
+              }
+            }
+          ]
+        },
+        {
+          "packages": [
+            "tenant.example.unlisted-client/2026.10.19",
+            "different.owner.helper/4.2.1"
+          ],
+          "acceptedLock": "sha256:1d54e962063c06d7f0099b9c402311ff017efc94c205ebaae4ef6c10c1ab364b",
+          "originalJars": {
+            "child": {
+              "sha256": "sha256:6777053b044341201b0da17927707eaf57c8805db54072f14667b91b27d7d472",
+              "bytes": 1987
+            },
+            "primary": {
+              "sha256": "sha256:dff8da73d4e379ea2721fd15ab31f05ca639cee3f7e8cef9473f8a27657eebff",
+              "bytes": 2800
+            }
+          },
+          "component": {
+            "sha256": "sha256:e45df064ee4ec8e455cc45d51d7e34067a9d44cdaea8aca92de928b6f8736ee3",
+            "bytes": 1211294
+          },
+          "originalJarsRemovedBeforeBuild": true,
+          "ordinaryInvocations": 13,
+          "guestHandlerInvocations": 2,
+          "originalNodeQualification": {
+            "sha256": "sha256:d3da533afbda42eed2001bcfbd50662d4bd33bb1f2158e14ac5ff0be7f702a10",
+            "bytes": 18738
+          },
+          "peer": {
+            "startedRequests": 12,
+            "acceptedConnections": 12,
+            "openConnections": 0,
+            "rejectedRequests": 0,
+            "committedMutations": 1,
+            "state": "stopped"
+          },
+          "nodeReapedClean": true,
+          "observed": [
+            {
+              "case": "private-handler",
+              "decoded": [
+                "1:handler:200:{\"empty\":\"\",\"id\":7,\"items\":[\"first\",\"\u03bb\"],\"name\":\"caf\u00e9\"}"
+              ],
+              "chargedOutboundRequests": 1,
+              "originalInvocation": {
+                "sha256": "sha256:3aa8f12421b6e42bcfc1a41d7c6661f8113306054e2dc4bdd7b80730e1646ae1",
+                "bytes": 1307
+              }
+            },
+            {
+              "case": "private-handler-denied",
+              "decoded": [
+                "1:handler:transport:permission-denied"
+              ],
+              "chargedOutboundRequests": 0,
+              "originalInvocation": {
+                "sha256": "sha256:a51039b91e04ed9716e4a0ae1c3cb8fd624046dfccb5441790bb05262e7cdced",
+                "bytes": 1187
+              }
+            },
+            {
+              "case": "fresh",
+              "decoded": [
+                "1:200:{\"empty\":\"\",\"id\":7,\"items\":[\"first\",\"\u03bb\"],\"name\":\"caf\u00e9\"}"
+              ],
+              "chargedOutboundRequests": 1,
+              "originalInvocation": {
+                "sha256": "sha256:d88f2856f58b1601503d8b3d8c696b5633ad2682edcb46c325064b23d9c0efc6",
+                "bytes": 1277
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "Rust": {
+      "extension": "Each private crate implements std::io::Read and passes its reader to golem_wasi_http::Body::new. Each nonempty read yielded one byte; the fifth returned EOF. Both ordinary factories use the installed backend.",
+      "qualificationSource": "9f0b04a8bf51372b17355d722a14631d3fd0d283",
+      "guestSource": "1089fce664193a20015badc4965940fccb08adc2",
+      "installedToolkitAndNativeSource": "9f75d2d8a5e0c19243da1f97f19b089cfd8043e5",
+      "toolkitArchive": {
+        "name": "latent-dev-linux-x86_64-rust-tools.zip",
+        "sha256": "sha256:1cba9a5c5d8d963dee1351d23eb90519baea77739b2bc1ff706413e57c5a8c27",
+        "size": 378884511
+      },
+      "nativeProducts": {
+        "sha256": "sha256:74cd8e0373c99dca02b302b0f6dfd8605cc44a0e01a13855e96f08ece227dfb6",
+        "bytes": 141141
+      },
+      "component": {
+        "sha256": "sha256:1f04bb8071470d1a28cf91ed9a209da7dacd7ed5286cf7f32761a734f68b7324",
+        "bytes": 971865
+      },
+      "packageDigest": "sha256:f1d22766d8818c98384a7bc883e929e933eea46f37b244a7f08d8cb46d4d58d0",
+      "guestCapture": {
+        "sha256": "sha256:9dfa7a1ca27ba0322569e7c21c68d52a6a1105f283ba5ecb0e867f48847e0f1c",
+        "bytes": 346589
+      },
+      "compilerReceipt": {
+        "sha256": "sha256:2e6e4702cba39d80b180f3dc8127a533807378d2d5f75220ec601d7ad8f1a57d",
+        "bytes": 226734
+      },
+      "originalNodeQualification": {
+        "sha256": "sha256:ec626c6c84cb1450ab834fbbd4e3ca7005067a632ed260811ce64fb460045a24",
+        "bytes": 519707
+      },
+      "projects": [
+        {
+          "package": {
+            "package": "outside-wasi-http-alpha-70b444976d947f39",
+            "version": "1.28853.17560",
+            "alias": "alpha"
+          },
+          "sourceInventory": "sha256:5ca0e67efcf5a21249e963d0972f7069e7edeab571cde554cfd61f64e725d23d",
+          "resource": {
+            "sha256": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+            "bytes": 57
+          }
+        },
+        {
+          "package": {
+            "package": "outside-wasi-http-delta-70b444976d947f39",
+            "version": "2.28853.17560",
+            "alias": "delta"
+          },
+          "sourceInventory": "sha256:9680325b939a715ba8f5b60f3f104e56e8285907e0b21fc6aa9f44763228d501",
+          "resource": {
+            "sha256": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+            "bytes": 57
+          }
+        }
+      ],
+      "acceptedCandidate": "sha256:90115612bc5db932797271f4deb4de8fc3cd81ce37ff7e2b691ade1fd8cab7fb",
+      "originalCratesRemovedBeforeBuild": true,
+      "catalogueRegistration": false,
+      "compilerNetwork": "denied",
+      "checkoutMounted": false,
+      "approvedExecutableInputs": 16,
+      "sourceTestsPassed": 45,
+      "guestInvocations": 10,
+      "guestReaderInvocations": 4,
+      "preEntryGrantRefusals": 2,
+      "tenants": [
+        {
+          "tenant": "examples",
+          "publication": "publication:sha256:296825666e3645c771ff0ff50f7b1c350be3da0a04b27c143ef91f60932d43bc",
+          "signedCases": [
+            {
+              "case": "installed-json",
+              "client": "waki",
+              "crate": "alpha",
+              "chargedOutboundRequests": 1,
+              "peerConnections": 1,
+              "caseRecord": {
+                "sha256": "sha256:e8caef4bb9b156a32f2f3442215c066da8620465ab26e9e2ac29654027aa3a23",
+                "bytes": 32172
+              },
+              "result": "fresh:waki:200:domain:7:caf\u00e9:first|\u03bb:"
+            },
+            {
+              "case": "guest-reader-post",
+              "client": "golem",
+              "crate": "alpha",
+              "chargedOutboundRequests": 1,
+              "peerConnections": 1,
+              "caseRecord": {
+                "sha256": "sha256:6e1bdc929bdce2b0f0385f327e678cb451955f94ace80808c645439a27fe5845",
+                "bytes": 37979
+              },
+              "result": "fresh:golem:reader:5:200:echo:POST:AAECAw=="
+            },
+            {
+              "case": "guest-reader-denied",
+              "client": "golem",
+              "crate": "alpha",
+              "chargedOutboundRequests": 0,
+              "peerConnections": 0,
+              "caseRecord": {
+                "sha256": "sha256:e3d4185fef67b1aea352fd61f643899a1d5523721c9d2c77aa2b4fbf5a5ee19e",
+                "bytes": 41429
+              },
+              "publicError": {
+                "phase": "send",
+                "display": "error sending request",
+                "source": "StreamError::LastOperationFailed(Error { handle: Resource { handle: 4 } })"
+              },
+              "exactUnderlyingCategoryProven": false
+            },
+            {
+              "case": "default-get-denied",
+              "client": "golem",
+              "crate": "alpha",
+              "chargedOutboundRequests": 0,
+              "peerConnections": 0,
+              "caseRecord": {
+                "sha256": "sha256:b8f8c2f1caa36950c06742e575608b21d019dc13d6546ddc3b35fbb4993a2eb4",
+                "bytes": 41104
+              },
+              "publicError": {
+                "phase": "send",
+                "display": "error sending request",
+                "source": "ErrorCode::HttpRequestDenied"
+              },
+              "exactUnderlyingCategoryProven": true
+            },
+            {
+              "case": "installed-json",
+              "client": "golem",
+              "crate": "delta",
+              "chargedOutboundRequests": 1,
+              "peerConnections": 1,
+              "caseRecord": {
+                "sha256": "sha256:06065724e78c9cca98380afeca5452aae8a0def9386c57340fe70b74763b7af6",
+                "bytes": 43588
+              },
+              "result": "fresh:golem:200:domain:7:caf\u00e9:first|\u03bb:"
+            }
+          ],
+          "peers": {
+            "contacts": 3,
+            "mutations": 0,
+            "completedWrites": 3,
+            "allClosed": true,
+            "vectors": [
+              "domain-json",
+              "method-bytes",
+              "domain-json"
+            ]
+          }
+        },
+        {
+          "tenant": "foreign",
+          "publication": "publication:sha256:e825b885e651f95d8919fa682525d92b63199d43328a646eb6834623ed2f51db",
+          "signedCases": [
+            {
+              "case": "installed-json",
+              "client": "golem",
+              "crate": "delta",
+              "chargedOutboundRequests": 1,
+              "peerConnections": 1,
+              "caseRecord": {
+                "sha256": "sha256:7ba410dce5478e1217d423c3bed022e09a34230f70171035291e9e389b4867ad",
+                "bytes": 35044
+              },
+              "result": "fresh:golem:200:domain:7:caf\u00e9:first|\u03bb:"
+            },
+            {
+              "case": "guest-reader-post",
+              "client": "golem",
+              "crate": "delta",
+              "chargedOutboundRequests": 1,
+              "peerConnections": 1,
+              "caseRecord": {
+                "sha256": "sha256:a63d0d37fd5528e3c0d159e7e8e9d799de536e294f3e54fe3678a9d0f23337ca",
+                "bytes": 40814
+              },
+              "result": "fresh:golem:reader:5:200:echo:POST:AAECAw=="
+            },
+            {
+              "case": "guest-reader-denied",
+              "client": "golem",
+              "crate": "delta",
+              "chargedOutboundRequests": 0,
+              "peerConnections": 0,
+              "caseRecord": {
+                "sha256": "sha256:ebed03282b5322e482f280295daff6d5a08dfb74dfbc55720522d60b3f811930",
+                "bytes": 44271
+              },
+              "publicError": {
+                "phase": "send",
+                "display": "error sending request",
+                "source": "StreamError::LastOperationFailed(Error { handle: Resource { handle: 4 } })"
+              },
+              "exactUnderlyingCategoryProven": false
+            },
+            {
+              "case": "default-get-denied",
+              "client": "golem",
+              "crate": "delta",
+              "chargedOutboundRequests": 0,
+              "peerConnections": 0,
+              "caseRecord": {
+                "sha256": "sha256:22fff058d553b9dc6a85214c68f21c8a4ceccdf299cf8e5f1ff55bd8c1154c88",
+                "bytes": 43948
+              },
+              "publicError": {
+                "phase": "send",
+                "display": "error sending request",
+                "source": "ErrorCode::HttpRequestDenied"
+              },
+              "exactUnderlyingCategoryProven": true
+            },
+            {
+              "case": "installed-json",
+              "client": "waki",
+              "crate": "alpha",
+              "chargedOutboundRequests": 1,
+              "peerConnections": 1,
+              "caseRecord": {
+                "sha256": "sha256:c0857550f4cc13887da27fa8088366313cb7415e6f8596334509c1ddb288e551",
+                "bytes": 46415
+              },
+              "result": "fresh:waki:200:domain:7:caf\u00e9:first|\u03bb:"
+            }
+          ],
+          "peers": {
+            "contacts": 3,
+            "mutations": 0,
+            "completedWrites": 3,
+            "allClosed": true,
+            "vectors": [
+              "domain-json",
+              "method-bytes",
+              "domain-json"
+            ]
+          }
+        }
+      ],
+      "cleanShutdown": true,
+      "firstAttempt": {
+        "source": "1089fce664193a20015badc4965940fccb08adc2",
+        "stage": "examples-guest-reader-denied",
+        "originalRecord": {
+          "sha256": "sha256:a6cb7f24b78c0024c773aedf663be7c1797a722db53457973a1f6fcd7e0df8c2",
+          "bytes": 172851
+        },
+        "reason": "The controller originally expected HttpRequestDenied on a streaming request. Golem reported LastOperationFailed while writing the body. The same installed component was reused to verify the public errors for both client paths."
+      }
+    }
+  }
+}

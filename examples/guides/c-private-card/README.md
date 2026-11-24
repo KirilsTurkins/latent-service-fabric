@@ -47,4 +47,10 @@ runtime profile and an HTTP grant for the chosen destination. In the signed
 test, the peer served a 57-byte price card. The capsule returned
 `card:7:5:57:1776131770`. Each of the three runs made one GET, and the node
 reported zero physical owners after each invocation.
+
+The transitive worker accepts a guest-owned callback and its request data.
+Calling it with a second origin outside the grant returned `card-status:5`
+(`CARD_HTTP`). Across all three captured packages that origin received zero
+connections. The next call to the authorized origin returned the price card.
+Both calls left zero activation and provider owners.
 [Signed executions and measured usage](../../../docs/testing/evidence/c-private-pthread-library-2026-11-24.json)
