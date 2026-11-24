@@ -683,6 +683,10 @@ impl StandaloneNode {
                 .await?;
                 self.state = Some(state);
                 self.effects = Some(effects);
+                self.state
+                    .as_ref()
+                    .ok_or_else(mode_error)?
+                    .bind_transaction_schema_owner(&catalogs.deployments)?;
             }
             (None, None) => {}
             _ => return Err(mode_error()),

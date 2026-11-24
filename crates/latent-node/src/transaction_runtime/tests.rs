@@ -18,6 +18,60 @@ use latent_core::{BudgetConsumption, DeclaredError, Metadata};
 use latent_executor::transaction::{Mode, StateFailure, TransactionHost};
 use latent_state::embedded::Family;
 
+#[tokio::test]
+async fn withdrawn_ingress_after_staging_cannot_commit_the_state_or_result() {
+    use latent_core::PlatformError;
+    use std::sync::atomic::{AtomicBool, Ordering};
+
+    struct Ingress(AtomicBool);
+    impl TransactionIngressFence for Ingress {
+        fn with_current(
+            &self,
+            action: &mut dyn FnMut() -> Result<(), PlatformError>,
+        ) -> Result<(), PlatformError> {
+            if self.0.load(Ordering::Acquire) {
+                action()
+            } else {
+                Err(super::authorization::denied())
+            }
+        }
+    }
+
+    let fixture = Fixture::new().await;
+    let (admission, envelope, budget) = fixture.invocation(false, "withdrawn-ingress");
+    let ingress = Arc::new(Ingress(AtomicBool::new(true)));
+    let admission = Arc::new(
+        Arc::try_unwrap(admission)
+            .ok()
+            .unwrap()
+            .with_ingress_fence(ingress.clone()),
+    );
+    let host = admission.admit(&envelope, &budget).await.unwrap();
+    host.acquire(Mode::Command).unwrap();
+    host.put(b"counter".to_vec(), value(b"staged"))
+        .await
+        .unwrap();
+    host.finish_guest_access();
+    ingress.0.store(false, Ordering::Release);
+    let _ = budget.finalize_at(None, std::time::Instant::now());
+    admission
+        .complete(
+            success(b"result"),
+            fixture.commit_control(&envelope, &budget),
+        )
+        .await;
+    assert_eq!(fixture.rows(Family::State).await, 0);
+    assert_eq!(fixture.rows(Family::Outbox).await, 0);
+    assert!(!matches!(
+        admission.take_completion().unwrap(),
+        Some(TransactionCompletionResult::Command(
+            CommandCompletionDisposition::Durable { .. }
+        ))
+    ));
+    drop((host, admission, budget, envelope));
+    fixture.shutdown().await;
+}
+
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn trusted_inbox_admission_commits_the_original_input_and_recovers_duplicate() {
     trusted_inbox_commit_and_replay(None).await;

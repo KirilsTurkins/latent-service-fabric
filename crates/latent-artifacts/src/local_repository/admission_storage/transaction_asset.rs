@@ -11,7 +11,6 @@ use crate::local_repository::{
 use crate::package::{
     decode_referrer, inspect_package, EvidenceKind, LayerRole, PackageKind, PackageLimits,
 };
-use crate::selected_transaction_asset::{COMPANION_BYTES, COMPANION_MEDIA_TYPE, COMPANION_PATH};
 use crate::{
     decode_contract_metadata, ContractMetadataLimits, ReleaseUseEligibility,
     VerifiedArtifactMetadata,
@@ -162,14 +161,15 @@ impl StoredAdmission {
                         return Err(corrupt("transaction-asset-contract-association"));
                     }
                 }
-                LayerRole::Asset if layer.path == COMPANION_PATH => {
+                LayerRole::Asset if layer.path == TransactionBinding::ASSET_PATH => {
                     if companion.is_some()
-                        || layer.media_type != COMPANION_MEDIA_TYPE
-                        || layer.size > COMPANION_BYTES as u64
+                        || layer.media_type != TransactionBinding::MEDIA_TYPE
+                        || layer.size > TransactionBinding::MAXIMUM_BYTES as u64
                     {
                         return Err(resource_exhausted("transaction-asset-companion-shape"));
                     }
-                    let bytes = read_blob(directory, &stored.blob, COMPANION_BYTES)?;
+                    let bytes =
+                        read_blob(directory, &stored.blob, TransactionBinding::MAXIMUM_BYTES)?;
                     let declaration = TransactionBinding::decode(&bytes)
                         .map_err(|_| corrupt("transaction-asset-companion"))?;
                     if declaration.capsule != metadata.manifest().metadata.name {

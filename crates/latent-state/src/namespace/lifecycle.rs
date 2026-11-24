@@ -1,12 +1,14 @@
 //! Bounded live namespace ownership, independent of native engine/file owners.
 //! Every production lifecycle writer advances this fence at logical acceptance
 //! and resolves it from the actual committed row before admitting new resources.
+use std::collections::BTreeMap;
 use std::sync::{
     atomic::{AtomicBool, AtomicUsize, Ordering},
     Arc, RwLock,
 };
 
 use latent_core::native_capacity::{NativeCapacityOwner, NativeReservation};
+use latent_core::{StateNamespaceId, TenantId};
 
 use super::{catalog::NamespaceRead, NamespaceError, NamespaceRecord, NamespaceStatus};
 
@@ -314,6 +316,46 @@ impl NamespaceLifecycleRegistry {
             return Err(NamespaceError::PermissionDenied);
         }
         action()
+    }
+
+    /// Recheck the same protected namespace rows at the route visibility
+    /// boundary. Missing rows are checked against pending creations too.
+    /// The action must only perform the prepared catalog's atomic replace.
+    pub fn with_current_deployment_schemas<T>(
+        &self,
+        expected: &BTreeMap<(TenantId, StateNamespaceId), Option<NamespaceRead>>,
+        action: impl FnOnce() -> T,
+    ) -> Result<T, NamespaceError> {
+        let _fence = self
+            .owner
+            .fence
+            .try_write()
+            .map_err(|_| NamespaceError::Unavailable)?;
+        self.check()?;
+        for read in expected.values().flatten() {
+            self.stamp(read.record())?;
+        }
+        let entries = self
+            .entries
+            .try_read()
+            .map_err(|_| NamespaceError::Unavailable)?;
+        for entry in entries.iter() {
+            let state = entry
+                .state
+                .try_read()
+                .map_err(|_| NamespaceError::Unavailable)?;
+            let scope = (state.record.tenant.clone(), state.record.id.clone());
+            if let Some(read) = expected.get(&scope) {
+                if state.pending.is_some()
+                    || read
+                        .as_ref()
+                        .is_none_or(|read| !same_lifecycle(&state.record, read.record()))
+                {
+                    return Err(NamespaceError::Conflict);
+                }
+            }
+        }
+        Ok(action())
     }
 
     pub fn retire(&self) -> Result<(), NamespaceError> {
