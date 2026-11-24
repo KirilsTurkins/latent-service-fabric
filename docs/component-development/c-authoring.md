@@ -154,6 +154,15 @@ physical owners after each case. A separate node refused entry with its HTTP
 provider absent. Conditional requests remain unsupported.
 [Signed results](../testing/evidence/c-libfetch-stat-range-signed-2026-11-23.json)
 
+The signed chunked-response run read the 51 bytes declared by a valid
+Content-Range and checked their checksum. A response one byte short and a
+response one byte long each exposed the expected prefix and set the C stream
+error. The peer saw one request for each case. Across all fifteen
+provider-backed cases it saw twelve requests and zero mutations, and the
+node retired every measured physical and provider owner. A separate node
+refused the call before entry with its HTTP provider absent.
+[Signed chunked-range results](../testing/evidence/c-libfetch-chunked-ranges-signed-2026-11-24.json)
+
 `fetchReqHTTP` supports bounded string request bodies for its declared HTTP
 methods. Only the empty flags string or `A` is supported. HTTP/HTTPS transport
 and TLS validation belong to the typed provider; socket and OpenSSL APIs are
