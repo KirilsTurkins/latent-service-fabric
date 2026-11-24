@@ -77,6 +77,7 @@ pub fn verify_inbox_scope(
     if key.tenant != scope.tenant
         || key.namespace != scope.namespace
         || incarnation(key)? != scope.incarnation
+        || key.entity != scope.entity
         || inbox.provider != scope.provider
         || inbox.binding != scope.input_binding()?
     {

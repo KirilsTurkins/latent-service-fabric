@@ -6,10 +6,47 @@ fn scope() -> InboxScope {
         tenant: "alpha".into(),
         namespace: "orders".into(),
         incarnation: 1,
+        entity: None,
         processing_scope: "primary".into(),
         provider: "private-nats".into(),
         stream: "orders".into(),
         stream_created: "2026-01-01T00:00:00Z".into(),
+    }
+}
+
+#[test]
+fn fixed_entity_is_part_of_the_origin_and_cannot_be_reassigned() {
+    let fixture = Fixture::new();
+    fixture.install(&[quota("alpha")]);
+    fixture
+        .store()
+        .apply(domain::create(fixture.store(), "alpha", "orders"))
+        .unwrap();
+    let legacy = scope();
+    let mut alice = legacy.clone();
+    alice.entity = Some("alice".into());
+    let mut bob = legacy.clone();
+    bob.entity = Some("bob".into());
+    assert_ne!(alice.input_binding().unwrap(), bob.input_binding().unwrap());
+    assert_ne!(
+        alice.input_binding().unwrap(),
+        legacy.input_binding().unwrap()
+    );
+
+    let view = fixture.store().snapshot().unwrap();
+    let enrolled = PreparedInboxScope::prepare(&view, &alice).unwrap();
+    drop(view);
+    fixture.store().apply(enrolled.into_batch()).unwrap();
+
+    let view = fixture.store().snapshot().unwrap();
+    assert!(PreparedInboxScope::prepare(&view, &alice)
+        .unwrap()
+        .existing());
+    for replacement in [bob, legacy] {
+        assert!(matches!(
+            PreparedInboxScope::prepare(&view, &replacement),
+            Err(StoreError::Conflict)
+        ));
     }
 }
 

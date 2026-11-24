@@ -202,6 +202,7 @@ int main(void) {
     for (size_t index = 0; index < sizeof(errors) / sizeof(errors[0]); ++index) {
         reset();
         status = errors[index].status;
+        if (status == 404) length = "9223372036854775808";
         /* An abort failure cannot replace the first actual HTTP outcome. */
         abort_failure = status == 503;
         assert(fetchStatURL(url, &stat, "A") == -1);
@@ -213,16 +214,16 @@ int main(void) {
         assert(opens == 1 && finishes == 1 && aborts == 1);
 
         /* Same frontend/port, fresh explicit request; no automatic replay. */
-        status = 200; abort_failure = false;
+        status = 200; abort_failure = false; length = NULL;
         assert(fetchStatURL(url, &stat, "A") == 0);
         assert(opens == 2 && finishes == 2 && aborts == 2);
     }
     reset(); expected_method = LATENT_HTTP_STREAMING_METHOD_GET;
-    status = 503; abort_failure = true;
+    status = 503; abort_failure = true; length = "9223372036854775808";
     assert(!fetchXGetURL(url, &stat, "A"));
     assert(fetchLastErrCode == FETCH_TEMP && errno == EIO);
     assert(opens == 1 && finishes == 1 && aborts == 1);
-    status = 200; abort_failure = false;
+    status = 200; abort_failure = false; length = NULL;
     FILE *after_error = fetchXGetURL(url, &stat, "A");
     assert(after_error && fclose(after_error) == 0);
     assert(opens == 2 && finishes == 2 && aborts == 2);

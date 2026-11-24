@@ -75,7 +75,7 @@ pub(super) fn validate_inventory(
 
 /// Describes a single addition only after the same complete producer and quota
 /// validation. The caller must separately establish approval and exclusion.
-#[cfg_attr(not(test), allow(dead_code))]
+#[cfg(any(test, all(target_os = "linux", target_arch = "x86_64")))]
 pub(super) fn validate_inventory_addition(
     view: &ReadView,
     identity: &StoreIdentity,

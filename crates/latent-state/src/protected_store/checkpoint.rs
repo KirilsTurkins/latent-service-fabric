@@ -21,6 +21,8 @@ use crate::store_io::{
     StoreIoError, StoreIoJob, StoreIoKind, StoreIoRetirement, StoreIoRetirementWitness,
 };
 
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod enrollment;
 mod native;
 pub(super) use native::CheckpointFile;
 

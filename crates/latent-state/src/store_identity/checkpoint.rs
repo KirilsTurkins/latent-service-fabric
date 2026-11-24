@@ -39,13 +39,44 @@ impl ExternalCheckpoint {
         dispatch_owner_epoch: u64,
         clock_floor_millis: u64,
     ) -> Result<Self, StoreError> {
-        Self::checked(
+        Self::initial_with_inbox_custody(
             identity,
-            1,
             protected_clock_epoch,
             dispatch_owner_epoch,
             clock_floor_millis,
+            None,
         )
+    }
+
+    /// Only a protected, newly staged destination may publish this initial
+    /// record after proving the archived and retained source inventories equal.
+    pub(crate) fn initial_with_inbox_custody(
+        identity: StoreIdentity,
+        protected_clock_epoch: u64,
+        dispatch_owner_epoch: u64,
+        clock_floor_millis: u64,
+        inbox_custody: Option<InboxCustodyWatermark>,
+    ) -> Result<Self, StoreError> {
+        let generation = if let Some(watermark) = inbox_custody {
+            if watermark.generation == 0 || watermark.digest == [0; 32] {
+                return Err(StoreError::Invalid);
+            }
+            watermark
+                .generation
+                .checked_add(1)
+                .ok_or(StoreError::Capacity)?
+        } else {
+            1
+        };
+        let mut checkpoint = Self::checked(
+            identity,
+            generation,
+            protected_clock_epoch,
+            dispatch_owner_epoch,
+            clock_floor_millis,
+        )?;
+        checkpoint.inbox_custody = inbox_custody;
+        Ok(checkpoint)
     }
 
     fn checked(

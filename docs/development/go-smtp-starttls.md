@@ -118,3 +118,14 @@ separate NOOP and QUIT. The receipt records connection counts and the peer's
 one accepted message separately. This fixture does not exercise RxGo/backoff,
 host TLS, a normally installed provider, cross-tenant reuse or final kernel
 retirement. A source or native client control alone is not a signed result.
+
+The signed lost-reply run passed on source `eb282945ae3a2e1fa91556467a1c610130e8fe35`.
+The job logged two contacts and one peer mutation. Both cases ended with zero
+observed guest Stores, instances, I/O owners and stream owners. The receipt
+identifies the signed component and the exact modules compiled into it. It also
+records which modules the fixture exercised. The retained JSON preserves every
+field from the job log. The SHA-256 of the original 5,362-byte JSON line,
+excluding its timestamp and line ending, is
+`3bd9ffd11c799bfca638506008bcf284535d127b688dbb844e70d76d1814070c`.
+[Retained receipt](../testing/evidence/go-published-smtp-lost-reply-2026-11-10.json)
+and [original job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42785338745/job/129725019256).

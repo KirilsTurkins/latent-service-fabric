@@ -99,51 +99,6 @@ class ManifestTests(unittest.TestCase):
         with self.assertRaisesRegex(InstallError, "retained-transaction-format-change"):
             lifecycle.compatible(state, release, True, configuration.LOCAL)
 
-    @unittest.skipUnless(LINUX, "installed ABI inspection uses Linux protected descriptors")
-    def test_state_enabled_preflight_uses_the_abi_authenticated_with_the_native_release(self):
-        metadata, _payload = fixture()
-        engine = metadata["engine"]
-        abi_bytes = (ROOT / verify.TRANSACTION_ABI_PATH).read_bytes()
-        abi = document(abi_bytes)
-        profile = {"hostAbiProfile": abi["id"], "hostAbiDigest": abi["digest"],
-                   "abiFileSha256": hashlib.sha256(abi_bytes).hexdigest(),
-                   "store": {**verify.TRANSACTION_STORE, "engineVersion": "4.4.0"}}
-        self.assertEqual(checks.abi_profile(ROOT, {}, engine), engine["hostAbiProfile"])
-        with self.assertRaisesRegex(InstallError, "does-not-admit-transaction-state"):
-            checks.abi_profile(ROOT, {"state": {}}, engine)
-
-        engine["transactionState"] = profile
-        with self.assertRaisesRegex(InstallError, "transaction-runtime-files-missing"):
-            verify.manifest(metadata, metadata["version"])
-        for name in sorted(verify.TRANSACTION_SCHEMAS | {verify.TRANSACTION_ABI_PATH}):
-            payload = (ROOT / name).read_bytes()
-            metadata["files"].append({"path": name, "size": len(payload),
-                                      "sha256": hashlib.sha256(payload).hexdigest(), "mode": 0o644})
-        self.assertEqual(verify.manifest(metadata, metadata["version"]), metadata)
-        self.assertEqual(checks.abi_profile(ROOT, {"state": {}}, engine), verify.TRANSACTION_ABI)
-        self.assertEqual(checks.abi_profile(ROOT, {}, engine), engine["hostAbiProfile"])
-        profile["hostAbiDigest"] = "sha256:" + "0" * 64
-        with self.assertRaisesRegex(InstallError, "transaction-runtime-abi-mismatch"):
-            checks.abi_profile(ROOT, {"state": {}}, engine)
-        profile["store"]["filesystem"] = "nfs"
-        with self.assertRaisesRegex(InstallError, "unsupported-transaction-store-profile"):
-            verify.manifest(metadata, metadata["version"])
-
-    @unittest.skipUnless(LINUX, "installed storage inspection uses Linux protected descriptors")
-    def test_packaged_preflight_refuses_a_stateless_start_over_original_transaction_storage(self):
-        with tempfile.TemporaryDirectory() as temporary:
-            layout = Layout.local(Path(temporary) / "evaluation")
-            layout.data.mkdir(parents=True, mode=0o700)
-            checks.require_original_storage_profile(layout, {})
-            state = layout.data / "state"
-            state.mkdir(mode=0o700)
-            original = state / "transaction-state.redb"
-            original.write_bytes(b"original-transaction-data")
-            with self.assertRaisesRegex(InstallError, "existing-transaction-storage-requires-state"):
-                checks.require_original_storage_profile(layout, {})
-            checks.require_original_storage_profile(layout, {"state": {}})
-            self.assertEqual(original.read_bytes(), b"original-transaction-data")
-
     def test_development_fixture_metadata_is_closed_and_never_release_authority(self):
         metadata, _payload = fixture()
         metadata["developmentTest"] = copy.deepcopy(verify.DEVELOPMENT_TEST)
@@ -422,6 +377,49 @@ class FileTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
+
+    def test_state_enabled_preflight_uses_the_abi_authenticated_with_the_native_release(self):
+        metadata, _payload = fixture()
+        engine = metadata["engine"]
+        abi_bytes = (ROOT / verify.TRANSACTION_ABI_PATH).read_bytes()
+        abi = document(abi_bytes)
+        profile = {"hostAbiProfile": abi["id"], "hostAbiDigest": abi["digest"],
+                   "abiFileSha256": hashlib.sha256(abi_bytes).hexdigest(),
+                   "store": {**verify.TRANSACTION_STORE, "engineVersion": "4.4.0"}}
+        self.assertEqual(checks.abi_profile(ROOT, {}, engine), engine["hostAbiProfile"])
+        with self.assertRaisesRegex(InstallError, "does-not-admit-transaction-state"):
+            checks.abi_profile(ROOT, {"state": {}}, engine)
+
+        engine["transactionState"] = profile
+        with self.assertRaisesRegex(InstallError, "transaction-runtime-files-missing"):
+            verify.manifest(metadata, metadata["version"])
+        for name in sorted(verify.TRANSACTION_SCHEMAS | {verify.TRANSACTION_ABI_PATH}):
+            payload = (ROOT / name).read_bytes()
+            metadata["files"].append({"path": name, "size": len(payload),
+                                      "sha256": hashlib.sha256(payload).hexdigest(), "mode": 0o644})
+        self.assertEqual(verify.manifest(metadata, metadata["version"]), metadata)
+        self.assertEqual(checks.abi_profile(ROOT, {"state": {}}, engine), verify.TRANSACTION_ABI)
+        self.assertEqual(checks.abi_profile(ROOT, {}, engine), engine["hostAbiProfile"])
+        profile["hostAbiDigest"] = "sha256:" + "0" * 64
+        with self.assertRaisesRegex(InstallError, "transaction-runtime-abi-mismatch"):
+            checks.abi_profile(ROOT, {"state": {}}, engine)
+        profile["store"]["filesystem"] = "nfs"
+        with self.assertRaisesRegex(InstallError, "unsupported-transaction-store-profile"):
+            verify.manifest(metadata, metadata["version"])
+
+    def test_packaged_preflight_refuses_a_stateless_start_over_original_transaction_storage(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            layout = Layout.local(Path(temporary) / "evaluation")
+            layout.data.mkdir(parents=True, mode=0o700)
+            checks.require_original_storage_profile(layout, {})
+            state = layout.data / "state"
+            state.mkdir(mode=0o700)
+            original = state / "transaction-state.redb"
+            original.write_bytes(b"original-transaction-data")
+            with self.assertRaisesRegex(InstallError, "existing-transaction-storage-requires-state"):
+                checks.require_original_storage_profile(layout, {})
+            checks.require_original_storage_profile(layout, {"state": {}})
+            self.assertEqual(original.read_bytes(), b"original-transaction-data")
 
     def test_single_link_protected_files_and_symlink_ancestors(self):
         leaf = self.root / "private"

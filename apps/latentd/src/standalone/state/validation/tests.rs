@@ -245,6 +245,7 @@ fn startup_censuses_source_custody_and_refuses_corrupt_rows() {
         tenant: "tenant".into(),
         namespace: "orders".into(),
         incarnation: 1,
+        entity: None,
         processing_scope: "primary".into(),
         provider: "private-nats".into(),
         stream: "orders".into(),
