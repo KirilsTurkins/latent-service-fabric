@@ -23,6 +23,13 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     if (3..=18).contains(&args.len()) && args[0] == "demo-sign-transaction" {
         return authoring::sign_transaction(std::path::Path::new(&args[1]), &args[2..]);
     }
+    if (4..=18).contains(&args.len()) && args[0] == "demo-sign-stateful-reference" {
+        return authoring::sign_stateful_reference(
+            std::path::Path::new(&args[1]),
+            std::path::Path::new(&args[2]),
+            &args[3..],
+        );
+    }
     if args.len() == 3 && args[0] == "demo-sign-neutral-resources" {
         return authoring::sign_neutral_resources(
             std::path::Path::new(&args[1]),
@@ -208,7 +215,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         || !matches!(args[0].to_str(), Some("demo-sign" | "demo-sign-separated"))
         || args.len() > 18
     {
-        return Err("usage: capsule_authoring <demo-sign|demo-sign-separated> <new-private-output> <build-directory>... (at most 16 builds), or demo-sign-transaction <new-private-output> <completed-build>... (at most 16 transaction builds), or demo-sign-rust-transaction <new-private-output> <completed-build>, or demo-check-stale-proofs <new-private-output> <policy> <signed-package-directory>... (at most 2 packages); development qualification only".into());
+        return Err("usage: capsule_authoring <demo-sign|demo-sign-separated> <new-private-output> <build-directory>... (at most 16 builds), or demo-sign-transaction <new-private-output> <completed-build>... (at most 16 transaction builds), or demo-sign-stateful-reference <new-private-output> <Angular-build> <completed-transaction-build>... (at most 15 backends), or demo-sign-rust-transaction <new-private-output> <completed-build>, or demo-check-stale-proofs <new-private-output> <policy> <signed-package-directory>... (at most 2 packages); development qualification only".into());
     }
     if args[0] == "demo-sign-separated" {
         authoring::sign_demo_separated(std::path::Path::new(&args[1]), &args[2..])

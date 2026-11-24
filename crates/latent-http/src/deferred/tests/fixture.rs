@@ -3,10 +3,10 @@ use super::{endpoint, proxy};
 use crate::{HttpCredentialReference, HttpProvider, HttpProviderConfig};
 use latent_artifacts::{DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig};
 use latent_capabilities::broker::{
-    ActivationCapabilityBroker, CapabilityBrokerLimits,
     io::{IoLimits, IoRuntime},
     pools::{ProviderPoolLimits, ProviderPools},
     secrets::CredentialScope,
+    ActivationCapabilityBroker, CapabilityBrokerLimits,
 };
 use latent_commit::atomic::{
     AdmissionDecision, AdmissionInput, AtomicError, CommandAccess, CommandTime, CompleteEnvelope,
@@ -14,9 +14,9 @@ use latent_commit::atomic::{
     StagedIntent,
 };
 use latent_core::{
-    StateNamespaceId, SystemActivationClock, TenantId,
     native_capacity::{NativeCapacityLimits, NativeCapacityOwner},
     transaction_contract::{CommandFingerprint, CommandKey, Value},
+    StateNamespaceId, SystemActivationClock, TenantId,
 };
 use latent_effects::{
     authority::{
@@ -24,7 +24,7 @@ use latent_effects::{
         EffectTime,
     },
     dispatch::{Disposition, EffectRecord},
-    dispatch_store::{DispatchCatalog, effect_row_key},
+    dispatch_store::{effect_row_key, DispatchCatalog},
     runtime::{DeferredEffectAdapter, DispatcherConfig, DispatcherOwner, EffectTimeSource},
 };
 use latent_policy::capability::{PolicyStore, PolicyStoreLimits};
@@ -34,8 +34,8 @@ use latent_secrets::{
 use latent_state::{
     embedded::{AtomicBatch, EmbeddedStore, Family, ReadView, RowKey, RowMutation, StoreError},
     namespace::{
-        NamespacePins, NamespaceQuota, NamespaceRecord, NamespaceStatus, NamespaceVersion,
-        catalog::NamespaceCatalog, namespace_record_key,
+        catalog::NamespaceCatalog, namespace_record_key, NamespacePins, NamespaceQuota,
+        NamespaceRecord, NamespaceStatus, NamespaceVersion,
     },
     protected_store::{ProtectedStoreConfig, ProtectedStoreOwner},
     session::{SessionLimits, StateAccess, StateMode, StateScope, StateSession},
@@ -46,8 +46,8 @@ use std::{
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     sync::{
-        Arc,
         atomic::{AtomicU64, Ordering},
+        Arc,
     },
     time::{Duration, Instant},
 };
@@ -573,13 +573,12 @@ impl Fixture {
         drop(self.adapter);
         drop(self.provider);
         self.secrets.close();
-        assert!(
-            self.pools
-                .shutdown(Instant::now() + WATCHDOG)
-                .await
-                .unwrap()
-                .is_clean()
-        );
+        assert!(self
+            .pools
+            .shutdown(Instant::now() + WATCHDOG)
+            .await
+            .unwrap()
+            .is_clean());
         self.proxy.finish().await;
         self.endpoint.finish().await;
     }

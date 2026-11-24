@@ -56,7 +56,12 @@ query operations need neither provider setting.
 For a disposable node with separate Alice and Bob publications, sign both
 completed builds together with
 `capsule_authoring demo-sign-transaction <private-output> <alice-build> <bob-build>`.
-This creates one short-lived fixture policy for the two exact packages.
+For the browser workflow, build `angular` with `tools/build_angular_package.py`
+and include its assembled output with
+`capsule_authoring demo-sign-stateful-reference <private-output> <angular-build> <alice-build> <bob-build>`.
+Use the resulting short-lived policy on the disposable node and publish each
+package using its own evidence directory. The Angular frontend uses
+`latent web publish` and the two guests use `latent release publish-package`.
 
 The captured SDK and original template lock remain unchanged. The ordinary
 language build captures the edited application source and binding inputs.
