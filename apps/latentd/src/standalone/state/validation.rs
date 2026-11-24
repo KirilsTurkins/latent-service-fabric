@@ -312,6 +312,16 @@ pub(super) fn result_payload_verifier(
 }
 
 #[cfg(target_os = "linux")]
+pub(super) fn state_payload_verifier(
+    store: std::sync::Arc<latent_blobs::local::LocalBlobStore>,
+    provider: crate::config::ProviderIdentity,
+) -> std::sync::Arc<latent_node::transaction_runtime::StatePayloadVerifier> {
+    std::sync::Arc::new(move |view, key, bytes, checkpoint| {
+        pin_installed_payload(&store, &provider, view, key, bytes, checkpoint).map(drop)
+    })
+}
+
+#[cfg(target_os = "linux")]
 fn pin_installed_payload<E: From<StoreError>>(
     store: &latent_blobs::local::LocalBlobStore,
     provider: &crate::config::ProviderIdentity,

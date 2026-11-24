@@ -380,7 +380,13 @@ impl StateKernel {
             policy,
             effects.command_admission_source(),
         )
-        .map(|owner| Arc::new(owner.with_result_payload_verifier(self.result_payload_verifier())))
+        .map(|owner| {
+            Arc::new(
+                owner
+                    .with_result_payload_verifier(self.result_payload_verifier())
+                    .with_state_payload_verifier(self.state_payload_verifier()),
+            )
+        })
     }
 
     pub(super) fn result_payload_verifier(
@@ -389,15 +395,31 @@ impl StateKernel {
         #[cfg(not(target_os = "linux"))]
         let _ = self;
         #[cfg(target_os = "linux")]
-        if let Some((store, provider)) = self
-            .bootstrap
-            .as_ref()
-            .and_then(|bootstrap| bootstrap.local_payload_selection.as_ref())
-            .and_then(|selection| selection.inventory_payloads())
-        {
+        if let Some((store, provider)) = self.inventory_payloads() {
             return Some(super::validation::result_payload_verifier(store, provider));
         }
         None
+    }
+
+    fn state_payload_verifier(
+        &self,
+    ) -> Option<Arc<latent_node::transaction_runtime::StatePayloadVerifier>> {
+        #[cfg(not(target_os = "linux"))]
+        let _ = self;
+        #[cfg(target_os = "linux")]
+        if let Some((store, provider)) = self.inventory_payloads() {
+            return Some(super::validation::state_payload_verifier(store, provider));
+        }
+        None
+    }
+
+    #[cfg(target_os = "linux")]
+    fn inventory_payloads(&self) -> Option<super::store::InventoryPayloads> {
+        self.bootstrap
+            .as_ref()?
+            .local_payload_selection
+            .as_ref()?
+            .inventory_payloads()
     }
 
     /// Used only after the node has closed and positively retired its original

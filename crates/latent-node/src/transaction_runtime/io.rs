@@ -1,6 +1,6 @@
 use super::{
     authorization::StateAuthorization, CommandHostSelection, CommandTimeSource, OwnedSession,
-    Physical, QueryOperation, StateTransactionHost,
+    Physical, QueryOperation, StatePayloadVerifier, StateTransactionHost,
 };
 use latent_core::{transaction_contract::Precondition, ActivationId, BudgetDimension};
 use latent_effects::authority::EffectAuthorityOwner;
@@ -44,6 +44,7 @@ impl StateTransactionHost {
         time: Arc<dyn CommandTimeSource>,
         conditions: Vec<Precondition>,
         minimum_view: Option<Vec<u8>>,
+        read_payload: Option<Arc<StatePayloadVerifier>>,
     ) -> Result<Arc<Self>, StateFailure> {
         let configured = super::initialization::configuration(
             &authorization,
@@ -187,6 +188,7 @@ impl StateTransactionHost {
             scope,
             view_token,
             authorization,
+            read_payload,
             store,
             session: Mutex::new(Some(owned)),
             witness,

@@ -583,6 +583,7 @@ impl NativeTransactionAdmission {
             Arc::clone(&self.owners.time),
             selection.expected_versions,
             selection.minimum_view_version,
+            self.owners.state_payload_verifier.clone(),
         )
         .await
         .map_err(|failure| {

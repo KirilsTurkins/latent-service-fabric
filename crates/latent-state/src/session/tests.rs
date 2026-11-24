@@ -204,6 +204,44 @@ fn state_payload_descriptor_binds_exact_cell_version_schema_and_bytes() {
         Err(StoreError::Corrupt)
     );
     drop(view);
+    let (view, mut session) = fixture.session();
+    let page = session
+        .scan(&view, b"", None, 2, contract::PAGE_BYTES, allow)
+        .unwrap();
+    assert_eq!(page.entries.len(), 2);
+    let mut verified = Vec::new();
+    for entry in &page.entries {
+        session
+            .verify_read_payload(&view, &entry.key, |_, owner, bytes| {
+                verified.push(owner.clone());
+                assert_eq!(bytes, reference.encode().unwrap());
+                Ok(())
+            })
+            .unwrap();
+    }
+    assert_eq!(verified, vec![reference.owner_key().unwrap()]);
+    assert_eq!(
+        session.verify_read_payload(&view, b"first", |_, _, _| Err(StoreError::Corrupt)),
+        Err(StateError::Corrupt)
+    );
+    session
+        .put(&view, b"first".to_vec(), value(b"new"), allow)
+        .unwrap();
+    assert_eq!(
+        session
+            .get(&view, b"first", allow)
+            .unwrap()
+            .unwrap()
+            .value
+            .bytes,
+        b"new"
+    );
+    session
+        .verify_read_payload(&view, b"first", |_, _, _| {
+            panic!("committed payload for staged value")
+        })
+        .unwrap();
+    drop(view);
     // A raw state-only replacement deliberately leaves the synthetic descriptor
     // stale; the validator must detect it. This is not production wiring.
     fixture.write(&[(b"first", Some(b"changed"))]);

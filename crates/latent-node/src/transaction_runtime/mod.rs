@@ -39,6 +39,7 @@ use latent_core::{ActivationId, HostMemoryReservation};
 use latent_effects::authority::EffectAuthorityOwner;
 use latent_executor::transaction::{CommandInfo, Mode, StateFailure};
 use latent_state::{
+    embedded::{ReadView, RowKey, StoreError},
     protected_store::{ProtectedStoreOperation, ProtectedStoreOwner, ProtectedStoreView},
     session::{StatePlan, StateScope, StateSession},
     store_io::StoreIoRetirementWitness,
@@ -53,6 +54,11 @@ use std::sync::{
 pub trait CommandTimeSource: Send + Sync {
     fn sample(&self) -> CommandTime;
 }
+
+/// The configured local payload reader runs on the original state read worker.
+pub type StatePayloadVerifier = dyn Fn(&ReadView, &RowKey, &[u8], &dyn Fn() -> Result<(), StoreError>) -> Result<(), StoreError>
+    + Send
+    + Sync;
 
 pub struct CommandHostSelection {
     context: IntentCaptureContext,
@@ -131,6 +137,7 @@ pub struct StateTransactionHost {
     scope: StateScope,
     view_token: Vec<u8>,
     authorization: Arc<StateAuthorization>,
+    read_payload: Option<Arc<StatePayloadVerifier>>,
     store: Arc<ProtectedStoreOwner>,
     session: Mutex<Option<OwnedSession>>,
     witness: StoreIoRetirementWitness,

@@ -1,4 +1,4 @@
-use super::StateTransactionHost;
+use super::{StateAuthorization, StatePayloadVerifier, StateTransactionHost};
 use latent_core::{
     transaction_contract::{self as contract, Value},
     BoxFuture, BudgetDimension,
@@ -8,6 +8,7 @@ use latent_executor::transaction::{
     StateFailure, TransactionHost, TransactionStagingIdentity, TransactionStagingObserver,
     TransactionStagingProgress, VersionedValue, ViewIdentity,
 };
+use latent_state::embedded::{ReadView, RowKey, StoreError};
 use std::sync::atomic::Ordering;
 
 impl StateTransactionHost {
@@ -184,11 +185,21 @@ impl TransactionHost for StateTransactionHost {
             } else {
                 "get-query"
             };
+            let verifier = self.read_payload.clone();
+            let auth = self.authorization.clone();
             self.access(
                 op,
                 key.len(),
                 contract::VALUE_BYTES,
-                move |session, view| session.get(view, &key, |_, _| Ok(())),
+                move |session, view| {
+                    let value = session.get(view, &key, |_, _| Ok(()))?;
+                    if value.is_some() {
+                        session.verify_read_payload(view, &key, |view, row, bytes| {
+                            verify_payload(verifier.as_deref(), &auth, view, row, bytes)
+                        })?;
+                    }
+                    Ok(value)
+                },
             )
             .await
             .map(|value| {
@@ -217,6 +228,8 @@ impl TransactionHost for StateTransactionHost {
             } else {
                 "scan-query"
             };
+            let verifier = self.read_payload.clone();
+            let auth = self.authorization.clone();
             let page = self
                 .access(
                     op,
@@ -227,14 +240,20 @@ impl TransactionHost for StateTransactionHost {
                             .as_ref()
                             .map(|bytes| session.cursor(bytes))
                             .transpose()?;
-                        session.scan(
+                        let page = session.scan(
                             view,
                             &prefix,
                             cursor.as_ref(),
                             limit,
                             contract::PAGE_BYTES,
                             |_, _| Ok(()),
-                        )
+                        )?;
+                        for entry in &page.entries {
+                            session.verify_read_payload(view, &entry.key, |view, row, bytes| {
+                                verify_payload(verifier.as_deref(), &auth, view, row, bytes)
+                            })?;
+                        }
+                        Ok(page)
                     },
                 )
                 .await?;
@@ -380,6 +399,26 @@ impl TransactionHost for StateTransactionHost {
         self.guest_closed.store(true, Ordering::Release);
     }
 }
+fn verify_payload(
+    verifier: Option<&StatePayloadVerifier>,
+    auth: &StateAuthorization,
+    view: &ReadView,
+    row: &RowKey,
+    bytes: &[u8],
+) -> Result<(), StoreError> {
+    let verifier = verifier.ok_or(StoreError::UnsupportedFormat)?;
+    verifier(view, row, bytes, &|| {
+        let now = std::time::Instant::now();
+        if now >= auth.authority.deadline()
+            || auth.budget.deadline().is_expired_at(now)
+            || auth.budget.descendant_is_cancelled()
+        {
+            return Err(StoreError::SnapshotExpired);
+        }
+        Ok(())
+    })
+}
+
 fn intent_budget_error(error: &latent_core::BudgetError) -> IntentFailure {
     match error {
         latent_core::BudgetError::Exhausted {

@@ -13,7 +13,8 @@ pub use selection::{TransactionInstallation, TransactionRetrySelection, Transact
 pub use selection_pins::TransactionInstallationSelection;
 
 use super::{
-    authorization, CommandTimeSource, PolicyCallBinding, StateTransactionHost, TransactionRetention,
+    authorization, CommandTimeSource, PolicyCallBinding, StatePayloadVerifier,
+    StateTransactionHost, TransactionRetention,
 };
 use latent_capabilities::namespace::RecoverySelection;
 use latent_commit::atomic::{AdmittedCommand, AtomicError, CommandRecord, ResultPolicy};
@@ -34,6 +35,7 @@ pub struct TransactionAdmissionOwners {
     command: CommandAdmissionSource,
     native: NativeCapacityOwner,
     result_payload_verifier: Option<Arc<latent_commit::atomic::ResultPayloadVerifier>>,
+    state_payload_verifier: Option<Arc<StatePayloadVerifier>>,
     pub(super) lanes: super::entity_queue::EntityQueue,
 }
 impl TransactionAdmissionOwners {
@@ -134,6 +136,7 @@ impl TransactionAdmissionOwners {
             command,
             native,
             result_payload_verifier: None,
+            state_payload_verifier: None,
             lanes,
         })
     }
@@ -145,6 +148,15 @@ impl TransactionAdmissionOwners {
         verifier: Option<Arc<latent_commit::atomic::ResultPayloadVerifier>>,
     ) -> Self {
         self.result_payload_verifier = verifier;
+        self
+    }
+
+    #[must_use]
+    pub fn with_state_payload_verifier(
+        mut self,
+        verifier: Option<Arc<StatePayloadVerifier>>,
+    ) -> Self {
+        self.state_payload_verifier = verifier;
         self
     }
 }
