@@ -63,10 +63,14 @@ pub fn phase4_host_abi_digest() -> String {
 }
 
 impl TransactionBinding {
+    pub const ASSET_PATH: &'static str = "transaction-binding.json";
+    pub const MEDIA_TYPE: &'static str = "application/vnd.latent.transaction-binding.v1+json";
+    pub const MAXIMUM_BYTES: usize = 128 * 1024;
+
     /// Decode a finite companion document. This is deliberately separate from
     /// the supported stateless `ManifestDocument` codec and engine admission.
     pub fn decode(bytes: &[u8]) -> Result<Self, TransactionBindingError> {
-        if bytes.len() > 128 * 1024 {
+        if bytes.len() > Self::MAXIMUM_BYTES {
             return Err(TransactionBindingError::Size);
         }
         let declaration: Self =

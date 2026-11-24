@@ -192,6 +192,15 @@ pub trait TransactionOutcomeValidator: Send + Sync {
         -> Result<(), PlatformError>;
 }
 
+/// Trusted transports retain the currentness of the exact original route.
+/// The callback is a short logical acceptance or one protected response write.
+pub trait TransactionIngressFence: Send + Sync {
+    fn with_current(
+        &self,
+        action: &mut dyn FnMut() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError>;
+}
+
 pub struct NativeTransactionAdmission {
     owners: Arc<TransactionAdmissionOwners>,
     installation: Arc<TransactionInstallation>,
@@ -201,6 +210,7 @@ pub struct NativeTransactionAdmission {
     retention: Mutex<Option<Arc<TransactionRetention>>>,
     ingress: Mutex<Option<NativeReservation>>,
     validator: Option<Arc<dyn TransactionOutcomeValidator>>,
+    ingress_fence: Option<Arc<dyn TransactionIngressFence>>,
     cancellation_abort: Mutex<Option<Arc<super::cancellation::CancellationAbortSlot>>>,
     inbox: Option<latent_commit::atomic::InboxIdentity>,
     inbox_scope: Option<latent_state::inbox_scope::InboxScope>,
@@ -222,6 +232,7 @@ impl NativeTransactionAdmission {
             retention: Mutex::new(None),
             ingress: Mutex::new(None),
             validator: None,
+            ingress_fence: None,
             cancellation_abort: Mutex::new(None),
             inbox: None,
             inbox_scope: None,
@@ -309,6 +320,12 @@ impl NativeTransactionAdmission {
     #[must_use]
     pub fn with_prepared_input(mut self, validator: Arc<dyn TransactionOutcomeValidator>) -> Self {
         self.validator = Some(validator);
+        self
+    }
+
+    #[must_use]
+    pub fn with_ingress_fence(mut self, fence: Arc<dyn TransactionIngressFence>) -> Self {
+        self.ingress_fence = Some(fence);
         self
     }
 
