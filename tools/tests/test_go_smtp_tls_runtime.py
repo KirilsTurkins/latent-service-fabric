@@ -199,6 +199,8 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
         result = published.graph_evidence(declaration, native, assets)
         self.assertEqual(len(result['transitiveEdges']), 2)
         self.assertEqual(result['smtpRetryPolicy'], 'none')
+        self.assertEqual(result['applicationLibraries'][0]['ordinaryApi'],
+                         'smtp.Dial/DialStartTLS/Noop/SendMail/Quit')
         lost = published.graph_evidence(declaration, native, assets, lost_reply=True)
         self.assertEqual(lost['workerTimer'], 'not exercised by the separate lost-reply fixture')
         self.assertEqual([row['ordinaryApi'] for row in lost['applicationLibraries']][1:],

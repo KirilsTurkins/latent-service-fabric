@@ -24,7 +24,7 @@ from tools.rust_capsule_project import ROOT, digest, fresh, inventory, read_file
 from tools.stage_runtime_wit import stage
 
 LIBRARIES = {
-    'github.com/emersion/go-smtp': ('v0.25.0', 'smtp.Dial/DialStartTLS/Noop/Quit'),
+    'github.com/emersion/go-smtp': ('v0.25.0', 'smtp.Dial/DialStartTLS/Noop/SendMail/Quit'),
     'github.com/reactivex/rxgo/v2': ('v2.5.0', 'rxgo.Defer/BackOffRetry/Observe'),
     'github.com/cenkalti/backoff/v4': ('v4.0.0', 'backoff.NewConstantBackOff/WithMaxRetries'),
 }
