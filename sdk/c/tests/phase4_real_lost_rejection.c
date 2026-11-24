@@ -9,6 +9,10 @@
 #define BYTES(s) ((latent_bytes){(const uint8_t *)(s), sizeof(s)-1u})
 static const char *required(const char *name) { const char *v=getenv(name); if (!v || !*v) { fprintf(stderr,"missing fixture field %s\n",name); exit(2); } return v; }
 static latent_string str(const char *v) { return (latent_string){v,strlen(v)}; }
+static latent_string rejection_client_key(void) {
+    const char *key = getenv("LSF_401_REJECTION_CLIENT_KEY");
+    return key ? str(key) : TEXT("c-sdk-lost-rejection");
+}
 static int digit(char c) { if (c >= '0' && c <= '9') return c-'0'; if (c >= 'a' && c <= 'f') return c-'a'+10; return -1; }
 static bool equal_hex(const uint8_t *v, size_t n, const char *hex) { if (strlen(hex)!=n*2) return false; for(size_t i=0;i<n;i++) { int a=digit(hex[2*i]),b=digit(hex[2*i+1]); if(a<0 || b<0 || v[i]!=(uint8_t)(a*16+b)) return false; } return true; }
 typedef struct observed { unsigned calls; bool pre_cancel; } observed;
@@ -20,8 +24,9 @@ static void invoked(const latent_transaction_invoke_command_result *r, const lat
         assert(f->transport.dispatched && f->transport.outcome==LATENT_PROFILE_OUTCOME_KNOWLEDGE_UNKNOWN);
         if (strcmp(required("LSF_401_MODE"),"cancel")==0) assert(f->transport.category==LATENT_PROFILE_FAILURE_CATEGORY_LOCAL_CANCELLED);
     }
-    assert(f->identity.command && f->identity.command->client_key.length==strlen("c-sdk-lost-rejection") &&
-        memcmp(f->identity.command->client_key.data,"c-sdk-lost-rejection",strlen("c-sdk-lost-rejection"))==0 && !f->observed.has_command);
+    const latent_string expected_key = rejection_client_key();
+    assert(f->identity.command && f->identity.command->client_key.length==expected_key.length &&
+        memcmp(f->identity.command->client_key.data,expected_key.data,expected_key.length)==0 && !f->observed.has_command);
     if (o->pre_cancel) puts("CANCELLED_BEFORE_DISPATCH");
     else if (strcmp(required("LSF_401_MODE"),"conflict")==0) {
         assert(f->transport.has_grpc_status && f->transport.grpc_status==6);
@@ -50,7 +55,7 @@ int main(void) {
     latent_transport_config config=latent_transport_defaults(); config.endpoint=str(url); config.tenant=str(tenant); config.bearer_token=(latent_bytes){(const uint8_t *)token,strlen(token)};
     if (strcmp(required("LSF_401_MODE"),"cancel")==0) config.timeout_millis=15000;
     latent_transport *owner=NULL; assert(latent_transport_create(&config,&owner,NULL)); const latent_transaction_client_vtable *api=latent_transport_transaction_vtable();
-    latent_transaction_command_selector selector={.has_namespace=true,.namespace={str(tenant),str(required("LSF_401_NAMESPACE")),str(required("LSF_401_INCARNATION"))},.operation=TEXT("update"),.client_key=TEXT("c-sdk-lost-rejection")};
+    latent_transaction_command_selector selector={.has_namespace=true,.namespace={str(tenant),str(required("LSF_401_NAMESPACE")),str(required("LSF_401_INCARNATION"))},.operation=TEXT("update"),.client_key=rejection_client_key()};
     observed out={0}; latent_profile_call *call;
     if (strcmp(required("LSF_401_MODE"),"recover")==0) {
         latent_transaction_lookup_command_request req={.has_profile=true,.profile=latent_transaction_current_profile(),.has_command=true,.command=selector,.has_authorization_publication=true,.authorization_publication={.id=str(required("LSF_401_PUBLICATION")),.tenant=str(tenant)}};
@@ -60,7 +65,7 @@ int main(void) {
         for(size_t i=0;i<len/2;i++) { int a=digit(hex[i*2]),b=digit(hex[i*2+1]); assert(a>=0 && b>=0); version[i]=(uint8_t)(a*16+b); }
         latent_transaction_expected_version expected={.key=BYTES("aggregate/count"),.has_version=true,.version={version,len/2}};
         latent_transaction_invoke_command_request req={.has_profile=true,.profile=latent_transaction_current_profile(),.has_command=true,.command=selector,.input_format=TEXT("lsf-wit-values-v1"),.expected_versions=&expected,.expected_versions_count=1,
-            .has_invocation=true,.invocation={.has_activation_id=true,.activation_id=TEXT("c-sdk-lost-rejection"),.has_target=true,.target={.tenant=str(tenant),.service=phase4_aggregate_service(),.contract=TEXT("examples:transactional-aggregate/api@1.0.0"),.function=TEXT("update"),.has_route=true,.route=phase4_aggregate_route(false)},.payload=BYTES("[{\"delta\":1,\"reject\":true}]"),.media_type=TEXT("application/vnd.latent.wit-values.v1+json"),.has_budget=true,.budget={.cpu_fuel=1000000000,.memory_bytes=67108864,.state_read_bytes=4194304,.state_write_bytes=2097152,.effect_count=1,.has_wall_time_limit_millis=true,.wall_time_limit_millis=phase4_aggregate_command_wall_limit()}}};
+            .has_invocation=true,.invocation={.has_activation_id=true,.activation_id=selector.client_key,.has_target=true,.target={.tenant=str(tenant),.service=phase4_aggregate_service(),.contract=TEXT("examples:transactional-aggregate/api@1.0.0"),.function=TEXT("update"),.has_route=true,.route=phase4_aggregate_route(false)},.payload=BYTES("[{\"delta\":1,\"reject\":true}]"),.media_type=TEXT("application/vnd.latent.wit-values.v1+json"),.has_budget=true,.budget={.cpu_fuel=1000000000,.memory_bytes=67108864,.state_read_bytes=4194304,.state_write_bytes=2097152,.effect_count=1,.has_wall_time_limit_millis=true,.wall_time_limit_millis=phase4_aggregate_command_wall_limit()}}};
         if (strcmp(mode,"conflict")==0) req.invocation.payload=BYTES("[{\"delta\":2,\"reject\":true}]");
         if (strcmp(mode,"cancel")==0) {
             observed before={.pre_cancel=true};
