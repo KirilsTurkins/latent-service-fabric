@@ -24,11 +24,12 @@ static tx_value field(tx_value value, const char *name) {
         if (strcmp(definition->name, name) != 0) continue;
         if (definition->presence != LSF_NO_OFFSET && !*(const bool *)(value.data + definition->presence))
             return (tx_value){0};
-        const uint8_t *data = value.data + definition->offset;
+        const void *storage = value.data + definition->offset;
+        const uint8_t *data = storage;
         size_t count = 0;
         if (definition->count != LSF_NO_OFFSET) {
             count = *(const size_t *)(value.data + definition->count);
-            memcpy(&data, data, sizeof(data));
+            memcpy(&data, storage, sizeof(data));
         }
         return (tx_value){definition->message, definition, data, count};
     }
