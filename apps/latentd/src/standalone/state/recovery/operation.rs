@@ -200,7 +200,6 @@ async fn prepare(
         })
         .cloned()
         .ok_or_else(super::denied)?;
-    super::profile::Profile::installed(&input.component.0)?;
     let deployment = tokio::time::timeout_at(
         bootstrap.deadline.into(),
         owners.deployments.get_versioned(
@@ -258,8 +257,14 @@ async fn prepare(
                             selector,
                         )?);
                     }
-                    let mut profiles = Vec::new();
-                    for source in &sources {
+                    let mut profiles = super::selection::current_profiles(
+                        &current,
+                        &configuration,
+                        &deployment.manifest,
+                        &adapters,
+                        &event_adapters,
+                    )?;
+                    for source in sources.iter().skip(1) {
                         if let Some(profile) =
                             super::selection::profile(source, &adapters, &event_adapters)?
                         {

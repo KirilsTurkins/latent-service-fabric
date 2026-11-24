@@ -1,8 +1,7 @@
 //! Bounded native decoder closure over actual retained signed package sources.
 use super::selection::{RecoveryProfile, RecoverySource};
 use super::{
-    assets::{self, SchemaEvidence},
-    profile::Profile,
+    assets::{self, order_draft, RecoveryCodec, SchemaEvidence},
     scope::Scope,
 };
 use latent_artifacts::DirectoryArtifactRepository;
@@ -32,7 +31,7 @@ impl Catalog {
         effects: Vec<RecoveryProfile>,
         publication: &str,
     ) -> Result<Self, PlatformError> {
-        if sources.len() > 4 || effects.len() > sources.len() {
+        if sources.len() > 4 || effects.len() > sources.len() * 2 {
             return Err(super::capacity());
         }
         let original = sources
@@ -42,13 +41,11 @@ impl Catalog {
                     && operation.publication().publication().as_str() == publication
             })
             .ok_or_else(super::denied)?;
-        Profile::installed(&original.publication().release().0)?;
         let mut schemas: Vec<SchemaEvidence> = Vec::new();
         for operation in sources {
             if operation.target().tenant != original.target().tenant
                 || operation.namespace() != original.namespace()
                 || operation.incarnation() != original.incarnation()
-                || Profile::installed(&operation.publication().release().0).is_err()
                 || schemas.iter().any(|prior| {
                     prior.operation.publication().publication()
                         == operation.publication().publication()
@@ -444,14 +441,15 @@ impl Catalog {
         {
             return Err(StoreError::UnsupportedFormat);
         }
+        if self.primary().codec == RecoveryCodec::OrderDraft {
+            return order_draft::validate_cell(view, &observed);
+        }
         if let Some(value) = observed.value {
             if observed.key != b"aggregate/count"
                 || !value.metadata.is_empty()
                 || !self.schemas.iter().any(|schema| {
-                    schema
-                        .profile
-                        .decode(&value.media_type, &value.bytes)
-                        .is_some()
+                    matches!(schema.codec, RecoveryCodec::Aggregate(codec)
+                        if codec.decode(&value.media_type, &value.bytes).is_some())
                 })
             {
                 return Err(StoreError::UnsupportedFormat);

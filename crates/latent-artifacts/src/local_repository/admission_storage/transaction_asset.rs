@@ -112,6 +112,7 @@ impl StoredAdmission {
             return Err(corrupt("transaction-asset-package-association"));
         }
         let mut companion = None;
+        let mut state_schema = None;
         let mut http_requirements = None;
         let mut event_requirements = None;
         for (layer, stored) in layout.config().layers.iter().zip(&self.layers) {
@@ -177,6 +178,14 @@ impl StoredAdmission {
                     }
                     companion = Some((declaration, layer.digest.clone()));
                 }
+                LayerRole::Asset if layer.path == "state-schema.json" => {
+                    if layer.media_type != "application/json"
+                        || !(1..=64 * 1024).contains(&layer.size)
+                    {
+                        return Err(corrupt("transaction-asset-schema-shape"));
+                    }
+                    state_schema = Some(&layer.digest);
+                }
                 LayerRole::Asset if layer.path == "deferred-http-requirements.json" => {
                     if http_requirements.is_some()
                         || layer.media_type != "application/json"
@@ -227,6 +236,12 @@ impl StoredAdmission {
         }
         let (declaration, digest) =
             companion.ok_or_else(|| corrupt("transaction-asset-companion-missing"))?;
+        // The stored admission already checked the exact blob bytes. Match
+        // the authenticated schema asset to the signed binding before selecting
+        // the operation. Older packages can still carry a digest-only binding.
+        if state_schema.is_some_and(|actual| actual.as_str() != declaration.state_schema) {
+            return Err(corrupt("transaction-asset-schema-association"));
+        }
         Ok((declaration, digest, http_requirements, event_requirements))
     }
 }
