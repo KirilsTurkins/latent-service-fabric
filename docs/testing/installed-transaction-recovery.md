@@ -72,6 +72,11 @@ the existing store and blob owner with the configured mode and verifies the
 retained references and bytes. Missing, corrupt or foreign payloads refuse the
 inspection.
 
+Live point reads and returned prefix-scan entries verify any linked local
+payload on the same protected view. The installed provider opens the immutable
+bytes under the original read deadline and budget. A missing or corrupt link
+fails the read. A staged replacement uses its own inline value until commit.
+
 Snapshot export carries linked local payloads in a protected v3 archive.
 `manifest.payloads` counts the independently retained owners and the bytes
 exported for them. The archive places each byte stream after its exact owner
