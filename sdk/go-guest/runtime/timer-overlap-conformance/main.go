@@ -13,9 +13,12 @@ type result struct {
 // Run is deliberately finite. The host witness, not this source's sleep or
 // channel order, establishes that both calls overlap an actual timer-next.
 func Run(which uint32) uint32 {
-	if which > 3 {
+	if which > 5 {
 		panic("unsupported overlap case")
 	}
+	firstResets := which < 4
+	secondResets := which%2 == 0
+	collectBetween := which == 2 || which == 3
 	target := time.NewTimer(time.Hour)
 	release := make(chan struct{})
 	watcherDone := make(chan struct{})
@@ -39,7 +42,11 @@ func Run(which uint32) uint32 {
 			panic("first marker timer")
 		}
 		markers <- struct{}{}
-		results <- result{1, target.Reset(time.Hour)}
+		if firstResets {
+			results <- result{1, target.Reset(time.Hour)}
+		} else {
+			results <- result{1, target.Stop()}
+		}
 	}()
 	<-markers
 	go func() {
@@ -47,7 +54,7 @@ func Run(which uint32) uint32 {
 		if !marker.Stop() {
 			panic("second marker timer")
 		}
-		if which >= 2 {
+		if collectBetween {
 			// The host witness accepts this marker only after the first
 			// worker parks with the original provider wait still pending.
 			// The second worker then collects before it enters Reset/Stop.
@@ -64,13 +71,13 @@ func Run(which uint32) uint32 {
 			collected.Stop()
 		}
 		markers <- struct{}{}
-		if which >= 2 {
+		if collectBetween {
 			// The root observes this only after the GC marker's Stop has
 			// returned, then admits a distinct root-owned marker before
 			// allowing this worker to reach the target operation.
 			<-continueSecond
 		}
-		if which%2 == 0 {
+		if secondResets {
 			results <- result{2, target.Reset(time.Hour)}
 		} else {
 			results <- result{2, target.Stop()}
@@ -78,7 +85,7 @@ func Run(which uint32) uint32 {
 	}()
 	<-markers
 	var releaseMarker *time.Ticker
-	if which >= 2 {
+	if collectBetween {
 		releaseMarker = time.NewTicker(41 * time.Minute)
 		continueSecond <- struct{}{}
 	}
@@ -89,25 +96,23 @@ func Run(which uint32) uint32 {
 	if one.worker == 2 {
 		one, two = two, one
 	}
-	if one.worker != 1 || two.worker != 2 || !two.active {
-		panic("public timer result")
+	if one.worker != 1 || two.worker != 2 {
+		panic("invalid worker identity")
 	}
-	if which%2 == 0 {
-		if !one.active || !target.Stop() {
-			panic("final reset timer stop")
-		}
-	} else if target.Stop() == one.active {
-		// Native Go is allowed to schedule Stop first, in which case Reset
-		// reports false and leaves the timer active. The signed host witness
-		// requires the opposite order and therefore requires result 42.
-		panic("reset/stop final state")
+	// Both operations return the previous state. Only Reset leaves the timer
+	// active. The signed witness orders the first caller before the second.
+	finalActive := target.Stop()
+	firstBeforeSecond := one.active && two.active == firstResets && finalActive == secondResets
+	secondBeforeFirst := two.active && one.active == secondResets && finalActive == firstResets
+	if !firstBeforeSecond && !secondBeforeFirst {
+		panic("timer return values or final state disagree with both serial orders")
 	}
 	close(release)
 	<-watcherDone
 	if releaseMarker != nil {
 		releaseMarker.Stop()
 	}
-	if which%2 == 1 && !one.active {
+	if !firstBeforeSecond {
 		return 43
 	}
 	return 42
