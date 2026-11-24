@@ -1022,6 +1022,55 @@
           "liveInstances": 0
         }
       }
+    },
+    "privateResourceAndTimer": {
+      "receiptDigest": "sha256:a5e39b1d47d8b1cbfaf18e9b72f8a1c51082e722d779788b9e3deafa7ffc537b",
+      "sourceRevision": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+      "applicationSource": "sha256:79ea5628f4811df91eb4683128ec878f591c68a264af4ef994c27049b7a28e04",
+      "package": {
+        "name": "outside-fetch-toolkit-resource",
+        "version": "1.7.1",
+        "files": {
+          "index.d.ts": {
+            "digest": "sha256:02d7329042b54cc04ea153b879fafd85251bc24530f92f622a00412afe23f9a8",
+            "size": 53
+          },
+          "index.mjs": {
+            "digest": "sha256:3f971af0a4d848ad47caeb7a8977e35b40b939a06b1c4f3560bef9dc081ee4fa",
+            "size": 457
+          },
+          "package.json": {
+            "digest": "sha256:d050c8290b94c8216d82bad7d2b18fbb2184077aaae08a7e1bc27879d21738b3",
+            "size": 240
+          },
+          "price-card.txt": {
+            "digest": "sha256:c74d6735a1ee8cb8933010a9864cd1eecf0f759cb9a626c6176f70da347d2c41",
+            "size": 57
+          }
+        },
+        "acceptedIdentity": "sha256:539d777f70d39139113e7420072ab8f9bf32be1f96ba7dc3d01e5907bd605ac9",
+        "sourceAbsentDuringBuild": true
+      },
+      "component": {
+        "sha256": "sha256:1f826d5dd5924a684ee409880ef1c4603e7f31f505282a2fd73ab0f354509d01",
+        "bytes": 12671284
+      },
+      "privateModuleBehavior": "Parse a static .txt import as JSON, await the ordinary one-millisecond setTimeout, fetch using Wretch, compare the parsed domain response with the resource and return the result.",
+      "invocationOutcomes": 31,
+      "guestExecutions": 27,
+      "preIoRefusals": 4,
+      "privateCallsOnSameNode": [
+        "fetch-outside-examples",
+        "fetch-outside-foreign"
+      ],
+      "primaryPeerContacts": 14,
+      "primaryPeerCommits": 1,
+      "tenantPeerContacts": {
+        "examples": 5,
+        "foreign": 5
+      },
+      "nodesReaped": 3,
+      "missingProviderContacts": 0
     }
   }
 }
