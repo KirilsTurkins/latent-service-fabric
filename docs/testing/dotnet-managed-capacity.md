@@ -85,6 +85,13 @@ depends on the workflow being available on the repository default branch; a
 task-owned selector-only child can run the same job on a reviewed branch without
 changing the production workflow. No signed execution is claimed by this code.
 
+## Empty managed root drain
+
+The compiler-owned drain checks whether the activation used its WASI adapter.
+When the adapter has no pump, a root can finish without allocating a canonical
+waitable set or its operation tables. Once the first owner creates the pump,
+the same root entry drains retained callbacks and timers.
+
 ## Ready-poll retirement of an unpolled timer
 
 An async WASI poll or pollable block can return an already-ready input before

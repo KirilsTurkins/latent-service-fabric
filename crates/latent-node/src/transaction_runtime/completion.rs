@@ -341,19 +341,23 @@ fn publish_fenced(
                                     control
                                         .accept(proposed)
                                         .then_some(())
-                                        .ok_or(NamespaceError::PermissionDenied)
+                                        .ok_or_else(super::authorization::denied)
                                 };
                                 // Same global owner and original deadline. Keep
                                 // the short Native fence after Policy/Namespace/
                                 // Effects and through the original cancellation
                                 // CAS; never hold it across physical publication.
-                                if let Some(retained) = &authorization.retention {
-                                    retained
-                                        .with_current(accept)
-                                        .map_err(|_| NamespaceError::PermissionDenied)?
-                                } else {
-                                    accept()
-                                }
+                                authorization
+                                    .with_ingress_current(|| {
+                                        if let Some(retained) = &authorization.retention {
+                                            retained
+                                                .with_current(accept)
+                                                .map_err(|_| super::authorization::denied())?
+                                        } else {
+                                            accept()
+                                        }
+                                    })
+                                    .map_err(|_| NamespaceError::PermissionDenied)
                             },
                         )
                         .map_err(|_| super::authorization::denied())

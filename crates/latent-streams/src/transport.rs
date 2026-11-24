@@ -250,9 +250,8 @@ impl Transport {
             }
         }
     }
-    /// A zero-time readiness observation for an already admitted plain TCP
-    /// owner. It never reads or writes bytes, creates no descriptor and never
-    /// waits for an event. TLS and protected transports retain their old path.
+    /// Sample the admitted TCP descriptor without reading or writing. For TLS,
+    /// the caller checks already decrypted bytes and close-notify first.
     #[cfg(target_os = "linux")]
     pub fn ready_now(&self, interest: Interest) -> io::Result<Option<Readiness>> {
         use rustix::event::{poll, PollFd, PollFlags, Timespec};
@@ -261,12 +260,9 @@ impl Transport {
             #[cfg(any(test, feature = "development-outbound"))]
             Wire::Protected(_) => return Err(io::ErrorKind::Unsupported.into()),
         };
-        if self.tls.is_some() {
-            return Err(io::ErrorKind::Unsupported.into());
-        }
         let mut events = PollFlags::empty();
         if interest.is_readable() {
-            events |= PollFlags::IN;
+            events |= PollFlags::IN | PollFlags::RDHUP;
         }
         if interest.is_writable() {
             events |= PollFlags::OUT;
@@ -284,13 +280,14 @@ impl Transport {
         if observed.intersects(PollFlags::ERR | PollFlags::NVAL) {
             return Err(io::ErrorKind::Other.into());
         }
-        if !observed.intersects(PollFlags::IN | PollFlags::OUT | PollFlags::HUP) {
+        if !observed.intersects(PollFlags::IN | PollFlags::OUT | PollFlags::RDHUP | PollFlags::HUP)
+        {
             return Err(io::ErrorKind::Other.into());
         }
         Ok(Some(Readiness {
             readable: observed.contains(PollFlags::IN),
             writable: observed.contains(PollFlags::OUT),
-            read_closed: observed.contains(PollFlags::HUP),
+            read_closed: observed.intersects(PollFlags::RDHUP | PollFlags::HUP),
             write_closed: observed.contains(PollFlags::HUP),
         }))
     }
@@ -543,11 +540,14 @@ impl Transport {
             return Ok(false);
         };
         let mut state = tls.lock().map_err(|_| failure())?;
-        let observed = state
-            .connection
-            .process_new_packets()
-            .map_err(|_| failure())?;
-        Ok(observed.plaintext_bytes_to_read() != 0 || observed.peer_has_closed())
+        match state.connection.reader().into_first_chunk() {
+            // The reader borrows its first plaintext chunk. An empty slice is clean EOF.
+            Ok(_) => Ok(true),
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => Ok(false),
+            // Wake the reader to report a known truncated TLS stream.
+            Err(error) if error.kind() == io::ErrorKind::UnexpectedEof => Ok(true),
+            Err(_) => Err(failure()),
+        }
     }
 }
 
@@ -577,6 +577,32 @@ mod tests {
     }
     use std::io::Read;
     use tokio::{io::AsyncWriteExt, net::TcpListener};
+
+    #[cfg(target_os = "linux")]
+    #[tokio::test]
+    async fn immediate_readiness_observes_peer_half_close_with_write_side_available() {
+        use tokio::io::{AsyncReadExt, Interest};
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let (client, (mut peer, _)) = tokio::try_join!(
+            tokio::net::TcpStream::connect(listener.local_addr().unwrap()),
+            listener.accept()
+        )
+        .unwrap();
+        peer.shutdown().await.unwrap();
+        // Wait for the peer FIN to arrive before taking the zero-time sample.
+        assert_eq!(client.peek(&mut [0]).await.unwrap(), 0);
+        let transport = super::Transport::tcp(client);
+        let ready = transport.ready_now(Interest::READABLE).unwrap().unwrap();
+        assert!(ready.is_read_closed());
+        assert!(!ready.is_write_closed());
+
+        transport.ready(Interest::WRITABLE).await.unwrap();
+        assert_eq!(transport.wire.write(b"R").unwrap(), Some(1));
+        let mut reply = [0];
+        peer.read_exact(&mut reply).await.unwrap();
+        assert_eq!(reply, *b"R");
+    }
 
     #[tokio::test]
     async fn repeated_handshake_reads_share_one_original_encrypted_input_ceiling() {

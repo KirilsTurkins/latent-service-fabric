@@ -1,8 +1,11 @@
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -16,6 +19,39 @@ public final class ManagedCachedFactoryReferenceControl {
     }
     private static void stop(ExecutorService pool) throws InterruptedException {
         pool.shutdownNow(); require(pool.awaitTermination(5, TimeUnit.SECONDS), "pool-not-terminated");
+    }
+    private static void defaultFactoryNames() throws Exception {
+        int callers = 8;
+        int perCaller = 32;
+        var ready = new CountDownLatch(callers);
+        var start = new CountDownLatch(1);
+        var shared = Executors.defaultThreadFactory();
+        Runnable target = () -> {};
+        String first = shared.newThread(target).getName();
+        require(first.endsWith("-thread-1"), "first-thread-number");
+        String prefix = first.substring(0, first.length() - 1);
+        var sharedNames = ConcurrentHashMap.<String>newKeySet();
+        var firstNames = ConcurrentHashMap.<String>newKeySet();
+        var results = new ArrayList<FutureTask<Void>>();
+        for (int i = 0; i < callers; i++) {
+            var result = new FutureTask<Void>(() -> {
+                ready.countDown();
+                await(start, "factory-callers-not-released");
+                for (int j = 0; j < perCaller; j++) {
+                    require(sharedNames.add(shared.newThread(target).getName()), "duplicate-thread-name");
+                    String name = Executors.defaultThreadFactory().newThread(target).getName();
+                    require(name.endsWith("-thread-1") && firstNames.add(name), "duplicate-factory-name");
+                }
+                return null;
+            });
+            results.add(result);
+            new Thread(result).start();
+        }
+        try { await(ready, "factory-callers-not-ready"); }
+        finally { start.countDown(); }
+        for (var result : results) result.get(5, TimeUnit.SECONDS);
+        for (int number = 2; number <= callers * perCaller + 1; number++)
+            require(sharedNames.contains(prefix + number), "missing-thread-number");
     }
     private static void nestedAcrossFactory() throws Exception {
         var selected = new AtomicReference<ExecutorService>(); var nested = new AtomicReference<Future<?>>();
@@ -235,7 +271,7 @@ public final class ManagedCachedFactoryReferenceControl {
         for (boolean immediate : new boolean[]{false, true}) for (String outcome : List.of("thread", "null", "throw"))
             duringFactory(immediate, outcome);
         noWorkerFailure(false); noWorkerFailure(true); committedFirst(); idleReuse(); growth(); concurrentReservations();
-        idleShutdownHandoff(); twoIdleHandoffs(); liveThread();
-        System.out.println("MANAGED_CACHED_FACTORY PASS nested;shutdown-thread-null-throw;refusal;committed;idle-reuse;growth;concurrent-reservations;idle-shutdown-handoff;two-handoffs;live-thread");
+        idleShutdownHandoff(); twoIdleHandoffs(); liveThread(); defaultFactoryNames();
+        System.out.println("MANAGED_CACHED_FACTORY PASS nested;shutdown-thread-null-throw;refusal;committed;idle-reuse;growth;concurrent-reservations;idle-shutdown-handoff;two-handoffs;live-thread;factory-names");
     }
 }

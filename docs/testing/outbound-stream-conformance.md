@@ -33,9 +33,31 @@ workloads: Rust `TcpStream`/lettre, C POSIX sockets/libcurl SMTP, Go
 and .NET `NetworkStream`/MailKit. This owner adds no package allow-list and
 selects no substitute runtime or version.
 
-For this shared slice, all six ordinary-library qualification entries remain
-**pending**. A passing canonical guest or native Python SMTP test cannot fill
-one of those entries. Each language owner must supply its actual signed
+All six entries for the normal provider installation remain **pending**.
+Two Go programmes have exercised the unchanged `go-smtp` v0.25.0 client on the
+reference provider. The Go 1.27.4 component completed seven calls using the
+ordinary factories, with a separate RxGo/backoff worker before connection. Its
+TLS 1.3 delivery returned successfully from `Client.SendMail` after the
+loopback peer accepted one message and sent its `250` reply. All seven calls
+retired their user-space owners. [Acknowledged delivery](evidence/go-published-smtp-acknowledged-2026-11-24.json)
+
+In the earlier lost-reply programme the client reported an unknown delivery outcome
+after the peer accepted one message and disconnected before acknowledging it.
+The peer observed no second attempt during the 250 ms observation window.
+A fresh activation made a separate connection and completed NOOP and QUIT.
+The two calls retired their user-space Store, instance, stream and I/O owners.
+The logged receipt records the component and dependency digests, compiler
+inputs, runtime limits and the outstanding kernel and TLS qualification.
+[Retained Go receipt](evidence/go-published-smtp-lost-reply-2026-11-10.json)
+and [original job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42785338745/job/129725019256).
+
+The TypeScript reference-provider programme ran `is-port-reachable` 4.0.0 on
+the maintained `net.Socket` path. A separate signed call paused the reader,
+received one payload byte and EOF after resuming, and released its original
+user-space owners. The Nodemailer cell still needs its own signed result.
+[TypeScript socket results](https://github.com/KirilsTurkins/latent-service-fabric/blob/d063d716d40eb566069229050bcf244c78252f2d/docs/testing/evidence/typescript-socket-paused-end-2026-11-23.json)
+
+For the full matrix, each language owner must supply its actual signed
 component, exact library/transitive/compiler/port/patch/engine/ABI identities,
 standard-I/O smoke, default factory execution and outside-checkout
 catalogue-absent/renamed private dependency controls. Optional injected

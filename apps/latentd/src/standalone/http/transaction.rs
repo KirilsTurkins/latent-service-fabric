@@ -6,12 +6,13 @@ pub(super) use binding::{bind, budget, business_metadata, map, recover};
 
 use base64::{engine::general_purpose::STANDARD, Engine};
 use latent_activation::ActivationOutcome;
+use latent_control_store::http_routes::AcceptedTransactionRoute;
 use latent_core::{PlatformError, PlatformErrorCode};
 use latent_ingress::http::{self, Delivery, DeliveryFence, HttpError, Invocation, Outcome};
 use latent_node::{
     transaction_runtime::{
-        NativeTransactionAdmission, TransactionAdmissionOwners, TransactionInstallation,
-        TransactionOutcomeValidator,
+        NativeTransactionAdmission, TransactionAdmissionOwners, TransactionIngressFence,
+        TransactionInstallation, TransactionOutcomeValidator,
     },
     ActivationReceipt,
 };
@@ -59,26 +60,51 @@ impl TransactionOutcomeValidator for HttpResultValidator {
     }
 }
 
-struct CurrentResult(Arc<dyn Phase4ResponseOwner>);
+pub(super) struct IngressRoute(pub Arc<AcceptedTransactionRoute>);
+
+impl TransactionIngressFence for IngressRoute {
+    fn with_current(
+        &self,
+        action: &mut dyn FnMut() -> Result<(), PlatformError>,
+    ) -> Result<(), PlatformError> {
+        self.0.with_current(action)?
+    }
+}
+
+struct CurrentResult {
+    owner: Arc<dyn Phase4ResponseOwner>,
+    route: Option<Arc<AcceptedTransactionRoute>>,
+}
 impl DeliveryFence for CurrentResult {
     fn with_current(
         &self,
         action: &mut dyn FnMut() -> Result<(), HttpError>,
     ) -> Result<(), HttpError> {
         let mut result = None;
-        self.0
+        self.owner
             .with_current(&mut || {
-                result = Some(action());
+                result = Some(if let Some(route) = &self.route {
+                    route
+                        .with_current(&mut *action)
+                        .map_err(|error| delivery_error(error.code))
+                        .and_then(|result| result)
+                } else {
+                    action()
+                });
             })
-            .map_err(|error| match error.code {
-                PlatformErrorCode::PermissionDenied | PlatformErrorCode::Unauthenticated => {
-                    HttpError::Forbidden
-                }
-                PlatformErrorCode::DeadlineExceeded => HttpError::DeadlineExceeded,
-                PlatformErrorCode::Cancelled => HttpError::Disconnected,
-                _ => HttpError::Overloaded,
-            })?;
+            .map_err(|error| delivery_error(error.code))?;
         result.ok_or(HttpError::Overloaded)?
+    }
+}
+
+fn delivery_error(code: PlatformErrorCode) -> HttpError {
+    match code {
+        PlatformErrorCode::PermissionDenied | PlatformErrorCode::Unauthenticated => {
+            HttpError::Forbidden
+        }
+        PlatformErrorCode::DeadlineExceeded => HttpError::DeadlineExceeded,
+        PlatformErrorCode::Cancelled => HttpError::Disconnected,
+        _ => HttpError::Overloaded,
     }
 }
 
@@ -157,12 +183,13 @@ pub(super) fn complete(
         clock,
     )
     .map_err(super::dispatch::status)?;
-    deliver(invocation, owned)
+    deliver(invocation, owned, None)
 }
 
 pub(super) fn deliver(
     invocation: Invocation,
     completion: OwnedPhase4Response,
+    route: Option<Arc<AcceptedTransactionRoute>>,
 ) -> Result<Delivery, u16> {
     let (response, owner) = completion.into_parts();
     owner
@@ -176,7 +203,7 @@ pub(super) fn deliver(
         return Err(502);
     }
     invocation
-        .complete_transaction(status, body, Arc::new(CurrentResult(owner)))
+        .complete_transaction(status, body, Arc::new(CurrentResult { owner, route }))
         .map_err(|e| e.status().unwrap_or(0))
 }
 

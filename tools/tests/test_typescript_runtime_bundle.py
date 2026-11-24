@@ -13,6 +13,17 @@ from tools.typescript_guest import runtime_profile as runtime
 
 
 class TypeScriptRuntimeBundleTests(unittest.TestCase):
+    def test_installed_recipe_contains_the_original_runtime_contracts(self):
+        from tools.dev_tool_distribution import ROOT, recipe
+
+        with tempfile.TemporaryDirectory() as temporary:
+            payload = Path(temporary)
+            recipe(payload, 'typescript')
+            for name in ('wit/platform/activation-runtime/package.wit', 'wit/platform/clock/package.wit',
+                         'wit/host-abi-phase3-v7.json'):
+                with self.subTest(name=name):
+                    self.assertEqual((payload / 'recipe' / name).read_bytes(), (ROOT / name).read_bytes())
+
     def project(self,root,profile=None):
         value={}if profile is None else {'runtimeProfile':profile}
         project=root/'project';project.mkdir()

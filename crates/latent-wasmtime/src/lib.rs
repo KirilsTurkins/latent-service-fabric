@@ -13,6 +13,9 @@ mod config;
 mod containment;
 #[cfg(feature = "development-test-host")]
 mod development_borrow_admission;
+#[cfg(feature = "development-go-lazy-owner-observer")]
+#[doc(hidden)]
+pub mod development_go_lazy_owner_observer;
 #[cfg(feature = "development-go-timer-overlap")]
 mod development_go_timer_cancel;
 #[cfg(feature = "development-go-timer-overlap")]

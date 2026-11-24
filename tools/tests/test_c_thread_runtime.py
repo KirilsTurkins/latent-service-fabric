@@ -13,6 +13,35 @@ from tools.rust_capsule_project import snapshot
 
 
 class CThreadRuntime(unittest.TestCase):
+    def test_deadline_matches_child_occurrence_to_a_live_sample_even_if_the_journal_finishes_later(self):
+        from unittest.mock import Mock, patch
+
+        inventory = {'topology': {'available': True, 'complete': True, 'entries': [
+            {'name': name, 'activeCount': '1'} for name in node.LIVE]}}
+        client = SimpleNamespace(deadline=10**12, call=lambda *args: {'data': {'inventory': inventory}})
+        for occurred, expect_pass in ((150, True), (99, False), (200, False), (230, False)):
+            with self.subTest(occurred=occurred), tempfile.TemporaryDirectory() as work:
+                output = Path(work)
+                process = SimpleNamespace(authoring_activation='original', authoring_started_unix_millis=100,
+                    owner=SimpleNamespace(exited=Mock(side_effect=[False, False, True])))
+                pages = [{'data': {'records': [{'sequence': '7', 'acceptedAtUnixMillis': '400',
+                    'data': {'observation': {'occurredAtUnixMillis': str(occurred)}}}]}}]
+                witness = {'childObserveCompletedSequence': 7}
+                with patch.object(node.time, 'time_ns', side_effect=[200_000_000, 250_000_000]), \
+                        patch.object(node, 'sample', return_value={'inventory': inventory}), \
+                        patch.object(node, 'usage', return_value={}), \
+                        patch.object(node, 'child_audit_pages', return_value=pages), \
+                        patch.object(node, 'child_entry', return_value=witness):
+                    if expect_pass:
+                        self.assertEqual(node.deadline_child(client, process, None, {}, output, {}), witness)
+                        proof = json.loads((output / 'child-original.json').read_bytes())
+                        self.assertEqual((proof['sampleStartedUnixMillis'], proof['sampleEndedUnixMillis'],
+                                          proof['auditAcceptedUnixMillis']), (200, 250, 400))
+                    else:
+                        with self.assertRaisesRegex(RuntimeError, 'must-precede-live-physical-sample'):
+                            node.deadline_child(client, process, None, {}, output, {})
+                        self.assertFalse((output / 'child-original.json').exists())
+
     def test_failed_child_audit_retains_raw_page_and_live_inventory_before_original_refusal(self):
         from unittest.mock import patch
         page = {'category': 'success', 'outcomeKnown': True, 'requestDispatched': True,

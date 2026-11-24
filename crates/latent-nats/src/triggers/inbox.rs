@@ -26,6 +26,8 @@ pub struct TransactionalBinding {
     pub processing_scope: String,
     pub namespace: String,
     pub incarnation: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entity: Option<String>,
     pub qualification: JetStreamQualification,
     pub duplicate_window_millis: u64,
     pub state_read_bytes: u64,
@@ -39,6 +41,10 @@ impl TransactionalBinding {
             || !text(&self.namespace, 128)
             || self.namespace.capacity() > 128
             || self.incarnation == 0
+            || self
+                .entity
+                .as_ref()
+                .is_some_and(|entity| !text(entity, 128) || entity.capacity() > 128)
             || !(1000..=86_400_000).contains(&self.duplicate_window_millis)
             || binding.budget.child_calls != 0
             || binding.budget.outbound_requests != 0
@@ -52,6 +58,30 @@ impl TransactionalBinding {
             config.maximum_payload_bytes + 5120,
             INBOX_IDENTITY_RETENTION_MILLIS,
         )
+    }
+}
+
+impl TriggerBinding {
+    /// Describe the exact source required by both startup and delivery.
+    /// A configuration description supplies no authority to create history.
+    pub fn inbox_scope(&self, provider: &str) -> Result<latent_state::inbox_scope::InboxScope> {
+        let selected = self
+            .transaction
+            .as_ref()
+            .ok_or(EventError::PermissionDenied)?;
+        if !text(provider, 128) {
+            return Err(EventError::PermissionDenied);
+        }
+        Ok(latent_state::inbox_scope::InboxScope {
+            tenant: self.tenant.clone(),
+            namespace: selected.namespace.clone(),
+            incarnation: selected.incarnation,
+            entity: selected.entity.clone(),
+            processing_scope: selected.processing_scope.clone(),
+            provider: provider.into(),
+            stream: self.stream.clone(),
+            stream_created: selected.qualification.stream_created.clone(),
+        })
     }
 }
 
@@ -125,6 +155,7 @@ impl InboxDelivery {
         key.tenant == self.tenant
             && key.namespace == self.namespace
             && key.incarnation == self.incarnation.to_string()
+            && key.entity == self.scope.entity
             && key.client_key == self.client_id
             && record.inbox_identity() == Some(&self.identity)
     }
@@ -141,22 +172,10 @@ fn capture(
     sequence: u64,
     payload: &[u8],
 ) -> Result<InboxDelivery> {
-    let selected = binding
-        .transaction
-        .as_ref()
-        .ok_or(EventError::PermissionDenied)?;
-    if sequence == 0 || !text(provider, 128) || qualified.binding != binding_identity(binding)? {
+    if sequence == 0 || qualified.binding != binding_identity(binding)? {
         return Err(EventError::PermissionDenied);
     }
-    let scope = latent_state::inbox_scope::InboxScope {
-        tenant: binding.tenant.clone(),
-        namespace: selected.namespace.clone(),
-        incarnation: selected.incarnation,
-        processing_scope: selected.processing_scope.clone(),
-        provider: provider.into(),
-        stream: binding.stream.clone(),
-        stream_created: selected.qualification.stream_created.clone(),
-    };
+    let scope = binding.inbox_scope(provider)?;
     let binding_id = scope
         .input_binding()
         .map_err(|_| EventError::InvalidEvent)?;
@@ -175,10 +194,10 @@ fn capture(
         .command_key()
         .map_err(|_| EventError::InvalidEvent)?;
     Ok(InboxDelivery {
-        tenant: binding.tenant.clone(),
-        namespace: selected.namespace.clone(),
-        incarnation: selected.incarnation,
-        processing_scope: selected.processing_scope.clone(),
+        tenant: scope.tenant.clone(),
+        namespace: scope.namespace.clone(),
+        incarnation: scope.incarnation,
+        processing_scope: scope.processing_scope.clone(),
         client_id,
         identity,
         scope,

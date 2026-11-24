@@ -8,6 +8,8 @@ use latent_policy::supply_chain;
 
 mod command;
 pub use command::main_entry;
+#[doc(hidden)]
+pub use command::transaction_recovery_example_entry;
 
 pub mod config;
 pub mod standalone;

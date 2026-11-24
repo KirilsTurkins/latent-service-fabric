@@ -20,8 +20,46 @@ def before_exit_trap(raw):
   raise AssertionError('closed-file-original-abi-source')
  return original
 
+HTTP_STATUS_PRIORITY_SHA256 = '5933ea76e8e752b75526d3369ac0b32101d3a1b1c3097923f1e30d0f8b1112d7'
+
+
+CHUNKED_RANGE_SHA256 = '4d3c4d9b854f34687575639f88b18e80759eb93aaa08c2144766a88a9d93ca0e'
+
+
+def before_chunked_range(raw):
+ # The caller has authenticated the entire new file. Undo only its line edits,
+ # in reverse order, then independently authenticate the previous backend.
+ lines = raw.splitlines(keepends=True)
+ for start, end, original in (
+  (436, 440, b''),
+  (417, 418, b'            partial_length == length;\n'),
+  (413, 414, b'        valid_range = operation == LATENT_HTTP_STREAMING_METHOD_GET && requested_offset > 0 && known_length &&\n'),
+  (138, 139, b''),
+  (118, 123, b''),
+  (108, 116, b'    if (!result.val.ok.is_some) { stream->eof = true; return 0; }\n'),
+  (96, 101, b'    const uint32_t maximum = length < LSF_FETCH_READ_BYTES ? (uint32_t)length : LSF_FETCH_READ_BYTES;\n'),
+  (23, 25, b''),
+ ):
+  lines[start:end] = original.splitlines(keepends=True)
+ return b''.join(lines)
+
+
 def before_body_media(raw):
  import hashlib
+ if hashlib.sha256(raw).hexdigest() != CHUNKED_RANGE_SHA256:
+  raise AssertionError('libfetch-body-media-exact-source')
+ raw = before_chunked_range(raw)
+ if hashlib.sha256(raw).hexdigest() != HTTP_STATUS_PRIORITY_SHA256:
+  raise AssertionError('libfetch-body-media-exact-source')
+ # Reconstruct the previous placement before applying the earlier body-media inverse.
+ length_check = (b'    if (!valid_length) {\n'
+                 b'        failure(FETCH_PROTO, EOVERFLOW, "HTTP content length is invalid or unrepresentable");\n'
+                 b'        goto fail_file;\n'
+                 b'    }\n')
+ status_check = b'    if (status < 200 || status >= 300) {\n'
+ if raw.count(length_check) != 1 or raw.count(status_check) != 1:
+  raise AssertionError('libfetch-status-priority-exact-addendum')
+ raw = raw.replace(length_check, b'', 1).replace(status_check, length_check + status_check, 1)
  if hashlib.sha256(raw).hexdigest() != '7e7ffd0526c5f474329a1136dd10942783abe77190416e69c6893d1e1c2085c3':
   raise AssertionError('libfetch-body-media-exact-source')
  changes = ((b'    const size_t media_length = content_type ? strnlen(content_type, 257) : 0;\n', b'    /* The pinned frontend only uses Content-Type when body is non-NULL. */\n    const size_t media_length = body && content_type ? strnlen(content_type, 257) : 0;\n'), (b'    if (content_type) {\n        metadata.body_media_type.is_some = true;\n', b'    if (body && content_type) {\n        metadata.body_media_type.is_some = true;\n'))
@@ -50,7 +88,7 @@ def before_head_metadata(path, raw):
 
 def before_host_boundary(raw):
  import hashlib
- if hashlib.sha256(raw).hexdigest() != '7e7ffd0526c5f474329a1136dd10942783abe77190416e69c6893d1e1c2085c3':
+ if hashlib.sha256(raw).hexdigest() != CHUNKED_RANGE_SHA256:
   raise AssertionError('libfetch-host-boundary-exact-source')
  raw = before_head_metadata('http.c', raw)
  if hashlib.sha256(raw).hexdigest() != '14f71c8141d2170f757b9c78a6b206095cb3d0ad86958de501f5e2a3663bc70e':
@@ -217,7 +255,7 @@ class CThreadMinimal(unittest.TestCase):
   raw=(ROOT/'sdk/c-guest/src/libfetch/http.c').read_bytes()
   self.assertEqual(hashlib.sha256(before_unsolicited_partial(raw)).hexdigest(),
                    'c81b948e74babf3edbc97a25473597daf24cba87ce48abda828f2e753c64185d')
-  for altered in (raw+b'\n',raw.replace(b'requested_offset > 0 && known_length',b'requested_offset >= 0 && known_length'),raw.replace(b'actual_offset < (uint64_t)partial_length',b'actual_offset <= (uint64_t)partial_length')):
+  for altered in (raw+b'\n',raw.replace(b'requested_offset > 0 &&\n',b'requested_offset >= 0 &&\n'),raw.replace(b'actual_offset < (uint64_t)partial_length',b'actual_offset <= (uint64_t)partial_length')):
    with self.assertRaisesRegex(AssertionError,'libfetch-host-boundary-exact-source'):
     before_unsolicited_partial(altered)
  def test_minimal_overlay_preserves_every_original_byte_and_full_standard_lifecycle_calls(self):

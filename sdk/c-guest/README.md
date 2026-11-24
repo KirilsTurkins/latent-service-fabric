@@ -59,6 +59,11 @@ as the initializer and waking contenders only after publication. See
 the separate signed contention owner. Neither path supplies general POSIX or
 unqualified native thread support.
 
+Without clock support, `pthread_mutex_timedlock` can acquire an immediately
+available mutex and preserves the ordinary recursive and error-checking
+behavior. If acquisition would wait, it returns `ENOTSUP` without reading the
+deadline or admitting a Wait. C11 timed mutexes still require clock support.
+
 New cooperative-runtime captures also select a source-level pthread rwlock
 port. It supports default attributes, recursive shared reads, exclusive writes,
 try operations and admitted blocking waiters. New readers have priority, so

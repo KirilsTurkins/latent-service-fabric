@@ -22,6 +22,7 @@ pub(in crate::deployments) struct RevisionRecord {
     pub publication: Option<latent_core::PublicationId>,
     pub attributes: Metadata,
     pub execution: ExecutionRequirements,
+    pub transactional: bool,
 }
 
 impl RevisionRecord {

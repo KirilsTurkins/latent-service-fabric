@@ -122,6 +122,17 @@ pub(crate) fn populate(
     metadata_rows: u64,
     entity: Option<String>,
 ) -> Inputs {
+    populate_with_inbox(store, recipe, installed, metadata_rows, entity, false)
+}
+
+pub(crate) fn populate_with_inbox(
+    store: &EmbeddedStore,
+    recipe: AggregateMigrationRecipe,
+    installed: bool,
+    metadata_rows: u64,
+    entity: Option<String>,
+    anchored_inbox: bool,
+) -> Inputs {
     let quota = installed.then(|| quota(metadata_rows));
     if let Some(quota) = &quota {
         let view = store.snapshot().unwrap();
@@ -130,6 +141,25 @@ pub(crate) fn populate(
         setup.publish(store, || Ok::<(), StoreError>(())).unwrap();
     }
     let mut scope = create_namespace(store, entity);
+    if anchored_inbox {
+        use crate::inbox_scope::{InboxScope, PreparedInboxScope};
+        for processing_scope in ["primary", "approved-replay"] {
+            let source = InboxScope {
+                tenant: scope.tenant.0.clone(),
+                namespace: scope.namespace.0.clone(),
+                incarnation: scope.incarnation,
+                entity: None,
+                processing_scope: processing_scope.into(),
+                provider: "fixture-jetstream".into(),
+                stream: "orders".into(),
+                stream_created: "2026-11-23T00:00:00Z".into(),
+            };
+            let view = store.snapshot().unwrap();
+            let plan = PreparedInboxScope::prepare(&view, &source).unwrap();
+            drop(view);
+            store.apply(plan.into_batch()).unwrap();
+        }
+    }
     put_original(store, &scope, recipe);
     scope.entity = None; // The installed recipe inspects the entire namespace.
     quiesce(store, &scope);

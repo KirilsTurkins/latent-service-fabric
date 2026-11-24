@@ -70,7 +70,7 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     #endCallbacks; #nextEndCallback = 0; #endFailureQueued = false; #endWriteGate;
     #invalidEndCallbacks; #nextInvalidEndCallback = 0; #invalidEndError;
     #invalidEndQueued = false; #invalidEndAdmitted = false;
-    #readBusy = false; #writeBusy = false; #connectBusy = false; #chunk; #quietRead = false;
+    #readBusy = false; #writeBusy = false; #connectBusy = false; #chunk;
     #progressing = false; #stopReady = false; #stopUncertain = false; #closeStarted = false; #nativeClosed = false;
     #cleanupFailed = false; #notificationQueued = false; #notificationDone = false;
     #connecting = false; #connected = false; #destroyed = false; #closed = false;
@@ -250,17 +250,20 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     }
     listenerCount(name) { return this.#listeners.get(name)?.length || 0; }
     emit(name, ...args) { return this.#emit(name, ...args); }
+    #prepareConnect(listener) {
+      this.#touch();
+      if (listener) this.once('connect', listener);
+      if (this.#destroyed) throw error('ERR_SOCKET_CLOSED', 'connect');
+    }
     connect(...args) {
       if (snapshotActive()) throw error('ERR_LSF_SNAPSHOT_EFFECT', 'connect');
       if (this.#token || this.#connecting || this.#connected || this.#destroyed)
         throw error('ERR_SOCKET_CLOSED', 'connect');
       const [request, listener] = destination(args);
-      // Refresh the configured idle clock before publishing a listener or
-      // reserving a native socket: timer refusal must not leave a half-connect.
-      this.#touch();
-      if (listener) this.once('connect', listener);
-      this.#token = transport.reserve(this.#afterTail, this); // BEFORE CAP connect.
-      this.#connecting = true; this.#connectBusy = true; this.#remotePort = request.port;
+      this.#connecting = true;
+      try { this.#token = transport.reserve(this.#afterTail, this, this.#prepareConnect, listener); }
+      catch (cause) { this.#connecting = false; throw cause; }
+      this.#connectBusy = true; this.#remotePort = request.port;
       let failed = false, cause;
       try { transport.connect(this.#token, request, this.#onConnect, this); }
       catch (value) { failed = true; cause = value; }
@@ -337,9 +340,10 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
     }
     #pumpReads() {
       if (this.#readBusy || !this.#connected || this.#eof || this.#destroyed) return;
+      // Keep at most one completed window while paused. Even if resume has
+      // already been requested, its queued delivery must precede another read.
+      if (this.#buffered !== undefined) return;
       if (!this.#flowing && !(this.#ending && this.#finished)) return;
-      if (!this.#flowing && this.#buffered !== undefined) throw unsupported('paused-end-unread-data', this.#writeAttempted);
-      this.#quietRead = !this.#flowing;
       this.#readBusy = true;
       let failed = false, cause;
       try { transport.read(this.#token, windowBytes, undefined, this.#onRead, this); }
@@ -365,9 +369,6 @@ export function createNodeNetModule(transport, Buffer, snapshotActive, target = 
       if (this.#destroyed) {
         transport.disposeChunk(this.#token, chunk); this.#chunk = undefined; this.#readBusy = false; return;
       }
-      // A paused graceful-close probe can observe real EOF only. Actual data
-      // remains owned in quarantine; it is never discarded or relabelled EOF.
-      if (this.#quietRead) throw unsupported('paused-end-unread-data', this.#writeAttempted);
       let failed = false, cause;
       // The completed read tail plus copy plus sibling write stay within three.
       try { transport.chunkBytes(this.#token, chunk, this.#onCopy, this); }

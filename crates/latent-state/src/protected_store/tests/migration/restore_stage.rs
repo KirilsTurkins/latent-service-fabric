@@ -176,6 +176,38 @@ fn original_authenticated_snapshot_imports_only_into_private_fresh_paused_destin
 }
 
 #[test]
+fn staged_restore_seals_the_complete_inbox_inventory_and_keeps_delivery_paused() {
+    use crate::inbox_scope::InboxScopeInventory;
+    use crate::store_identity::ExternalCheckpoint;
+
+    let setup = Setup::with_anchored_inbox();
+    let (root, _) = super::super::fixture();
+    let (checkpoint, _) = super::super::fixture();
+    let config = destination(root.path(), checkpoint.path(), 4 * 1024 * 1024);
+    let (snapshot, input, owners, request) = prepare(&setup, config);
+    let custody = input.inbox_custody().unwrap();
+    assert_eq!(custody.generation, 2);
+    let history = input.inbox_history().unwrap();
+    assert_eq!((history.archived_rows, history.current_rows), (0, 0));
+    assert!(history.identical);
+    let (snapshot, restored) = wait(job(&setup, snapshot, input, &owners, request)).unwrap();
+    let restored = restored.unwrap().unwrap();
+    assert_eq!(restored.checkpoint().inbox_custody(), Some(custody));
+    let physical = fs::read(checkpoint.path().join("transaction-checkpoint.v1")).unwrap();
+    assert_eq!(
+        &ExternalCheckpoint::decode(&physical).unwrap(),
+        restored.checkpoint()
+    );
+    let snapshot = inspect(&setup, snapshot, move |view| {
+        assert_eq!(InboxScopeInventory::read(view, || Ok(()))?, Some(custody));
+        assert!(crate::recovery::require_ready(view).is_err());
+        Ok(())
+    });
+    drop(restored);
+    setup.retire(snapshot);
+}
+
+#[test]
 fn scoped_fresh_restore_keeps_eight_mib_cache_and_the_original_sixteen_mib_recovery_ceiling() {
     let setup = Setup::with_finite_restore_profile();
     let (root, _) = super::super::fixture();

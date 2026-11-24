@@ -12,6 +12,17 @@ pub struct CanonicalTarget {
 }
 
 impl CanonicalTarget {
+    /// Copy the request fields used by shared ingress route matching.
+    #[must_use]
+    pub fn routing_identity(&self) -> Self {
+        Self {
+            scheme: self.scheme,
+            authority: self.authority.clone(),
+            path: self.path.clone(),
+            query: None,
+        }
+    }
+
     pub fn parse(scheme: Scheme, authority: &str, target: &str) -> Result<Self, HttpError> {
         if target.len() > MAX_TARGET_BYTES || !target.starts_with('/') {
             return Err(HttpError::InvalidTarget);

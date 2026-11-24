@@ -15,11 +15,19 @@ the adapter build recipe, not by a guest declaration or an ordinary host default
 Synchronous `ready`, `get` and stream operations inspect existing state and
 signal the driver; they do not poll an async import in a synchronous WIT task.
 
+A synchronous readiness query on an unused adapter leaves its scheduler
+unallocated. The compiler-owned root drain also returns immediately if the
+invocation never registered work or a waiter. After the first registration,
+readiness queries signal the existing driver and the root drains its accepted work.
+
 Each waiter retains its original readiness sources and current waker. The
 driver wakes only callers whose actual sources became ready. The operation
 and deferred-retirement capacity remains 32; at most 64 live waiters and 64
 sources per wait are admitted. Dropped waiters release their sources and their
 slots can be reused. Duplicate input sources preserve their original indices.
+The driver takes a weak snapshot before calling any owner. A callback can drop
+an operation or waiter that has yet to run in that turn. The driver skips it
+and continues with the next live sibling.
 
 Dropping an accepted operation from a synchronous resource destructor retains
 its pinned future, original activation owner and quota slot. Only the private
@@ -41,7 +49,10 @@ calls a synchronous readiness observation while both are pending, then releases
 only the sibling and requires it to return while the original remains held.
 A separate operation is abandoned while its host future is still live; only
 the explicit async drain may destroy it. The engine must then report empty
-concurrent state. Native tests additionally cover cancellation, waiter capacity,
+concurrent state. One callback discards a sibling before its first poll. The
+host observes zero polls and zero host-future destructors for that operation.
+[Compiled probe results](evidence/rust-http-discarded-callback-2026-11-24.json)
+Native tests additionally cover cancellation, waiter capacity,
 index preservation, waker replacement and refusal of premature drain.
 
 With the repository-pinned Rust toolchain and wasm-tools installed:

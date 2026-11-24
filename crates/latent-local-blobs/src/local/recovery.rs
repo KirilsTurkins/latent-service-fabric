@@ -16,10 +16,11 @@ pub(super) fn open(
     namespace: &str,
     limits: LocalBlobLimits,
     checkpoint: &dyn Fn() -> Result<()>,
+    create: bool,
 ) -> Result<Arc<LocalBlobStore>> {
     checkpoint()?;
-    let root = Directory::root(path)?;
-    let lock = root.open_file("LOCK", true, !root.present("LOCK")?, 0)?;
+    let root = Directory::root(path, create)?;
+    let lock = root.open_file("LOCK", true, create && !root.present("LOCK")?, 0)?;
     lock.try_lock().map_err(|_| LocalBlobError::Busy)?;
     let names = root.names(5)?;
     if names.iter().any(|n| {
@@ -28,7 +29,7 @@ pub(super) fn open(
         return Err(LocalBlobError::Corrupt);
     }
     if !names.iter().any(|n| n == "OWNER.json") {
-        if names.iter().any(|n| n != "LOCK") {
+        if !create || names.iter().any(|n| n != "LOCK") {
             return Err(LocalBlobError::Corrupt);
         }
         root.write_new(
@@ -44,8 +45,8 @@ pub(super) fn open(
     if owner.version != 1 || owner.namespace != namespace {
         return Err(LocalBlobError::PermissionDenied);
     }
-    let objects = root.child("objects", !root.present("objects")?)?;
-    let staging = root.child("staging", !root.present("staging")?)?;
+    let objects = root.child("objects", create && !root.present("objects")?)?;
+    let staging = root.child("staging", create && !root.present("staging")?)?;
     let durable: Option<super::durable::ModeRecord> = if root.present("DURABLE.json")? {
         let mode: super::durable::ModeRecord = parse(&root, "DURABLE.json")?;
         mode.validate()?;

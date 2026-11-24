@@ -1,0 +1,357 @@
+{
+  "schemaVersion": "latent.dotnet.packaged-cold-build-comparison.v1",
+  "issue": 694,
+  "observedOn": "2026-11-24",
+  "status": "passed",
+  "sourceHead": "13dcd58ca695442f78dc9c7d56bb59cd815641ec",
+  "target": "linux-x86_64",
+  "toolkit": {
+    "sha256": "sha256:7dc13e3aa5f353e8de58984a99ce6c9f0a1030d80173042ef921af2637d9129d",
+    "bytes": 871244585
+  },
+  "bundleManifest": {
+    "sha256": "sha256:91008f409a48f160764f8647f371ac70a4ed2267dea29c7557ca20c6420806db",
+    "bytes": 263952
+  },
+  "frozenFrontend": {
+    "sha256": "sha256:8a79749ab0c623c787ae6cab4b58bdf951f93b058a983a72aefb6dbb27b380b2",
+    "bytes": 3258544
+  },
+  "helper": {
+    "sha256": "sha256:0919fe400aa95a1e653c7a96e36bb40e0ba4502f95e478ec840051e8cddc749d",
+    "bytes": 342072
+  },
+  "previousObservedSource": "40f3d880e5e3a2f2f192478193a64210f6bb29aa",
+  "previousNativeAot": {
+    "first": {
+      "sha256": "sha256:9699588257b2704b73fbc1dadbda3aa35f2a6a2401c7de6853d1afcb96cc88d0",
+      "bytes": 10493962
+    },
+    "second": {
+      "sha256": "sha256:0b201e46f1ff3f0215fc3279a8c54241cb2d9f5049b126e6ba9f39020d2ad1c4",
+      "bytes": 10493962
+    },
+    "differingBytes": 499
+  },
+  "source": "sha256:7b648bf719f0c4aa691955f023eba45a4e44c9c39682cd298550c9cb4343e367",
+  "recipe": "sha256:eb7cdb07529deee4ff48d7ec3075b9f9cae89e64293cf5fd9d48ae052534bef8",
+  "generator": "refit/16.4.0",
+  "reviewedApproval": "sha256:263fedbbe8a33db0b6737a3031289e0af79ef6a34d5415cec729072555b4dbd6",
+  "originalPackages": 8,
+  "generatorOutputs": "sha256:2355306219829b94362d415d96ede6c95ec9ba2836d61d73a57f1ef4fae9b0b8",
+  "nativeAot": {
+    "sha256": "sha256:70ea859344afb674a2e6d91218191fa5781c86118b255a021df15e83ba07b235",
+    "bytes": 10492474
+  },
+  "component": {
+    "sha256": "sha256:95e063fff1d219067cc5eccca53aeb632990499c35b5828da61ddebc4c722b8b",
+    "bytes": 10813091
+  },
+  "package": "sha256:4aba68f97241a428a08079915e7f6010b5c8c815aa3b663d461354c54a010f49",
+  "independentColdBuilds": {
+    "first": {
+      "frontendReceipt": {
+        "sha256": "sha256:46a7a63825caf1ecb667006cb8900683c728651e5f1db1c236f572e90e5cbba2",
+        "bytes": 1149
+      },
+      "observations": {
+        "sha256": "sha256:b0dead89ed0446999f6c3996fa2a8c290f770107a548072c72b4b40dab80a256",
+        "bytes": 3362
+      },
+      "approvedAttempt": "694cbfe7a7a432eee5b0eb3f342fe272",
+      "maximumObservedBytes": 3850252582,
+      "maximumObservedEntries": 26324,
+      "samples": 103,
+      "sameAttemptOnSelectedCacheHit": true,
+      "unselectedBuildRefusedBeforeAndAfter": true
+    },
+    "second": {
+      "frontendReceipt": {
+        "sha256": "sha256:ded9c4b93301cf5e8aa3611035d71713508f52df663ede1d0bddc58cfb61662c",
+        "bytes": 1149
+      },
+      "observations": {
+        "sha256": "sha256:319756eb5af392c1ad2f95ce2d9239d456ebc1f0b317b043ca7e51bbad1a2f60",
+        "bytes": 3363
+      },
+      "approvedAttempt": "6d4503d7b044bfed6a533aa379eea525",
+      "maximumObservedBytes": 3850294405,
+      "maximumObservedEntries": 26333,
+      "samples": 108,
+      "sameAttemptOnSelectedCacheHit": true,
+      "unselectedBuildRefusedBeforeAndAfter": true
+    }
+  },
+  "byteComparison": {
+    "originalNativeAot": true,
+    "component": true,
+    "packageDigestsEqual": true
+  },
+  "attemptByteLimit": 4294967296,
+  "attemptEntryLimit": 65536,
+  "attemptUsageSamplingIntervalSeconds": 1.5,
+  "sourceTests": 128,
+  "sourceTestOutput": {
+    "sha256": "sha256:d0a34815197726d327f49ae34d4e73317d54187c3d9d36c91821695ec53fd576",
+    "bytes": 228
+  },
+  "installedBuildNetwork": "isolated loopback after native resolution",
+  "guestCheckoutMounted": false,
+  "signedNode": {
+    "sourceHead": "13dcd58ca695442f78dc9c7d56bb59cd815641ec",
+    "signingToolSource": "269fe85be9e29a0e3410ead65b7e1c1bce0aa4a3",
+    "native": {
+      "capsule_authoring": {
+        "sha256": "sha256:90911e308c6fc7c07d77ec2b1faf3b867abae36b087d4704570ceb5584cff510",
+        "bytes": 26143816
+      },
+      "latent": {
+        "sha256": "sha256:0a0bbd49d1d06d6ef46d877f296cc31fa4dea25d19c883d15b7cf0a37643f6eb",
+        "bytes": 47194192
+      },
+      "latentd": {
+        "sha256": "sha256:661debfda09fc29bfa7403623767df46de3130855fffdc3c956f3c53d5ab2e41",
+        "bytes": 129878176
+      }
+    },
+    "defaultFactories": [
+      "FlurlClient()",
+      "RestService.CreateHttpClient(endpoint, settings)",
+      "RestService.ForGenerated<IDomainApi>(client, settings)"
+    ],
+    "cases": [
+      {
+        "case": "flurl-json",
+        "result": [
+          "1:200:domain:7:caf\u00e9:first|\u03bb:"
+        ],
+        "outboundRequests": 1,
+        "fuel": 53903200,
+        "peakGuestBytes": 58485072,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-json",
+        "result": [
+          "1:200:domain:7:caf\u00e9:first|\u03bb:"
+        ],
+        "outboundRequests": 1,
+        "fuel": 54690926,
+        "peakGuestBytes": 58904928,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "outside-alpha",
+        "result": [
+          "1:200:domain:7:caf\u00e9:first|\u03bb:"
+        ],
+        "outboundRequests": 1,
+        "fuel": 53372672,
+        "peakGuestBytes": 58419536,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "outside-delta",
+        "result": [
+          "1:200:domain:7:caf\u00e9:first|\u03bb:"
+        ],
+        "outboundRequests": 1,
+        "fuel": 53370614,
+        "peakGuestBytes": 58839392,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-404",
+        "result": [
+          "1:404:error:domain-error"
+        ],
+        "outboundRequests": 1,
+        "fuel": 53917243,
+        "peakGuestBytes": 58485060,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-404",
+        "result": [
+          "1:404:error:domain-error"
+        ],
+        "outboundRequests": 1,
+        "fuel": 53431645,
+        "peakGuestBytes": 58904916,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-500",
+        "result": [
+          "1:500:error:domain-error"
+        ],
+        "outboundRequests": 1,
+        "fuel": 53916359,
+        "peakGuestBytes": 58485060,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-500",
+        "result": [
+          "1:500:error:domain-error"
+        ],
+        "outboundRequests": 1,
+        "fuel": 53433255,
+        "peakGuestBytes": 58904916,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-pending-cancel",
+        "result": [
+          "1:cancelled"
+        ],
+        "outboundRequests": 1,
+        "fuel": 53860509,
+        "peakGuestBytes": 58485034,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-pending-cancel",
+        "result": [
+          "1:cancelled"
+        ],
+        "outboundRequests": 1,
+        "fuel": 53322023,
+        "peakGuestBytes": 58904890,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "reserved-header",
+        "result": [
+          "1:transport-error"
+        ],
+        "outboundRequests": 0,
+        "fuel": 53687755,
+        "peakGuestBytes": 58904902,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "foreign-target",
+        "result": [
+          "1:transport-error"
+        ],
+        "outboundRequests": 0,
+        "fuel": 53699390,
+        "peakGuestBytes": 58904902,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-post",
+        "result": [
+          "1:200:echo:AAECAw=="
+        ],
+        "outboundRequests": 1,
+        "fuel": 54005848,
+        "peakGuestBytes": 58904906,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "uncertain-post",
+        "result": [
+          "1:transport-error"
+        ],
+        "outboundRequests": 1,
+        "fuel": 53868921,
+        "peakGuestBytes": 58485046,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "flurl-pre-cancelled",
+        "result": [
+          "1:cancelled"
+        ],
+        "outboundRequests": 0,
+        "fuel": 53545046,
+        "peakGuestBytes": 58485034,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "refit-pre-cancelled",
+        "result": [
+          "1:cancelled"
+        ],
+        "outboundRequests": 0,
+        "fuel": 52987039,
+        "peakGuestBytes": 58485034,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "early-body-dispose",
+        "result": [
+          "1:early:4"
+        ],
+        "outboundRequests": 1,
+        "fuel": 53720848,
+        "peakGuestBytes": 58485030,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "guest-extension",
+        "result": [
+          "1:200:domain:7:caf\u00e9:first|\u03bb:"
+        ],
+        "outboundRequests": 1,
+        "fuel": 52807532,
+        "peakGuestBytes": 58419536,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "guest-extension-denied",
+        "result": [
+          "1:transport-error"
+        ],
+        "outboundRequests": 0,
+        "fuel": 52525718,
+        "peakGuestBytes": 58419510,
+        "physicalRetirementVerified": true
+      },
+      {
+        "case": "fresh-default",
+        "result": [
+          "1:200:domain:7:caf\u00e9:first|\u03bb:"
+        ],
+        "outboundRequests": 1,
+        "fuel": 53903406,
+        "peakGuestBytes": 58485072,
+        "physicalRetirementVerified": true
+      }
+    ],
+    "preEntryRefusals": [
+      {
+        "case": "runtime-missing",
+        "code": "permission-denied",
+        "guestFuel": 0,
+        "outboundRequests": 0
+      },
+      {
+        "case": "http-missing",
+        "code": "permission-denied",
+        "guestFuel": 0,
+        "outboundRequests": 0
+      }
+    ],
+    "peer": {
+      "contacts": 15,
+      "completedWrites": 11,
+      "mutations": 1,
+      "allClosed": true
+    },
+    "nodeReaped": true,
+    "cleanShutdown": true,
+    "original": {
+      "sha256": "sha256:ea46b74513a793a72d22676250e43ec467b8b611393a210f145291dc713b3681",
+      "bytes": 48629
+    }
+  },
+  "comparisonOriginal": {
+    "sha256": "sha256:4ed7882751e9ae18d64e26299ffa13ff55951e09069aec8082ed6e3d186c841b",
+    "bytes": 3418
+  },
+  "fullMilestoneQualification": false,
+  "publisherAuthenticated": false
+}

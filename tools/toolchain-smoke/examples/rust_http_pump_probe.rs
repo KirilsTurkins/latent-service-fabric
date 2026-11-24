@@ -8,6 +8,7 @@ wit_bindgen::generate!({
             import host;
             export run: async func(key: u32) -> u32;
             export retire: async func(key: u32);
+            export discard-before-turn: async func(key: u32);
             export drain: async func();
             export poke: func();
         }
@@ -75,10 +76,29 @@ impl pump::Readiness for Started {
         self.0.started.get()
     }
 }
+struct DiscardBeforeTurn {
+    next: RefCell<Option<Rc<Operation>>>,
+    done: Cell<bool>,
+}
+impl pump::Progress for DiscardBeforeTurn {
+    fn pending(&self) -> bool {
+        self.next.borrow().is_some()
+    }
+    fn progress(&self, _: &mut Context<'_>) {
+        if self.next.borrow_mut().take().is_some() {
+            self.done.set(true);
+        }
+    }
+}
+impl pump::Readiness for DiscardBeforeTurn {
+    fn ready(&self) -> bool {
+        self.done.get()
+    }
+}
 struct Control;
 impl Guest for Control {
     fn poke() {
-        pump::Pump::current().step();
+        pump::Pump::signal_driver();
     }
     async fn run(key: u32) -> u32 {
         let operation = Operation::new(key);
@@ -94,8 +114,19 @@ impl Guest for Control {
         assert!(!operation.ready.get());
         drop(operation);
     }
+    async fn discard_before_turn(key: u32) {
+        let first = Rc::new(DiscardBeforeTurn {
+            next: RefCell::new(None),
+            done: Cell::new(false),
+        });
+        let callback: Rc<dyn pump::Progress> = first.clone();
+        pump::Pump::track(&callback);
+        first.next.replace(Some(Operation::new(key)));
+        let source: Rc<dyn pump::Readiness> = first;
+        assert_eq!(pump::Pump::current().poll(&[source]).await, vec![0]);
+    }
     async fn drain() {
-        pump::Pump::current().drain_retired().await;
+        pump::Pump::drain_retired().await;
     }
 }
 export!(Control);

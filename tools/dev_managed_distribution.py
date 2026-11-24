@@ -188,10 +188,11 @@ def prepare(payload: Path, output: Path, language: str, download, *, prepared_ja
         os.environ["PATH"] = str(payload / "sdk/bin") + os.pathsep + original["PATH"]
         if language == "java":
             from tools.java_capsule_project import create
-            from tools.java_guest.compiler import Compiler
+            from tools.java_guest.compiler_acquisition import AcquisitionCompiler
             project = create(output / "managed-dependency-project", "greeting")
             os.environ.update(JAVA_HOME=str(roots["jdk"]), PATH=str(roots["jdk"] / "bin") + os.pathsep + os.environ["PATH"])
-            compiler = Compiler(output / "managed-dependencies", roots["wasi-sdk"], gradle=str(roots["gradle"] / "bin/gradle"))
+            compiler = AcquisitionCompiler(output / "managed-dependencies", roots["wasi-sdk"],
+                                           gradle=str(roots["gradle"] / "bin/gradle"))
             compiler.compile(project / "src", project / "wit", "examples:greeting/service@1.0.0", output / "managed-dependency-build")
             compiler.check_unchanged()
             roots["gradle-cache"] = compiler.directory / "gradle-home/caches/modules-2"

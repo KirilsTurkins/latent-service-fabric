@@ -250,6 +250,9 @@ impl Catalog {
                 self.command(bytes, inventory, count)
             }
             Family::Outbox => self.effect(bytes, inventory, count),
+            Family::PayloadReference if latent_state::payload_references::owns_row(key) => {
+                self.payload_reference(key, bytes, inventory, count)
+            }
             Family::PayloadReference => {
                 let payload = latent_effects::payload::PayloadRecord::decode(bytes)
                     .map_err(|_| StoreError::Corrupt)?;
@@ -315,6 +318,29 @@ impl Catalog {
             _ => observe(inventory, RetainedKind::MigrationCheckpoint, LINKED, count),
         }
     }
+    fn payload_reference(
+        &self,
+        key: &RowKey,
+        bytes: &[u8],
+        inventory: &mut RetainedInventory,
+        count: RetainedCount,
+    ) -> Result<(), StoreError> {
+        use latent_state::payload_references::{owner_reference, row_tenant};
+        let scope = self.scope();
+        if row_tenant(key, bytes)? != scope.tenant.0
+            || owner_reference(key, bytes)?.is_some_and(|reference| {
+                !scope.contains(
+                    &reference.owner.tenant,
+                    &reference.owner.namespace,
+                    reference.owner.incarnation,
+                )
+            })
+        {
+            return Err(StoreError::UnsupportedFormat);
+        }
+        observe(inventory, RetainedKind::MigrationCheckpoint, LINKED, count)
+    }
+
     fn close_receipt(
         &self,
         key: &RowKey,

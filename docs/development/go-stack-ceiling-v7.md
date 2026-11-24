@@ -258,3 +258,15 @@ compares other modules in the original component coordinate space. Core-local
 body/operator metadata and raw observed frames remain unchanged. Strict readers
 require a bounded typed origin and refuse legacy unadjusted or forged origins.
 No offset constant, module-ordinal assumption, guard change or fallback is used.
+
+## Go 1.27.4 execution
+
+At `fc82effe057c`, the signed guest completed the below-cap recursion and
+collection. The observed stack grew from 262,144 to 655,360 bytes and the
+checksum was 17,756,160. The qualifier identified the private cap frame on
+ordinary growth, on growth with a raised guest stack setting, and during
+initialization. Each refusal was followed by a successful fresh invocation.
+The original Store, instance, reservation, reserved fuel and reserved memory
+counts returned to zero after every attempt. The programme used its original
+64 MiB and one-billion-fuel budget. Aggregate native and kernel accounting
+remains open. [Seven signed results](../testing/evidence/go-stack-ceiling-current-2026-11-23.json)

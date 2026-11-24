@@ -300,7 +300,7 @@ impl StandaloneNode {
         {
             return Err(super::mode_error());
         }
-        let mut catalogs = Catalogs::open_with_control(&settings, &control_runtime).await?;
+        let mut catalogs = Catalogs::open_for_recovery(&settings, &control_runtime).await?;
         let bootstrap = catalogs.state.take().ok_or_else(super::mode_error)?;
         let policy = Arc::clone(
             catalogs

@@ -13,7 +13,7 @@ from tools.go_guest.runtime import checked_sources, replace_once
 PROFILE = 'go-net-declared-streams-v1'
 PREIMAGES = {
     'crypto/tls/cache.go': '553ad7a40a9b198bea838833e3e5ed5660ec9b031ad75f58a9ea119e44bd3bfb',
-    'net/dial.go': '1ea8719962e33747db841fae362a339c29315fde2c5554a344b2935aa6f803b5',
+    'net/dial.go': 'b1213168e51f9daa3ad11c8e1612144dc430d681b62c9a4c3e3292136d8997fd',
     'net/lookup.go': 'e8b6b0a0dc7ca0715fe14e6599b1784dc85ce59689e0cb3f9a7fe3eea26ada19',
     'net/tcpsock.go': '0c3392bd7c2966f894e01ea27514623cf09dc2660e426049219f7e5ee3ec0f74',
 }

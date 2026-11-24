@@ -4,10 +4,10 @@ use super::{
     catalog::Catalog,
     codecs::Codecs,
     execution::NativeRecoveryReport,
-    request::NativeRecoveryRequest,
+    request::{Action, NativeRecoveryRequest},
 };
 use crate::{
-    config::NodeSettings,
+    config::{state::StateSettings, NodeSettings},
     standalone::{effects::ProtectedEffectClock, state::StateBootstrap},
 };
 use latent_artifacts::DirectoryArtifactRepository;
@@ -21,8 +21,10 @@ use latent_core::{
 use latent_effects::dispatch_store::DispatchCatalog;
 use latent_policy::{capability::PolicyStore, supply_chain::SupplyChainAuthority};
 use latent_state::{
-    protected_store::{ProtectedCheckpointConfig, ProtectedStoreOwner},
+    embedded::ReadView,
+    protected_store::{ProtectedCheckpoint, ProtectedCheckpointConfig, ProtectedStoreOwner},
     recovery::namespace_resume::NamespaceRecoveryView,
+    store_identity::ExternalCheckpoint,
     store_io::StoreIoKind,
 };
 use std::{sync::Arc, time::Instant};
@@ -48,11 +50,13 @@ pub(in crate::standalone) async fn recover(
     let state = settings.state.as_ref().ok_or_else(super::denied)?;
     if !settings.credentials_from_protected_file
         || principal.kind != PrincipalKind::Administrator
-        || state.tenant_quotas.len() != 1
-        || principal.tenant.as_ref()
-            != Some(&latent_core::TenantId(
-                state.tenant_quotas[0].tenant.clone(),
-            ))
+        || !bootstrap.matches_local_payload(settings)
+        || (request.request.inbox_binding().is_none()
+            && (state.tenant_quotas.len() != 1
+                || principal.tenant.as_ref()
+                    != Some(&latent_core::TenantId(
+                        state.tenant_quotas[0].tenant.clone(),
+                    ))))
         || !state.operations.iter().any(|operation| {
             operation.publication.as_str() == request.publication
                 && Some(&operation.tenant) == principal.tenant.as_ref()
@@ -85,16 +89,24 @@ pub(in crate::standalone) async fn recover(
         .reserve_buffer(NativeBufferClass::Response, 2 * 1024 * 1024)
         .map_err(|_| super::capacity())?;
     let store = bootstrap.open_store_offline(state).await?;
-    let prepared = prepare(
-        state, principal, request, &owners, &store, &bootstrap, &original,
-    )
-    .await;
-    let (outcome, pins) = match prepared {
-        Ok(codecs) => {
-            let result = super::execution::execute(&store, Arc::clone(&codecs), state).await;
-            (result, Some(codecs))
+    let (outcome, pins) = if request.request.inbox_binding().is_some() {
+        let result = super::inbox_enrollment::run(
+            settings, state, principal, &request, &owners, &store, &bootstrap, &original,
+        )
+        .await;
+        (result, None)
+    } else {
+        match prepare(
+            state, principal, request, &owners, &store, &bootstrap, &original,
+        )
+        .await
+        {
+            Ok(codecs) => {
+                let result = super::execution::execute(&store, Arc::clone(&codecs), state).await;
+                (result, Some(codecs))
+            }
+            Err(error) => (Err(error), None),
         }
-        Err(error) => (Err(error), None),
     };
     store.close();
     let cutoff = Instant::now() + settings.shutdown_grace();
@@ -116,19 +128,11 @@ pub(in crate::standalone) async fn recover(
     ))
 }
 
-#[expect(
-    clippy::too_many_lines,
-    reason = "Original checkpoint, signed selections, installed clock and purpose decisions remain one admission construction"
-)]
-async fn prepare(
-    state: &crate::config::state::StateSettings,
-    principal: &InvocationPrincipal,
-    request: NativeRecoveryRequest,
-    owners: &RecoveryOwners<'_>,
-    store: &Arc<ProtectedStoreOwner>,
-    bootstrap: &StateBootstrap,
+pub(super) async fn require_installed_marker(
+    store: &ProtectedStoreOwner,
+    state: &StateSettings,
     original: &Arc<NativeReservation>,
-) -> Result<Arc<Codecs>, PlatformError> {
+) -> Result<(), PlatformError> {
     let marker = store
         .ensure_state_mode_marker(state.store_identity.clone(), Arc::clone(original))
         .map_err(|_| super::denied())?
@@ -138,27 +142,47 @@ async fn prepare(
     if marker.created_here {
         return Err(super::denied());
     }
-    let (checkpoint, opened) = store
-        .open_checkpoint(
-            ProtectedCheckpointConfig {
-                root: state.checkpoint_root.clone(),
-            },
-            state.store_identity.clone(),
-            None,
-            Arc::clone(original),
-            DispatchCatalog::checkpoint,
+    Ok(())
+}
+
+#[expect(
+    clippy::too_many_lines,
+    reason = "Original checkpoint, signed selections, installed clock and purpose decisions remain one admission construction"
+)]
+async fn prepare(
+    state: &StateSettings,
+    principal: &InvocationPrincipal,
+    request: NativeRecoveryRequest,
+    owners: &RecoveryOwners<'_>,
+    store: &Arc<ProtectedStoreOwner>,
+    bootstrap: &StateBootstrap,
+    original: &Arc<NativeReservation>,
+) -> Result<Arc<Codecs>, PlatformError> {
+    require_installed_marker(store, state, original).await?;
+    let payloads = if matches!(&request.request, Action::InspectNamespace {}) {
+        bootstrap
+            .local_payload_selection
+            .as_deref()
+            .and_then(super::super::store::LocalPayloadSelection::inventory_payloads)
+    } else {
+        None
+    };
+    let (checkpoint, floor) =
+        inspect_checkpoint_with_payloads(store, state, original, payloads.as_ref()).await?;
+    if floor.inbox_custody().is_some()
+        && !matches!(
+            &request.request,
+            Action::InspectNamespace {}
+                | Action::Snapshot { .. }
+                | Action::InspectRestore { .. }
+                | Action::Restore { .. }
+                | Action::InspectCloseEffects { .. }
+                | Action::CloseEffects { .. }
         )
-        .map_err(|_| super::denied())?
-        .await
-        .map_err(|_| super::denied())?;
-    opened.map_err(|_| super::denied())?;
-    let (checkpoint, inspected) = store
-        .inspect_checkpoint(checkpoint, DispatchCatalog::checkpoint)
-        .map_err(|_| super::denied())?
-        .await
-        .map_err(|_| super::denied())?;
-    let inspected = inspected.map_err(|_| super::denied())?;
-    let floor = inspected.checkpoint.ok_or_else(super::denied)?;
+    {
+        // Recovery and resume require explicit inbox reconciliation.
+        return Err(super::denied());
+    }
     let clock = ProtectedEffectClock::admit(
         Arc::clone(&owners.clock),
         Arc::clone(&owners.supply_chain),
@@ -287,6 +311,7 @@ async fn prepare(
                         namespace,
                         identity: configuration.store_identity.clone(),
                         quotas: super::super::validation::quotas(&configuration),
+                        payloads,
                         checkpoint: floor,
                         original,
                         _metadata: metadata,
@@ -301,4 +326,70 @@ async fn prepare(
     job.await
         .map_err(|_| super::super::unavailable())?
         .map_err(|_| super::super::unavailable())?
+}
+
+pub(in crate::standalone::state) async fn inspect_checkpoint(
+    store: &ProtectedStoreOwner,
+    state: &StateSettings,
+    original: &Arc<NativeReservation>,
+) -> Result<(ProtectedCheckpoint, ExternalCheckpoint), PlatformError> {
+    inspect_checkpoint_with_payloads(store, state, original, None).await
+}
+
+async fn inspect_checkpoint_with_payloads(
+    store: &ProtectedStoreOwner,
+    state: &StateSettings,
+    original: &Arc<NativeReservation>,
+    payloads: Option<&super::super::store::InventoryPayloads>,
+) -> Result<(ProtectedCheckpoint, ExternalCheckpoint), PlatformError> {
+    use crate::config::state::STARTUP_VALIDATOR_BYTES;
+
+    let config = ProtectedCheckpointConfig {
+        root: state.checkpoint_root.clone(),
+    };
+    let inventory = || {
+        let identity = state.store_identity.clone();
+        let quotas = super::super::validation::quotas(state);
+        let original = Arc::clone(original);
+        let payloads = payloads.cloned();
+        move |view: &ReadView| {
+            super::super::validation::validate_offline_inventory(
+                view,
+                &identity,
+                &quotas,
+                &original,
+                payloads.as_ref(),
+            )
+        }
+    };
+    let (checkpoint, opened) = store
+        .open_checkpoint_with_inbox_inventory(
+            config,
+            state.store_identity.clone(),
+            None,
+            Arc::clone(original),
+            STARTUP_VALIDATOR_BYTES,
+            DispatchCatalog::checkpoint,
+            inventory(),
+        )
+        .map_err(|_| super::denied())?
+        .await
+        .map_err(|_| super::denied())?;
+    opened.map_err(|_| super::denied())?;
+    let (checkpoint, inspected) = store
+        .inspect_checkpoint_with_inbox_inventory(
+            checkpoint,
+            Arc::clone(original),
+            STARTUP_VALIDATOR_BYTES,
+            DispatchCatalog::checkpoint,
+            inventory(),
+        )
+        .map_err(|_| super::denied())?
+        .await
+        .map_err(|_| super::denied())?;
+    let floor = inspected
+        .map_err(|_| super::denied())?
+        .checkpoint
+        .ok_or_else(super::denied)?;
+    Ok((checkpoint, floor))
 }

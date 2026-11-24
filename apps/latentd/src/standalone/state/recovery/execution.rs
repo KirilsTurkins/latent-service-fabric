@@ -221,6 +221,7 @@ pub(super) async fn execute(
                     return Err(error);
                 }
             };
+            let inbox_replay = input.inbox_custody().zip(input.inbox_history());
             if let Action::Restore {
                 window_acknowledgement,
                 ..
@@ -252,16 +253,17 @@ pub(super) async fn execute(
                     .map_err(|error| failure(format!("restore-stage:{error:?}")));
                 let retired = retire(snapshot, &codecs).await;
                 let receipt = outcome?;
-                Ok(
-                    serde_json::json!({"action":"restore", "operationDigest":digest(receipt.operation_digest()),
+                let mut value = serde_json::json!({"action":"restore", "operationDigest":digest(receipt.operation_digest()),
                         "snapshotDigest":digest(receipt.input().snapshot().snapshot_digest),
                         "manifestDigest":digest(receipt.input().snapshot().manifest_digest),
                         "destinationIdentity":receipt.checkpoint().identity().as_str(),
                         "checkpoint":receipt.checkpoint().encode(), "importedRows":receipt.imported_rows().to_string(),
-                        "resourcePhysicallyRetired":retired, "pausedForReconciliation":true}),
-                )
+                        "resourcePhysicallyRetired":retired, "pausedForReconciliation":true});
+                report_inbox_replay(&mut value, inbox_replay);
+                Ok(value)
             } else {
-                let value = serde_json::json!({"action":"inspect-restore", "snapshot":snapshot_value(input.snapshot()), "windowDigest":digest(input.window().digest().map_err(storage)?), "window":input.window()});
+                let mut value = serde_json::json!({"action":"inspect-restore", "snapshot":snapshot_value(input.snapshot()), "windowDigest":digest(input.window().digest().map_err(storage)?), "window":input.window()});
+                report_inbox_replay(&mut value, inbox_replay);
                 drop(input);
                 let retired = retire(snapshot, &codecs).await;
                 Ok(with_retirement(value, retired))
@@ -608,7 +610,15 @@ async fn snapshot(
     .await?;
     let outcome = result.map_err(protected)?.map_err(snapshot_error);
     let retired = retire(snapshot, &codecs).await;
-    Ok(with_retirement(snapshot_value(&outcome?), retired))
+    let mut report = with_retirement(snapshot_value(&outcome?), retired);
+    if let Some(custody) = codecs.checkpoint.inbox_custody() {
+        report["inboxCustody"] = serde_json::json!({
+            "checkpointGeneration": codecs.checkpoint.generation(),
+            "sourceCount": custody.generation,
+            "sourceDigest": digest(custody.digest),
+        });
+    }
+    Ok(report)
 }
 
 async fn metadata_action(
@@ -617,6 +627,11 @@ async fn metadata_action(
     settings: &crate::config::state::StateSettings,
 ) -> Result<serde_json::Value, PlatformError> {
     let worker = Arc::clone(&codecs);
+    let kind = if matches!(&codecs.action, Action::InspectNamespace {}) {
+        StoreIoKind::RecoveryRead
+    } else {
+        StoreIoKind::RecoveryWrite
+    };
     let memory = codecs
         .original
         .reserve_buffer(
@@ -624,7 +639,7 @@ async fn metadata_action(
             8 * 1024 * 1024,
         )
         .map_err(|_| super::capacity())?;
-    let job = store.with_store_retaining(StoreIoKind::RecoveryWrite, 8 * 1024 * 1024, Arc::clone(&codecs) as Arc<dyn std::any::Any + Send + Sync>, move |engine| {
+    let job = store.with_store_retaining(kind, 8 * 1024 * 1024, Arc::clone(&codecs) as Arc<dyn std::any::Any + Send + Sync>, move |engine| {
         let _memory = memory;
         let outcome = (|| {
             let view = engine.snapshot()?;
@@ -633,7 +648,15 @@ async fn metadata_action(
             let mut batch = AtomicBatch::default();
             let mut time_changed = false;
             let result = match &worker.action {
-                Action::InspectNamespace {} => serde_json::json!({"action":"inspect-namespace", "namespace":observed.namespace.encode().map_err(|_| StoreError::Corrupt)?, "history":observed.history.encode().map_err(|_| StoreError::Corrupt)?, "view":observed.view_token()?, "guard":observed.guard.as_ref().map(RecoveryGuard::encode).transpose()?, "reviewDigest":digest(worker.review)}),
+                Action::InspectNamespace {} => serde_json::json!({
+                    "action":"inspect-namespace",
+                    "namespace":observed.namespace.encode().map_err(|_| StoreError::Corrupt)?,
+                    "history":observed.history.encode().map_err(|_| StoreError::Corrupt)?,
+                    "view":observed.view_token()?,
+                    "guard":observed.guard.as_ref().map(RecoveryGuard::encode).transpose()?,
+                    "reviewDigest":digest(worker.review),
+                    "publicationEffects":publication_effects(&worker, &view)?
+                }),
                 Action::InspectCloseEffects { operation_id, effect_ids, reason } => {
                     let plan = inspect(&view, close_scope(&worker), worker.authority.actor.clone(), operation_id.clone(), effect_ids.clone(), reason.clone())?;
                     serde_json::json!({"action":"inspect-close-effects", "acknowledgement":digest(plan.digest()?), "plan":plan})
@@ -681,11 +704,65 @@ async fn metadata_action(
     Ok(result)
 }
 
+fn publication_effects(
+    codecs: &Codecs,
+    view: &latent_state::embedded::ReadView,
+) -> Result<serde_json::Value, StoreError> {
+    let operation = &codecs.catalog.primary().operation;
+    let publication = operation.publication().publication().as_str();
+    let counts = DispatchCatalog::publication_counts(
+        view,
+        &operation.target().tenant.0,
+        operation.namespace(),
+        operation.incarnation(),
+        publication,
+        &mut || codecs.check(),
+    )?;
+    Ok(serde_json::json!({
+        "publication":publication,
+        "pending":counts.pending.to_string(),
+        "dispatching":counts.active.to_string(),
+        "knownFailed":counts.known_failed.to_string(),
+        "uncertain":counts.uncertain.to_string(),
+        "retryScheduled":counts.retry_scheduled.to_string(),
+        "policyBlocked":counts.blocked.to_string(),
+        "unresolvedPayloadBytes":counts.payload_bytes.to_string(),
+        "hasUnresolvedEffects":counts.oldest_unresolved_millis.is_some()
+    }))
+}
+
 async fn seal(
     store: &ProtectedStoreOwner,
-    codecs: &Codecs,
+    codecs: &Arc<Codecs>,
     settings: &crate::config::state::StateSettings,
 ) -> Result<(), PlatformError> {
+    if codecs.checkpoint.inbox_custody().is_some() {
+        let (checkpoint, current) =
+            super::operation::inspect_checkpoint(store, settings, &codecs.original).await?;
+        if current != codecs.checkpoint {
+            checkpoint.retire().await;
+            return Err(storage(StoreError::Conflict));
+        }
+        let worker = Arc::clone(codecs);
+        let (checkpoint, result) = awaited(
+            store
+                .advance_checkpoint_with_inbox_inventory(
+                    checkpoint,
+                    Some(current),
+                    codecs.authority.clock.covered_epoch()?,
+                    Arc::clone(&codecs.original),
+                    crate::config::state::STARTUP_VALIDATOR_BYTES,
+                    DispatchCatalog::checkpoint,
+                    move |view| worker.inbox_custody(view),
+                )
+                .map_err(protected)?,
+            codecs,
+        )
+        .await?;
+        let result = result.map_err(protected);
+        checkpoint.retire().await;
+        return result.map(|_| ());
+    }
     let (checkpoint, opened) = awaited(
         store
             .open_checkpoint(
@@ -761,6 +838,24 @@ fn file_config(file: &File) -> ProtectedSnapshotConfig {
 }
 fn snapshot_value(receipt: &SnapshotReceipt) -> serde_json::Value {
     serde_json::json!({"action":"snapshot", "snapshotDigest":digest(receipt.snapshot_digest), "manifestDigest":digest(receipt.manifest_digest), "fileBytes":receipt.file_bytes.to_string(), "manifest":receipt.manifest})
+}
+fn report_inbox_replay(
+    report: &mut serde_json::Value,
+    inbox: Option<(
+        latent_state::store_identity::InboxCustodyWatermark,
+        latent_state::protected_store::InboxHistoryComparison,
+    )>,
+) {
+    if let Some((custody, history)) = inbox {
+        report["inboxReplay"] = serde_json::json!({
+            "status": "reconciliation-required",
+            "sourceInventoryGeneration": custody.generation.to_string(),
+            "sourceInventoryDigest": digest(custody.digest),
+            "archivedTerminalRows": history.archived_rows.to_string(),
+            "currentTerminalRows": history.current_rows.to_string(),
+            "terminalHistoryIdentical": history.identical,
+        });
+    }
 }
 fn with_retirement(mut value: serde_json::Value, retired: bool) -> serde_json::Value {
     value["resourcePhysicallyRetired"] = retired.into();

@@ -4,10 +4,11 @@ import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** Owned factories preserve independent FIFO pools and requested parallelism. */
 public final class Executors {
-    private static int nextPool;
+    private static final AtomicInteger nextPool = new AtomicInteger();
     private Executors() { }
     static boolean isManaged(java.util.concurrent.Executor executor) {
         // A scheduled-executor subclass may override execute and retain or
@@ -44,11 +45,11 @@ public final class Executors {
         return new ManagedExecutor(Integer.MAX_VALUE, defaultThreadFactory(), true, false);
     }
     public static ThreadFactory defaultThreadFactory() {
-        int pool = ++nextPool;
+        String prefix = "pool-" + nextPool.incrementAndGet() + "-thread-";
         return new ThreadFactory() {
-            private int nextThread;
+            private final AtomicInteger nextThread = new AtomicInteger();
             @Override public Thread newThread(Runnable task) {
-                Thread thread = new Thread(task, "pool-" + pool + "-thread-" + ++nextThread);
+                Thread thread = new Thread(task, prefix + nextThread.incrementAndGet());
                 thread.setDaemon(false);
                 thread.setPriority(Thread.NORM_PRIORITY);
                 return thread;

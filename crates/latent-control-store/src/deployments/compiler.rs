@@ -806,6 +806,10 @@ async fn compile_catalog_inner(
                     publication: publication.clone(),
                     attributes,
                     execution: artifact.manifest().execution.clone(),
+                    transactional: artifact.manifest().imports.iter().any(|import| {
+                        super::rollouts::comparison::state::transaction_import(&import.contract.0)
+                    }) || artifact.manifest().execution.state_model
+                        == latent_manifest::StateModel::TransactionalKeyed,
                 };
                 previous
                     .and_then(|catalog| catalog.record_by_id(&deployment.id))

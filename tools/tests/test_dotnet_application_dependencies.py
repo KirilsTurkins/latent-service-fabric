@@ -654,6 +654,19 @@ class CapturedCompilerSelection(unittest.TestCase):
         self.evidence.mkdir()
         self.stages = []
 
+    def test_build_maps_the_private_workspace_for_application_and_helper_assemblies(self):
+        compiler = self.compiler_type.__new__(self.compiler_type)
+        compiler.dotnet = Path(sys.executable).resolve()
+        compiler.isolation = None
+        workspace = Path('/private') / 'sources ,= $(dir);percent%'
+        compiler.commands = self.namespace(root=workspace / 'project', run=lambda *args: args)
+        expected = '-p:PathMap=' + str(Path('/private') / 'sources %2C%2C== %24%28dir%29%3Bpercent%25') + '=/_/lsf'
+        for stage in ('native-aot', 'managed-entropy-build-helper'):
+            command = compiler.run(stage, compiler.dotnet, 'build', workspace / 'Code.csproj')
+            self.assertEqual(command[-2:], (workspace / 'Code.csproj', expected))
+        restore = compiler.run('restore', compiler.dotnet, 'restore', workspace / 'Code.csproj')
+        self.assertEqual(restore, ('restore', compiler.dotnet, 'restore', workspace / 'Code.csproj'))
+
     def graph(self, imports):
         interfaces, packages = [], [{'name': 'examples:greeting@1.0.0'}]
         for identity in imports:
@@ -848,6 +861,32 @@ class CapturedCompilerSelection(unittest.TestCase):
                     compiler.compile(work, 'examples:greeting/service@1.0.0', output)
             self.assertNotIn('native-aot', self.stages)
             self.assertTrue((self.evidence / 'nuget-asset-selection-drift.json').is_file())
+
+
+class CompilerPackageCache(unittest.TestCase):
+    def test_private_sdk_package_remains_bound_as_the_application_cache_grows(self):
+        from tools.dotnet_compiler_isolation import DotnetIsolation, stage_sdk_packages
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'original'
+            source.mkdir()
+            (source / 'library.dll').write_bytes(b'compiler-owned')
+            cache = root / 'attempt' / 'nuget-packages'
+            cache.parent.mkdir()
+            name = 'nuget/sdk.compiler/1.0.0'
+            selected = stage_sdk_packages({name: source, 'sdk': root / 'unselected'}, cache)
+            sdk = cache / 'sdk.compiler' / '1.0.0'
+            self.assertEqual(selected, {name: sdk})
+            self.assertEqual(list(cache.parent.rglob('library.dll')), [sdk / 'library.dll'])
+            before = DotnetIsolation.observe_distribution(sdk)
+            app = cache / 'user.library/2.0.0'
+            app.mkdir(parents=True)
+            (app / 'user.dll').write_bytes(b'reviewed application')
+            self.assertEqual(DotnetIsolation.observe_distribution(sdk), before)
+            (sdk / 'library.dll').write_bytes(b'changed')
+            self.assertNotEqual(DotnetIsolation.observe_distribution(sdk), before)
+            self.assertEqual((source / 'library.dll').read_bytes(), b'compiler-owned')
 
 
 class RelocatedCompilerPython(unittest.TestCase):

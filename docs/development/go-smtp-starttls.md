@@ -103,9 +103,15 @@ effect-free retry before the client is constructed. This is not a retry policy
 of the SMTP library, and no network call or effect is retried by the fixture.
 The selected module graph and original ZIPs are captured and checked before the
 maintained offline Go authoring build, which uses its existing compiler namespace.
-This route requires its own signed result and does not inherit the earlier v5
-or v7 standard-library observation. It does not qualify the normal provider,
-host TLS accounting or final kernel retirement.
+
+The signed Go 1.27.4 component completed seven calls on the reference provider.
+The peer received one connection per call. For the delivery case, the client
+upgraded the connection to TLS 1.3 and called `Client.SendMail`. The loopback
+peer accepted one complete message, sent the `250` reply and observed `QUIT`.
+The guest returned `published-smtp-delivery-acknowledged`. Each of the seven
+calls ended with zero live Stores, instances, stream owners and I/O owners.
+The production provider, host TLS accounting and final kernel retirement remain
+open. [Signed delivery record](../testing/evidence/go-published-smtp-acknowledged-2026-11-24.json)
 
 The separately selected `published-lost-reply` owner captures the same published
 SMTP dependency graph for a different fixture. Its controlled local peer reads
@@ -118,3 +124,14 @@ separate NOOP and QUIT. The receipt records connection counts and the peer's
 one accepted message separately. This fixture does not exercise RxGo/backoff,
 host TLS, a normally installed provider, cross-tenant reuse or final kernel
 retirement. A source or native client control alone is not a signed result.
+
+The signed lost-reply run passed on source `eb282945ae3a2e1fa91556467a1c610130e8fe35`.
+The job logged two contacts and one peer mutation. Both cases ended with zero
+observed guest Stores, instances, I/O owners and stream owners. The receipt
+identifies the signed component and the exact modules compiled into it. It also
+records which modules the fixture exercised. The retained JSON preserves every
+field from the job log. The SHA-256 of the original 5,362-byte JSON line,
+excluding its timestamp and line ending, is
+`3bd9ffd11c799bfca638506008bcf284535d127b688dbb844e70d76d1814070c`.
+[Retained receipt](../testing/evidence/go-published-smtp-lost-reply-2026-11-10.json)
+and [original job](https://github.com/KirilsTurkins/latent-service-fabric/actions/runs/42785338745/job/129725019256).

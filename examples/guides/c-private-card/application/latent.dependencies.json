@@ -1,0 +1,73 @@
+{
+  "artifacts": [
+    {
+      "dependencies": [
+        "shopfloor/card-policy",
+        "team/picking-worker"
+      ],
+      "format": "directory",
+      "id": "shopfloor/cards",
+      "metadata": {
+        "cSources": [
+          "card_client.c"
+        ],
+        "includeDirectories": [
+          "."
+        ],
+        "version": "0.1.0-owner-source"
+      },
+      "mount": "dependencies/card-client",
+      "role": "application",
+      "source": {
+        "path": "../libraries/card"
+      }
+    },
+    {
+      "dependencies": [],
+      "format": "directory",
+      "id": "shopfloor/card-policy",
+      "metadata": {
+        "resources": [
+          {
+            "mediaType": "text/plain",
+            "path": "configuration/card-policy.txt",
+            "source": "expected-card.txt"
+          }
+        ]
+      },
+      "mount": "dependencies/card-policy",
+      "role": "resource",
+      "source": {
+        "path": "../libraries/resource"
+      }
+    },
+    {
+      "dependencies": [],
+      "format": "directory",
+      "id": "team/picking-worker",
+      "metadata": {
+        "cSources": [
+          "order_worker.c"
+        ],
+        "includeDirectories": [
+          "."
+        ],
+        "version": "0.1.0-owner-source"
+      },
+      "mount": "dependencies/worker",
+      "role": "application",
+      "source": {
+        "path": "../libraries/runner"
+      }
+    }
+  ],
+  "formatVersion": 1,
+  "language": "c",
+  "nativeLocks": [],
+  "selection": {
+    "languageStandard": "c23",
+    "runtimeProfile": "c-libfetch-clock-entropy-v1",
+    "target": "wasm32-wasi"
+  },
+  "transformations": []
+}

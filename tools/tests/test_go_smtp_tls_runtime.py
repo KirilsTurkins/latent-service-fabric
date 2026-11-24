@@ -24,6 +24,8 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
             result.append(('GO_SMTP_CASE', {'case': label, 'mode': mode, 'result': outcome, 'contacts': contacts}))
         complete = {'cases': 6, 'contacts': 6, 'cleanLogicalProviderStop': True,
             'normalProviderInstalled': False, 'kernelRetirementQualified': False, 'hostTlsQualified': False}
+        if program == 'published':
+            complete.update(cases=7, contacts=7, peerMutations=1)
         if program == 'published-lost-reply':
             complete = {'cases': 2, 'contacts': 2, 'peerMutations': 1, 'postCompletionReplayWindowMillis': 250,
                 'cleanLogicalProviderStop': True, 'normalProviderInstalled': False,
@@ -132,7 +134,11 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
         record = runtime.outcomes(raw, program='published')
         self.assertEqual([row['case'] for row in record['cases']],
                          [row[0] for row in runtime.PUBLISHED_EXPECTED])
-        self.assertEqual(len(record['userSpaceOwners']), 6)
+        self.assertEqual(len(record['userSpaceOwners']), 7)
+        self.assertEqual(record['cases'][-1]['result'], 'published-smtp-delivery-acknowledged')
+        self.assertEqual(record['completion']['peerMutations'], 1)
+        with self.assertRaisesRegex(ValueError, 'completion'):
+            runtime.outcomes(raw.replace(b'"peerMutations": 1', b'"peerMutations": 0'), program='published')
         with self.assertRaises(ValueError):
             runtime.outcomes(raw)
         with self.assertRaises(ValueError):
@@ -193,6 +199,8 @@ class GoSmtpTlsRuntimeTests(unittest.TestCase):
         result = published.graph_evidence(declaration, native, assets)
         self.assertEqual(len(result['transitiveEdges']), 2)
         self.assertEqual(result['smtpRetryPolicy'], 'none')
+        self.assertEqual(result['applicationLibraries'][0]['ordinaryApi'],
+                         'smtp.Dial/DialStartTLS/Noop/SendMail/Quit')
         lost = published.graph_evidence(declaration, native, assets, lost_reply=True)
         self.assertEqual(lost['workerTimer'], 'not exercised by the separate lost-reply fixture')
         self.assertEqual([row['ordinaryApi'] for row in lost['applicationLibraries']][1:],

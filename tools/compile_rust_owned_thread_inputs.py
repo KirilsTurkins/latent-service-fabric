@@ -199,7 +199,8 @@ def run(output, rust_bin, expected_head, *, application_diagnostic=False):
         commands.run('native-sync-build', tools['rustc'], '--edition=2024', '--test',
                      ROOT / NATIVE_SYNC_TEST, '-o', native_sync)
         listed = commands.run('native-sync-list', native_sync, '--list')
-        require(sum(line.endswith(b': test') for line in listed.splitlines()) == 22,
+        require(sum(line.endswith(b': test') for line in listed.splitlines()) == 23
+                and b'broadcast_leaves_a_new_waiter_queued_when_an_original_waiter_retires: test' in listed.splitlines(),
                 'rust-thread-inputs-native-sync-case-closure')
         commands.run('native-sync-run', native_sync, '--test-threads=1')
         summary['nativeWaitControls'] = 14

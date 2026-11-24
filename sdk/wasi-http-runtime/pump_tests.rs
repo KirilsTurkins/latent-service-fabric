@@ -108,6 +108,83 @@ fn completed_sibling_wakes_its_caller_while_original_gate_remains_held() {
 }
 
 #[test]
+fn dropping_a_sibling_before_its_turn_skips_its_callback() {
+    struct Callback<F>(F);
+    impl<F: Fn()> Progress for Callback<F> {
+        fn progress(&self, _: &mut Context<'_>) {
+            (self.0)();
+        }
+        fn pending(&self) -> bool {
+            false
+        }
+    }
+
+    let calls = Rc::new(Cell::new(0));
+    let observed = calls.clone();
+    let discarded: Rc<dyn Progress> = Rc::new(Callback(move || observed.set(observed.get() + 1)));
+    let owned = RefCell::new(Some(discarded.clone()));
+    let first: Rc<dyn Progress> = Rc::new(Callback(move || drop(owned.borrow_mut().take())));
+    let sibling = Rc::new(Gate::default());
+    let active: Rc<dyn Progress> = sibling.clone();
+    for owner in [&first, &discarded, &active] {
+        Pump::track(owner);
+    }
+    drop(discarded);
+
+    assert!(Pump::current()
+        .drive(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
+    assert_eq!(calls.get(), 0);
+    assert_eq!(sibling.polls.get(), 1);
+}
+
+#[test]
+fn dropping_a_waiter_before_its_turn_leaves_its_waker_quiet() {
+    struct DropWaiter(RefCell<Option<Rc<Waiting>>>);
+    impl Readiness for DropWaiter {
+        fn ready(&self) -> bool {
+            drop(self.0.borrow_mut().take());
+            false
+        }
+    }
+
+    let pump = Pump::new();
+    let first = Rc::new(DropWaiter(RefCell::new(None)));
+    let _observer = pump.register(&[first.clone()]);
+    let ready = Rc::new(Gate::default());
+    let discarded = waiting(&pump, &ready);
+    let (calls, waker) = signal();
+    assert!(discarded.poll(&Context::from_waker(&waker)).is_pending());
+    first.0.replace(Some(discarded));
+    ready.complete.set(true);
+
+    assert!(pump
+        .drive(&mut Context::from_waker(Waker::noop()))
+        .is_pending());
+    assert_eq!(calls.0.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn idle_observation_and_empty_root_drain_leave_the_pump_unallocated() {
+    assert!(CURRENT.with(|slot| slot.get().is_none()));
+    Pump::signal_driver();
+    assert!(std::pin::pin!(Pump::drain_retired())
+        .as_mut()
+        .poll(&mut Context::from_waker(Waker::noop()))
+        .is_ready());
+    assert!(CURRENT.with(|slot| slot.get().is_none()));
+
+    let gate = Rc::new(Gate::default());
+    let original: Rc<dyn Progress> = gate.clone();
+    Pump::track(&original);
+    let (wakes, waker) = signal();
+    Pump::current().driver_waker.borrow_mut().replace(waker);
+    Pump::signal_driver();
+    assert_eq!(wakes.0.load(Ordering::SeqCst), 1);
+    assert_eq!(gate.polls.get(), 0);
+}
+
+#[test]
 fn synchronous_observation_only_schedules_and_cannot_poll_or_complete_an_import() {
     let pump = Pump::new();
     let gate = Rc::new(Gate::default());

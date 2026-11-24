@@ -78,6 +78,60 @@ impl StateKernel {
             .ok_or_else(super::unavailable)
     }
 
+    /// The protected startup inventory has already verified its external
+    /// watermark. Confirm every selected stream against that same store before
+    /// a poller can start. This read cannot create or replace source custody.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(super) async fn require_inbox_sources(
+        &self,
+        bindings: &[latent_nats::triggers::TriggerBinding],
+        provider: &str,
+    ) -> Result<(), PlatformError> {
+        use latent_core::native_capacity::NativeBufferClass;
+        use latent_state::{inbox_scope, store_io::StoreIoKind};
+
+        const WORK_BYTES: u64 = 512 * 1024;
+        let bootstrap = self.bootstrap.as_ref().ok_or_else(super::unavailable)?;
+        bootstrap.check_live()?;
+        let original = bootstrap.original();
+        let buffer = original
+            .reserve_buffer(NativeBufferClass::Work, WORK_BYTES)
+            .map_err(|_| super::unavailable())?;
+        let scopes = bindings
+            .iter()
+            .map(|binding| binding.inbox_scope(provider))
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|_| super::unavailable())?;
+        let current = Arc::clone(&original);
+        let job = self
+            .store
+            .with_store_retaining(
+                StoreIoKind::RecoveryRead,
+                WORK_BYTES,
+                original,
+                move |store| {
+                    let _buffer = buffer;
+                    let view = store.snapshot()?;
+                    for scope in &scopes {
+                        super::validation::live(&current)?;
+                        inbox_scope::require_existing(&view, scope)?;
+                    }
+                    super::validation::live(&current)
+                },
+            )
+            .map_err(|_| super::unavailable())?;
+        if !matches!(
+            tokio::time::timeout_at(bootstrap.deadline.into(), job).await,
+            Ok(Ok(Ok(())))
+        ) {
+            return Err(super::super::error(
+                latent_core::PlatformErrorCode::Unavailable,
+                "transactional-input-custody-unavailable",
+            ));
+        }
+        bootstrap.check_live()
+    }
+
     pub(super) fn check_ready(&self, effects: &EffectRuntime) -> Result<(), PlatformError> {
         let bootstrap = self.bootstrap.as_ref().ok_or_else(super::unavailable)?;
         bootstrap.check_live()?;
