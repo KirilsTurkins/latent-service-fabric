@@ -165,10 +165,10 @@ def qualify(native_directory, adapter_directory, zig_archive, python_prefix, out
         stage = 'normal-controller-package-and-compiler-observation-join'
         record['packaging'] = complete_installed_package(artifact,native,output/'packaging',deadline)
         stage = 'signed-installed-two-client-denial-retirement-fresh'
-        observed = node.run(artifact, native, output/'node', deadline=deadline)
-        require(observed['status'] == 'passed' and observed['guestExecutions'] == 4
-            and observed['invocationAttempts'] == 6 and observed['preEntryRefusalsCount'] == 2
-            and observed['peerContacts'] == 4, 'installed-rust-all-finite-cases-required')
+        observed = node.run(artifact, native, output/'node', deadline=deadline, include_guest_reader=True)
+        require(observed['status'] == 'passed' and observed['guestExecutions'] == 8
+            and observed['guestReaderExecutions'] == 4 and observed['invocationAttempts'] == 10
+            and observed['preEntryRefusalsCount'] == 2 and observed['peerContacts'] == 6, 'installed-rust-all-finite-cases-required')
         record['node'] = file_identity(output/'node/qualification.json', 16*1024**2)
         prepared.check()
         runtime.Prepared(adapter_directory, tools['rustc'], tools['wasm-tools']).check()
@@ -182,7 +182,7 @@ def qualify(native_directory, adapter_directory, zig_archive, python_prefix, out
             and captured == inventory(snapshot(app)) and time.monotonic() < deadline,
             'installed-rust-final-full-inventory-source-and-deadline')
         record.update(status='passed', installedRecipeQualification=True, signedQualification=True,
-            guestExecutions=4, invocationAttempts=6, preEntryRefusals=2, peerContacts=4,
+            guestExecutions=8, guestReaderExecutions=4, invocationAttempts=10, preEntryRefusals=2, peerContacts=6,
             fullTicketQualification=False)
         write_json(output/'qualification.json', record)
         return record

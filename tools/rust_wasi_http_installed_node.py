@@ -40,7 +40,22 @@ def owned_cleanup(record):
         stack.close()
 
 
-def run(artifact, native, output, *, deadline):
+def programme(include_guest_reader):
+    domain = ('installed-json', 'json', '/conformance/json', original.DOMAIN_TEXT, 1, 'domain-json', '')
+    yield 'examples', 'waki', 'alpha', domain
+    yield 'foreign', 'golem', 'delta', domain
+    if include_guest_reader:
+        allowed = ('guest-reader-post', 'reader-post', '/conformance/echo',
+            'reader:5:200:echo:POST:AAECAw==', 1, 'method-bytes', '')
+        denied = ('guest-reader-denied', 'reader-post', 'foreign', 'error:request-denied', 0, None, '')
+        for tenant, alias in (('examples', 'alpha'), ('foreign', 'delta')):
+            yield tenant, 'golem', alias, allowed
+            yield tenant, 'golem', alias, denied
+    yield 'examples', 'golem', 'delta', domain
+    yield 'foreign', 'waki', 'alpha', domain
+
+
+def run(artifact, native, output, *, deadline, include_guest_reader=False):
     output = fresh(output)
     names = ('component.wasm', 'BUILD-COMPLETE.json', 'source-inputs.json', 'recipe-inputs.json',
         'build-observation.json', 'capsule.json', 'package-source.json', 'rust-http-runtime.json')
@@ -122,13 +137,14 @@ def run(artifact, native, output, *, deadline):
             require(publications['examples'] != publications['foreign'], 'installed-rust-independent-publications')
             record['publications'] = publications
             stage = 'both-ordinary-parsed-clients-and-opposite-fresh'
-            spec = ('installed-json', 'json', '/conformance/json', original.DOMAIN_TEXT, 1, 'domain-json', '')
-            for tenant, library, alias in (('examples', 'waki', 'alpha'), ('foreign', 'golem', 'delta'),
-                    ('examples', 'golem', 'delta'), ('foreign', 'waki', 'alpha')):
-                label = tenant+'-'+library
+            expected = {tenant: [] for tenant in TENANTS}
+            for tenant, library, alias, spec in programme(include_guest_reader):
+                label = tenant+'-'+(library if spec[1] == 'json' else spec[0])
+                stage = label
                 row = original.invoke(clients[tenant], node, targets[tenant], peers, tenant, library,
                     alias, spec, probe, output, label)
                 record['cases'].append(row)
+                expected[tenant].extend([spec[5]] * row['parsedPeerRequests'])
                 write_json(output/('case-'+label+'.json'), row)
             stage = 'final-physical-provider-retirement-and-shutdown'
             for index, tenant in enumerate(TENANTS):
@@ -145,15 +161,19 @@ def run(artifact, native, output, *, deadline):
                 raw = json.dumps(observed, ensure_ascii=True).encode()
                 require(all(secret not in raw and secret.removeprefix(b'Bearer ') not in raw
                     for secret in protected), 'installed-rust-no-controlled-credentials-retained')
-                record['peers'][tenant] = original.check_peer_final(observed, ['domain-json', 'domain-json'])
+                record['peers'][tenant] = original.check_peer_final(observed, expected[tenant])
                 write_json(output/(tenant+'-peer-final.json'), observed)
             record['startup'] = node.startup_record
         require(before == {name: file_identity(artifact/name) for name in names}
             and binaries == {name: file_identity(path, 512*1024**2) for name, path in native.items()}
             and materials == {name: file_identity(ROOT/name) for name in MATERIALS}
             and time.monotonic() < deadline, 'installed-rust-final-source-and-product-identity')
-        record.update(status='passed', guestExecutions=4, invocationAttempts=6, preEntryRefusalsCount=2,
-            peerContacts=4, signedInstalledRecipeQualification=True)
+        observed_calls = len(record['cases'])
+        refused = len(record['preEntryRefusals'])
+        record.update(status='passed', guestExecutions=observed_calls, invocationAttempts=observed_calls+refused,
+            preEntryRefusalsCount=refused, peerContacts=sum(peer['contacts'] for peer in record['peers'].values()),
+            guestReaderExecutions=sum(row['specification'][1]=='reader-post' for row in record['cases']),
+            signedInstalledRecipeQualification=True)
         write_json(output/'qualification.json', record)
         return record
     except BaseException:
