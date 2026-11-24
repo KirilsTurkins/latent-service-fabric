@@ -26,16 +26,24 @@ pub const RESPONSE_RESERVATION_BYTES: u64 = 2048 + 2 * 8192 + 4096;
 
 impl QualifiedHttpEndpoint {
     pub fn validate(&self, config: &HttpProviderConfig) -> Result<(), HttpError> {
+        self.configured_destination(config).map(|_| ())
+    }
+
+    pub(super) fn configured_destination(
+        &self,
+        config: &HttpProviderConfig,
+    ) -> Result<usize, HttpError> {
         config.validate()?;
+        let index = config
+            .destinations
+            .iter()
+            .position(|destination| destination.origin == self.origin)
+            .ok_or(HttpError::InvalidRequest)?;
+        let selected = &config.destinations[index];
         if self.format_version != 1
-            || config.destinations.len() != 1
-            || self.origin != config.destinations[0].origin
             || self.origin.scheme != "https"
-            || !matches!(
-                config.destinations[0].resolution,
-                HttpResolution::Static { .. }
-            )
-            || !config.destinations[0].redirect_destinations.is_empty()
+            || !matches!(selected.resolution, HttpResolution::Static { .. })
+            || !selected.redirect_destinations.is_empty()
             || config.limits.maximum_redirects != 0
             || !(11..=32).contains(&config.limits.maximum_headers)
             || config.limits.maximum_header_bytes < 4096
@@ -77,7 +85,7 @@ impl QualifiedHttpEndpoint {
         if target.url.query().is_some() {
             return Err(HttpError::InvalidUrl);
         }
-        Ok(())
+        Ok(index)
     }
 }
 

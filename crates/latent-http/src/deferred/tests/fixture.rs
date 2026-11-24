@@ -3,10 +3,10 @@ use super::{endpoint, proxy};
 use crate::{HttpCredentialReference, HttpProvider, HttpProviderConfig};
 use latent_artifacts::{DirectoryArtifactRepository, DirectoryArtifactRepositoryConfig};
 use latent_capabilities::broker::{
+    ActivationCapabilityBroker, CapabilityBrokerLimits,
     io::{IoLimits, IoRuntime},
     pools::{ProviderPoolLimits, ProviderPools},
     secrets::CredentialScope,
-    ActivationCapabilityBroker, CapabilityBrokerLimits,
 };
 use latent_commit::atomic::{
     AdmissionDecision, AdmissionInput, AtomicError, CommandAccess, CommandTime, CompleteEnvelope,
@@ -14,9 +14,9 @@ use latent_commit::atomic::{
     StagedIntent,
 };
 use latent_core::{
+    StateNamespaceId, SystemActivationClock, TenantId,
     native_capacity::{NativeCapacityLimits, NativeCapacityOwner},
     transaction_contract::{CommandFingerprint, CommandKey, Value},
-    StateNamespaceId, SystemActivationClock, TenantId,
 };
 use latent_effects::{
     authority::{
@@ -24,7 +24,7 @@ use latent_effects::{
         EffectTime,
     },
     dispatch::{Disposition, EffectRecord},
-    dispatch_store::{effect_row_key, DispatchCatalog},
+    dispatch_store::{DispatchCatalog, effect_row_key},
     runtime::{DeferredEffectAdapter, DispatcherConfig, DispatcherOwner, EffectTimeSource},
 };
 use latent_policy::capability::{PolicyStore, PolicyStoreLimits};
@@ -34,8 +34,8 @@ use latent_secrets::{
 use latent_state::{
     embedded::{AtomicBatch, EmbeddedStore, Family, ReadView, RowKey, RowMutation, StoreError},
     namespace::{
-        catalog::NamespaceCatalog, namespace_record_key, NamespacePins, NamespaceQuota,
-        NamespaceRecord, NamespaceStatus, NamespaceVersion,
+        NamespacePins, NamespaceQuota, NamespaceRecord, NamespaceStatus, NamespaceVersion,
+        catalog::NamespaceCatalog, namespace_record_key,
     },
     protected_store::{ProtectedStoreConfig, ProtectedStoreOwner},
     session::{SessionLimits, StateAccess, StateMode, StateScope, StateSession},
@@ -46,8 +46,8 @@ use std::{
     os::unix::fs::PermissionsExt,
     path::{Path, PathBuf},
     sync::{
-        atomic::{AtomicU64, Ordering},
         Arc,
+        atomic::{AtomicU64, Ordering},
     },
     time::{Duration, Instant},
 };
@@ -307,15 +307,19 @@ impl Fixture {
         fault: proxy::Fault,
         authorization: Option<Arc<dyn super::super::DeferredHttpAuthorization>>,
     ) -> Self {
-        Self::configured(fault, authorization, 32768).await
+        Self::configured(fault, authorization, 32768, false).await
     }
     pub async fn with_response_ceiling(fault: proxy::Fault, maximum_response_bytes: u64) -> Self {
-        Self::configured(fault, None, maximum_response_bytes).await
+        Self::configured(fault, None, maximum_response_bytes, false).await
+    }
+    pub async fn with_adjacent_read_origin(fault: proxy::Fault) -> Self {
+        Self::configured(fault, None, 32768, true).await
     }
     async fn configured(
         fault: proxy::Fault,
         authorization: Option<Arc<dyn super::super::DeferredHttpAuthorization>>,
         maximum_response_bytes: u64,
+        adjacent_read_origin: bool,
     ) -> Self {
         let base = std::env::var_os("LATENT_STATE_TEST_ROOT")
             .map_or_else(std::env::temp_dir, PathBuf::from);
@@ -323,31 +327,65 @@ impl Fixture {
         fs::set_permissions(root.path(), fs::Permissions::from_mode(0o700)).unwrap();
         let endpoint = endpoint::Endpoint::open(root.path().join("remote")).await;
         let proxy = proxy::Proxy::open(endpoint.port, fault).await;
-        let config = proxy.config();
+        let mut config = proxy.config();
         let qualification = qualification(&config);
         let (catalog, policies, pools) = install_shared_pools(root.path());
-        let secrets = install_credentials(root.path(), pools.clone(), &config).await;
-        let credential = secrets
-            .bind_credential(
-                CredentialScope {
-                    tenant: TenantId("tests".into()),
-                    provider_id: "http".into(),
-                    origin: config.destinations[0].origin.clone(),
+        let mut specs = credential_specs(&config, "1");
+        if adjacent_read_origin {
+            let mut reader = config.destinations[0].clone();
+            reader.origin.scheme = "http".into();
+            reader.origin.host = "reader.example.test".into();
+            let effect_credential = &specs[0];
+            let reader_credential = SecretSpec {
+                tenant: effect_credential.tenant.clone(),
+                reference: "http-reader".into(),
+                source: SecretSource::File {
+                    name: "read-token".into(),
                 },
-                "http-auth".into(),
-            )
-            .unwrap();
+                purpose: SecretPurpose::ProviderCredential {
+                    provider_id: "http".into(),
+                    origin: reader.origin.clone(),
+                },
+                media_type: effect_credential.media_type.clone(),
+                version: effect_credential.version.clone(),
+                expires_at_unix_millis: effect_credential.expires_at_unix_millis,
+            };
+            specs.insert(0, reader_credential);
+            config.destinations.insert(0, reader);
+        }
+        let secrets =
+            install_credentials(root.path(), pools.clone(), specs, adjacent_read_origin).await;
+        let references = config
+            .destinations
+            .iter()
+            .enumerate()
+            .map(|(index, destination)| HttpCredentialReference {
+                destination: index,
+                name: "authorization".into(),
+                binding: secrets
+                    .bind_credential(
+                        CredentialScope {
+                            tenant: TenantId("tests".into()),
+                            provider_id: "http".into(),
+                            origin: destination.origin.clone(),
+                        },
+                        (if destination.origin == qualification.origin {
+                            "http-auth"
+                        } else {
+                            "http-reader"
+                        })
+                        .into(),
+                    )
+                    .unwrap(),
+            })
+            .collect();
         let provider = HttpProvider::install_with_secret_references(
             pools.clone(),
             "http",
             1,
             0,
             config,
-            vec![HttpCredentialReference {
-                destination: 0,
-                name: "authorization".into(),
-                binding: credential,
-            }],
+            references,
         )
         .unwrap();
         let clock = Arc::new(Clock(AtomicU64::new(100)));
@@ -535,12 +573,13 @@ impl Fixture {
         drop(self.adapter);
         drop(self.provider);
         self.secrets.close();
-        assert!(self
-            .pools
-            .shutdown(Instant::now() + WATCHDOG)
-            .await
-            .unwrap()
-            .is_clean());
+        assert!(
+            self.pools
+                .shutdown(Instant::now() + WATCHDOG)
+                .await
+                .unwrap()
+                .is_clean()
+        );
         self.proxy.finish().await;
         self.endpoint.finish().await;
     }
@@ -580,12 +619,18 @@ pub fn write_credential(root: &Path, bytes: &[u8]) {
 async fn install_credentials(
     root: &Path,
     pools: Arc<ProviderPools>,
-    config: &HttpProviderConfig,
+    specs: Vec<SecretSpec>,
+    adjacent_read_origin: bool,
 ) -> LocalSecretStore {
     let directory = root.join("secrets");
     fs::create_dir(&directory).unwrap();
     fs::set_permissions(&directory, fs::Permissions::from_mode(0o700)).unwrap();
     write_credential(&directory, b"Bearer synthetic-http-reference");
+    if adjacent_read_origin {
+        let read_token = directory.join("read-token");
+        fs::write(&read_token, b"Bearer synthetic-read-reference").unwrap();
+        fs::set_permissions(read_token, fs::Permissions::from_mode(0o600)).unwrap();
+    }
     let deadline = Instant::now() + WATCHDOG;
     let store = LocalSecretStore::open_before(
         pools,
@@ -599,7 +644,7 @@ async fn install_credentials(
     .await
     .unwrap();
     store
-        .reload_before(0, credential_specs(config, "1"), deadline)
+        .reload_before(0, specs, deadline)
         .unwrap()
         .await
         .unwrap_or_else(|error| {

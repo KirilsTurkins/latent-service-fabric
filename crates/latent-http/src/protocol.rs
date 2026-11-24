@@ -93,7 +93,11 @@ struct Inner {
     _metadata: ProviderMetadata,
 }
 impl ProtocolTransport {
-    pub(crate) fn from_http_provider(provider: &crate::provider::Inner) -> Result<Self, HttpError> {
+    pub(crate) fn from_http_provider(
+        provider: &crate::provider::Inner,
+        destination: usize,
+        mut config: HttpProviderConfig,
+    ) -> Result<Self, HttpError> {
         let metadata = provider.pools.reserve_protocol_metadata(
             65536
                 + 3 * provider
@@ -103,8 +107,13 @@ impl ProtocolTransport {
                     .map(Vec::capacity)
                     .sum::<usize>(),
         )?;
-        let mut config = provider.config.clone();
-        if config.destinations.len() != 1 {
+        if config.destinations.len() != 1
+            || provider
+                .config
+                .destinations
+                .get(destination)
+                .is_none_or(|entry| entry.origin != config.destinations[0].origin)
+        {
             return Err(HttpError::InvalidRequest);
         }
         config.destinations[0].allowed_request_headers.clear();
@@ -118,7 +127,7 @@ impl ProtocolTransport {
                 answers: Answers::from_static(addresses)?,
                 config,
                 pools: Arc::clone(&provider.pools),
-                client: provider.client(0)?,
+                client: provider.client(destination)?,
                 tls: Arc::clone(&provider.tls),
                 _metadata: metadata,
             }),
