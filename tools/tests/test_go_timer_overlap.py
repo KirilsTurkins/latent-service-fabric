@@ -17,8 +17,9 @@ def cases():
                  reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
             for case, mode, outcome, count in [('reset-reset', 0, 'success', 1),
                 ('reset-stop', 1, 'success', 2), ('gc-reset-reset', 2, 'success', 3),
-                ('gc-reset-stop', 3, 'success', 4), ('cancel-reset-reset', 0, 'cancelled', 5),
-                ('deadline-reset-stop', 1, 'deadline-exceeded', 6), ('fresh', 0, 'success', 7)]]
+                ('gc-reset-stop', 3, 'success', 4), ('stop-reset', 4, 'success', 5),
+                ('stop-stop', 5, 'success', 6), ('cancel-reset-reset', 0, 'cancelled', 7),
+                ('deadline-reset-stop', 1, 'deadline-exceeded', 8), ('fresh', 0, 'success', 9)]]
 
 
 def stdout(rows=None, filtered=53):
@@ -30,10 +31,10 @@ def stdout(rows=None, filtered=53):
 
 def stderr():
     names = ('reset-reset', 'reset-stop', 'gc-reset-reset', 'gc-reset-stop',
-             'cancel-reset-reset', 'deadline-reset-stop')
+             'stop-reset', 'stop-stop', 'cancel-reset-reset', 'deadline-reset-stop')
     lines = []
     for index, name in enumerate(names):
-        gc, stop = int(index in (2, 3)), int(index in (4, 5))
+        gc, stop = int(index in (2, 3)), int(index in (6, 7))
         lines.append(f'LSF-GO-TIMER-OVERLAP-V4|go-timer-overlap-{name}|1|0|0|4|1|1|1|1|{gc}|{gc}|1|{stop}|{1-stop}|512')
         lines.append(f'LSF-GO-TIMER-WAIT-DROP-V1|go-timer-overlap-{name}|{1-stop}')
     return ('\n'.join(lines) + '\n').encode()
@@ -67,7 +68,7 @@ class GoTimerOverlap(unittest.TestCase):
                 return component, {}
         original = reference.ROOT / 'sdk/go-guest/runtime/timer-overlap-conformance'
         source, world = (original / 'main.go').read_bytes(), (original / 'world.wit').read_bytes()
-        native = {'modes': [0, 1, 2, 3], 'outputs': [42, 43, 42, 43], 'freshProcessPerMode': True,
+        native = {'modes': [0, 1, 2, 3, 4, 5], 'outputs': [42, 43, 42, 43, 43, 43], 'freshProcessPerMode': True,
                   'sourceDigest': 'sha256:' + reference.digest(source)}
         with tempfile.TemporaryDirectory() as temporary, patch.object(activation, 'ROOT', reference.ROOT), \
                 patch.object(activation, 'Compiler', SourceOnlyCompiler), patch.object(activation, 'stage'), \
@@ -129,13 +130,17 @@ class GoTimerOverlap(unittest.TestCase):
     def test_exact_source_bound_signed_retirements_and_six_complete_witnesses(self):
         result = reference.timer_overlap_observations(stdout(), stderr(), 53)
         self.assertEqual(result['cases'], cases())
-        self.assertEqual(len(result['witnesses']), 6)
+        self.assertEqual(len(result['witnesses']), 8)
         self.assertEqual([w['bothParkedBeforeRootStop'] for w in result['witnesses']],
-                         [False, False, False, False, True, True])
+                         [False, False, False, False, False, False, True, True])
         self.assertEqual([w['handshakeParkObserved'] for w in result['witnesses']],
-                         [False, False, True, True, False, False])
+                         [False, False, True, True, False, False, False, False])
         self.assertEqual([w['returned'] for w in result['physicalWaitDrops']],
-                         [True, True, True, True, False, False])
+                         [True, True, True, True, True, True, False, False])
+        for name in ('stop-reset', 'stop-stop'):
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, 'physical-wait-drops'):
+                marker = ('LSF-GO-TIMER-WAIT-DROP-V1|go-timer-overlap-'+name+'|').encode()
+                reference.timer_overlap_observations(stdout(), stderr().replace(marker+b'1', marker+b'0'), 53)
         for rows in (cases()[:-1], list(reversed(cases())), cases() + cases()[:1]):
             with self.subTest(rows=rows), self.assertRaisesRegex(ValueError, 'signed-retirement'):
                 reference.timer_overlap_observations(stdout(rows), stderr(), 53)
@@ -194,20 +199,20 @@ class GoTimerOverlap(unittest.TestCase):
                       'sourceDigest': 'sha256:' + reference.digest(source), 'sourceUnchanged': True,
                       'ordinarySource': True, 'signedExecution': 'not-run',
                       'componentDigest': 'sha256:' + reference.digest(component), 'bindingDigest': 'sha256:' + 'a' * 64,
-                      'tools': [], 'transformations': [], 'nativeReference': {'modes': [0, 1, 2, 3], 'outputs': [42, 42, 42, 42],
+                      'tools': [], 'transformations': [], 'nativeReference': {'modes': [0, 1, 2, 3, 4, 5], 'outputs': [42, 42, 42, 42, 42, 42],
                       'freshProcessPerMode': True, 'sourceDigest': 'sha256:' + reference.digest(source)}}
             receipt = folder / 'GO-ACTIVATION-COMPILE.json'
             receipt.write_text(json.dumps(record))
             self.assertEqual(reference.compile_identity(folder, reference.ROOT, record['profile'], record['fixture'])['sourceDigest'], record['sourceDigest'])
             changed = copy.deepcopy(record)
-            changed['nativeReference']['outputs'] = [42, 43, 42, 43]
+            changed['nativeReference']['outputs'] = [42, 43, 42, 43, 43, 43]
             receipt.write_text(json.dumps(changed))
             reference.compile_identity(folder, reference.ROOT, record['profile'], record['fixture'])
-            changed['nativeReference']['outputs'] = [43, 42, 42, 42]
+            changed['nativeReference']['outputs'] = [43, 42, 42, 42, 42, 42]
             receipt.write_text(json.dumps(changed))
             with self.assertRaisesRegex(ValueError, 'native-reference'):
                 reference.compile_identity(folder, reference.ROOT, record['profile'], record['fixture'])
-            changed['nativeReference']['outputs'] = [42, 42, 43, 42]
+            changed['nativeReference']['outputs'] = [42, 42, 43, 42, 42, 42]
             receipt.write_text(json.dumps(changed))
             with self.assertRaisesRegex(ValueError, 'native-reference'):
                 reference.compile_identity(folder, reference.ROOT, record['profile'], record['fixture'])

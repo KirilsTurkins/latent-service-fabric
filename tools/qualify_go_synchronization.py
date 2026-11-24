@@ -226,18 +226,20 @@ def timer_overlap_observations(raw: bytes, diagnostic: bytes, filtered: int, cas
                      reservedFuel=0, reservedMemory=0, pendingProviderWaits=0)
                 for case, mode, outcome, count in [('reset-reset', 0, 'success', 1),
                     ('reset-stop', 1, 'success', 2), ('gc-reset-reset', 2, 'success', 3),
-                    ('gc-reset-stop', 3, 'success', 4), ('cancel-reset-reset', 0, 'cancelled', 5),
-                    ('deadline-reset-stop', 1, 'deadline-exceeded', 6), ('fresh', 0, 'success', 7)]]
+                    ('gc-reset-stop', 3, 'success', 4), ('stop-reset', 4, 'success', 5),
+                    ('stop-stop', 5, 'success', 6), ('cancel-reset-reset', 0, 'cancelled', 7),
+                    ('deadline-reset-stop', 1, 'deadline-exceeded', 8), ('fresh', 0, 'success', 9)]]
     if json.dumps(rows, sort_keys=True, separators=(',', ':')) != json.dumps(expected, sort_keys=True, separators=(',', ':')):
         raise ValueError('Go-timer-overlap-signed-retirement-required')
     prefix = b'LSF-GO-TIMER-OVERLAP-V4|'
     records = re.findall(rb'^LSF-GO-TIMER-OVERLAP-V4\|([^\r\n]+)$', diagnostic, re.M)
-    if diagnostic.count(prefix) != 6 or len(records) != 6:
-        raise ValueError('Go-timer-overlap-exact-witnesses-required')
     observed = []
     names = ('go-timer-overlap-reset-reset', 'go-timer-overlap-reset-stop',
              'go-timer-overlap-gc-reset-reset', 'go-timer-overlap-gc-reset-stop',
+             'go-timer-overlap-stop-reset', 'go-timer-overlap-stop-stop',
              'go-timer-overlap-cancel-reset-reset', 'go-timer-overlap-deadline-reset-stop')
+    if diagnostic.count(prefix) != len(names) or len(records) != len(names):
+        raise ValueError('Go-timer-overlap-exact-witnesses-required')
     for case, record in zip(names, records):
         fields = record.split(b'|')
         gc_case = '-gc-' in case
@@ -260,7 +262,7 @@ def timer_overlap_observations(raw: bytes, diagnostic: bytes, filtered: int, cas
     if diagnostic.count(drop_prefix) != len(names) or len(drops) != len(names):
         raise ValueError('Go-timer-overlap-physical-wait-drops-required')
     drop_map = {name.decode(): returned == b'1' for name, returned in drops}
-    if len(drop_map) != len(names) or set(drop_map) != set(names) or not all(drop_map[name] for name in names[:4]):
+    if len(drop_map) != len(names) or set(drop_map) != set(names) or not all(drop_map[name] for name in names[:-2]):
         raise ValueError('Go-timer-overlap-physical-wait-drops-required')
     return {'cases': rows, 'witnesses': observed,
             'physicalWaitDrops': [{'activation': name, 'returned': drop_map[name]} for name in names]}
@@ -668,11 +670,15 @@ def compile_identity(path: Path, root: Path, profile: str, fixture: str = 'synch
     if profile in {'go-component-activation-v5', 'go-component-activation-v7'}:
         native = record['nativeReference']
         expected_modes = {'synchronization': NATIVE_MODES, 'managed-idle': [0, 1, 2], 'timers': TIMER_NATIVE_MODES,
-                          'task-saturation': [0], 'timer-overlap': [0, 1, 2, 3],
+                          'task-saturation': [0], 'timer-overlap': [0, 1, 2, 3, 4, 5],
                           'timer-fired': [0, 1, 2, 3], 'zero-clock': [0]}[fixture]
-        native_outputs = (native.get('outputs') in ([42, 42, 42, 42], [42, 43, 42, 42],
-                                                    [42, 42, 42, 43], [42, 43, 42, 43])
-                          if fixture == 'timer-overlap' else native.get('output') == 42)
+        if fixture == 'timer-overlap':
+            values = native.get('outputs')
+            native_outputs = (isinstance(values, list) and len(values) == len(expected_modes)
+                and all(type(value) is int and value in ((42,) if mode in (0, 2) else (42, 43))
+                        for mode, value in zip(expected_modes, values)))
+        else:
+            native_outputs = native.get('output') == 42
         if (native['modes'] != expected_modes or not native_outputs
                 or native['freshProcessPerMode'] is not True or native['sourceDigest'] != record['sourceDigest']):
             raise ValueError('Go-synchronization-native-reference')
