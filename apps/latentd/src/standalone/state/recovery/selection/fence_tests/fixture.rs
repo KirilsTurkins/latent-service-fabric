@@ -1,6 +1,6 @@
 //! Real signed selections and policy seals for the final writer fence only.
 use super::super::super::{
-    assets::SchemaEvidence,
+    assets::{RecoveryCodec, SchemaEvidence},
     authority::{Authority, NativeProfile},
     catalog::Catalog,
     codecs::Codecs,
@@ -468,7 +468,7 @@ fn evidence(operation: Arc<RecoverySource>, schema: &SchemaId, companion: &[u8])
     SchemaEvidence {
         operation,
         schema,
-        profile: Profile::Legacy,
+        codec: RecoveryCodec::Aggregate(Profile::Legacy),
         artifacts: Vec::new(),
     }
 }

@@ -72,6 +72,47 @@ pub(super) fn profile(
     Ok(profile.map(|(scope, profile)| RecoveryProfile { scope, profile }))
 }
 
+pub(super) fn current_profiles(
+    source: &RecoverySource,
+    settings: &StateSettings,
+    deployment: &DeploymentManifest,
+    adapters: &[Arc<latent_http::deferred::HttpEffectAdapter>],
+    event_adapters: &[Arc<latent_nats::deferred::JetStreamEffectAdapter>],
+) -> Result<Vec<RecoveryProfile>, PlatformError> {
+    let current = &source.input;
+    let asset = source.asset.get();
+    let mut profiles: Vec<RecoveryProfile> = Vec::new();
+    // A publication's query can precede its command in the node configuration.
+    // Every configured peer still uses the original signed installation and namespace.
+    for peer in settings.operations.iter().filter(|peer| {
+        peer.tenant == current.tenant
+            && peer.publication == current.publication
+            && peer.deployment == current.deployment
+            && peer.binding == current.binding
+            && peer.incarnation == current.incarnation
+            && (peer.deferred_http.is_some() || peer.deferred_event.is_some())
+    }) {
+        super::super::installations::policy::check_asset(asset, peer, deployment)?;
+        super::super::installations::policy::state_binding(settings, peer, deployment)?;
+        let http = super::super::installations::http::recovery_profile(asset, peer, adapters)?;
+        let event =
+            super::super::installations::event::recovery_profile(asset, peer, event_adapters)?;
+        for (scope, profile) in [http, event].into_iter().flatten() {
+            if let Some(prior) = profiles.iter().find(|prior| prior.scope == scope) {
+                if prior.profile != profile {
+                    return Err(super::denied());
+                }
+            } else {
+                if profiles.len() == 2 {
+                    return Err(super::capacity());
+                }
+                profiles.push(RecoveryProfile { scope, profile });
+            }
+        }
+    }
+    Ok(profiles)
+}
+
 pub(super) fn capture_current(
     repository: &Arc<DirectoryArtifactRepository>,
     settings: &StateSettings,

@@ -31,7 +31,7 @@ impl Catalog {
         effects: Vec<RecoveryProfile>,
         publication: &str,
     ) -> Result<Self, PlatformError> {
-        if sources.len() > 4 || effects.len() > sources.len() {
+        if sources.len() > 4 || effects.len() > sources.len() * 2 {
             return Err(super::capacity());
         }
         let original = sources
