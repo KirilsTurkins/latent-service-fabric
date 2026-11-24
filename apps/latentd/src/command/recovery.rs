@@ -1,4 +1,5 @@
 //! Bounded offline actions use the authenticated current store owners.
+use super::Failure;
 use crate::{
     config::NodeConfig,
     standalone::{RuntimeThreads, StandaloneNode},
@@ -27,14 +28,15 @@ pub(super) struct Arguments {
     request_file: Option<PathBuf>,
 }
 
-pub(super) fn installed(args: Arguments) -> Result<(), super::Failure> {
+pub(super) fn installed(args: Arguments) -> Result<(), Failure> {
     if !cfg!(all(target_os = "linux", target_arch = "x86_64")) {
-        return Err(super::Failure::new(
-            "platform",
-            PlatformErrorCode::Unavailable,
-        ));
+        return Err(unavailable("platform"));
     }
-    run(args).map_err(|stage| super::Failure::new(stage, PlatformErrorCode::Unavailable))
+    run(args)
+}
+
+const fn unavailable(stage: &'static str) -> Failure {
+    Failure::new(stage, PlatformErrorCode::Unavailable)
 }
 
 #[derive(Parser)]
@@ -47,30 +49,31 @@ struct ExampleArguments {
 pub fn transaction_recovery_example_entry() -> ExitCode {
     match run(ExampleArguments::parse().recovery) {
         Ok(()) => ExitCode::SUCCESS,
-        Err(code) => {
-            eprintln!("transaction-recovery-helper: {code}");
+        Err(failure) => {
+            eprintln!("transaction-recovery-helper: {}", failure.stage);
             ExitCode::FAILURE
         }
     }
 }
-fn run(args: Arguments) -> Result<(), &'static str> {
+fn run(args: Arguments) -> Result<(), Failure> {
     let settings = NodeConfig::load(&args.config)
         .and_then(|input| input.derive())
-        .map_err(|_| "protected-configuration-refused")?;
+        .map_err(|error| Failure::new("protected-configuration-refused", error.code))?;
     let bytes = latent_protected_files::read(
         &args.credential_file,
         512,
         latent_protected_files::ProtectedFilePolicy::Secret,
         "recoveryFixtureCredential",
     )
-    .map_err(|_| "protected-credential-refused")?;
-    let credential = std::str::from_utf8(&bytes).map_err(|_| "credential-encoding-refused")?;
+    .map_err(|_| unavailable("protected-credential-refused"))?;
+    let credential =
+        std::str::from_utf8(&bytes).map_err(|_| unavailable("credential-encoding-refused"))?;
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .worker_threads(settings.control_workers())
         .max_blocking_threads(settings.control_blocking_threads())
         .enable_all()
         .build()
-        .map_err(|_| "native-runtime-refused")?;
+        .map_err(|_| unavailable("native-runtime-refused"))?;
     let grace = settings.shutdown_grace();
     let result = if let Some(path) = &args.request_file {
         recover(&runtime, settings, credential, &args.tenant, path)
@@ -84,7 +87,7 @@ fn run(args: Arguments) -> Result<(), &'static str> {
         )))
         .map(Output::Diagnosis)
     } else {
-        Err("native-recovery-mode-required")
+        Err(unavailable("native-recovery-mode-required"))
     };
     runtime.shutdown_timeout(grace);
     let result = result?;
@@ -92,7 +95,7 @@ fn run(args: Arguments) -> Result<(), &'static str> {
     output
         .write_all(result.bytes())
         .and_then(|()| output.write_all(b"\n"))
-        .map_err(|_| "diagnosis-output-refused")?;
+        .map_err(|_| unavailable("diagnosis-output-refused"))?;
     Ok(())
 }
 
@@ -118,16 +121,16 @@ fn recover(
     credential: &str,
     tenant: &str,
     path: &std::path::Path,
-) -> Result<Output, &'static str> {
+) -> Result<Output, Failure> {
     let bytes = latent_protected_files::read(
         path,
         16_384,
         latent_protected_files::ProtectedFilePolicy::Integrity,
         "nativeRecoveryRequest",
     )
-    .map_err(|_| "protected-request-refused")?;
+    .map_err(|_| unavailable("protected-request-refused"))?;
     let request = crate::standalone::NativeRecoveryRequest::decode(&bytes)
-        .map_err(|_| "native-request-refused")?;
+        .map_err(|error| Failure::new("native-request-refused", error.code))?;
     let report = runtime
         .block_on(StandaloneNode::recover_namespace(
             settings,
@@ -136,11 +139,11 @@ fn recover(
             request,
             runtime.handle().clone(),
         ))
-        .map_err(|_| "native-operator-recovery-refused")?;
+        .map_err(|error| Failure::new("native-operator-recovery-refused", error.code))?;
     report
         .encode()
         .map(Output::Recovery)
-        .map_err(|_| "recovery-encoding-refused")
+        .map_err(|_| unavailable("recovery-encoding-refused"))
 }
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 fn recover(
@@ -149,17 +152,19 @@ fn recover(
     _credential: &str,
     _tenant: &str,
     _path: &std::path::Path,
-) -> Result<Output, &'static str> {
-    Err("native-recovery-platform-refused")
+) -> Result<Output, Failure> {
+    Err(unavailable("native-recovery-platform-refused"))
 }
 
 fn encode<T: serde::Serialize>(
     result: Result<T, latent_core::PlatformError>,
-) -> Result<String, &'static str> {
-    let observed = result.map_err(|_| "native-operator-diagnosis-refused")?;
+) -> Result<String, Failure> {
+    let observed =
+        result.map_err(|error| Failure::new("native-operator-diagnosis-refused", error.code))?;
     let mut bytes = BoundedOutput(Vec::new());
-    serde_json::to_writer(&mut bytes, &observed).map_err(|_| "diagnosis-encoding-refused")?;
-    String::from_utf8(bytes.0).map_err(|_| "diagnosis-encoding-refused")
+    serde_json::to_writer(&mut bytes, &observed)
+        .map_err(|_| unavailable("diagnosis-encoding-refused"))?;
+    String::from_utf8(bytes.0).map_err(|_| unavailable("diagnosis-encoding-refused"))
 }
 
 struct BoundedOutput(Vec<u8>);
