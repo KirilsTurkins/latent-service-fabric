@@ -158,6 +158,23 @@ the integrated source. The identified historical native binaries are reused;
 this does not claim a rebuilt current host. Complete simultaneous reset/dispose
 races, shutdown/tenant fencing and managed CPU scheduling remain separate.
 
+## Changing a timer while its callback is running
+
+An outside NuGet library scheduled a worker from a live timer callback. The
+worker used the default task scheduler and called `Change` before or after
+starting `DisposeAsync`. Before disposal, `Change` returned true. After
+disposal started, it returned false. In both orders the disposal task remained
+pending while the callback was active, then completed after exactly one callback.
+The standard .NET 10.0.100 reference and the signed NativeAOT component returned
+the same results.
+
+The Linux node completed 56 invocations, including all 24 task cases and four
+individual missing-grant refusals. Each task finished with zero active, queued
+or quarantined execution cells and zero reserved CPU or memory. The node shut
+down cleanly. The guest came from `6e32468c7167`. The node and four companion
+components came from the verified five-template build at `fc82effe057c`.
+[Component identities, reference output and measured costs](../testing/evidence/dotnet-pending-timer-disposal-2026-11-24.json)
+
 ## Qualification-private WaitAll reference
 
 At the reference's qualified source732c, the ordinary driver still selected its

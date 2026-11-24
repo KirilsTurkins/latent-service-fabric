@@ -38,7 +38,8 @@ SOURCES = {
             "timeoutSeconds": 600, "connectionAttempts": 3},
     "wasm-tools": {"url": f"https://github.com/bytecodealliance/wasm-tools/releases/download/v{distribution.WASM_VERSION}/"
                           f"wasm-tools-{distribution.WASM_VERSION}-x86_64-linux.tar.gz",
-                   "sha256": "sha256:" + distribution.WASM_SHA256, "maximum": 5862464, "version": distribution.WASM_VERSION},
+                   "sha256": "sha256:" + distribution.WASM_SHA256, "maximum": 5862464,
+                   "version": distribution.WASM_VERSION, "connectionAttempts": 3},
     "wit-bindgen": {"url": BINDGEN_URL, "sha256": "sha256:" + distribution.ARCHIVE_SHA256,
                     "maximum": 32 * 1024 * 1024, "version": distribution.BINDGEN_VERSION},
 }

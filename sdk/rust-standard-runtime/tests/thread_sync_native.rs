@@ -197,6 +197,35 @@ fn rwlock_gate_blocks_new_readers_until_existing_reader_releases_and_writer_fini
 }
 
 #[test]
+fn rwlock_failed_writer_wait_preserves_existing_readers_and_releases_the_gate() {
+    for refuse_before_admission in [true, false] {
+        let lock = rwlock::RwLock::new();
+        runtime::index(1);
+        lock.read();
+        runtime::index(2);
+        if refuse_before_admission {
+            runtime::refuse_wait(true);
+        } else {
+            runtime::on_wait(|| panic!("wait interrupted after the writer queued"));
+        }
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| lock.write()));
+        runtime::refuse_wait(false);
+        assert!(result.is_err());
+        assert_eq!(runtime::live(), 0);
+
+        runtime::index(3);
+        assert!(lock.try_read(), "a failed writer retained the admission gate");
+        unsafe { lock.read_unlock(); }
+        assert!(!lock.try_write(), "the original reader is still active");
+        runtime::index(1);
+        unsafe { lock.read_unlock(); }
+        runtime::index(3);
+        assert!(lock.try_write());
+        unsafe { lock.write_unlock(); }
+    }
+}
+
+#[test]
 fn once_initializer_is_run_once_and_original_poison_force_semantics_are_retained() {
     let once = once::Once::new();
     let calls = cell::Cell::new(0);

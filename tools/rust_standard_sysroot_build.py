@@ -121,7 +121,8 @@ def build(archive: Path, output: Path, rust_bin: Path, *, logging=False, entropy
                 path = library / name; path.parent.mkdir(parents=True, exist_ok=True)
                 with path.open('xb') as stream: stream.write(raw)
                 path.chmod(modes.get(name, 0o644))
-            tools = {name: checked_path(rust_bin / name) for name in ('cargo', 'rustc')}
+            suffix = '.exe' if sys.platform == 'win32' else ''
+            tools = {name: checked_path(rust_bin / (name + suffix)) for name in ('cargo', 'rustc')}
             environment = build_environment(work)
             environment.update(HOME=str(work / 'home'), CARGO_HOME=str(work / 'cargo-home'),
                 CARGO_NET_OFFLINE='true', RUSTUP_AUTO_INSTALL='0', RUSTC=str(tools['rustc']),

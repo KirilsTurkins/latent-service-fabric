@@ -291,7 +291,7 @@ fn checkpoint_component(
             } else if timer_fired {
                 serde_json::json!([0, 1, 2, 3])
             } else if timer_overlap {
-                serde_json::json!([0, 1, 2, 3])
+                serde_json::json!([0, 1, 2, 3, 4, 5])
             } else if managed {
                 serde_json::json!([0, 1, 2])
             } else if published {
@@ -309,12 +309,15 @@ fn checkpoint_component(
             }
         );
         if timer_overlap {
-            assert!(
-                record["nativeReference"]["outputs"] == serde_json::json!([42, 42, 42, 42])
-                    || record["nativeReference"]["outputs"] == serde_json::json!([42, 43, 42, 42])
-                    || record["nativeReference"]["outputs"] == serde_json::json!([42, 42, 42, 43])
-                    || record["nativeReference"]["outputs"] == serde_json::json!([42, 43, 42, 43])
-            );
+            let outputs = record["nativeReference"]["outputs"].as_array().unwrap();
+            assert_eq!(outputs.len(), 6);
+            for (mode, output) in outputs.iter().enumerate() {
+                if matches!(mode, 0 | 2) {
+                    assert_eq!(output.as_u64(), Some(42));
+                } else {
+                    assert!(matches!(output.as_u64(), Some(42 | 43)));
+                }
+            }
         } else {
             assert_eq!(record["nativeReference"]["output"], 42);
         }

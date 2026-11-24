@@ -160,7 +160,9 @@ struct State {
 }
 #[derive(Debug)]
 struct Slab {
-    records: Vec<Option<Record>>,
+    // Only IDs escape the state lock. Settling one owner can move another
+    // live record without changing its token or readiness.
+    records: Vec<Record>,
     // Drop the real records/allocation before releasing its native charge.
     _allocation: HostMemoryReservation,
 }
@@ -477,7 +479,7 @@ impl ActivationRuntime {
         hook(AdmissionStep::ChargedFuel);
         if state.slab.is_none() {
             let count = self.inner.limits.total();
-            let bytes = std::alloc::Layout::array::<Option<Record>>(count)
+            let bytes = std::alloc::Layout::array::<Record>(count)
                 .ok()
                 .and_then(|layout| layout.size().checked_add(SLAB_ALLOCATION_BOOKKEEPING))
                 .and_then(|bytes| u64::try_from(bytes).ok())
@@ -514,7 +516,6 @@ impl ActivationRuntime {
                     "runtime-record-capacity",
                 ));
             }
-            records.resize(count, None);
             state.slab = Some(Slab {
                 records,
                 _allocation: allocation,
@@ -524,17 +525,16 @@ impl ActivationRuntime {
             generation: self.inner.generation,
             id: state.next_id,
         };
-        let slot = state
-            .slab
-            .as_ref()
-            .expect("reserved slab")
-            .records
-            .iter()
-            .position(|slot| slot.is_none())
-            .ok_or_else(|| error(PlatformErrorCode::ResourceExhausted, "runtime-record-limit"))?;
+        let records = &state.slab.as_ref().expect("reserved slab").records;
+        if records.len() == records.capacity() {
+            return Err(error(
+                PlatformErrorCode::ResourceExhausted,
+                "runtime-record-limit",
+            ));
+        }
         hook(AdmissionStep::PreparedSlot);
-        // A first admission can also have spent time reserving/allocating the
-        // bounded slab, or scanning it. Recheck ledger closure and deadline;
+        // A first admission can also have spent time allocating the bounded
+        // slab. Recheck ledger closure and deadline;
         // the physical allocation remains prepaid until retirement.
         self.check_commit_ledger_locked(state)?;
         hook(AdmissionStep::CheckedBeforePublication);
@@ -546,11 +546,16 @@ impl ActivationRuntime {
         self.check_commit_ledger_locked(state)?;
         #[cfg(test)]
         hook(AdmissionStep::HoldingPublicationGuard);
-        state.slab.as_mut().expect("reserved slab").records[slot] = Some(Record {
-            id: token.id,
-            kind,
-            parked: false,
-        });
+        state
+            .slab
+            .as_mut()
+            .expect("reserved slab")
+            .records
+            .push(Record {
+                id: token.id,
+                kind,
+                parked: false,
+            });
         state.next_id = next_id;
         state.owners[index] += 1;
         if matches!(state.phase, RuntimePhase::Waiting) {
@@ -562,7 +567,7 @@ impl ActivationRuntime {
         // ledger or ancestor closed first, restore the identifier and count
         // without releasing the prepaid slab; no RuntimeOwner exists yet.
         if !publication.commit_while_open() {
-            state.slab.as_mut().expect("reserved slab").records[slot] = None;
+            state.slab.as_mut().expect("reserved slab").records.pop();
             state.next_id = token.id;
             state.owners[index] -= 1;
             state.phase = RuntimePhase::Cancelling;
@@ -588,7 +593,6 @@ impl ActivationRuntime {
             .as_ref()?
             .records
             .iter()
-            .flatten()
             .find(|r| r.id == token.id)
     }
 
@@ -629,11 +633,7 @@ impl ActivationRuntime {
         let slot = state
             .slab
             .as_ref()
-            .and_then(|slab| {
-                slab.records
-                    .iter()
-                    .position(|r| r.is_some_and(|r| r.id == token.id))
-            })
+            .and_then(|slab| slab.records.iter().position(|r| r.id == token.id))
             .ok_or_else(|| error(PlatformErrorCode::InvalidArgument, "runtime-token"))?;
         // Cancellation can win the state lock after check_live returns. Do not
         // publish a parked owner after that transition; already accepted work
@@ -644,8 +644,7 @@ impl ActivationRuntime {
         self.check_commit_ledger_locked(&mut state)?;
         #[cfg(test)]
         hook(ReadinessStep::Checked);
-        let record =
-            state.slab.as_ref().expect("checked slab").records[slot].expect("checked owner");
+        let record = state.slab.as_ref().expect("checked slab").records[slot];
         let newly_parked_task = record.kind.index() == 0 && !record.parked;
         let should_wait = state.phase == RuntimePhase::Running
             && state.owners[0] == state.parked_tasks + u16::from(newly_parked_task);
@@ -653,10 +652,7 @@ impl ActivationRuntime {
         self.check_commit_ledger_locked(&mut state)?;
         #[cfg(test)]
         hook(ReadinessStep::Guarded);
-        state.slab.as_mut().expect("checked slab").records[slot]
-            .as_mut()
-            .expect("checked owner")
-            .parked = true;
+        state.slab.as_mut().expect("checked slab").records[slot].parked = true;
         if should_wait {
             state.phase = RuntimePhase::Waiting;
         }
@@ -665,10 +661,7 @@ impl ActivationRuntime {
         // The state mutex hides the provisional park. The ancestry RMWs order
         // it with closure; on failure retain the existing owner.
         if !publication.commit_while_open() {
-            state.slab.as_mut().expect("checked slab").records[slot]
-                .as_mut()
-                .expect("checked owner")
-                .parked = record.parked;
+            state.slab.as_mut().expect("checked slab").records[slot].parked = record.parked;
             state.phase = RuntimePhase::Cancelling;
             drop(publication);
             return Err(error(PlatformErrorCode::Cancelled, "runtime-cancelled"));
@@ -899,12 +892,10 @@ impl Drop for RuntimeOwner {
             .state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if let Some(slot) = state.slab.as_mut().and_then(|slab| {
-            slab.records
-                .iter_mut()
-                .find(|slot| slot.is_some_and(|r| r.id == self.token.id))
+        if let Some(record) = state.slab.as_mut().and_then(|slab| {
+            let slot = slab.records.iter().position(|r| r.id == self.token.id)?;
+            Some(slab.records.swap_remove(slot))
         }) {
-            let record = slot.take().expect("matching live owner");
             state.owners[record.kind.index()] -= 1;
             if record.kind == OwnerKind::ManagedIdleWorker {
                 state.managed_idle_workers -= 1;
@@ -956,11 +947,10 @@ impl RuntimeWake {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         let phase = state.phase;
-        let slot = state.slab.as_ref().and_then(|slab| {
-            slab.records
-                .iter()
-                .position(|r| r.is_some_and(|r| r.id == self.token.id))
-        });
+        let slot = state
+            .slab
+            .as_ref()
+            .and_then(|slab| slab.records.iter().position(|r| r.id == self.token.id));
         if self.token.generation != runtime.inner.generation || slot.is_none() {
             state.stale_wakes = state.stale_wakes.saturating_add(1);
             return false;
@@ -986,22 +976,15 @@ impl RuntimeWake {
         }
         #[cfg(test)]
         hook(ReadinessStep::Guarded);
-        let record =
-            state.slab.as_ref().expect("checked slab").records[slot].expect("checked owner");
-        state.slab.as_mut().expect("checked slab").records[slot]
-            .as_mut()
-            .expect("checked owner")
-            .parked = false;
+        let record = state.slab.as_ref().expect("checked slab").records[slot];
+        state.slab.as_mut().expect("checked slab").records[slot].parked = false;
         if state.phase == RuntimePhase::Waiting {
             state.phase = RuntimePhase::Running;
         }
         #[cfg(test)]
         hook(ReadinessStep::Tentative);
         if !publication.commit_while_open() {
-            state.slab.as_mut().expect("checked slab").records[slot]
-                .as_mut()
-                .expect("checked owner")
-                .parked = record.parked;
+            state.slab.as_mut().expect("checked slab").records[slot].parked = record.parked;
             state.phase = RuntimePhase::Cancelling;
             return false;
         }
