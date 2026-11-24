@@ -1,0 +1,182 @@
+{
+  "issue": 746,
+  "platform": "linux-x86_64",
+  "guestAndInvocationSource": "6e32468c71676875258dff87dbccc1c21078c41c",
+  "nativeAndCompanionSource": "fc82effe057c99e278646010a3b7f1e0a1cfef80",
+  "sourceComparison": {
+    "source": "6e32468c71676875258dff87dbccc1c21078c41c",
+    "differingInputs": [
+      "helpers",
+      "runtime"
+    ],
+    "matchingInstalledRuntime": {
+      "dotnet-authoring-tools": false,
+      "dotnet-authoring-tools-fc82effe": true
+    }
+  },
+  "nativeTemplateQualification": {
+    "sha256": "sha256:956494b5328de021aafc05ef74fb3b1db49bf892896acd552150b1aa50c26a4f",
+    "bytes": 31161
+  },
+  "nativeSourceInputs": {
+    "sha256": "sha256:c071acafd05ff2855166281917a3b3b4f0a6127b13a0c161cea3c4428b75b490",
+    "bytes": 56654
+  },
+  "nativeBinaries": {
+    "latent": {
+      "sha256": "sha256:91dca312633e7996e5dab6ee4e9eb60e76591314b9ad5b8831203e0e41bed6ea",
+      "bytes": 76442344
+    },
+    "latentd": {
+      "sha256": "sha256:9688674a173301527077b1c4221a37a06076f0b08d7c1530d3b45a46365ca492",
+      "bytes": 212359352
+    },
+    "package": {
+      "sha256": "sha256:7d39ae32d5c4be19480c800eac3041e0ca6de7f9fbe2cb3b0fb442f166a7f68c",
+      "bytes": 19685760
+    },
+    "capsule_contracts": {
+      "sha256": "sha256:064df5c939093b2a14f3db4c5cb70b01aeb7dfeed317257237f45696af0554e8",
+      "bytes": 14401464
+    },
+    "capsule_authoring": {
+      "sha256": "sha256:79e0622d0c3e0449e545720f6b31414d8324b111c151926f3cc424c38da24042",
+      "bytes": 26132920
+    }
+  },
+  "companionComponents": {
+    "word-count": {
+      "sha256": "sha256:33813569133784cc71dfe9b3bd21ce380eb203495b1a82ae3ac2c62e604843be",
+      "bytes": 1709396
+    },
+    "shipping": {
+      "sha256": "sha256:3ed5ecfea2a58ee30caf83815125caf078e6ef8fcb4d8557c19826c6b0f8171d",
+      "bytes": 1708011
+    },
+    "http-status": {
+      "sha256": "sha256:97674081753040d865faf82cdcab1c2970ad5d8bee1c92c101ab9f05f522b645",
+      "bytes": 1741482
+    },
+    "recovery": {
+      "sha256": "sha256:6c468891ca6b7aa1ef5118633178efc14dbaa54fd79ac2d8b3721ab642a03ca2",
+      "bytes": 1770764
+    }
+  },
+  "reference": {
+    "guestSource": "6e32468c71676875258dff87dbccc1c21078c41c",
+    "library": {
+      "sha256": "sha256:249d6399b016ad403996314730bf53dda4c51db4bed01ce4d5c131e57d2f3cfd",
+      "bytes": 25218
+    },
+    "framework": "10.0.100",
+    "reference": {
+      "sha256": "sha256:ca26dd8d83bc3cac52ea064440e0015ee39eb97657a9a30e2f2b583a5bd3b824",
+      "bytes": 30208
+    },
+    "cases": [
+      {
+        "mode": "timer-change-before-dispose",
+        "returned": "ordinary-tasks:timer-change-before-dispose|changed=1|pending=1|callbacks=1|drained=1|fresh=1"
+      },
+      {
+        "mode": "timer-change-after-dispose",
+        "returned": "ordinary-tasks:timer-change-after-dispose|changed=0|pending=1|callbacks=1|drained=1|fresh=1"
+      }
+    ],
+    "sourceTests": 47,
+    "skipped": 0
+  },
+  "capturedNuget": {
+    "assemblyDigest": "sha256:6aae57df121e0f3e0c14d88477fff6d9bf8603d252241cfe9e9d98d02ddc4f20",
+    "packageDigest": "sha256:fe9c963ec1285752f5b2e1c814bfd00c0357c742577c483352fb0ff3e1bbb589",
+    "lockDigest": "sha256:6cb1f24e0995b732e1db33fcc75d73d6b0183c9b49696a15478bf53a38b4b897",
+    "originalLibraryAndFeedRemoved": true
+  },
+  "component": {
+    "sha256": "sha256:857c67a4c3a232074ed0b1ecbbfa578886bb410b386adc871fc792b1bf173f3f",
+    "bytes": 3283330
+  },
+  "taskWaitPort": {
+    "sha256": "sha256:80d51e23c039632746accaea41d17f1e36ce379a63e61b596e6a58a4669b2bc9",
+    "bytes": 24389
+  },
+  "buildComplete": {
+    "sha256": "sha256:05bd6b205d99c39349aa6c102a543bfb2846738e238817a269a6aacb9198d14c",
+    "bytes": 6014
+  },
+  "sourceInventory": {
+    "sha256": "sha256:4c2d51949a6df01807e847d35f1811ce0cabe5109241f431e9d676506e799376",
+    "bytes": 24416
+  },
+  "signedWorkflow": {
+    "sha256": "sha256:636cff518f058219e27135a2541308b3ed120e1dcb08846edf5b95995ea5d10f",
+    "bytes": 854793
+  },
+  "newCases": [
+    {
+      "mode": "timer-change-before-dispose",
+      "returned": "ordinary-tasks:timer-change-before-dispose|changed=1|pending=1|callbacks=1|drained=1|fresh=1",
+      "fuel": 51378150,
+      "peakMemoryBytes": 57594344,
+      "wallTimeMicros": 262965,
+      "outboundRequests": 0,
+      "effects": 0,
+      "retirementPhase": "dotnet-ordinary-tasks-timer-change-before-dispose-retired"
+    },
+    {
+      "mode": "timer-change-after-dispose",
+      "returned": "ordinary-tasks:timer-change-after-dispose|changed=0|pending=1|callbacks=1|drained=1|fresh=1",
+      "fuel": 51331161,
+      "peakMemoryBytes": 57174486,
+      "wallTimeMicros": 124605,
+      "outboundRequests": 0,
+      "effects": 0,
+      "retirementPhase": "dotnet-ordinary-tasks-timer-change-after-dispose-retired"
+    }
+  ],
+  "missingGrantRefusals": [
+    "latent:clock/monotonic@0.1.0",
+    "latent:clock/wall@0.1.0",
+    "latent:runtime/activation@0.1.0",
+    "latent:random/random@0.1.0"
+  ],
+  "taskLimit": 8,
+  "timerLimit": 8,
+  "invocations": 56,
+  "ordinaryTaskCases": 24,
+  "taskModes": [
+    "run",
+    "when-all",
+    "thread-pool",
+    "scheduler",
+    "error",
+    "cancel",
+    "context",
+    "suppressed-context",
+    "delay",
+    "cancel-after",
+    "nested",
+    "monitor",
+    "timer-periodic-context",
+    "timer-change",
+    "timer-dispose",
+    "timer-self-dispose-drain",
+    "cancel-pending",
+    "manual-reset-sibling",
+    "manual-reset-context",
+    "manual-reset-suppressed-context",
+    "manual-reset-captured-context",
+    "timer-change-before-dispose",
+    "timer-change-after-dispose",
+    "reset-notification-refusal"
+  ],
+  "allOutcomesKnownAndReaped": true,
+  "zeroActiveQueuedAndQuarantinedCellsAndReservedQuotaAfterEveryTask": true,
+  "samples": 48,
+  "providerIdleObservations": 30,
+  "cleanNodeShutdown": true,
+  "limitations": [
+    "The five native binaries and four companion builds were authenticated against their earlier issuing checkout. Current host compilation was outside this run.",
+    "The two cases cover opposing operation orders during a running callback. Other scheduler interleavings, tenant isolation and whole-runtime memory costs have separate qualification."
+  ]
+}
